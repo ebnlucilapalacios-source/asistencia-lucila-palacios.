@@ -3,363 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E.B.N. Lucila Palacios - Gestión Escolar</title>
-    
-    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJkZWZhdWx0X2xvY2FsZSI6ICJlcyIsCiAgIm5hbWUiOiAiRS5CLk4uIEx1Y2lsYSBQYWxhY2lvcyIsCiAgInNob3J0X25hbWUiOiAiTHVjaWxhIEFwcCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTU0MzYwIiwKICAidGhlbWVfY29sb3IiOiAiIzE1NDM2MCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogIjQyMTY5Mi5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
-    <link rel="apple-touch-icon" href="421692.png">
-    <link rel="icon" type="image/png" href="421692.png">
-
+    <title>E.B.N. Lucila Palacios - Control de Asistencia</title>
+    <link rel="icon" type="image/png" href="Imagen_20260225_005025_993.png">
     <style>
         :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --peligro: #c0392b; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; }
-        
-        /* Cabecera con Logo Institucional */
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; }
-        #logoEscuela { width: 80px; height: 80px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 50px; }
+        header { background: var(--azul); color: white; padding: 20px 15px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 90px; height: 90px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 8px; object-fit: contain; }
         .container { max-width: 500px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
-        
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:active { transform: scale(0.98); }
-        .btn-registro { background: var(--exito); }
-        .btn-borrar { background: none; color: var(--peligro); border: none; width: auto; padding: 5px; cursor: pointer; font-size: 1.1rem; }
-        
-        /* Lista de Alumnos */
-        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; transition: 0.2s; }
-        .avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--celeste); }
-        .info-student { flex-grow: 1; }
-        .btn-check { width: 85px; padding: 8px; font-size: 0.7rem; border-radius: 20px; }
-        .presente { background: var(--exito); }
+        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-check { width: 90px; padding: 8px; font-size: 0.7rem; border-radius: 20px; border: none; font-weight: bold; }
+        .presente { background: var(--exito); color: white; }
         .ausente { background: #ebedef; color: #7f8c8d; }
-
-        /* Barras de Progreso y Gráficos */
-        .progress-container { background: #e0e0e0; border-radius: 10px; height: 18px; margin: 10px 0; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
-        .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease-in-out; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
-        
-        .chart-row { margin-bottom: 12px; }
-        .chart-label { font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold; }
-        .chart-bar-bg { background: #eee; height: 10px; border-radius: 5px; overflow: hidden; }
-        .chart-bar-fill { height: 100%; transition: width 1s; }
-
-        #cuadroHonor { background: #fff3e0; padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid var(--naranja); }
+        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
+        .info-student { flex-grow: 1; }
+        .progress-container { background: #e0e0e0; border-radius: 10px; height: 18px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
+        .honor-card { background: #fff3e0; border-left: 5px solid var(--naranja); padding: 10px; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="421692.png" id="logoEscuela" alt="Escudo EBN Lucila Palacios">
-    <h1 style="margin:0; font-size: 1.1rem;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p id="labelAula" style="font-size: 0.7rem; opacity:0.9; margin:2px;">Cargando Grado...</p>
+    <img src="Imagen_20260225_005025_993.png" id="logoEscuela" alt="Logo">
+    <h1 style="margin:0; font-size: 1.2rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p id="labelAula" style="margin:5px 0 0; font-size:0.8rem; opacity:0.9;">Cargando...</p>
 </header>
 
 <div class="container">
     <details class="card">
-        <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Configuración y Matrícula</summary>
-        <div style="margin-top:15px;">
-            <input type="text" id="gradoSec" placeholder="Grado y Sección (Ej: 1ero A)">
-            <button onclick="guardarAula()">Guardar Grado Actual</button>
-            <hr>
-            <h3>Inscribir/Editar Alumno</h3>
-            <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
-            <select id="genAlu"><option value="M">Masculino</option><option value="F">Femenino</option></select>
-            <label style="font-size:12px; color:gray;">Fecha de Nacimiento:</label>
-            <input type="date" id="fechaNac">
-            <input type="file" id="fotoAlu" accept="image/*" capture="user">
-            <button onclick="registrarAlumno()" class="btn-registro">Guardar Alumno</button>
-            
-            <div style="background:#f4f6f7; padding:15px; border-radius:10px; margin-top:20px; border: 1px dashed var(--celeste);">
-                <h4 style="margin:0 0 10px 0; font-size:14px;">💾 Copia de Seguridad</h4>
-                <button onclick="exportarDatos()" style="background:#546e7a; font-size:0.8rem; margin-bottom:10px;">📤 Descargar Backup (.json)</button>
-                <label style="font-size:11px; display:block;">Importar datos:</label>
-                <input type="file" id="importFile" accept=".json" onchange="importarDatos(event)" style="font-size:10px;">
-            </div>
-        </div>
+        <summary style="cursor:pointer; font-weight:bold; color:var(--celeste);">⚙️ Configuración y Matrícula</summary>
+        <input type="text" id="gradoSec" placeholder="Ej: 1er Grado Sección A">
+        <button onclick="guardarAula()">Guardar Aula</button>
+        <hr>
+        <input type="text" id="nomAlu" placeholder="Nombre del Alumno">
+        <select id="genAlu"><option value="F">Hembra (F)</option><option value="M">Varón (M)</option></select>
+        <button onclick="registrarAlumno()" style="background:var(--exito);">Inscribir Alumno</button>
     </details>
 
     <div class="card">
-        <h3>📅 Control de Asistencia</h3>
-        <label style="font-size:12px; color:gray;">Consultar fecha:</label>
-        <input type="date" id="calendarioConsulta" onchange="cambiarFechaConsulta()">
-        
-        <div class="progress-container">
-            <div id="barraProgreso" class="progress-bar">0%</div>
-        </div>
-
-        <input type="text" id="buscador" placeholder="🔍 Buscar por nombre..." onkeyup="actualizarUI()">
-        <button onclick="marcarTodos()" style="background:var(--naranja); font-size:0.9rem; margin-bottom:10px;">✅ Marcar todos Presente</button>
-        
+        <h3 style="margin-top:0;">📅 Control de Asistencia</h3>
+        <label style="font-size:0.8rem; color:#666;">Consultar fecha:</label>
+        <input type="date" id="calendarioConsulta" onchange="cambiarFecha()">
+        <div class="progress-container"><div id="barraProgreso" class="progress-bar">0%</div></div>
+        <input type="text" id="buscador" placeholder="🔍 Buscar por nombre..." oninput="actualizarUI()">
+        <button onclick="marcarTodos()" style="background:var(--naranja); margin-bottom:10px;">✅ Marcar todos Presente</button>
         <div id="listaAlumnos"></div>
     </div>
 
     <div class="card">
-        <div id="cuadroHonor"></div>
-        <div id="contenedorStatsGlobal"></div>
-        
-        <button onclick="generarEstadisticaEscuela()" style="background:var(--azul); margin-top:10px;">📊 Ver Estadística Institucional</button>
-        <button onclick="descargarExcel()" style="background:var(--celeste); margin-top:10px;">📥 Descargar Reporte CSV (Excel)</button>
-        
-        <hr>
-        <h4 style="color:var(--peligro); margin-bottom:5px;">🧹 Limpieza de Datos</h4>
-        <input type="month" id="filtroMesBorrar">
-        <button onclick="limpiarAsistenciaMes()" style="background:var(--peligro); font-size:0.8rem;">Borrar Mes Seleccionado</button>
+        <div id="cuadroHonor" class="honor-card">🏆 <strong>Cuadro de Honor:</strong> Sin datos</div>
+        <button onclick="verEstadistica()" style="background:var(--azul); margin-top:15px;">📊 Estadística por Género</button>
+        <button onclick="descargarExcel()" style="background:var(--celeste); margin-top:10px;">📥 Descargar Reporte (Excel)</button>
     </div>
 </div>
 
 <script>
-    // --- VARIABLES GLOBALES ---
-    let alumnos = JSON.parse(localStorage.getItem('lp_alumnos_v2')) || [];
-    let asistencias = JSON.parse(localStorage.getItem('lp_asistencias_v2')) || {};
-    let aulaActual = localStorage.getItem('lp_aula_v2') || "Aula No Definida";
+    let alumnos = JSON.parse(localStorage.getItem('lp_alumnos_v3')) || [];
+    let asistencias = JSON.parse(localStorage.getItem('lp_asistencias_v3')) || {};
+    let aulaActual = localStorage.getItem('lp_aula_v3') || "Sin Grado";
     let fechaConsulta = new Date().toISOString().split('T')[0];
-    let editandoId = null;
 
-    // --- FUNCIONES DE APOYO ---
-    function calcularEdad(fn) {
-        const hoy = new Date(); const c = new Date(fn);
-        let e = hoy.getFullYear() - c.getFullYear();
-        if (hoy.getMonth() < c.getMonth() || (hoy.getMonth() === c.getMonth() && hoy.getDate() < c.getDate())) e--;
-        return e;
-    }
-
-    function esCumple(fn) {
-        const hoy = new Date(); const c = new Date(fn);
-        return hoy.getDate() === c.getDate() && hoy.getMonth() === c.getMonth();
-    }
-
-    function obtenerPromedioAlumno(id) {
-        const fechas = Object.keys(asistencias).filter(f => !f.includes('_nota'));
-        if (fechas.length === 0) return 0;
-        let p = 0;
-        fechas.forEach(f => { if(asistencias[f][id]) p++; });
-        return ((p / fechas.length) * 100).toFixed(0);
-    }
-
-    // --- GESTIÓN DE ALUMNOS ---
     function registrarAlumno() {
         const n = document.getElementById('nomAlu').value.trim();
         const g = document.getElementById('genAlu').value;
-        const f = document.getElementById('fechaNac').value;
-        const file = document.getElementById('fotoAlu').files[0];
-
-        if(!n || !f) return alert("Por favor complete nombre y fecha de nacimiento.");
-
-        const guardar = (fotoData) => {
-            if(editandoId) {
-                const i = alumnos.findIndex(a => a.id === editandoId);
-                alumnos[i].nombre = n; alumnos[i].genero = g; alumnos[i].nacimiento = f;
-                if(fotoData) alumnos[i].foto = fotoData;
-                editandoId = null;
-                alert("Datos actualizados.");
-            } else {
-                alumnos.push({ id: Date.now(), nombre: n, genero: g, nacimiento: f, foto: fotoData || '', grado: aulaActual });
-                alert("Alumno inscrito.");
-            }
-            localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
-            document.getElementById('nomAlu').value = "";
-            document.getElementById('fechaNac').value = "";
-            document.querySelector('.btn-registro').innerText = "Guardar Alumno";
-            actualizarUI();
-        };
-
-        if(file) { const r = new FileReader(); r.onloadend = () => guardar(r.result); r.readAsDataURL(file); }
-        else guardar(null);
+        if(!n) return alert("Escribe el nombre");
+        alumnos.push({ id: Date.now(), nombre: n, genero: g, grado: aulaActual });
+        localStorage.setItem('lp_alumnos_v3', JSON.stringify(alumnos));
+        document.getElementById('nomAlu').value = "";
+        actualizarUI();
     }
 
-    function prepararEdicion(id) {
-        const a = alumnos.find(x => x.id === id);
-        document.getElementById('nomAlu').value = a.nombre;
-        document.getElementById('genAlu').value = a.genero;
-        document.getElementById('fechaNac').value = a.nacimiento;
-        editandoId = id;
-        document.querySelector('.btn-registro').innerText = "Actualizar Datos (Modo Edición)";
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function eliminarAlumno(id) {
-        if(confirm("¿Seguro que deseas eliminar este alumno de forma permanente?")) {
-            alumnos = alumnos.filter(a => a.id !== id);
-            localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
-            actualizarUI();
-        }
-    }
-
-    // --- ASISTENCIA ---
     function marcar(id) {
         if(!asistencias[fechaConsulta]) asistencias[fechaConsulta] = {};
         asistencias[fechaConsulta][id] = !asistencias[fechaConsulta][id];
-        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
+        localStorage.setItem('lp_asistencias_v3', JSON.stringify(asistencias));
         actualizarUI();
     }
 
     function marcarTodos() {
         if(!asistencias[fechaConsulta]) asistencias[fechaConsulta] = {};
-        alumnos.filter(a => a.grado === aulaActual).forEach(a => asistencias[fechaConsulta][a.id] = true);
-        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
+        alumnos.filter(a => a.grado === aulaActual).forEach(a => { asistencias[fechaConsulta][a.id] = true; });
+        localStorage.setItem('lp_asistencias_v3', JSON.stringify(asistencias));
         actualizarUI();
     }
 
-    function agregarObservacion(id) {
-        const actual = (asistencias[fechaConsulta] && asistencias[fechaConsulta][id + '_nota']) || "";
-        const n = prompt("Añadir nota u observación para este día:", actual);
-        if(n !== null) {
-            if(!asistencias[fechaConsulta]) asistencias[fechaConsulta] = {};
-            asistencias[fechaConsulta][id + '_nota'] = n;
-            localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
-            actualizarUI();
-        }
-    }
-
-    function cambiarFechaConsulta() {
-        fechaConsulta = document.getElementById('calendarioConsulta').value;
-        actualizarUI();
-    }
-
-    function guardarAula() {
-        const nuevoGrado = document.getElementById('gradoSec').value.trim();
-        if(nuevoGrado) {
-            localStorage.setItem('lp_aula_v2', nuevoGrado);
-            location.reload();
-        }
-    }
-
-    // --- INTERFAZ DE USUARIO ---
     function actualizarUI() {
         const lista = document.getElementById('listaAlumnos');
-        const busq = document.getElementById('buscador').value.toLowerCase();
+        const busqueda = document.getElementById('buscador').value.toLowerCase();
         lista.innerHTML = "";
         let pres = 0;
-        
-        // Filtrar alumnos del grado actual
-        const alumnosGrado = alumnos.filter(a => a.grado === aulaActual);
+        const filtrados = alumnos.filter(a => a.grado === aulaActual && a.nombre.toLowerCase().includes(busqueda));
 
-        alumnosGrado.filter(a => a.nombre.toLowerCase().includes(busq)).forEach(a => {
+        filtrados.forEach(a => {
             const estaP = asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id];
-            const nota = asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id + '_nota'];
-            const prom = obtenerPromedioAlumno(a.id);
             if(estaP) pres++;
-
-            lista.innerHTML += `
-                <div class="student-item" style="border-left: 5px solid ${nota ? 'var(--naranja)':'transparent'}">
-                    <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
-                    <div class="info-student">
-                        <strong>${esCumple(a.nacimiento)?'🎂':''} ${a.nombre}</strong><br>
-                        <small>${prom}% Promedio • ${calcularEdad(a.nacimiento)} años</small>
-                        ${nota ? `<br><small style="color:var(--naranja); font-style:italic;">📝 ${nota}</small>` : ''}
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
-                        <button onclick="agregarObservacion(${a.id})" style="font-size:9px; padding:3px; background:#ddd; color:#333;">NOTAS</button>
-                    </div>
-                    <button onclick="prepararEdicion(${a.id})" class="btn-borrar" style="color:var(--celeste)">✏️</button>
-                    <button onclick="eliminarAlumno(${a.id})" class="btn-borrar">🗑️</button>
-                </div>`;
+            lista.innerHTML += `<div class="student-item">
+                <div class="info-student"><strong>${a.nombre}</strong><br><small>${a.genero==='F'?'Hembra':'Varón'}</small></div>
+                <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
+            </div>`;
         });
 
-        // Barra de progreso real
-        const porc = alumnosGrado.length > 0 ? ((pres / alumnosGrado.length) * 100).toFixed(0) : 0;
-        const barra = document.getElementById('barraProgreso');
-        barra.style.width = porc + "%";
-        barra.innerText = porc + "%";
-        
-        // Cuadro de Honor local
-        const honor = [...alumnosGrado].sort((a,b) => obtenerPromedioAlumno(b.id) - obtenerPromedioAlumno(a.id)).slice(0,3);
-        let hHtml = "<h4>🏆 Cuadro de Honor (Grado Actual)</h4>";
-        if(alumnosGrado.length > 0 && Object.keys(asistencias).length > 0) {
-            honor.forEach((h, i) => { 
-                const p = obtenerPromedioAlumno(h.id);
-                if(p > 0) hHtml += `<div>${['🥇','🥈','🥉'][i]} ${h.nombre} — ${p}%</div>`;
-            });
-        } else { hHtml += "<small>Sin registros suficientes.</small>"; }
-        document.getElementById('cuadroHonor').innerHTML = hHtml;
+        const totalGrado = alumnos.filter(a => a.grado === aulaActual).length;
+        const porc = totalGrado > 0 ? ((pres / totalGrado) * 100).toFixed(0) : 0;
+        document.getElementById('barraProgreso').style.width = porc + "%";
+        document.getElementById('barraProgreso').innerText = porc + "%";
+        actualizarHonor();
     }
 
-    // --- ESTADÍSTICAS Y REPORTES ---
-    function generarEstadisticaEscuela() {
-        const stats = {};
-        alumnos.forEach(a => {
-            const g = a.grado || "Indefinido";
-            if(!stats[g]) stats[g] = { suma: 0, cont: 0 };
-            stats[g].suma += parseFloat(obtenerPromedioAlumno(a.id));
-            stats[g].cont++;
+    function actualizarHonor() {
+        if (alumnos.length === 0) return;
+        let conteo = {};
+        Object.keys(asistencias).forEach(f => {
+            Object.keys(asistencias[f]).forEach(id => { if(asistencias[f][id]) conteo[id] = (conteo[id]||0) + 1; });
         });
-        
-        let html = "<h4>🏢 Estadística Institucional por Grados</h4>";
-        Object.keys(stats).sort().forEach(grado => {
-            const prom = (stats[grado].suma / stats[grado].cont).toFixed(1);
-            let color = prom < 75 ? 'var(--peligro)' : (prom < 90 ? 'var(--naranja)' : 'var(--exito)');
-            html += `
-                <div class="chart-row">
-                    <div class="chart-label"><span>${grado}</span><span>${prom}%</span></div>
-                    <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${prom}%; background:${color}"></div></div>
-                </div>`;
-        });
-        document.getElementById('contenedorStatsGlobal').innerHTML = html;
+        let mejorId = Object.keys(conteo).reduce((a, b) => conteo[a] > conteo[b] ? a : b, null);
+        if(mejorId) {
+            let alu = alumnos.find(a => a.id == mejorId);
+            document.getElementById('cuadroHonor').innerHTML = `🏆 <strong>Cuadro de Honor:</strong> ${alu.nombre} (${conteo[mejorId]} asistencias)`;
+        }
     }
 
+    function verEstadistica() {
+        let hTot = alumnos.filter(a => a.grado === aulaActual && a.genero === 'F').length;
+        let vTot = alumnos.filter(a => a.grado === aulaActual && a.genero === 'M').length;
+        let hPres = 0, vPres = 0;
+        alumnos.filter(a => a.grado === aulaActual).forEach(a => {
+            if(asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id]) {
+                if(a.genero === 'F') hPres++; else vPres++;
+            }
+        });
+        alert(`Estadística de hoy:\n\nHembras: ${hPres} de ${hTot} (${hTot>0?((hPres/hTot)*100).toFixed(1):0}%)\nVarones: ${vPres} de ${vTot} (${vTot>0?((vPres/vTot)*100).toFixed(1):0}%)`);
+    }
+
+    function cambiarFecha() { fechaConsulta = document.getElementById('calendarioConsulta').value; actualizarUI(); }
+    function guardarAula() { const g = document.getElementById('gradoSec').value.trim(); if(g) { localStorage.setItem('lp_aula_v3', g); location.reload(); } }
     function descargarExcel() {
-        let csv = "\ufeffFecha,Grado,Nombre,Estado,Nota/Observacion\n";
-        Object.keys(asistencias).filter(f => !f.includes('_nota')).sort().forEach(f => {
-            alumnos.forEach(a => {
-                const est = asistencias[f][a.id] ? "Presente" : "Ausente";
-                const n = (asistencias[f][a.id + '_nota'] || "").replace(/,/g, ".");
-                csv += `${f},${a.grado},${a.nombre},${est},"${n}"\n`;
+        let csv = "\ufeffFecha,Nombre,Genero,Estado\n";
+        Object.keys(asistencias).sort().forEach(f => {
+            alumnos.filter(a => a.grado === aulaActual).forEach(a => {
+                csv += `${f},${a.nombre},${a.genero},${asistencias[f][a.id]?'Presente':'Ausente'}\n`;
             });
         });
-        const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url; link.download = `Reporte_LucilaPalacios_${fechaConsulta}.csv`;
-        link.click();
+        const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = "Asistencia_Lucila_Palacios.csv"; l.click();
     }
 
-    // --- BACKUP Y LIMPIEZA ---
-    function exportarDatos() {
-        const datos = { alumnos, asistencias, aula: aulaActual };
-        const blob = new Blob([JSON.stringify(datos)], {type: 'application/json'});
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `Backup_Lucila_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-    }
-
-    function importarDatos(e) {
-        const file = e.target.files[0];
-        if(!file) return;
-        if(!confirm("⚠️ Al importar, se reemplazarán todos tus datos actuales. ¿Continuar?")) return;
-        const reader = new FileReader();
-        reader.onload = (x) => {
-            const data = JSON.parse(x.target.result);
-            localStorage.setItem('lp_alumnos_v2', JSON.stringify(data.alumnos));
-            localStorage.setItem('lp_asistencias_v2', JSON.stringify(data.asistencias));
-            localStorage.setItem('lp_aula_v2', data.aula);
-            location.reload();
-        };
-        reader.readAsText(file);
-    }
-
-    function limpiarAsistenciaMes() {
-        const m = document.getElementById('filtroMesBorrar').value;
-        if(!m || !confirm("¿Eliminar TODA la asistencia del mes " + m + "?")) return;
-        Object.keys(asistencias).forEach(f => { if(f.startsWith(m)) delete asistencias[f]; });
-        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
-        location.reload();
-    }
-
-    // --- INICIO ---
     document.getElementById('calendarioConsulta').value = fechaConsulta;
     document.getElementById('labelAula').innerText = aulaActual + " • E.B.N. Lucila Palacios";
     actualizarUI();
-    
-    // Registro de Service Worker para PWA
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            const swCode = `self.addEventListener('fetch', (e) => {});`;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob));
-        });
-    }
 </script>
 </body>
 </html>
