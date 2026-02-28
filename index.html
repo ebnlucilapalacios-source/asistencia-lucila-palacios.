@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docente - Lucila Palacios</title>
-    <link rel="icon" type="image/png" href="Imagen_20260225_005025_993.png">
+    <link rel="icon" type="image/png" href="IMG_20260225_005025_993.png">
     <style>
         :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
@@ -12,172 +12,72 @@
         #logoEscuela { width: 85px; height: 85px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); object-fit: contain; }
         .container { max-width: 500px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-registro { background: var(--exito); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .student-card { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #eee; background: #fff; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid #ddd; }
-        .info-alu { flex-grow: 1; }
-        .btn-edit { background: none; border: 1px solid var(--naranja); color: var(--naranja); width: auto; padding: 4px 8px; font-size: 0.75rem; border-radius: 5px; cursor: pointer; }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-asis { width: 60px; height: 40px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; }
+        .student-card { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
-
 <header>
-    <img src="Imagen_20260225_005025_993.png" id="logoEscuela" alt="Escudo Lucila Palacios">
+    <img src="IMG_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
     <h1 style="font-size: 1.2rem; margin: 8px 0 0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin:0; font-size: 0.9rem; opacity: 0.9;">Control de Asistencia de Aula</p>
 </header>
-
 <div class="container">
     <div class="card">
-        <h3>👤 Datos del Aula</h3>
-        <input type="text" id="profe" placeholder="Nombre del Docente">
-        <input type="text" id="aula" placeholder="Grado y Sección (Ej: 5to A)">
-        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Configuración</button>
+        <h3>👤 Configurar Aula</h3>
+        <input type="text" id="profe" placeholder="Docente">
+        <input type="text" id="aula" placeholder="Grado y Sección">
+        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar</button>
     </div>
-
     <div class="card">
-        <h3 id="tituloRegistro">📝 Inscribir Alumno</h3>
-        <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
-        <select id="genAlu">
-            <option value="F">Femenino (Hembra)</option>
-            <option value="M">Masculino (Varón)</option>
-        </select>
-        <label style="font-size: 0.8rem; color: #666;">Fecha de Nacimiento:</label>
+        <h3>📝 Registro</h3>
+        <input type="text" id="nomAlu" placeholder="Nombre">
+        <select id="genAlu"><option value="F">F (Hembra)</option><option value="M">M (Varón)</option></select>
         <input type="date" id="fechaNac">
-        <label style="font-size: 0.8rem; color: #666;">Foto (Opcional):</label>
-        <input type="file" id="fotoAlu" accept="image/*">
-        <button onclick="registrarAlumno()" id="btnGuardar" class="btn-registro">Inscribir Alumno</button>
+        <button onclick="registrar()" style="background:var(--exito); color:white;">Inscribir</button>
     </div>
-
     <div class="card">
-        <h3>📅 Asistencia: <span id="fechaHoy"></span></h3>
-        <input type="text" id="buscador" placeholder="🔍 Buscar alumno..." oninput="dibujar()">
-        <div id="listaAsistencia" style="margin-top:10px;"></div>
-        
-        <button onclick="exportarReporte()" style="background:var(--naranja); color:white; margin-top:20px; font-size: 1.1rem; padding: 15px;">
-            📤 Enviar Reporte a Dirección
-        </button>
+        <h3>📅 Asistencia: <span id="fHoy"></span></h3>
+        <div id="listaAsistencia"></div>
+        <button onclick="exportar()" style="background:var(--naranja); color:white; margin-top:20px;">📤 Enviar a Dirección</button>
     </div>
 </div>
-
 <script>
-    let d = JSON.parse(localStorage.getItem('ebn_doc_final_v2')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
+    let d = JSON.parse(localStorage.getItem('ebn_v7')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
     let hoy = new Date().toISOString().split('T')[0];
-    let editandoId = null;
-    document.getElementById('fechaHoy').innerText = hoy;
+    document.getElementById('fHoy').innerText = hoy;
 
-    function guardarConfig() {
-        d.profe = document.getElementById('profe').value.trim();
-        d.aula = document.getElementById('aula').value.trim().toUpperCase();
-        localStorage.setItem('ebn_doc_final_v2', JSON.stringify(d));
-        alert("Configuración de aula guardada correctamente.");
+    function guardarConfig() { d.profe = document.getElementById('profe').value; d.aula = document.getElementById('aula').value; localStorage.setItem('ebn_v7', JSON.stringify(d)); alert("Guardado"); }
+    function registrar() { 
+        const n = document.getElementById('nomAlu').value; 
+        const g = document.getElementById('genAlu').value;
+        const f = document.getElementById('fechaNac').value;
+        if(!n || !d.aula) return alert("Faltan datos");
+        d.alumnos.push({ id: Date.now(), nombre: n, genero: g, nacimiento: f, seccion: d.aula, docente: d.profe });
+        localStorage.setItem('ebn_v7', JSON.stringify(d));
+        document.getElementById('nomAlu').value = ""; dibujar();
     }
-
-    function registrarAlumno() {
-        const nombre = document.getElementById('nomAlu').value.trim();
-        const genero = document.getElementById('genAlu').value;
-        const nacimiento = document.getElementById('fechaNac').value;
-        const file = document.getElementById('fotoAlu').files[0];
-
-        if(!nombre || !nacimiento || !d.aula) return alert("Por favor, complete los datos y configure su sección.");
-
-        const guardar = (fotoData) => {
-            if (editandoId) {
-                const idx = d.alumnos.findIndex(a => a.id === editandoId);
-                d.alumnos[idx] = { ...d.alumnos[idx], nombre, genero, nacimiento };
-                if (fotoData) d.alumnos[idx].foto = fotoData;
-                editandoId = null;
-                alert("Datos del alumno actualizados.");
-            } else {
-                d.alumnos.push({ 
-                    id: Date.now(), nombre, genero, nacimiento, 
-                    seccion: d.aula, docente: d.profe, foto: fotoData || '' 
-                });
-                alert("Alumno inscrito con éxito.");
-            }
-            localStorage.setItem('ebn_doc_final_v2', JSON.stringify(d));
-            resetForm();
-            dibujar();
-        };
-
-        if(file) {
-            const reader = new FileReader();
-            reader.onloadend = () => guardar(reader.result);
-            reader.readAsDataURL(file);
-        } else {
-            guardar(null);
-        }
-    }
-
-    function prepararEdicion(id) {
-        const alu = d.alumnos.find(a => a.id === id);
-        document.getElementById('nomAlu').value = alu.nombre;
-        document.getElementById('genAlu').value = alu.genero;
-        document.getElementById('fechaNac').value = alu.nacimiento;
-        editandoId = id;
-        document.getElementById('tituloRegistro').innerText = "📝 Editar Alumno";
-        const btn = document.getElementById('btnGuardar');
-        btn.innerText = "Actualizar Datos";
-        btn.style.background = "var(--naranja)";
-        window.scrollTo({ top: 150, behavior: 'smooth' });
-    }
-
-    function resetForm() {
-        document.getElementById('nomAlu').value = "";
-        document.getElementById('fechaNac').value = "";
-        document.getElementById('fotoAlu').value = "";
-        document.getElementById('tituloRegistro').innerText = "📝 Inscribir Alumno";
-        const btn = document.getElementById('btnGuardar');
-        btn.innerText = "Inscribir Alumno";
-        btn.style.background = "var(--exito)";
-    }
-
     function marcar(id) {
         if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
         d.asistencias[hoy][id] = !d.asistencias[hoy][id];
-        localStorage.setItem('ebn_doc_final_v2', JSON.stringify(d));
-        dibujar();
+        localStorage.setItem('ebn_v7', JSON.stringify(d)); dibujar();
     }
-
     function dibujar() {
-        const bus = document.getElementById('buscador').value.toLowerCase();
-        const lista = document.getElementById('listaAsistencia');
-        lista.innerHTML = "";
-        
-        d.alumnos.filter(a => a.nombre.toLowerCase().includes(bus))
-                 .sort((a,b) => a.nombre.localeCompare(b.nombre))
-                 .forEach(a => {
+        const lista = document.getElementById('listaAsistencia'); lista.innerHTML = "";
+        d.alumnos.forEach(a => {
             const asis = d.asistencias[hoy] && d.asistencias[hoy][a.id];
-            lista.innerHTML += `
-                <div class="student-card">
-                    <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
-                    <div class="info-alu">
-                        <div style="font-weight:bold; font-size: 0.9rem;">${a.nombre}</div>
-                        <button onclick="prepararEdicion(${a.id})" class="btn-edit">Editar Ficha</button>
-                    </div>
-                    <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asis?'#27ae60':'#ccc'}">
-                        ${asis?'P':'F'}
-                    </button>
-                </div>`;
+            lista.innerHTML += `<div class="student-card">
+                <div style="flex-grow:1"><b>${a.nombre}</b></div>
+                <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asis?'#27ae60':'#ccc'}">${asis?'P':'F'}</button>
+            </div>`;
         });
     }
-
-    function exportarReporte() {
-        if(d.alumnos.length === 0) return alert("Debe inscribir alumnos primero.");
-        const blob = new Blob([JSON.stringify(d)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Reporte_${d.aula}_${hoy}.json`;
-        a.click();
+    function exportar() {
+        const b = new Blob([JSON.stringify(d)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+        a.download = `Reporte_${d.aula}_${hoy}.json`; a.click();
     }
-
-    if(d.profe) {
-        document.getElementById('profe').value = d.profe;
-        document.getElementById('aula').value = d.aula;
-    }
-    dibujar();
+    document.getElementById('profe').value = d.profe; document.getElementById('aula').value = d.aula; dibujar();
 </script>
 </body>
 </html>
