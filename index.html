@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E.B.N. Lucila Palacios - Gestión Escolar</title>
     
-    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJkZWZhdWx0X2xvY2FsZSI6ICJlcyIsCiAgIm5hbWUiOiAiRS5CLk4uIEx1Y2lsYSBQYWxhY2lvcyIsCiAgInNob3J0X25hbWUiOiAiTHVjaWxhIEFwcCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTU0MzYwIiwKICAidGhlbWVfY29sb3IiOiAiIzE1NDM2MCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogIkltYWdlbl8yMDI2MDIyNV8wMDUwMjVfOTkzLnBuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
-    <link rel="apple-touch-icon" href="Imagen_20260225_005025_993.png">
     <link rel="icon" type="image/png" href="Imagen_20260225_005025_993.png">
 
     <style>
@@ -22,7 +20,6 @@
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
         button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-registro { background: var(--exito); }
-        .btn-borrar { background: none; color: var(--peligro); border: none; width: auto; padding: 5px; cursor: pointer; font-size: 1.1rem; }
         
         .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
         .avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--celeste); }
@@ -31,14 +28,8 @@
         .presente { background: var(--exito); }
         .ausente { background: #ebedef; color: #7f8c8d; }
 
-        .progress-container { background: #e0e0e0; border-radius: 10px; height: 18px; margin: 10px 0; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+        .progress-container { background: #e0e0e0; border-radius: 10px; height: 18px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
-        
-        .chart-row { margin-bottom: 12px; }
-        .chart-label { font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold; }
-        .chart-bar-bg { background: #eee; height: 10px; border-radius: 5px; overflow: hidden; }
-        .chart-bar-fill { height: 100%; transition: width 1s; }
-        #cuadroHonor { background: #fff3e0; padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid var(--naranja); }
     </style>
 </head>
 <body>
@@ -73,33 +64,15 @@
     </div>
 
     <div class="card">
-        <div id="cuadroHonor"></div>
-        <button onclick="generarEstadisticaEscuela()" style="background:var(--azul);">📊 Estadística Institucional</button>
-        <button onclick="descargarExcel()" style="background:var(--celeste); margin-top:10px;">📥 Descargar Reporte (Excel)</button>
+        <button onclick="descargarExcel()" style="background:var(--celeste);">📥 Descargar Reporte (Excel)</button>
     </div>
 </div>
 
 <script>
-    // Se mantienen todas las funciones lógicas de la versión anterior
     let alumnos = JSON.parse(localStorage.getItem('lp_alumnos_v2')) || [];
     let asistencias = JSON.parse(localStorage.getItem('lp_asistencias_v2')) || {};
     let aulaActual = localStorage.getItem('lp_aula_v2') || "Sin Grado";
     let fechaConsulta = new Date().toISOString().split('T')[0];
-
-    function calcularEdad(fn) {
-        const hoy = new Date(); const c = new Date(fn);
-        let e = hoy.getFullYear() - c.getFullYear();
-        if (hoy.getMonth() < c.getMonth() || (hoy.getMonth() === c.getMonth() && hoy.getDate() < c.getDate())) e--;
-        return e;
-    }
-
-    function obtenerPromedioAlumno(id) {
-        const fechas = Object.keys(asistencias).filter(f => !f.includes('_nota'));
-        if (fechas.length === 0) return 0;
-        let p = 0;
-        fechas.forEach(f => { if(asistencias[f][id]) p++; });
-        return ((p / fechas.length) * 100).toFixed(0);
-    }
 
     function registrarAlumno() {
         const n = document.getElementById('nomAlu').value.trim();
@@ -134,16 +107,12 @@
 
         alumnosGrado.forEach(a => {
             const estaP = asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id];
-            const prom = obtenerPromedioAlumno(a.id);
             if(estaP) pres++;
 
             lista.innerHTML += `
                 <div class="student-item">
                     <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
-                    <div class="info-student">
-                        <strong>${a.nombre}</strong><br>
-                        <small>${prom}% Asistencia • ${calcularEdad(a.nacimiento)} años</small>
-                    </div>
+                    <div class="info-student"><strong>${a.nombre}</strong></div>
                     <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
                 </div>`;
         });
@@ -156,6 +125,18 @@
     function guardarAula() {
         const g = document.getElementById('gradoSec').value.trim();
         if(g) { localStorage.setItem('lp_aula_v2', g); location.reload(); }
+    }
+
+    function descargarExcel() {
+        let csv = "\ufeffFecha,Grado,Nombre,Estado\n";
+        Object.keys(asistencias).forEach(f => {
+            alumnos.forEach(a => {
+                const est = asistencias[f][a.id] ? "Presente" : "Ausente";
+                csv += `${f},${a.grado},${a.nombre},${est}\n`;
+            });
+        });
+        const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = "Reporte.csv"; l.click();
     }
 
     document.getElementById('calendarioConsulta').value = fechaConsulta;
