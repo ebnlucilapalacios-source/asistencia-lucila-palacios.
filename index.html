@@ -3,204 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Lucila Palacios - Pro</title>
-    <style>
-        :root { --azul: #154360; --celeste: #3498db; --naranja: #e67e22; --gris: #f4f6f7; --exito: #28b463; --peligro: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); }
-        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); position: sticky; top: 0; z-index: 100; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #d5dbdb; font-size: 16px; box-sizing: border-box; }
-        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:active { transform: scale(0.98); }
-        .btn-registro { background: var(--exito); }
-        .btn-borrar { background: none; color: var(--peligro); border: none; width: auto; padding: 5px; cursor: pointer; font-size: 1.2rem; }
-        
-        /* Buscador */
-        #buscador { border: 2px solid var(--celeste); margin-bottom: 15px; }
+    <title>E.B.N. Lucila Palacios - Gestión Escolar</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJkZWZhdWx0X2xvY2FsZSI6ICJlcyIsCiAgIm5hbWUiOiAiRS5CLk4uIEx1Y2lsYSBQYWxhY2lvcyIsCiAgInNob3J0X25hbWUiOiAiTHVjaWxhIEFwcCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMTU0MzYwIiwKICAidGhlbWVfY29sb3IiOiAiIzE1NDM2MCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogIjQyMTY5Mi5wbmciLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSIKICAgIH0KICBdCn0=">
+    <link rel="apple-touch-icon" href="421692.png">
+    <link rel="icon" type="image/png" href="421692.png">
 
-        .student-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; gap: 10px; position: relative; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--celeste); }
-        .info-student { flex-grow: 1; }
-        .btn-check { width: 90px; padding: 8px; font-size: 0.7rem; border-radius: 20px; }
-        .presente { background: var(--exito); }
-        .ausente { background: #ecf0f1; color: #95a5a6; }
+    <style>
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --peligro: #c0392b; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; }
         
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .stat-box { background: var(--azul); color: white; padding: 10px; border-radius: 10px; text-align: center; }
-        .stat-num { font-size: 1.2rem; font-weight: 900; display: block; color: var(--naranja); }
-        .age-dist { font-size: 0.8rem; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 85px; height: 85px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
+        
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-registro { background: var(--exito); }
+        .btn-borrar { background: none; color: var(--peligro); border: none; width: auto; padding: 5px; cursor: pointer; font-size: 1.1rem; }
+        
+        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
+        .avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--celeste); }
+        .info-student { flex-grow: 1; }
+        .btn-check { width: 85px; padding: 8px; font-size: 0.7rem; border-radius: 20px; }
+        .presente { background: var(--exito); }
+        .ausente { background: #ebedef; color: #7f8c8d; }
+
+        .progress-container { background: #e0e0e0; border-radius: 10px; height: 18px; margin: 10px 0; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
+        
+        .chart-row { margin-bottom: 12px; }
+        .chart-label { font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold; }
+        .chart-bar-bg { background: #eee; height: 10px; border-radius: 5px; overflow: hidden; }
+        .chart-bar-fill { height: 100%; transition: width 1s; }
+        #cuadroHonor { background: #fff3e0; padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid var(--naranja); }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-size:30px;">🏫</div>
-    <h1 style="margin:0; font-size: 1.2rem;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p id="labelAula" style="margin:5px 0 0; font-size: 0.8rem; opacity:0.8;">Cargando...</p>
+    <img src="421692.png" id="logoEscuela" alt="Escudo EBN Lucila Palacios">
+    <h1 style="margin:0; font-size: 1.1rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p id="labelAula" style="font-size: 0.7rem; opacity:0.9; margin:2px;">Cargando...</p>
 </header>
 
 <div class="container">
     <details class="card">
         <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Configuración y Matrícula</summary>
         <div style="margin-top:15px;">
-            <input type="text" id="gradoSec" placeholder="Grado y Sección">
-            <button onclick="guardarAula()">Guardar Aula</button>
+            <input type="text" id="gradoSec" placeholder="Grado y Sección (Ej: 1ero A)">
+            <button onclick="guardarAula()">Guardar Aula Actual</button>
             <hr>
-            <h3>Inscribir Alumno</h3>
+            <h3>Inscribir/Editar Alumno</h3>
             <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
             <select id="genAlu"><option value="M">Masculino</option><option value="F">Femenino</option></select>
-            <label style="font-size:12px; color:gray;">Fecha de Nacimiento:</label>
             <input type="date" id="fechaNac">
             <input type="file" id="fotoAlu" accept="image/*" capture="user">
-            <button onclick="registrarAlumno()" class="btn-registro">Inscribir Alumno</button>
+            <button onclick="registrarAlumno()" class="btn-registro">Guardar Alumno</button>
+            <div style="background:#f4f6f7; padding:15px; border-radius:10px; margin-top:20px; border: 1px dashed var(--celeste);">
+                <button onclick="exportarDatos()" style="background:#546e7a; font-size:0.8rem; margin-bottom:10px;">📤 Descargar Backup</button>
+                <input type="file" id="importFile" accept=".json" onchange="importarDatos(event)" style="font-size:10px;">
+            </div>
         </div>
     </details>
 
     <div class="card">
-        <h3>📅 Asistencia: <span id="fechaHoy"></span></h3>
-        <input type="text" id="buscador" placeholder="🔍 Buscar alumno..." onkeyup="actualizarUI()">
-        <button onclick="marcarTodos()" style="background:var(--naranja); margin-bottom:10px;">✅ Marcar todos Presente</button>
+        <h3>📅 Control Diario</h3>
+        <input type="date" id="calendarioConsulta" onchange="cambiarFechaConsulta()">
+        <div class="progress-container"><div id="barraProgreso" class="progress-bar">0%</div></div>
+        <input type="text" id="buscador" placeholder="🔍 Buscar por nombre..." onkeyup="actualizarUI()">
+        <button onclick="marcarTodos()" style="background:var(--naranja); font-size:0.9rem;">✅ Marcar todos Presente</button>
         <div id="listaAlumnos"></div>
     </div>
 
     <div class="card">
-        <h3>📊 Estadísticas</h3>
-        <div class="grid-stats" id="statsBox"></div>
-        <div class="age-dist" id="distribucionEdades"></div>
-        <button onclick="descargarExcel()" style="background:var(--azul); margin-top:15px;">📥 Descargar Reporte CSV</button>
+        <div id="cuadroHonor"></div>
+        <div id="contenedorStatsGlobal"></div>
+        <button onclick="generarEstadisticaEscuela()" style="background:var(--azul);">📊 Estadística Institucional</button>
+        <button onclick="descargarExcel()" style="background:var(--celeste); margin-top:10px;">📥 Descargar Reporte (Excel)</button>
+        <hr>
+        <input type="month" id="filtroMesBorrar">
+        <button onclick="limpiarAsistenciaMes()" style="background:var(--peligro); font-size:0.8rem;">Borrar Mes Seleccionado</button>
     </div>
 </div>
 
 <script>
     let alumnos = JSON.parse(localStorage.getItem('lp_alumnos_v2')) || [];
-    let aulaInfo = localStorage.getItem('lp_aula_v2') || "Aula no definida";
     let asistencias = JSON.parse(localStorage.getItem('lp_asistencias_v2')) || {};
+    let aulaActual = localStorage.getItem('lp_aula_v2') || "Sin Grado";
+    let fechaConsulta = new Date().toISOString().split('T')[0];
+    let editandoId = null;
 
-    function calcularEdad(fechaNacimiento) {
-        const hoy = new Date();
-        const cumple = new Date(fechaNacimiento);
-        let edad = hoy.getFullYear() - cumple.getFullYear();
-        const m = hoy.getMonth() - cumple.getMonth();
-        if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) { edad--; }
-        return edad;
+    function calcularEdad(fn) {
+        const hoy = new Date(); const c = new Date(fn);
+        let e = hoy.getFullYear() - c.getFullYear();
+        if (hoy.getMonth() < c.getMonth() || (hoy.getMonth() === c.getMonth() && hoy.getDate() < c.getDate())) e--;
+        return e;
     }
 
-    function esCumpleaños(fechaNacimiento) {
-        const hoy = new Date();
-        const cumple = new Date(fechaNacimiento);
-        return hoy.getDate() === cumple.getDate() && hoy.getMonth() === cumple.getMonth();
+    function obtenerPromedioAlumno(id) {
+        const fechas = Object.keys(asistencias).filter(f => !f.includes('_nota'));
+        if (fechas.length === 0) return 0;
+        let p = 0;
+        fechas.forEach(f => { if(asistencias[f][id]) p++; });
+        return ((p / fechas.length) * 100).toFixed(0);
     }
 
     function registrarAlumno() {
-        const nombre = document.getElementById('nomAlu').value.trim();
-        const genero = document.getElementById('genAlu').value;
-        const nacimiento = document.getElementById('fechaNac').value;
+        const n = document.getElementById('nomAlu').value.trim();
+        const g = document.getElementById('genAlu').value;
+        const f = document.getElementById('fechaNac').value;
         const file = document.getElementById('fotoAlu').files[0];
 
-        if(!nombre || !nacimiento) return alert("Completa nombre y fecha de nacimiento");
+        if(!n || !f) return alert("Complete los datos");
 
-        const reader = new FileReader();
-        reader.onloadend = function() {
-            alumnos.push({ id: Date.now(), nombre, genero, nacimiento, foto: reader.result || '' });
+        const guardar = (foto) => {
+            if(editandoId) {
+                const i = alumnos.findIndex(a => a.id === editandoId);
+                alumnos[i] = {...alumnos[i], nombre: n, genero: g, nacimiento: f};
+                if(foto) alumnos[i].foto = foto;
+                editandoId = null;
+            } else {
+                alumnos.push({ id: Date.now(), nombre: n, genero: g, nacimiento: f, foto: foto || '', grado: aulaActual });
+            }
             localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
             location.reload();
         };
-        if(file) reader.readAsDataURL(file); else reader.onloadend();
+
+        if(file) { const r = new FileReader(); r.onloadend = () => guardar(r.result); r.readAsDataURL(file); }
+        else guardar(null);
     }
 
-    function eliminarAlumno(id) {
-        if(confirm("¿Seguro que deseas eliminar este alumno?")) {
-            alumnos = alumnos.filter(a => a.id !== id);
-            localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
+    function marcar(id) {
+        if(!asistencias[fechaConsulta]) asistencias[fechaConsulta] = {};
+        asistencias[fechaConsulta][id] = !asistencias[fechaConsulta][id];
+        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
+        actualizarUI();
+    }
+
+    function agregarObservacion(id) {
+        const actual = (asistencias[fechaConsulta] && asistencias[fechaConsulta][id + '_nota']) || "";
+        const n = prompt("Observación del día:", actual);
+        if(n !== null) {
+            if(!asistencias[fechaConsulta]) asistencias[fechaConsulta] = {};
+            asistencias[fechaConsulta][id + '_nota'] = n;
+            localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
             actualizarUI();
         }
     }
 
-    function marcar(id) {
-        const hoyStr = new Date().toISOString().split('T')[0];
-        if(!asistencias[hoyStr]) asistencias[hoyStr] = {};
-        asistencias[hoyStr][id] = !asistencias[hoyStr][id];
-        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
-        actualizarUI();
-    }
-
-    function marcarTodos() {
-        const hoyStr = new Date().toISOString().split('T')[0];
-        if(!asistencias[hoyStr]) asistencias[hoyStr] = {};
-        alumnos.forEach(a => { asistencias[hoyStr][a.id] = true; });
-        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
-        actualizarUI();
-    }
-
-    function guardarAula() {
-        localStorage.setItem('lp_aula_v2', document.getElementById('gradoSec').value);
-        location.reload();
-    }
-
     function actualizarUI() {
-        const contenedor = document.getElementById('listaAlumnos');
-        const busqueda = document.getElementById('buscador').value.toLowerCase();
-        const hoyStr = new Date().toISOString().split('T')[0];
-        contenedor.innerHTML = "";
-        
-        let edadesCount = {};
-        let presHoy = 0;
+        const lista = document.getElementById('listaAlumnos');
+        const busq = document.getElementById('buscador').value.toLowerCase();
+        lista.innerHTML = "";
+        let pres = 0;
+        const alumnosGrado = alumnos.filter(a => a.grado === aulaActual);
 
-        // Filtrar y mostrar
-        alumnos.filter(a => a.nombre.toLowerCase().includes(busqueda)).forEach(a => {
-            const edadActual = calcularEdad(a.nacimiento);
-            const cumple = esCumpleaños(a.nacimiento);
-            const estaP = asistencias[hoyStr] && asistencias[hoyStr][a.id];
-            
-            if(estaP) presHoy++;
-            edadesCount[edadActual] = (edadesCount[edadActual] || 0) + 1;
+        alumnosGrado.filter(a => a.nombre.toLowerCase().includes(busq)).forEach(a => {
+            const estaP = asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id];
+            const nota = asistencias[fechaConsulta] && asistencias[fechaConsulta][a.id + '_nota'];
+            const prom = obtenerPromedioAlumno(a.id);
+            if(estaP) pres++;
 
-            contenedor.innerHTML += `
-                <div class="student-item">
+            lista.innerHTML += `
+                <div class="student-item" style="border-left: 5px solid ${nota ? 'var(--naranja)':'transparent'}">
                     <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
                     <div class="info-student">
-                        <span style="font-weight:bold;">${cumple ? '🎂 ' : ''}${a.nombre}</span><br>
-                        <small>${a.genero} • ${edadActual} años</small>
+                        <strong>${a.nombre}</strong><br>
+                        <small>${prom}% Promedio • ${calcularEdad(a.nacimiento)} años</small>
+                        ${nota ? `<br><small style="color:var(--naranja)">📝 ${nota}</small>` : ''}
                     </div>
-                    <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">
-                        ${estaP ? 'PRESENTE' : 'AUSENTE'}
-                    </button>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
+                        <button onclick="agregarObservacion(${a.id})" style="font-size:9px; padding:2px; background:#ddd; color:#333;">NOTAS</button>
+                    </div>
+                    <button onclick="prepararEdicion(${a.id})" class="btn-borrar" style="color:var(--celeste)">✏️</button>
                     <button onclick="eliminarAlumno(${a.id})" class="btn-borrar">🗑️</button>
                 </div>`;
         });
 
-        // Stats Globales (siempre sobre el total)
-        const total = alumnos.length || 1;
-        document.getElementById('statsBox').innerHTML = `
-            <div class="stat-box"><span class="stat-num">${((presHoy/total)*100).toFixed(0)}%</span>Asistencia</div>
-            <div class="stat-box"><span class="stat-num">${presHoy}/${alumnos.length}</span>Presentes</div>
-        `;
+        const porc = alumnosGrado.length > 0 ? ((pres / alumnosGrado.length) * 100).toFixed(0) : 0;
+        document.getElementById('barraProgreso').style.width = porc + "%";
+        document.getElementById('barraProgreso').innerText = porc + "%";
+        
+        const honor = [...alumnosGrado].sort((a,b) => obtenerPromedioAlumno(b.id) - obtenerPromedioAlumno(a.id)).slice(0,3);
+        let hHtml = "<h4>🏆 Cuadro de Honor</h4>";
+        honor.forEach((h, i) => { if(obtenerPromedioAlumno(h.id) > 0) hHtml += `<div>${['🥇','🥈','🥉'][i]} ${h.nombre} (${obtenerPromedioAlumno(h.id)}%)</div>`});
+        document.getElementById('cuadroHonor').innerHTML = hHtml;
+    }
 
-        let distHtml = "<strong>Distribución de Edades:</strong><br>";
-        Object.keys(edadesCount).sort().forEach(ed => {
-            distHtml += `${ed} años: ${edadesCount[ed]} | `;
+    function generarEstadisticaEscuela() {
+        const stats = {};
+        alumnos.forEach(a => {
+            if(!stats[a.grado]) stats[a.grado] = { suma: 0, cont: 0 };
+            stats[a.grado].suma += parseFloat(obtenerPromedioAlumno(a.id));
+            stats[a.grado].cont++;
         });
-        document.getElementById('distribucionEdades').innerHTML = distHtml;
+        let html = "<h4>🏢 Estadística Institucional</h4>";
+        Object.keys(stats).sort().forEach(g => {
+            const p = (stats[g].suma / stats[g].cont).toFixed(1);
+            html += `<div class="chart-row"><div class="chart-label"><span>${g}</span><span>${p}%</span></div>
+                     <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${p}%; background:var(--azul)"></div></div></div>`;
+        });
+        document.getElementById('contenedorStatsGlobal').innerHTML = html;
     }
 
     function descargarExcel() {
-        let csv = "\ufeffFecha,Nombre,Genero,Fecha_Nac,Estado\n";
-        Object.keys(asistencias).sort().forEach(f => {
+        let csv = "\ufeffFecha,Grado,Nombre,Estado,Nota\n";
+        Object.keys(asistencias).filter(f => !f.includes('_nota')).sort().forEach(f => {
             alumnos.forEach(a => {
                 const est = asistencias[f][a.id] ? "Presente" : "Ausente";
-                csv += `${f},${a.nombre},${a.genero},${a.nacimiento},${est}\n`;
+                const n = (asistencias[f][a.id + '_nota'] || "").replace(/,/g, ".");
+                csv += `${f},${a.grado},${a.nombre},${est},"${n}"\n`;
             });
         });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Reporte_LucilaPalacios.csv`;
-        a.click();
+        const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = "Reporte_Lucila.csv"; l.click();
     }
 
-    document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString();
-    document.getElementById('labelAula').innerText = aulaInfo;
+    function guardarAula() {
+        const g = document.getElementById('gradoSec').value.trim();
+        if(g) { localStorage.setItem('lp_aula_v2', g); location.reload(); }
+    }
+
+    document.getElementById('calendarioConsulta').value = fechaConsulta;
+    document.getElementById('labelAula').innerText = aulaActual + " • E.B.N. Lucila Palacios";
     actualizarUI();
 </script>
 </body>
