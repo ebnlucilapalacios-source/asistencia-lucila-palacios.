@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dirección - E.B.N. Lucila Palacios</title>
+    <link rel="icon" type="image/png" href="Imagen_20260225_005025_993.png">
+    <style>
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); }
+        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 95px; height: 95px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); object-fit: contain; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+        .stat-box { background: #f0f4f8; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-val { font-size: 1.6rem; font-weight: bold; color: var(--celeste); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: var(--celeste); color: white; }
+    </style>
+</head>
+<body>
+<header>
+    <img src="Imagen_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
+    <h1 style="margin:10px 0 0; font-size: 1.3rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin:0; opacity:0.8;">Panel de Dirección Institucional</p>
+</header>
+<div class="container">
+    <div class="card">
+        <h3>📊 Totales de la Escuela (Hoy)</h3>
+        <div class="stats-grid">
+            <div class="stat-box"><div>Matrícula</div><div id="mTotal" class="stat-val">0</div></div>
+            <div class="stat-box"><div>Presentes</div><div id="aTotal" class="stat-val">0</div></div>
+            <div class="stat-box" style="border-bottom: 4px solid #ff007f;"><div>Hembras</div><div id="hTotal" class="stat-val">0</div></div>
+            <div class="stat-box" style="border-bottom: 4px solid #007bff;"><div>Varones</div><div id="vTotal" class="stat-val">0</div></div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>📋 Reporte por Secciones</h3>
+        <table id="tablaSecciones">
+            <thead><tr><th>Sección</th><th>Docente</th><th>V</th><th>H</th><th>Total</th></tr></thead>
+            <tbody id="cuerpo"></tbody>
+        </table>
+        <button onclick="importar()" style="width:100%; padding:15px; background:var(--exito); color:white; border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">📥 Importar Reportes de Docentes</button>
+    </div>
+</div>
+<script>
+    let master = JSON.parse(localStorage.getItem('ebn_master_v5')) || { alumnos: [], asistencias: {} };
+    let hoy = new Date().toISOString().split('T')[0];
+
+    function actualizar() {
+        const alus = master.alumnos;
+        const asis = master.asistencias[hoy] || {};
+        document.getElementById('mTotal').innerText = alus.length;
+        document.getElementById('aTotal').innerText = Object.values(asis).filter(v => v === true).length;
+        document.getElementById('hTotal').innerText = alus.filter(a => a.genero === 'F' && asis[a.id]).length;
+        document.getElementById('vTotal').innerText = alus.filter(a => a.genero === 'M' && asis[a.id]).length;
+
+        const secciones = [...new Set(alus.map(a => a.seccion))];
+        const tbody = document.getElementById('cuerpo');
+        tbody.innerHTML = "";
+        secciones.forEach(sec => {
+            const grupo = alus.filter(a => a.seccion === sec);
+            const v = grupo.filter(a => a.genero === 'M' && asis[a.id]).length;
+            const h = grupo.filter(a => a.genero === 'F' && asis[a.id]).length;
+            const doc = grupo[0].docente || "---";
+            tbody.innerHTML += `<tr><td>${sec}</td><td>${doc}</td><td>${v}</td><td>${h}</td><td>${v+h}</td></tr>`;
+        });
+    }
+
+    function importar() {
+        const input = document.createElement('input');
+        input.type = 'file'; input.multiple = true;
+        input.onchange = e => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const data = JSON.parse(ev.target.result);
+                    data.alumnos.forEach(na => { if(!master.alumnos.find(ma => ma.id === na.id)) master.alumnos.push(na); });
+                    master.asistencias = {...master.asistencias, ...data.asistencias};
+                    localStorage.setItem('ebn_master_v5', JSON.stringify(master));
+                    actualizar();
+                };
+                reader.readAsText(file);
+            });
+        };
+        input.click();
+    }
+    actualizar();
+</script>
+</body>
+</html>
