@@ -1,45 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docente - Lucila Palacios</title>
+    <link rel="icon" type="image/png" href="IMG_20260225_005025_993.png">
+    <style>
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
+        header { background: var(--azul); color: white; padding: 25px 15px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 90px; height: 90px; border-radius: 50%; background: white; padding: 3px; border: 3px solid var(--naranja); object-fit: contain; margin-bottom: 10px; }
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn-registro { background: var(--exito); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-edit { background: none; border: 1px solid var(--naranja); color: var(--naranja); width: auto; padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; cursor: pointer; }
+        .btn-asis { width: 65px; height: 45px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<header>
+    <img src="IMG_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
+    <h1 style="font-size: 1.3rem; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin: 5px 0 0; opacity: 0.9;">Control de Asistencia</p>
+</header>
+<div class="container">
     <div class="card">
-        <h3>📅 Asistencia: <span id="fHoy"></span></h3>
+        <h3>👤 Configurar Aula</h3>
+        <input type="text" id="profe" placeholder="Nombre del Docente">
+        <input type="text" id="aula" placeholder="Grado y Sección">
+        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Aula</button>
+    </div>
+    <div class="card">
+        <h3 id="titReg">📝 Registro de Alumno</h3>
+        <input type="text" id="nomAlu" placeholder="Nombre completo">
+        <select id="genAlu"><option value="F">Femenino (Hembra)</option><option value="M">Masculino (Varón)</option></select>
+        <input type="date" id="fechaNac">
+        <button onclick="registrarAlumno()" id="btnGuardar" class="btn-registro">Inscribir Alumno</button>
+    </div>
+    <div class="card">
+        <h3>📅 Hoy: <span id="fechaHoy"></span></h3>
         <div id="listaAsistencia"></div>
-        <button onclick="exportar()" style="background:var(--naranja); color:white; margin-top:20px;">📤 Enviar a Dirección</button>
+        <button onclick="exportarReporte()" style="background:var(--naranja); color:white; margin-top:20px; padding: 15px; font-size: 1.1rem;">📤 Enviar a Dirección</button>
     </div>
 </div>
 <script>
-    let d = JSON.parse(localStorage.getItem('ebn_v7')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
+    let d = JSON.parse(localStorage.getItem('ebn_final_v1')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
     let hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fHoy').innerText = hoy;
+    let editandoId = null;
+    document.getElementById('fechaHoy').innerText = hoy;
 
-    function guardarConfig() { d.profe = document.getElementById('profe').value; d.aula = document.getElementById('aula').value; localStorage.setItem('ebn_v7', JSON.stringify(d)); alert("Guardado"); }
-    function registrar() { 
-        const n = document.getElementById('nomAlu').value; 
-        const g = document.getElementById('genAlu').value;
-        const f = document.getElementById('fechaNac').value;
-        if(!n || !d.aula) return alert("Faltan datos");
-        d.alumnos.push({ id: Date.now(), nombre: n, genero: g, nacimiento: f, seccion: d.aula, docente: d.profe });
-        localStorage.setItem('ebn_v7', JSON.stringify(d));
-        document.getElementById('nomAlu').value = ""; dibujar();
+    function guardarConfig() {
+        d.profe = document.getElementById('profe').value;
+        d.aula = document.getElementById('aula').value.toUpperCase();
+        localStorage.setItem('ebn_final_v1', JSON.stringify(d));
+        alert("Configuración guardada");
     }
+
+    function registrarAlumno() {
+        const nombre = document.getElementById('nomAlu').value.trim();
+        const genero = document.getElementById('genAlu').value;
+        const nacimiento = document.getElementById('fechaNac').value;
+        if(!nombre || !d.aula) return alert("Complete los datos");
+        if (editandoId) {
+            const idx = d.alumnos.findIndex(a => a.id === editandoId);
+            d.alumnos[idx] = { ...d.alumnos[idx], nombre, genero, nacimiento };
+            editandoId = null;
+        } else {
+            d.alumnos.push({ id: Date.now(), nombre, genero, nacimiento, seccion: d.aula, docente: d.profe });
+        }
+        localStorage.setItem('ebn_final_v1', JSON.stringify(d));
+        resetForm(); dibujar();
+    }
+
+    function prepararEdicion(id) {
+        const a = d.alumnos.find(alu => alu.id === id);
+        document.getElementById('nomAlu').value = a.nombre;
+        document.getElementById('genAlu').value = a.genero;
+        document.getElementById('fechaNac').value = a.nacimiento;
+        editandoId = id;
+        document.getElementById('titReg').innerText = "📝 Editar Alumno";
+        document.getElementById('btnGuardar').innerText = "Actualizar Datos";
+        window.scrollTo({top: 200, behavior: 'smooth'});
+    }
+
+    function resetForm() {
+        document.getElementById('nomAlu').value = "";
+        document.getElementById('titReg').innerText = "📝 Registro de Alumno";
+        document.getElementById('btnGuardar').innerText = "Inscribir Alumno";
+    }
+
     function marcar(id) {
         if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
         d.asistencias[hoy][id] = !d.asistencias[hoy][id];
-        localStorage.setItem('ebn_v7', JSON.stringify(d)); dibujar();
+        localStorage.setItem('ebn_final_v1', JSON.stringify(d)); dibujar();
     }
+
     function dibujar() {
         const lista = document.getElementById('listaAsistencia'); lista.innerHTML = "";
         d.alumnos.forEach(a => {
             const asis = d.asistencias[hoy] && d.asistencias[hoy][a.id];
             lista.innerHTML += `<div class="student-card">
-                <div style="flex-grow:1"><b>${a.nombre}</b></div>
+                <div style="flex-grow:1">
+                    <b>${a.nombre}</b><br>
+                    <button onclick="prepararEdicion(${a.id})" class="btn-edit">Editar</button>
+                </div>
                 <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asis?'#27ae60':'#ccc'}">${asis?'P':'F'}</button>
             </div>`;
         });
     }
-    function exportar() {
+
+    function exportarReporte() {
         const b = new Blob([JSON.stringify(d)], {type: "application/json"});
         const a = document.createElement('a'); a.href = URL.createObjectURL(b);
         a.download = `Reporte_${d.aula}_${hoy}.json`; a.click();
     }
-    document.getElementById('profe').value = d.profe; document.getElementById('aula').value = d.aula; dibujar();
+    document.getElementById('profe').value = d.profe;
+    document.getElementById('aula').value = d.aula;
+    dibujar();
 </script>
 </body>
 </html>
