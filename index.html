@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Lucila Palacios - Pro</title>
+    <style>
+        :root { --azul: #154360; --celeste: #3498db; --naranja: #e67e22; --gris: #f4f6f7; --exito: #28b463; --peligro: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); }
+        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #d5dbdb; font-size: 16px; box-sizing: border-box; }
+        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.98); }
+        .btn-registro { background: var(--exito); }
+        .btn-borrar { background: none; color: var(--peligro); border: none; width: auto; padding: 5px; cursor: pointer; font-size: 1.2rem; }
+        
+        /* Buscador */
+        #buscador { border: 2px solid var(--celeste); margin-bottom: 15px; }
+
+        .student-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; gap: 10px; position: relative; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--celeste); }
+        .info-student { flex-grow: 1; }
+        .btn-check { width: 90px; padding: 8px; font-size: 0.7rem; border-radius: 20px; }
+        .presente { background: var(--exito); }
+        .ausente { background: #ecf0f1; color: #95a5a6; }
+        
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { background: var(--azul); color: white; padding: 10px; border-radius: 10px; text-align: center; }
+        .stat-num { font-size: 1.2rem; font-weight: 900; display: block; color: var(--naranja); }
+        .age-dist { font-size: 0.8rem; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-size:30px;">🏫</div>
+    <h1 style="margin:0; font-size: 1.2rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p id="labelAula" style="margin:5px 0 0; font-size: 0.8rem; opacity:0.8;">Cargando...</p>
+</header>
+
+<div class="container">
+    <details class="card">
+        <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Configuración y Matrícula</summary>
+        <div style="margin-top:15px;">
+            <input type="text" id="gradoSec" placeholder="Grado y Sección">
+            <button onclick="guardarAula()">Guardar Aula</button>
+            <hr>
+            <h3>Inscribir Alumno</h3>
+            <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
+            <select id="genAlu"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+            <label style="font-size:12px; color:gray;">Fecha de Nacimiento:</label>
+            <input type="date" id="fechaNac">
+            <input type="file" id="fotoAlu" accept="image/*" capture="user">
+            <button onclick="registrarAlumno()" class="btn-registro">Inscribir Alumno</button>
+        </div>
+    </details>
+
+    <div class="card">
+        <h3>📅 Asistencia: <span id="fechaHoy"></span></h3>
+        <input type="text" id="buscador" placeholder="🔍 Buscar alumno..." onkeyup="actualizarUI()">
+        <button onclick="marcarTodos()" style="background:var(--naranja); margin-bottom:10px;">✅ Marcar todos Presente</button>
+        <div id="listaAlumnos"></div>
+    </div>
+
+    <div class="card">
+        <h3>📊 Estadísticas</h3>
+        <div class="grid-stats" id="statsBox"></div>
+        <div class="age-dist" id="distribucionEdades"></div>
+        <button onclick="descargarExcel()" style="background:var(--azul); margin-top:15px;">📥 Descargar Reporte CSV</button>
+    </div>
+</div>
+
+<script>
+    let alumnos = JSON.parse(localStorage.getItem('lp_alumnos_v2')) || [];
+    let aulaInfo = localStorage.getItem('lp_aula_v2') || "Aula no definida";
+    let asistencias = JSON.parse(localStorage.getItem('lp_asistencias_v2')) || {};
+
+    function calcularEdad(fechaNacimiento) {
+        const hoy = new Date();
+        const cumple = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - cumple.getFullYear();
+        const m = hoy.getMonth() - cumple.getMonth();
+        if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) { edad--; }
+        return edad;
+    }
+
+    function esCumpleaños(fechaNacimiento) {
+        const hoy = new Date();
+        const cumple = new Date(fechaNacimiento);
+        return hoy.getDate() === cumple.getDate() && hoy.getMonth() === cumple.getMonth();
+    }
+
+    function registrarAlumno() {
+        const nombre = document.getElementById('nomAlu').value.trim();
+        const genero = document.getElementById('genAlu').value;
+        const nacimiento = document.getElementById('fechaNac').value;
+        const file = document.getElementById('fotoAlu').files[0];
+
+        if(!nombre || !nacimiento) return alert("Completa nombre y fecha de nacimiento");
+
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            alumnos.push({ id: Date.now(), nombre, genero, nacimiento, foto: reader.result || '' });
+            localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
+            location.reload();
+        };
+        if(file) reader.readAsDataURL(file); else reader.onloadend();
+    }
+
+    function eliminarAlumno(id) {
+        if(confirm("¿Seguro que deseas eliminar este alumno?")) {
+            alumnos = alumnos.filter(a => a.id !== id);
+            localStorage.setItem('lp_alumnos_v2', JSON.stringify(alumnos));
+            actualizarUI();
+        }
+    }
+
+    function marcar(id) {
+        const hoyStr = new Date().toISOString().split('T')[0];
+        if(!asistencias[hoyStr]) asistencias[hoyStr] = {};
+        asistencias[hoyStr][id] = !asistencias[hoyStr][id];
+        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
+        actualizarUI();
+    }
+
+    function marcarTodos() {
+        const hoyStr = new Date().toISOString().split('T')[0];
+        if(!asistencias[hoyStr]) asistencias[hoyStr] = {};
+        alumnos.forEach(a => { asistencias[hoyStr][a.id] = true; });
+        localStorage.setItem('lp_asistencias_v2', JSON.stringify(asistencias));
+        actualizarUI();
+    }
+
+    function guardarAula() {
+        localStorage.setItem('lp_aula_v2', document.getElementById('gradoSec').value);
+        location.reload();
+    }
+
+    function actualizarUI() {
+        const contenedor = document.getElementById('listaAlumnos');
+        const busqueda = document.getElementById('buscador').value.toLowerCase();
+        const hoyStr = new Date().toISOString().split('T')[0];
+        contenedor.innerHTML = "";
+        
+        let edadesCount = {};
+        let presHoy = 0;
+
+        // Filtrar y mostrar
+        alumnos.filter(a => a.nombre.toLowerCase().includes(busqueda)).forEach(a => {
+            const edadActual = calcularEdad(a.nacimiento);
+            const cumple = esCumpleaños(a.nacimiento);
+            const estaP = asistencias[hoyStr] && asistencias[hoyStr][a.id];
+            
+            if(estaP) presHoy++;
+            edadesCount[edadActual] = (edadesCount[edadActual] || 0) + 1;
+
+            contenedor.innerHTML += `
+                <div class="student-item">
+                    <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
+                    <div class="info-student">
+                        <span style="font-weight:bold;">${cumple ? '🎂 ' : ''}${a.nombre}</span><br>
+                        <small>${a.genero} • ${edadActual} años</small>
+                    </div>
+                    <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">
+                        ${estaP ? 'PRESENTE' : 'AUSENTE'}
+                    </button>
+                    <button onclick="eliminarAlumno(${a.id})" class="btn-borrar">🗑️</button>
+                </div>`;
+        });
+
+        // Stats Globales (siempre sobre el total)
+        const total = alumnos.length || 1;
+        document.getElementById('statsBox').innerHTML = `
+            <div class="stat-box"><span class="stat-num">${((presHoy/total)*100).toFixed(0)}%</span>Asistencia</div>
+            <div class="stat-box"><span class="stat-num">${presHoy}/${alumnos.length}</span>Presentes</div>
+        `;
+
+        let distHtml = "<strong>Distribución de Edades:</strong><br>";
+        Object.keys(edadesCount).sort().forEach(ed => {
+            distHtml += `${ed} años: ${edadesCount[ed]} | `;
+        });
+        document.getElementById('distribucionEdades').innerHTML = distHtml;
+    }
+
+    function descargarExcel() {
+        let csv = "\ufeffFecha,Nombre,Genero,Fecha_Nac,Estado\n";
+        Object.keys(asistencias).sort().forEach(f => {
+            alumnos.forEach(a => {
+                const est = asistencias[f][a.id] ? "Presente" : "Ausente";
+                csv += `${f},${a.nombre},${a.genero},${a.nacimiento},${est}\n`;
+            });
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Reporte_LucilaPalacios.csv`;
+        a.click();
+    }
+
+    document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString();
+    document.getElementById('labelAula').innerText = aulaInfo;
+    actualizarUI();
+</script>
+</body>
+</html>
