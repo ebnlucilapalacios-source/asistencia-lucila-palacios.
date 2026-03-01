@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Estadístico EBNLP</title>
+    <title>Sistema Maestro EBNLP - Control 24/7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
@@ -11,83 +11,75 @@
         .container { max-width: 1200px; margin: auto; }
         header { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 15px; }
         .logo { max-height: 100px; }
-        
-        /* Dashboard Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stat-card h2 { margin: 5px 0; color: var(--azul); font-size: 1.8rem; }
-
         .grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        
+        select, input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: white; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background: var(--azul); color: white; }
-        
-        .resumen-tabla { background: #eef2f3; font-weight: bold; }
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; color: white; }
-        
+        .asistio { background-color: #d4edda !important; font-weight: bold; }
+        .no-toca { background-color: #f1f1f1; color: #aaa; font-style: italic; }
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .no-print { display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/421692.png" alt="Logo" class="logo">
+        <img src="https://i.ibb.co/L5fX0y0/logo-ebnlp.png" alt="Logo" class="logo">
         <h2 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h2>
-        <p style="margin:0;">Reporte de Estadística Diaria y Mensual</p>
+        <p style="margin:0; font-weight:bold; color:var(--naranja);">CONTROL DE ASISTENCIA 24/7 (INTERDIARIO)</p>
     </header>
 
     <div class="stats-grid">
-        <div class="stat-card"><p>TOTAL NÓMINA</p><h2 id="totalP">0</h2></div>
-        <div class="stat-card" style="border-color:var(--verde);"><p>PRESENTES HOY</p><h2 id="countPres">0</h2></div>
-        <div class="stat-card" style="border-color:var(--rojo);"><p>AUSENTES</p><h2 id="countAus">0</h2></div>
+        <div class="stat-card"><p>DEBEN ASISTIR HOY</p><h2 id="totalP">0</h2></div>
+        <div class="stat-card" style="border-color:var(--verde);"><p>PRESENTES REALES</p><h2 id="countPres">0</h2></div>
+        <div class="stat-card" style="border-color:var(--rojo);"><p>AUSENCIAS</p><h2 id="countAus">0</h2></div>
         <div class="stat-card" style="border-color:var(--naranja);"><p>% EFICIENCIA</p><h2 id="percAsis">0%</h2></div>
     </div>
 
     <div class="grid">
-        <div class="side no-print">
+        <div class="side">
             <div class="card">
-                <h3>📥 Cargar Asistencia</h3>
+                <h3>📥 Cargar Novedad</h3>
                 <label>Personal:</label>
                 <select id="selPers"></select>
                 <label>Estatus:</label>
                 <select id="selEst">
                     <option value="Asistencia">Asistencia</option>
-                    <option value="Falta Injustificada">Falta</option>
+                    <option value="Falta Injustificada">Falta Injustificada</option>
                     <option value="Permiso">Permiso</option>
-                    <option value="Reposo">Reposo</option>
-                    <option value="Vacaciones">Vacaciones</option>
+                    <option value="Reposo">Reposo Médico</option>
                 </select>
                 <label>Fecha:</label>
                 <input type="date" id="fecReg" onchange="procesar()">
-                <button onclick="registrar()" style="background:var(--verde); padding:10px; width:100%; color:white; border:none; border-radius:5px; cursor:pointer;">💾 GUARDAR</button>
+                <button onclick="registrar()" style="background:var(--verde);">💾 GUARDAR Y SUBIR</button>
             </div>
             
             <div class="card">
-                <h3>📊 Cuadro Estadístico Hoy</h3>
+                <h3>📊 Cuadro Estadístico</h3>
                 <table style="font-size: 0.7rem;">
                     <thead><tr><th>Cargo</th><th>Total</th><th>Asis</th></tr></thead>
                     <tbody id="resumenCargos"></tbody>
                 </table>
-                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px; width:100%; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">📄 DESCARGAR REPORTE</button>
+                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 EXPORTAR REPORTE</button>
             </div>
         </div>
 
-        <div class="card" id="areaReporte">
-            <h3 id="tituloLista" style="text-align:center;">Lista de Control</h3>
-            <table id="tablaMaestra">
-                <thead>
-                    <tr>
-                        <th>Trabajador</th>
-                        <th>Función</th>
-                        <th>Estatus</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCuerpo"></tbody>
-            </table>
+        <div class="card">
+            <h3 id="tituloLista" style="text-align:center;">Lista del Personal</h3>
+            <div style="overflow-x:auto;">
+                <table id="tablaMaestra">
+                    <thead>
+                        <tr><th>Nombre</th><th>Cargo</th><th>Estatus</th></tr>
+                    </thead>
+                    <tbody id="tablaCuerpo"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -95,75 +87,85 @@
 <script>
     const URL_NUBE = "https://script.google.com/macros/s/AKfycbyWt4l2_S3_OsAoj2cFK1zRXcQA6AiEbgynRwfFUw3GJWAmI51PrtMwfHxtOQN7fbhIKg/exec";
 
-    const nomina = `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nYuraima Bastardo,Administrativo\nMirlnis Carvajal,Administrativo\nDayana Jiménez,Docente\nLorraine Brito,Docente\nRosa Nacaratto,Docente\nNeviss Guerra,Docente\nRusmary Larez,Docente\nGénesis Morillo,Docente\nYunequi Valdez,Docente\nJunior San Vicente,Docente\nYulimar Aguanes,Docente\nLuisa Jimenez,Docente\nYomaira Cáceres,Docente\nAna David,Docente\nEliday Salazar,Docente\nRoselba Terán,Docente\nYorvis Bolivar,Docente\nYubiry Martinez,Docente\nDalia Luces,Docente\nJoleth Guzmán,Docente\nAngel Figuera,Docente\nFrancelis Montaño,Docente\nGaudy Rodríguez,Docente\nMagloris Fernández,Docente\nNorelis Pérez,Obrero\nGilda Villarroel,Obrero\nAna Figuera,Obrero\nMarleny Serrano,Obrero\nRuth Campos,Obrero\nDayana García,Obrero\nLuisana Quintana,Obrero\nCarlos Castillo,Obrero\nEdgar Martinez,Obrero\nJonathan Cedeño,Obrero\nLuis Figueroa,Obrero\nJunior Morgado,Obrero\nRaiza Vallenilla,Cocinera\nGenesis Camero,Cocinera\nIrma Jaramillo,Cocinera\nDovelis Conde,Cocinera\nYureima Pimentel,Cocinera\nRosa Rivero,Cocinera\nMarcia Guzmán,Cocinera\nLianna Carvajal,Administrativo\nMaría Marchan,Administrativo\nGlenis Salazar,Docente\nMargoris Rodríguez,Docente\nLuisa Sosa,Docente\nMilvida Torres,Docente\nGladys Salcedo,Docente\nYanitza Alexander,Docente\nAndreina Flores,Docente\nNelida Castellanos,Docente\nOnexis Rocca,Docente\nJustina Fernández,Docente\nLeosmary Loroño,Docente\nJosé Shijan Brito,Docente\nMayerlin Chacon,Docente\nNaileth Vargas,Obrero\nYoelis Solorzano,Obrero\nYelitza Medina,Obrero\nEvelyn Carmona,Obrero\nDanielys Campos,Obrero\nJeanmaikol Díaz,Obrero\nOsmil Sanabria,Vigilante\nDaher Cardier,Vigilante\nPedro González,Vigilante\nMoisés Romero,Vigilante\nCesar Suárez,Vigilante\nJuan Vargas,Vigilante\nGuillermo Albornoz,Vigilante\nDarwin Aguilera,Vigilante\nJoseyver López,Vigilante`;
+    const nomina = `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nYuraima Bastardo,Administrativo\nMirlnis Carvajal,Administrativo\nLianna Carvajal,Administrativo\nMaría Marchan,Administrativo\nDayana Jiménez,Docente\nLorraine Brito,Docente\nRosa Nacaratto,Docente\nNeviss Guerra,Docente\nRusmary Larez,Docente\nGénesis Morillo,Docente\nYunequi Valdez,Docente\nJunior San Vicente,Docente\nYulimar Aguanes,Docente\nLuisa Jimenez,Docente\nYomaira Cáceres,Docente\nAna David,Docente\nEliday Salazar,Docente\nRoselba Terán,Docente\nYorvis Bolivar,Docente\nYubiry Martinez,Docente\nDalia Luces,Docente\nJoleth Guzmán,Docente\nAngel Figuera,Docente\nFrancelis Montaño,Docente\nGaudy Rodríguez,Docente\nMagloris Fernández,Docente\nGlenis Salazar,Docente\nMargoris Rodríguez,Docente\nLuisa Sosa,Docente\nMilvida Torres,Docente\nGladys Salcedo,Docente\nYanitza Alexander,Docente\nAndreina Flores,Docente\nNelida Castellanos,Docente\nOnexis Rocca,Docente\nJustina Fernández,Docente\nLeosmary Loroño,Docente\nJosé Shijan Brito,Docente\nMayerlin Chacon,Docente\nNorelis Pérez,Obrero\nGilda Villarroel,Obrero\nAna Figuera,Obrero\nMarleny Serrano,Obrero\nRuth Campos,Obrero\nDayana García,Obrero\nLuisana Quintana,Obrero\nCarlos Castillo,Obrero\nEdgar Martinez,Obrero\nJonathan Cedeño,Obrero\nLuis Figueroa,Obrero\nJunior Morgado,Obrero\nNaileth Vargas,Obrero\nYoelis Solorzano,Obrero\nYelitza Medina,Obrero\nEvelyn Carmona,Obrero\nDanielys Campos,Obrero\nJeanmaikol Díaz,Obrero\nRaiza Vallenilla,Cocinera\nGenesis Camero,Cocinera\nIrma Jaramillo,Cocinera\nDovelis Conde,Cocinera\nYureima Pimentel,Cocinera\nRosa Rivero,Cocinera\nMarcia Guzmán,Cocinera\nOsmil Sanabria,Vigilante-A\nDaher Cardier,Vigilante-A\nPedro González,Vigilante-A\nMoisés Romero,Vigilante-A\nCesar Suárez,Vigilante-B\nJuan Vargas,Vigilante-B\nGuillermo Albornoz,Vigilante-B\nDarwin Aguilera,Vigilante-B\nJoseyver López,Vigilante-B`;
 
-    let db = JSON.parse(localStorage.getItem('ebnlp_stats_v1')) || { registros: [] };
+    let db = JSON.parse(localStorage.getItem('ebnlp_247_v1')) || { registros: [] };
 
     function registrar() {
         const id = document.getElementById('selPers').value;
         const est = document.getElementById('selEst').value;
         const fec = document.getElementById('fecReg').value;
         const [nombre, cargo] = nomina.split('\n')[id].split(',');
-
-        if(!fec) return alert("Seleccione fecha");
-
         fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ nombre, cargo, est, mins:0, fec }) });
-
         db.registros = db.registros.filter(r => !(r.id === id && r.fec === fec)); 
         db.registros.push({ id, est, fec });
-        localStorage.setItem('ebnlp_stats_v1', JSON.stringify(db));
+        localStorage.setItem('ebnlp_247_v1', JSON.stringify(db));
         procesar();
     }
 
     function procesar() {
-        const hoy = document.getElementById('fecReg').value;
+        const fechaInput = document.getElementById('fecReg').value;
+        const hoy = new Date(fechaInput + "T00:00:00");
+        const diaSemana = hoy.getDay(); // 0:Dom, 6:Sab
+        const diaMes = hoy.getDate();
+        
+        // Rotación de vigilantes: Impar=A, Par=B
+        const grupoActivo = (diaMes % 2 !== 0) ? "Vigilante-A" : "Vigilante-B";
+
         const lista = nomina.split('\n');
         const tbody = document.getElementById('tablaCuerpo');
         const rbody = document.getElementById('resumenCargos');
-        
-        tbody.innerHTML = "";
-        rbody.innerHTML = "";
-        document.getElementById('tituloLista').innerText = `Reporte EBNLP - Fecha: ${hoy}`;
+        tbody.innerHTML = ""; rbody.innerHTML = "";
 
         let totales = { "Directivo":0, "Docente":0, "Administrativo":0, "Obrero":0, "Cocinera":0, "Vigilante":0 };
         let presentes = { "Directivo":0, "Docente":0, "Administrativo":0, "Obrero":0, "Cocinera":0, "Vigilante":0 };
+        let esperadosHoy = 0;
 
         lista.forEach((linea, i) => {
+            if(!linea) return;
             const [nombre, cargo] = linea.split(',');
-            totales[cargo]++;
+            const reg = db.registros.find(r => parseInt(r.id) === i && r.fec === fechaInput);
             
-            const reg = db.registros.find(r => parseInt(r.id) === i && r.fec === hoy);
-            let estTxt = "S/R";
-            if(reg) {
-                estTxt = reg.est;
-                if(estTxt === "Asistencia") presentes[cargo]++;
+            let laboraHoy = true;
+            let cargoLimpio = cargo.includes("Vigilante") ? "Vigilante" : cargo;
+
+            if(cargo.includes("Vigilante")) {
+                if(cargo !== grupoActivo) laboraHoy = false;
+            } else {
+                if(diaSemana === 0 || diaSemana === 6) laboraHoy = false;
             }
 
-            tbody.innerHTML += `<tr><td>${nombre}</td><td>${cargo}</td><td>${estTxt}</td></tr>`;
+            if(laboraHoy) {
+                totales[cargoLimpio]++;
+                esperadosHoy++;
+            }
+
+            let estTxt = reg ? reg.est : (laboraHoy ? "S/R" : "No Laborable");
+            let clase = !laboraHoy ? "no-toca" : (reg && reg.est === "Asistencia" ? "asistio" : "");
+            
+            if(reg && reg.est === "Asistencia" && laboraHoy) presentes[cargoLimpio]++;
+
+            tbody.innerHTML += `<tr class="${clase}"><td>${nombre}</td><td>${cargo}</td><td>${estTxt}</td></tr>`;
         });
 
-        // Llenar cuadro estadístico
         let tPres = 0;
-        for(let cargo in totales) {
-            tPres += presentes[cargo];
-            rbody.innerHTML += `<tr><td>${cargo}</td><td>${totales[cargo]}</td><td>${presentes[cargo]}</td></tr>`;
+        for(let c in totales) {
+            tPres += presentes[c];
+            if(totales[c] > 0) rbody.innerHTML += `<tr><td>${c}</td><td>${totales[c]}</td><td>${presentes[c]}</td></tr>`;
         }
 
-        // Totales superiores
-        document.getElementById('totalP').innerText = lista.length;
+        document.getElementById('totalP').innerText = esperadosHoy;
         document.getElementById('countPres').innerText = tPres;
-        document.getElementById('countAus').innerText = lista.length - tPres;
-        document.getElementById('percAsis').innerText = ((tPres/lista.length)*100).toFixed(1) + "%";
+        document.getElementById('countAus').innerText = esperadosHoy - tPres;
+        document.getElementById('percAsis').innerText = esperadosHoy > 0 ? ((tPres/esperadosHoy)*100).toFixed(1) + "%" : "0%";
     }
 
     function generarReportePDF() {
-        const element = document.body;
-        html2pdf().set({ margin: 5, filename: 'Estadistica_EBNLP.pdf', html2canvas: { scale: 2 } }).from(element).save();
+        html2pdf().set({ margin: 5, filename: `Reporte_EBNLP_${document.getElementById('fecReg').value}.pdf` }).from(document.body).save();
     }
 
-    // Inicio
     const s = document.getElementById('selPers');
-    nomina.split('\n').forEach((l, i) => s.innerHTML += `<option value="${i}">${l.split(',')[0]}</option>`);
+    nomina.split('\n').forEach((l, i) => { if(l) s.innerHTML += `<option value="${i}">${l.split(',')[0]}</option>`; });
     document.getElementById('fecReg').valueAsDate = new Date();
     procesar();
 </script>
