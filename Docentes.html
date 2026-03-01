@@ -8,14 +8,16 @@
         :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --error: #e74c3c; --oro: #f1c40f; --morado: #8e44ad; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 50px; }
         
+        /* Encabezado Principal */
         header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
-        .logo-escuela { width: 120px; height: 120px; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; }
+        .logo-escuela { width: 110px; height: 110px; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; border: 2px solid white; }
         
         .container { max-width: 850px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
         
-        .cuadro-honor { background: linear-gradient(to right, #fff9c4, #fff); border: 2px solid var(--oro); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px; display: none; }
-        .foto-perfil { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; background: #eee; border: 2px solid var(--celeste); }
+        /* Cuadro de Honor Visible */
+        .cuadro-honor { background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%); border: 3px solid var(--oro); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .foto-perfil { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; background: #eee; border: 3px solid var(--oro); }
 
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
@@ -29,77 +31,75 @@
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
         th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
-        th { background: #f8f9fa; }
-
-        .tag-justificado { background: var(--morado); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+        th { background: #f8f9fa; color: var(--celeste); }
 
         @media print {
             .no-print, button, input, select { display: none !important; }
             .card { box-shadow: none; border: 1px solid #ccc; }
-            @page { size: landscape; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://i.ibb.co/Lzr2Cg0/421692.png" class="logo-escuela" alt="EBN Lucila Palacios">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-escuela" alt="Logo Lucila Palacios">
     <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin:5px 0 0;">Panel de Control Estadístico - San Félix</p>
+    <p style="margin:5px 0 0;">Control Estadístico Docente - San Félix</p>
 </header>
 
 <div class="container">
+
+    <div class="card no-print">
+        <h3 style="margin-top:0; color:var(--celeste);">👤 Información del Docente</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="docente" placeholder="Nombre completo del Docente" onchange="saveConfig()">
+            <input type="text" id="seccion" placeholder="Grado y Sección" onchange="saveConfig()">
+        </div>
+    </div>
+
     <div id="honorCard" class="cuadro-honor">
-        <h2 style="color:var(--naranja); margin:0;">🏆 Cuadro de Honor</h2>
-        <div id="honorContent"></div>
+        <h2 style="color:var(--naranja); margin:0 0 10px 0;">⭐ Cuadro de Honor ⭐</h2>
+        <div id="honorContent">
+            <p style="color:#666; font-style:italic;">Registre alumnos y asistencia para ver al estudiante destacado.</p>
+        </div>
     </div>
 
     <div class="card no-print">
-        <h3>➕ Ingreso de Alumno (Nuevo Ingreso)</h3>
-        <input type="text" id="newNombre" placeholder="Nombre y Apellido Completo">
+        <h3>➕ Incorporar Nuevo Alumno</h3>
+        <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
         <div style="display: flex; gap: 10px;">
             <select id="newGen"><option value="F">Femenino</option><option value="M">Masculino</option></select>
             <input type="date" id="newNac">
         </div>
-        <p style="font-size: 0.8rem; margin: 5px 0;">Cargar foto del niño/a:</p>
+        <p style="font-size: 0.8rem; margin: 10px 0 5px 0;">Subir foto del estudiante:</p>
         <input type="file" id="newFoto" accept="image/*">
-        <button onclick="agregarAlumno()" class="btn-main">Registrar en Matrícula</button>
+        <button onclick="agregarAlumno()" class="btn-main">Guardar en Matrícula</button>
     </div>
 
     <div class="card">
-        <h3>📅 Asistencia Hoy: <span id="fechaActual"></span></h3>
+        <h3>📅 Control de Hoy: <span id="fechaActual"></span></h3>
         <div class="stats-grid">
-            <div class="stat-card"><span class="stat-val" id="percDiario">0%</span>Asistencia Diaria</div>
-            <div class="stat-card"><span class="stat-val" id="totalMat">0</span>Matrícula Activa</div>
-            <div class="stat-card"><span class="stat-val" id="totalPres">0</span>Presentes</div>
+            <div class="stat-card"><span class="stat-val" id="totalMat">0</span>Matrícula Total</div>
+            <div class="stat-card"><span class="stat-val" id="totalPres">0</span>Asistieron</div>
+            <div class="stat-card"><span class="stat-val" id="percDiario">0%</span>% Asistencia</div>
         </div>
         <div id="listaAsistencia"></div>
     </div>
 
-    <div class="card reporte-final">
-        <h3>📊 Estadística de Edades y Género</h3>
-        <div id="tablaEdades"></div>
-
-        <h3 style="margin-top:25px;">📉 Resumen de Asistencia Mensual</h3>
+    <div class="card">
+        <h3>📊 Resumen Estadístico Mensual</h3>
         <div id="tablaMensual" style="overflow-x: auto;"></div>
-
+        
         <div style="display:flex; gap:10px; margin-top:20px;" class="no-print">
-            <button onclick="window.print()" style="background:var(--azul); color:white;">🖨️ Descargar PDF / Imprimir</button>
-            <button onclick="exportarDatos()" style="background:var(--celeste); color:white;">📤 Respaldar Datos (JSON)</button>
+            <button onclick="window.print()" style="background:var(--azul); color:white; font-weight: bold;">🖨️ Imprimir / Guardar PDF</button>
+            <button onclick="exportarRespaldo()" style="background:var(--celeste); color:white;">💾 Respaldar Datos</button>
         </div>
     </div>
 
-    <div class="card no-print">
-        <h3>⚙️ Datos del Docente</h3>
-        <input type="text" id="docente" placeholder="Nombre del Docente" onchange="saveConfig()">
-        <input type="text" id="seccion" placeholder="Grado y Sección" onchange="saveConfig()">
-        <label style="font-size: 0.8rem; color: #666;">Cargar respaldo anterior:</label>
-        <input type="file" accept=".json" onchange="importarDatos(event)">
-    </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('ebn_final_v1')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
+    let db = JSON.parse(localStorage.getItem('ebn_v11')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
     let hoy = new Date().toISOString().split('T')[0];
 
     function init() {
@@ -116,11 +116,12 @@
     }
 
     async function agregarAlumno() {
-        const nom = document.getElementById('newNombre').value.toUpperCase();
+        const nom = document.getElementById('newNombre').value.trim().toUpperCase();
         const gen = document.getElementById('newGen').value;
         const nac = document.getElementById('newNac').value;
         const fotoFile = document.getElementById('newFoto').files[0];
-        if(!nom || !nac) return alert("Por favor complete nombre y fecha de nacimiento");
+        
+        if(!nom || !nac) return alert("Faltan datos obligatorios.");
 
         let fotoBase64 = "";
         if(fotoFile) {
@@ -140,16 +141,9 @@
 
     function marcar(id) {
         if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
-        let estado = db.asistencias[hoy][id] || 0; // 0:Falta, 1:Presente, 2:Justificado
-        db.asistencias[hoy][id] = (estado + 1) % 3;
+        let actual = db.asistencias[hoy][id] || 0;
+        db.asistencias[hoy][id] = (actual + 1) % 3; // 0:Falta, 1:Presente, 2:Justificado
         save(); render();
-    }
-
-    function desincorporar(id) {
-        if(confirm("¿Seguro que desea retirar a este alumno de la matrícula?")) {
-            db.alumnos = db.alumnos.filter(a => a.id !== id);
-            save(); render();
-        }
     }
 
     function render() {
@@ -162,28 +156,22 @@
             if(estado === 1) presentes++;
             if(estado === 2) justificados++;
 
-            let btnColor = "#ccc", btnText = "FALTA";
-            if(estado === 1) { btnColor = "var(--exito)"; btnText = "PRESENTE"; }
-            if(estado === 2) { btnColor = "var(--morado)"; btnText = "JUSTIF."; }
+            let color = "#ccc", texto = "FALTA";
+            if(estado === 1) { color = "var(--exito)"; texto = "P"; }
+            if(estado === 2) { color = "var(--morado)"; texto = "J"; }
 
             lista.innerHTML += `
                 <div class="student-item">
-                    <img src="${a.foto || 'https://via.placeholder.com/50'}" class="foto-perfil">
-                    <div class="student-info">
-                        <b>${a.nombre}</b><br>
-                        <small onclick="desincorporar(${a.id})" style="color:red; cursor:pointer">✖ Desincorporar (Egreso)</small>
-                    </div>
-                    <button onclick="marcar(${a.id})" style="width:100px; background:${btnColor}; color:white; border:none; border-radius:8px;">
-                        ${btnText}
-                    </button>
+                    <img src="${a.foto || 'https://via.placeholder.com/60'}" class="foto-perfil" style="width:55px; height:55px; border:2px solid ${color}">
+                    <div class="student-info"><b>${a.nombre}</b></div>
+                    <button onclick="marcar(${a.id})" style="width:60px; background:${color}; color:white; border:none; border-radius:8px; font-weight:bold;">${texto}</button>
                 </div>
             `;
         });
 
         document.getElementById('totalMat').innerText = db.alumnos.length;
         document.getElementById('totalPres').innerText = presentes;
-        let totalAsis = presentes + justificados; // Justificados cuentan para el porcentaje
-        let p = db.alumnos.length > 0 ? Math.round((totalAsis/db.alumnos.length)*100) : 0;
+        let p = db.alumnos.length > 0 ? Math.round(((presentes+justificados)/db.alumnos.length)*100) : 0;
         document.getElementById('percDiario').innerText = p + "%";
 
         actualizarTablas();
@@ -191,53 +179,44 @@
     }
 
     function actualizarTablas() {
-        // Tabla Edades
-        let ed = {};
+        const dias = Object.keys(db.asistencias).sort().slice(-7);
+        let html = `<table><tr><th>Estudiante</th>`;
+        dias.forEach(d => html += `<th>${d.split('-')[2]}</th>`);
+        html += `<th>%</th></tr>`;
+        
         db.alumnos.forEach(a => {
-            let e = new Date().getFullYear() - new Date(a.nacimiento).getFullYear();
-            if(!ed[e]) ed[e] = {f:0, m:0};
-            a.genero === 'F' ? ed[e].f++ : ed[e].m++;
-        });
-        let hE = `<table><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr>`;
-        Object.keys(ed).sort().forEach(e => {
-            hE += `<tr><td>${e} años</td><td>${ed[e].f}</td><td>${ed[e].m}</td><td>${ed[e].f+ed[e].m}</td></tr>`;
-        });
-        document.getElementById('tablaEdades').innerHTML = hE + "</table>";
-
-        // Tabla Mensual
-        const dias = Object.keys(db.asistencias).sort().slice(-5);
-        let hM = `<table><tr><th>Alumno</th>`;
-        dias.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
-        hM += `<th>%</th></tr>`;
-        db.alumnos.forEach(a => {
-            let asis = 0;
-            hM += `<tr><td style="text-align:left">${a.nombre}</td>`;
+            let totalAsis = 0;
+            html += `<tr><td style="text-align:left">${a.nombre}</td>`;
             dias.forEach(d => {
                 let s = db.asistencias[d][a.id];
-                if(s === 1 || s === 2) asis++;
-                hM += `<td>${s===1?'P':(s===2?'J':'F')}</td>`;
+                if(s === 1 || s === 2) totalAsis++;
+                html += `<td>${s===1?'P':(s===2?'J':'F')}</td>`;
             });
-            hM += `<td>${dias.length>0?Math.round((asis/dias.length)*100):0}%</td></tr>`;
+            let porc = dias.length > 0 ? Math.round((totalAsis/dias.length)*100) : 0;
+            html += `<td><b>${porc}%</b></td></tr>`;
         });
-        document.getElementById('tablaMensual').innerHTML = hM + "</table>";
+        document.getElementById('tablaMensual').innerHTML = html + "</table>";
     }
 
     function verificarHonor() {
-        let max = -1, mejor = null;
+        let max = -1, destacado = null;
         db.alumnos.forEach(a => {
             let total = Object.keys(db.asistencias).length;
-            let count = Object.values(db.asistencias).filter(dia => dia[a.id] === 1 || dia[a.id] === 2).length;
+            let count = Object.values(db.asistencias).filter(d => d[a.id] === 1 || d[a.id] === 2).length;
             let p = total > 0 ? (count/total)*100 : 0;
-            if(p > max) { max = p; mejor = a; }
+            if(p > max) { max = p; destacado = a; }
         });
-        if(mejor && max >= 95) {
-            document.getElementById('honorCard').style.display = "block";
-            document.getElementById('honorContent').innerHTML = `<img src="${mejor.foto}" class="foto-perfil"><br><b>${mejor.nombre}</b><br>Asistencia Excelente: ${Math.round(max)}%`;
+        if(destacado && max >= 90) {
+            document.getElementById('honorContent').innerHTML = `
+                <img src="${destacado.foto || 'https://via.placeholder.com/80'}" class="foto-perfil">
+                <h3 style="margin:10px 0 0 0;">${destacado.nombre}</h3>
+                <p style="color:var(--exito); font-weight:bold; margin:5px;">${Math.round(max)}% de Asistencia Mensual</p>
+            `;
         }
     }
 
-    function save() { localStorage.setItem('ebn_final_v1', JSON.stringify(db)); }
-    function exportarDatos() { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db)); a.download = `Matricula_LucilaPalacios.json`; a.click(); }
+    function save() { localStorage.setItem('ebn_v11', JSON.stringify(db)); }
+    function exportarRespaldo() { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db)); a.download = `Lucila_Palacios_Backup.json`; a.click(); }
     function importarDatos(e) { const r = new FileReader(); r.onload = (ev) => { db = JSON.parse(ev.target.result); save(); location.reload(); }; r.readAsText(e.target.files[0]); }
     init();
 </script>
