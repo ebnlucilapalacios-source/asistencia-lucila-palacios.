@@ -3,164 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docente - Lucila Palacios (Reporte Maestro)</title>
+    <title>E.B.N. Lucila Palacios - Gestión Integral</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --rojo: #b22222; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; font-size: 13px; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); }
-        .logo { width: 65px; height: 65px; background: white; border-radius: 50%; padding: 2px; }
-        .container { max-width: 650px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h3 { margin-top: 0; color: var(--azul); border-bottom: 2px solid #eee; padding-bottom: 5px; font-size: 1.1rem; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .grid-estat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; margin-bottom: 10px; }
-        .estat-val { background: #eef2f3; padding: 8px; border-radius: 8px; font-weight: bold; border: 1px solid #d1d8e0; }
-        .student-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .btn-check { width: 45px; height: 35px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background: #f2f2f2; color: var(--azul); }
-        .porcentaje { font-weight: bold; color: var(--celeste); }
-        .alerta-baja { color: var(--rojo); font-weight: bold; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --peligro: #c0392b; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 60px; }
+        
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); position: sticky; top: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 80px; height: 80px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); object-fit: contain; }
+        
+        nav { background: var(--celeste); display: flex; justify-content: space-around; padding: 10px; position: sticky; top: 115px; z-index: 999; }
+        nav button { background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 11px; }
+        nav button.active { background: var(--naranja); border-color: var(--naranja); font-weight: bold; }
+
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
+        .seccion { display: none; }
+        .seccion.active { display: block; }
+
+        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
+        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-registro { background: var(--exito); }
+        
+        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid var(--celeste); }
+        .btn-check { width: 85px; padding: 8px; font-size: 0.7rem; border-radius: 20px; border:none; color:white; font-weight:bold; }
+        .presente { background: var(--exito); }
+        .ausente { background: #dcdde1; color: #7f8c8d; }
+
+        .progress-container { background: #e0e0e0; border-radius: 10px; height: 20px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
     </style>
 </head>
 <body>
 
-<header id="header-main">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
-    <h2 style="margin:5px 0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-weight: bold;">REPORTE ESTADÍSTICO DE AULA</p>
+<header>
+    <img src="Imagen_20260225_005025_993.png" id="logoEscuela" alt="Escudo EBN Lucila Palacios">
+    <h1 style="margin:0; font-size: 1.1rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p id="labelAula" style="font-size: 0.7rem; opacity:0.9; margin:2px;">Cargando...</p>
 </header>
 
-<div class="container" id="contenido-reporte">
-    <div class="card">
-        <h3>📊 Estadística General (911)</h3>
-        <div class="grid-estat">
-            <div class="estat-val">V: <span id="vTotal">0</span></div>
-            <div class="estat-val">H: <span id="hTotal">0</span></div>
-            <div class="estat-val">Total: <span id="tTotal">0</span></div>
-            <div class="estat-val" style="background:var(--naranja); color:white;">%: <span id="pTotal">0</span></div>
+<nav id="menu-principal">
+    <button onclick="ver('control')" id="nav-con" class="active">📅 CONTROL</button>
+    <button onclick="ver('pedagogico')" id="nav-ped">📚 P.A.</button>
+    <button onclick="ver('nomina')" id="nav-nom">👔 NÓMINA</button>
+    <button onclick="ver('bienes')" id="nav-bie">🏫 BIENES</button>
+</nav>
+
+<div class="container" id="area-reporte">
+
+    <div id="control" class="seccion active">
+        <details class="card">
+            <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Matrícula y Aula</summary>
+            <div style="margin-top:15px;">
+                <input type="text" id="gradoSec" placeholder="Grado y Sección">
+                <button onclick="guardarAula()">Guardar Aula</button>
+                <hr>
+                <h3>Inscribir Alumno</h3>
+                <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
+                <select id="genAlu"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+                <input type="file" id="fotoAlu" accept="image/*" capture="user">
+                <button onclick="registrarAlumno()" class="btn-registro">Guardar Alumno</button>
+            </div>
+        </details>
+
+        <div class="card">
+            <h3>📅 Asistencia Diaria</h3>
+            <input type="date" id="calendarioConsulta" onchange="actualizarUI()">
+            <div class="progress-container"><div id="barraProgreso" class="progress-bar">0%</div></div>
+            <div id="listaAlumnos"></div>
         </div>
-        <div id="infoDocente" style="margin: 10px 0; font-style: italic; color: #555;"></div>
-        
-        <table id="tablaEdades">
-            <thead><tr><th>Edad</th><th>Varones</th><th>Hembras</th><th>Sub-Total</th></tr></thead>
-            <tbody id="bodyEdades"></tbody>
-        </table>
     </div>
 
-    <div class="card">
-        <h3>📝 Control de Asistencia y Rendimiento</h3>
-        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Hoy: <b id="fechaTexto"></b> | (P)=Presente, (F)=Falto</p>
-        <div id="listaAlumnos"></div>
-        
-        <div id="seccionBotones" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button onclick="exportarJSON()" style="background:var(--azul); color:white;">📤 Enviar a Dirección</button>
-            <button onclick="generarPDF()" style="background:var(--rojo); color:white;">📄 Descargar Reporte PDF</button>
+    <div id="pedagogico" class="seccion">
+        <div class="card">
+            <h3>📖 Proyectos del Trimestre (P.A.)</h3>
+            <div style="background:#fff9f0; padding:10px; border-radius:10px; margin-bottom:10px;">
+                <input type="text" id="pa1" placeholder="Nombre del P.A. 1" onchange="guardarDatos()">
+                <input type="text" id="pa2" placeholder="Nombre del P.A. 2" onchange="guardarDatos()">
+            </div>
+            <h4>Planificación de la Semana</h4>
+            <textarea id="plan_s" placeholder="Actividades..." onchange="guardarDatos()"></textarea>
         </div>
+    </div>
+
+    <div id="nomina" class="seccion">
+        <div class="card">
+            <h3>👔 Personal de la Institución</h3>
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px;">
+                <input type="text" id="nom_p" placeholder="Nombre Personal">
+                <select id="car_p">
+                    <option value="Docente">Docente</option>
+                    <option value="Obrero">Obrero</option>
+                    <option value="Vigilante">Vigilante</option>
+                    <option value="Cocinera">Cocinera</option>
+                </select>
+            </div>
+            <button onclick="altaPersonal()" style="background:var(--celeste);">Añadir a Nómina</button>
+            <table id="tablaNomina">
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>-</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="bienes" class="seccion">
+        <div class="card">
+            <h3>🏫 Bienes Nacionales</h3>
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px;">
+                <input type="text" id="b_nom" placeholder="Bien (Ej: Silla)">
+                <input type="number" id="b_cant" placeholder="Cant.">
+            </div>
+            <button onclick="altaBien()">Cargar Bien</button>
+            <table id="tablaBienes">
+                <thead><tr><th>Bien</th><th>Cant.</th><th>Estado</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="padding:0 15px;">
+        <button onclick="exportarPDF()" style="background:var(--naranja); padding:15px; font-size:1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">📄 GENERAR REPORTE PDF FINAL</button>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('ebn_v7')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
-    let hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaTexto').innerText = hoy;
+    let db = JSON.parse(localStorage.getItem('lp_master_v17')) || {
+        alumnos: [], asistencias: {}, aula: "Sin Grado", 
+        nomina: [], bienes: [], pa1: "", pa2: "", plan: ""
+    };
+    let fechaHoy = new Date().toISOString().split('T')[0];
 
-    function calcularEdad(fecha) {
-        let naci = new Date(fecha);
-        let diff = Date.now() - naci.getTime();
-        return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+    function ver(id) {
+        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('nav-' + id.substring(0,3)).classList.add('active');
     }
 
-    function registrar() {
-        const nom = prompt("Nombre y Apellido del Alumno:");
-        const gen = prompt("Género (V/H):").toUpperCase();
-        const nac = prompt("Fecha Nacimiento (AAAA-MM-DD):");
-        if(nom && gen && nac) {
-            db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac });
-            guardar(); dibujar();
-        }
+    // --- ALUMNOS ---
+    function registrarAlumno() {
+        const n = document.getElementById('nomAlu').value.trim();
+        const g = document.getElementById('genAlu').value;
+        const file = document.getElementById('fotoAlu').files[0];
+        if(!n) return alert("Ingrese nombre");
+
+        const save = (foto) => {
+            db.alumnos.push({ id: Date.now(), nombre: n, genero: g, foto: foto || '', grado: db.aula });
+            actualizarUI();
+        };
+
+        if(file) { const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(file); }
+        else save(null);
     }
 
     function marcar(id) {
-        if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
-        db.asistencias[hoy][id] = !db.asistencias[hoy][id];
-        guardar(); dibujar();
+        let f = document.getElementById('calendarioConsulta').value;
+        if(!db.asistencias[f]) db.asistencias[f] = {};
+        db.asistencias[f][id] = !db.asistencias[f][id];
+        actualizarUI();
     }
 
-    function dibujar() {
-        document.getElementById('infoDocente').innerHTML = `<b>Docente:</b> ${db.profe} | <b>Aula:</b> ${db.aula}`;
-        const lista = document.getElementById('listaAlumnos');
-        const bodyEdades = document.getElementById('bodyEdades');
-        lista.innerHTML = "";
-        
-        let v = 0, h = 0, asistieronHoy = 0;
-        let edades = {};
-        let totalDiasMes = Object.keys(db.asistencias).length || 1;
+    function actualizarUI() {
+        // Asistencia
+        let f = document.getElementById('calendarioConsulta').value;
+        const lista = document.getElementById('listaAlumnos'); lista.innerHTML = "";
+        let pres = 0;
+        const misAlu = db.alumnos.filter(a => a.grado === db.aula);
 
-        db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-            if(a.genero === 'V') v++; else h++;
-            let edad = calcularEdad(a.nacimiento);
-            if(!edades[edad]) edades[edad] = {v:0, h:0};
-            if(a.genero === 'V') edades[edad].v++; else edades[edad].h++;
-
-            // Calcular % Individual Mensual
-            let asistenciasAlumno = 0;
-            Object.values(db.asistencias).forEach(dia => { if(dia[a.id]) asistenciasAlumno++; });
-            let porcIndiv = ((asistenciasAlumno / totalDiasMes) * 100).toFixed(0);
-
-            const estaPresente = db.asistencias[hoy] && db.asistencias[hoy][a.id];
-            if(estaPresente) asistieronHoy++;
-
-            lista.innerHTML += `
-                <div class="student-row">
-                    <div style="flex-grow:1">
-                        <b>${a.nombre}</b> <small>(${a.genero})</small><br>
-                        <span class="porcentaje ${porcIndiv < 75 ? 'alerta-baja' : ''}">Asist. Mensual: ${porcIndiv}%</span>
-                    </div>
-                    <button onclick="marcar(${a.id})" class="btn-check" style="background:${estaPresente? '#27ae60':'#ccc'}">${estaPresente?'P':'F'}</button>
-                </div>`;
+        misAlu.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
+            const estaP = db.asistencias[f] && db.asistencias[f][a.id];
+            if(estaP) pres++;
+            lista.innerHTML += `<div class="student-item">
+                <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
+                <div class="info-student"><strong>${a.nombre}</strong> <small>(${a.genero})</small></div>
+                <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
+            </div>`;
         });
 
-        document.getElementById('vTotal').innerText = v;
-        document.getElementById('hTotal').innerText = h;
-        document.getElementById('tTotal').innerText = v + h;
-        document.getElementById('pTotal').innerText = db.alumnos.length ? ((asistieronHoy / db.alumnos.length) * 100).toFixed(0) : 0;
+        const porc = misAlu.length > 0 ? ((pres / misAlu.length) * 100).toFixed(0) : 0;
+        document.getElementById('barraProgreso').style.width = porc + "%";
+        document.getElementById('barraProgreso').innerText = porc + "%";
 
-        bodyEdades.innerHTML = "";
-        Object.keys(edades).sort((a,b) => a-b).forEach(e => {
-            bodyEdades.innerHTML += `<tr><td>${e} años</td><td>${edades[e].v}</td><td>${edades[e].h}</td><td>${edades[e].v + edades[e].h}</td></tr>`;
+        // Nómina
+        const tN = document.querySelector('#tablaNomina tbody'); tN.innerHTML = "";
+        db.nomina.forEach(p => {
+            tN.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td><button onclick="bajaPersonal(${p.id})" style="background:var(--peligro); color:white; border:none; padding:4px; border-radius:5px;">X</button></td></tr>`;
         });
-    }
 
-    function guardar() { localStorage.setItem('ebn_v7', JSON.stringify(db)); }
-
-    function generarPDF() {
-        document.getElementById('seccionBotones').style.display = 'none';
-        const opt = { 
-            margin: 10, 
-            filename: `Reporte_${db.aula}_${hoy}.pdf`,
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-        html2pdf().set(opt).from(document.body).save().then(() => {
-            document.getElementById('seccionBotones').style.display = 'grid';
+        // Bienes
+        const tB = document.querySelector('#tablaBienes tbody'); tB.innerHTML = "";
+        db.bienes.forEach(b => {
+            tB.innerHTML += `<tr><td>${b.n}</td><td>${b.c}</td><td>${b.e}</td></tr>`;
         });
+
+        localStorage.setItem('lp_master_v17', JSON.stringify(db));
     }
 
-    function exportarJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-        const a = document.createElement('a'); a.href = dataStr;
-        a.download = `DATA_${db.aula}_${hoy}.json`; a.click();
+    // --- PERSONAL Y BIENES ---
+    function altaPersonal() {
+        const n = document.getElementById('nom_p').value.toUpperCase();
+        const c = document.getElementById('car_p').value;
+        if(n) { db.nomina.push({id: Date.now(), n, c}); actualizarUI(); }
+    }
+    function bajaPersonal(id) { db.nomina = db.nomina.filter(p=>p.id!==id); actualizarUI(); }
+
+    function altaBien() {
+        const n = document.getElementById('b_nom').value.toUpperCase();
+        const c = document.getElementById('b_cant').value;
+        if(n && c) { db.bienes.push({id: Date.now(), n, c, e:'ACTIVO'}); actualizarUI(); }
     }
 
-    if(!db.profe) {
-        db.profe = prompt("Nombre del Docente:");
-        db.aula = prompt("Grado y Sección:");
-        guardar();
+    function guardarAula() { 
+        db.aula = document.getElementById('gradoSec').value; 
+        document.getElementById('labelAula').innerText = db.aula + " • E.B.N. Lucila Palacios";
+        actualizarUI(); 
     }
-    dibujar();
+
+    function guardarDatos() {
+        db.pa1 = document.getElementById('pa1').value;
+        db.pa2 = document.getElementById('pa2').value;
+        db.plan = document.getElementById('plan_s').value;
+        actualizarUI();
+    }
+
+    function exportarPDF() {
+        document.getElementById('menu-principal').style.display = 'none';
+        document.querySelectorAll('.seccion').forEach(s => s.classList.add('active'));
+        const opt = { margin: 10, filename: 'REPORTE_LUCILA_PALACIOS.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(document.body).save().then(() => { location.reload(); });
+    }
+
+    // Carga inicial
+    document.getElementById('calendarioConsulta').value = fechaHoy;
+    document.getElementById('labelAula').innerText = db.aula + " • E.B.N. Lucila Palacios";
+    document.getElementById('pa1').value = db.pa1;
+    document.getElementById('pa2').value = db.pa2;
+    document.getElementById('plan_s').value = db.plan;
+    actualizarUI();
 </script>
 </body>
 </html>
