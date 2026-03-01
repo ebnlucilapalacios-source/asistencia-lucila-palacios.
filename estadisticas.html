@@ -3,60 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas EBNLP</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        const firebaseConfig = {
-            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-            projectId: "control-de-asistencia-d585e",
-            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-            messagingSenderId: "368890880546",
-            appId: "1:368890880546:web:a97ab4372dea536217207b"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        window.syncSec = (s, cb) => onSnapshot(doc(db, "secciones", s), (d) => cb(d.data()));
-        window.saveSec = async (s, d) => await setDoc(doc(db, "secciones", s), d);
-    </script>
+    <title>Control Estadístico - Lucila Palacios</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; text-align: center; }
-        header { background: #2980b9; color: white; padding: 20px; border-bottom: 4px solid #f39c12; }
-        .card { background: white; padding: 20px; margin: 15px auto; max-width: 400px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .btn { background: #2980b9; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; --morado: #8e44ad; --rojo: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 50px; }
+        
+        header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        .logo-escuela { width: 100px; height: 100px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
+        
+        .container { max-width: 900px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
+        
+        .cuadro-honor { background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%); border: 3px solid var(--oro); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        .foto-honor { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--oro); background: #eee; }
+
+        .chart-container { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 20px 0; border-bottom: 2px solid #ddd; margin: 10px 0; justify-content: center; }
+        .bar { background: var(--azul); min-width: 25px; border-radius: 4px 4px 0 0; position: relative; transition: height 0.3s; }
+        .bar-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: bold; }
+
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
+        .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
+        .btn-feriado { background: var(--rojo); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .btn-feriado.activo { background: #555; }
+        
+        .student-item { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
+        th { background: #f8f9fa; }
+
+        .resumen-final { background: var(--celeste); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
+        .selector-fecha { background: #e8f4fd; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--azul); }
+        .aviso-dia { padding: 10px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; }
+
+        @media print {
+            .no-print, button, input, select { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+            body { background: white; }
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h2 style="margin:0;">Estadísticas de Alumnos</h2>
-        <a href="index.html" style="color: white; text-decoration: none; font-size: 0.8rem;">← VOLVER AL MENÚ</a>
-    </header>
+
+<header>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-escuela" alt="Logo">
+    <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p>San Félix - Reporte Estadístico de Asistencia</p>
+</header>
+
+<div class="container">
+    
+    <div class="card no-print">
+        <h3>👤 Identificación Docente</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="docente" placeholder="Nombre del Docente" onchange="saveConfig()">
+            <input type="text" id="seccion" placeholder="Grado y Sección" onchange="saveConfig()">
+        </div>
+    </div>
+
+    <div id="honorCard" class="cuadro-honor">
+        <h2 style="color:var(--naranja); margin:0 0 10px 0;">🏆 Cuadro de Honor</h2>
+        <div id="honorContent"></div>
+    </div>
+
     <div class="card">
-        <h3>Introducir Sección</h3>
-        <input type="text" id="secIn" placeholder="Ej: 1A" style="padding:10px; width:70%; border-radius:5px; border:1px solid #ccc;">
-        <br><br>
-        <button class="btn" onclick="conectar()">ENTRAR</button>
+        <h3>📈 Variación de Asistencia (Días Laborales)</h3>
+        <div id="graficoAsistencia" class="chart-container"></div>
     </div>
-    <div id="panel" style="display:none;" class="card">
-        <h4 id="txtSec"></h4>
-        <p>Matrícula: <b id="txtT">0</b> (H: <span id="txtH">0</span> | V: <span id="txtV">0</span>)</p>
+
+    <div class="card no-print">
+        <h3>➕ Registro de Nuevo Alumno</h3>
+        <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
+        <div style="display: flex; gap: 10px;">
+            <select id="newGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
+            <input type="date" id="newNac">
+        </div>
+        <input type="file" id="newFoto" accept="image/*">
+        <button onclick="agregarAlumno()" class="btn-main">Guardar en Matrícula</button>
     </div>
-    <script>
-        function conectar() {
-            const s = document.getElementById('secIn').value.toUpperCase().trim();
-            if(!s) return;
-            window.syncSec(s, (data) => {
-                document.getElementById('panel').style.display = 'block';
-                document.getElementById('txtSec').innerText = "Sección: " + s;
-                const d = data || { alumnos: [] };
-                const h = d.alumnos.filter(a => a.g === 'F').length;
-                const v = d.alumnos.filter(a => a.g === 'M').length;
-                document.getElementById('txtH').innerText = h;
-                document.getElementById('txtV').innerText = v;
-                document.getElementById('txtT').innerText = h + v;
-            });
+
+    <div class="card">
+        <h3>📅 Pase de Lista</h3>
+        <div class="selector-fecha no-print">
+            <label>Seleccione Fecha:</label>
+            <input type="date" id="fechaSeleccionada" onchange="cambiarFecha()">
+            <button id="btnFeriado" onclick="toggleFeriado()" class="btn-feriado">🚩 Marcar como Feriado / No Laboral</button>
+        </div>
+        
+        <div id="avisoFinSemana" class="aviso-dia" style="display:none; background: #fff3cd; color: #856404;">⚠️ Atención: La fecha seleccionada es Fin de Semana.</div>
+        <div id="avisoFeriado" class="aviso-dia" style="display:none; background: #f8d7da; color: #721c24;">🚫 DÍA MARCADO COMO FERIADO</div>
+
+        <p><b>Fecha de registro:</b> <span id="displayFecha"></span></p>
+        <div id="listaAsistencia"></div>
+    </div>
+
+    <div class="card">
+        <h2 style="text-align: center; color: var(--celeste);">REPORTE ESTADÍSTICO MENSUAL</h2>
+        <div class="no-print" style="margin-bottom: 15px;">
+            <label>Filtrar Reporte por Mes:</label>
+            <input type="month" id="filtroMes" onchange="render()">
+        </div>
+        
+        <p><b>Docente:</b> <span id="repDocente"></span> | <b>Sección:</b> <span id="repSeccion"></span></p>
+        
+        <div class="resumen-final">
+            <span style="font-size: 1.1rem;">Porcentaje de Asistencia del Mes:</span><br>
+            <span id="porcentajeGlobalMensual" style="font-size: 2.5rem; font-weight: bold;">0%</span>
+        </div>
+
+        <h4>📊 Distribución por Edades y Género</h4>
+        <div id="tablaEdades"></div>
+
+        <h4 style="margin-top:20px;">📋 Registro Mensual Detallado (Lunes a Viernes)</h4>
+        <div id="tablaMensual" style="overflow-x: auto;"></div>
+
+        <div style="margin-top:20px;" class="no-print">
+            <button onclick="window.print()" style="background:var(--azul); color:white; font-weight: bold;">🖨️ Imprimir / Guardar PDF para Dirección</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Se añade 'feriados' al objeto de base de datos
+    let db = JSON.parse(localStorage.getItem('ebn_v15')) || { docente: "", seccion: "", alumnos: [], asistencias: {}, feriados: [] };
+    
+    let hoy = new Date().toISOString().split('T')[0];
+    let fechaTrabajo = hoy;
+
+    function init() {
+        document.getElementById('fechaSeleccionada').value = hoy;
+        document.getElementById('filtroMes').value = hoy.substring(0, 7);
+        document.getElementById('docente').value = db.docente || "";
+        document.getElementById('seccion').value = db.seccion || "";
+        render();
+    }
+
+    function cambiarFecha() {
+        fechaTrabajo = document.getElementById('fechaSeleccionada').value;
+        render();
+    }
+
+    function toggleFeriado() {
+        const index = db.feriados.indexOf(fechaTrabajo);
+        if (index === -1) {
+            db.feriados.push(fechaTrabajo);
+        } else {
+            db.feriados.splice(index, 1);
         }
-    </script>
+        save(); render();
+    }
+
+    function saveConfig() {
+        db.docente = document.getElementById('docente').value;
+        db.seccion = document.getElementById('seccion').value;
+        save(); render();
+    }
+
+    async function agregarAlumno() {
+        const nom = document.getElementById('newNombre').value.trim().toUpperCase();
+        const gen = document.getElementById('newGen').value;
+        const nac = document.getElementById('newNac').value;
+        const fotoFile = document.getElementById('newFoto').files[0];
+        if(!nom || !nac) return alert("Complete los datos.");
+
+        if(fotoFile) {
+            const reader = new FileReader();
+            reader.readAsDataURL(fotoFile);
+            reader.onload = () => {
+                db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac, foto: reader.result });
+                save(); render();
+                limpiarForm();
+            };
+        } else {
+            db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac, foto: "" });
+            save(); render();
+            limpiarForm();
+        }
+    }
+
+    function limpiarForm() {
+        document.getElementById('newNombre').value = "";
+        document.getElementById('newNac').value = "";
+        document.getElementById('newFoto').value = "";
+    }
+
+    function marcar(id) {
+        if(db.feriados.includes(fechaTrabajo)) return; // No marcar si es feriado
+        if(!db.asistencias[fechaTrabajo]) db.asistencias[fechaTrabajo] = {};
+        let actual = db.asistencias[fechaTrabajo][id] || 0;
+        db.asistencias[fechaTrabajo][id] = (actual + 1) % 3;
+        save(); render();
+    }
+
+    function render() {
+        const esFeriado = db.feriados.includes(fechaTrabajo);
+        const fechaObj = new Date(fechaTrabajo + "T12:00:00");
+        const esFinSemana = fechaObj.getDay() === 0 || fechaObj.getDay() === 6;
+
+        document.getElementById('displayFecha').innerText = fechaTrabajo;
+        document.getElementById('repDocente').innerText = db.docente;
+        document.getElementById('repSeccion').innerText = db.seccion;
+
+        // UI de avisos
+        document.getElementById('avisoFinSemana').style.display = esFinSemana ? 'block' : 'none';
+        document.getElementById('avisoFeriado').style.display = esFeriado ? 'block' : 'none';
+        const btnF = document.getElementById('btnFeriado');
+        btnF.innerText = esFeriado ? "✅ Quitar marca de Feriado" : "🚩 Marcar como Feriado / No Laboral";
+        btnF.className = esFeriado ? "btn-feriado activo" : "btn-feriado";
+
+        const lista = document.getElementById('listaAsistencia');
+        lista.innerHTML = "";
+
+        if(!esFeriado) {
+            db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+                const estado = (db.asistencias[fechaTrabajo] && db.asistencias[fechaTrabajo][a.id]) || 0;
+                let color = "#ccc", texto = "F";
+                if(estado === 1) { color = "var(--exito)"; texto = "P"; }
+                if(estado === 2) { color = "var(--morado)"; texto = "J"; }
+
+                lista.innerHTML += `<div class="student-item">
+                    <img src="${a.foto || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                    <div style="flex-grow:1"><b>${a.nombre}</b></div>
+                    <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; font-weight:bold;">${texto}</button>
+                </div>`;
+            });
+        } else {
+            lista.innerHTML = "<p style='text-align:center; color:grey;'>Las asistencias de este día no contarán para el promedio.</p>";
+        }
+
+        dibujarGrafico();
+        actualizarTablasYPorcentajes();
+        verificarHonor();
+    }
+
+    function dibujarGrafico() {
+        const grafico = document.getElementById('graficoAsistencia');
+        grafico.innerHTML = "";
+        // Filtrar días registrados que NO sean feriados
+        const diasValidos = Object.keys(db.asistencias)
+            .filter(d => !db.feriados.includes(d))
+            .sort().slice(-10);
+
+        diasValidos.forEach(d => {
+            let pres = Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
+            let porc = db.alumnos.length > 0 ? (pres / db.alumnos.length) * 100 : 0;
+            grafico.innerHTML += `<div class="bar" style="height: ${porc}%"><span class="bar-label">${d.split('-')[2]}/${d.split('-')[1]}</span></div>`;
+        });
+    }
+
+    function actualizarTablasYPorcentajes() {
+        const mesFiltro = document.getElementById('filtroMes').value;
+
+        // 1. Tabla de Edades
+        let ed = {}; let tH=0, tV=0;
+        db.alumnos.forEach(a => {
+            let e = new Date().getFullYear() - new Date(a.nacimiento).getFullYear();
+            if(!ed[e]) ed[e] = {f:0, m:0};
+            a.genero === 'F' ? (ed[e].f++, tH++) : (ed[e].m++, tV++);
+        });
+        let hE = `<table><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr>`;
+        Object.keys(ed).sort().forEach(e => {
+            hE += `<tr><td>${e} años</td><td>${ed[e].f}</td><td>${ed[e].m}</td><td>${ed[e].f+ed[e].m}</td></tr>`;
+        });
+        document.getElementById('tablaEdades').innerHTML = hE + `<tr><td><b>TOTAL</b></td><td>${tH}</td><td>${tV}</td><td><b>${db.alumnos.length}</b></td></tr></table>`;
+
+        // 2. Tabla Mensual Filtrada (Solo días que tienen registros y no son feriados)
+        const diasDelMes = Object.keys(db.asistencias)
+            .filter(d => d.startsWith(mesFiltro) && !db.feriados.includes(d))
+            .sort();
+        
+        let hM = `<table><tr><th>Estudiante</th>`;
+        diasDelMes.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
+        hM += `<th>%</th></tr>`;
+
+        let sumaAsistenciasMes = 0;
+
+        db.alumnos.forEach(a => {
+            let asistenciasAlumno = 0;
+            hM += `<tr><td style="text-align:left">${a.nombre}</td>`;
+            diasDelMes.forEach(d => {
+                let s = db.asistencias[d][a.id] || 0;
+                if(s === 1 || s === 2) {
+                    asistenciasAlumno++;
+                    sumaAsistenciasMes++;
+                }
+                hM += `<td>${s===1?'P':(s===2?'J':'F')}</td>`;
+            });
+            let pInd = diasDelMes.length > 0 ? Math.round((asistenciasAlumno/diasDelMes.length)*100) : 0;
+            hM += `<td><b>${pInd}%</b></td></tr>`;
+        });
+        document.getElementById('tablaMensual').innerHTML = hM + "</table>";
+
+        // Cálculo Global Mensual (Solo cuenta días laborales registrados)
+        let totalPosibleMes = db.alumnos.length * diasDelMes.length;
+        let porcGlobal = totalPosibleMes > 0 ? Math.round((sumaAsistenciasMes / totalPosibleMes) * 100) : 0;
+        document.getElementById('porcentajeGlobalMensual').innerText = porcGlobal + "%";
+    }
+
+    function verificarHonor() {
+        let max = -1, mejor = null;
+        // El cuadro de honor considera todos los días registrados no feriados
+        const diasValidos = Object.keys(db.asistencias).filter(d => !db.feriados.includes(d));
+        
+        db.alumnos.forEach(a => {
+            let asist = diasValidos.filter(d => db.asistencias[d][a.id] === 1 || db.asistencias[d][a.id] === 2).length;
+            let p = diasValidos.length > 0 ? (asist/diasValidos.length)*100 : 0;
+            if(p > max) { max = p; mejor = a; }
+        });
+
+        if(mejor && max >= 80) {
+            document.getElementById('honorContent').innerHTML = `
+                <img src="${mejor.foto || 'https://via.placeholder.com/80'}" class="foto-honor">
+                <h3 style="margin:10px 0 0 0;">${mejor.nombre}</h3>
+                <p style="color:var(--exito); font-weight:bold;">Asistencia Destacada: ${Math.round(max)}%</p>
+            `;
+        } else {
+            document.getElementById('honorContent').innerHTML = `<p>Registre datos para ver el cuadro de honor.</p>`;
+        }
+    }
+
+    function save() { localStorage.setItem('ebn_v15', JSON.stringify(db)); }
+    
+    window.onload = init;
+</script>
 </body>
 </html>
