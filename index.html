@@ -3,247 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E.B.N. Lucila Palacios - Gestión Integral</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Docente - Lucila Palacios</title>
+    <link rel="icon" type="image/png" href="IMG_20260225_005025_993.png">
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --peligro: #c0392b; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 60px; }
-        
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); position: sticky; top: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; }
-        #logoEscuela { width: 80px; height: 80px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); object-fit: contain; }
-        
-        nav { background: var(--celeste); display: flex; justify-content: space-around; padding: 10px; position: sticky; top: 115px; z-index: 999; }
-        nav button { background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 11px; }
-        nav button.active { background: var(--naranja); border-color: var(--naranja); font-weight: bold; }
-
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
+        header { background: linear-gradient(to right, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
+        header img { width: 60px; margin-bottom: 10px; }
         .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
-        .seccion { display: none; }
-        .seccion.active { display: block; }
-
-        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
-        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-registro { background: var(--exito); }
-        
-        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid var(--celeste); }
-        .btn-check { width: 85px; padding: 8px; font-size: 0.7rem; border-radius: 20px; border:none; color:white; font-weight:bold; }
-        .presente { background: var(--exito); }
-        .ausente { background: #dcdde1; color: #7f8c8d; }
-
-        .progress-container { background: #e0e0e0; border-radius: 10px; height: 20px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold; background: linear-gradient(90deg, var(--celeste), var(--exito)); }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn-registro { background: var(--exito); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-edit { background: none; border: 1px solid var(--naranja); color: var(--naranja); width: auto; padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; cursor: pointer; margin-top: 5px; }
+        .btn-asis { width: 65px; height: 45px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
+        .resumen-mensual { display: block; font-size: 0.75rem; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="Imagen_20260225_005025_993.png" id="logoEscuela" alt="Escudo EBN Lucila Palacios">
-    <h1 style="margin:0; font-size: 1.1rem;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p id="labelAula" style="font-size: 0.7rem; opacity:0.9; margin:2px;">Cargando...</p>
+    <img src="IMG_20260225_005025_993.png" alt="Escudo">
+    <h1 style="font-size: 1.3rem; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin: 5px 0 0; opacity: 0.9;">Control Docente Mensual</p>
 </header>
 
-<nav id="menu-principal">
-    <button onclick="ver('control')" id="nav-con" class="active">📅 CONTROL</button>
-    <button onclick="ver('pedagogico')" id="nav-ped">📚 P.A.</button>
-    <button onclick="ver('nomina')" id="nav-nom">👔 NÓMINA</button>
-    <button onclick="ver('bienes')" id="nav-bie">🏫 BIENES</button>
-</nav>
-
-<div class="container" id="area-reporte">
-
-    <div id="control" class="seccion active">
-        <details class="card">
-            <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Matrícula y Aula</summary>
-            <div style="margin-top:15px;">
-                <input type="text" id="gradoSec" placeholder="Grado y Sección">
-                <button onclick="guardarAula()">Guardar Aula</button>
-                <hr>
-                <h3>Inscribir Alumno</h3>
-                <input type="text" id="nomAlu" placeholder="Nombre y Apellido">
-                <select id="genAlu"><option value="M">Masculino</option><option value="F">Femenino</option></select>
-                <input type="file" id="fotoAlu" accept="image/*" capture="user">
-                <button onclick="registrarAlumno()" class="btn-registro">Guardar Alumno</button>
-            </div>
-        </details>
-
-        <div class="card">
-            <h3>📅 Asistencia Diaria</h3>
-            <input type="date" id="calendarioConsulta" onchange="actualizarUI()">
-            <div class="progress-container"><div id="barraProgreso" class="progress-bar">0%</div></div>
-            <div id="listaAlumnos"></div>
-        </div>
+<div class="container">
+    <div class="card">
+        <h3>👤 Configurar Aula</h3>
+        <input type="text" id="profe" placeholder="Nombre del Docente">
+        <input type="text" id="aula" placeholder="Grado y Sección (Ej: 1-A)">
+        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Aula</button>
     </div>
 
-    <div id="pedagogico" class="seccion">
-        <div class="card">
-            <h3>📖 Proyectos del Trimestre (P.A.)</h3>
-            <div style="background:#fff9f0; padding:10px; border-radius:10px; margin-bottom:10px;">
-                <input type="text" id="pa1" placeholder="Nombre del P.A. 1" onchange="guardarDatos()">
-                <input type="text" id="pa2" placeholder="Nombre del P.A. 2" onchange="guardarDatos()">
-            </div>
-            <h4>Planificación de la Semana</h4>
-            <textarea id="plan_s" placeholder="Actividades..." onchange="guardarDatos()"></textarea>
-        </div>
+    <div class="card">
+        <h3 id="titReg">📝 Registro de Alumno</h3>
+        <input type="text" id="nomAlu" placeholder="Nombre completo">
+        <select id="genAlu">
+            <option value="F">Femenino (Hembra)</option>
+            <option value="M">Masculino (Varón)</option>
+        </select>
+        <input type="date" id="fechaNac">
+        <button onclick="registrarAlumno()" id="btnGuardar" class="btn-registro">Inscribir Alumno</button>
     </div>
 
-    <div id="nomina" class="seccion">
-        <div class="card">
-            <h3>👔 Personal de la Institución</h3>
-            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px;">
-                <input type="text" id="nom_p" placeholder="Nombre Personal">
-                <select id="car_p">
-                    <option value="Docente">Docente</option>
-                    <option value="Obrero">Obrero</option>
-                    <option value="Vigilante">Vigilante</option>
-                    <option value="Cocinera">Cocinera</option>
-                </select>
-            </div>
-            <button onclick="altaPersonal()" style="background:var(--celeste);">Añadir a Nómina</button>
-            <table id="tablaNomina">
-                <thead><tr><th>Nombre</th><th>Cargo</th><th>-</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="bienes" class="seccion">
-        <div class="card">
-            <h3>🏫 Bienes Nacionales</h3>
-            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px;">
-                <input type="text" id="b_nom" placeholder="Bien (Ej: Silla)">
-                <input type="number" id="b_cant" placeholder="Cant.">
-            </div>
-            <button onclick="altaBien()">Cargar Bien</button>
-            <table id="tablaBienes">
-                <thead><tr><th>Bien</th><th>Cant.</th><th>Estado</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div style="padding:0 15px;">
-        <button onclick="exportarPDF()" style="background:var(--naranja); padding:15px; font-size:1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">📄 GENERAR REPORTE PDF FINAL</button>
+    <div class="card">
+        <h3>📅 Hoy: <span id="fechaHoy"></span></h3>
+        <div id="listaAsistencia"></div>
+        <button onclick="exportarReporte()" style="background:var(--naranja); color:white; margin-top:20px; padding: 15px; font-size: 1.1rem; font-weight: bold;">📤 Enviar Reporte a Dirección</button>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('lp_master_v17')) || {
-        alumnos: [], asistencias: {}, aula: "Sin Grado", 
-        nomina: [], bienes: [], pa1: "", pa2: "", plan: ""
-    };
-    let fechaHoy = new Date().toISOString().split('T')[0];
+    // Inicialización de datos
+    let d = JSON.parse(localStorage.getItem('ebn_asistencia_v1')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
+    let hoy = new Date().toISOString().split('T')[0];
+    let editandoId = null;
 
-    function ver(id) {
-        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('nav-' + id.substring(0,3)).classList.add('active');
+    document.getElementById('fechaHoy').innerText = hoy;
+    document.getElementById('profe').value = d.profe;
+    document.getElementById('aula').value = d.aula;
+
+    function guardarConfig() {
+        d.profe = document.getElementById('profe').value;
+        d.aula = document.getElementById('aula').value.toUpperCase();
+        save();
+        alert("Configuración actualizada.");
     }
 
-    // --- ALUMNOS ---
     function registrarAlumno() {
-        const n = document.getElementById('nomAlu').value.trim();
-        const g = document.getElementById('genAlu').value;
-        const file = document.getElementById('fotoAlu').files[0];
-        if(!n) return alert("Ingrese nombre");
+        const nombre = document.getElementById('nomAlu').value.trim();
+        const genero = document.getElementById('genAlu').value;
+        const nacimiento = document.getElementById('fechaNac').value;
 
-        const save = (foto) => {
-            db.alumnos.push({ id: Date.now(), nombre: n, genero: g, foto: foto || '', grado: db.aula });
-            actualizarUI();
-        };
+        if(!nombre || !d.aula) return alert("Por favor, ingrese el nombre y configure el aula.");
 
-        if(file) { const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(file); }
-        else save(null);
+        if (editandoId) {
+            const idx = d.alumnos.findIndex(a => a.id === editandoId);
+            d.alumnos[idx] = { ...d.alumnos[idx], nombre, genero, nacimiento };
+            editandoId = null;
+        } else {
+            d.alumnos.push({ 
+                id: Date.now(), 
+                nombre, 
+                genero, 
+                nacimiento, 
+                seccion: d.aula, 
+                docente: d.profe 
+            });
+        }
+        
+        save();
+        resetForm();
+        dibujar();
+    }
+
+    function prepararEdicion(id) {
+        const a = d.alumnos.find(alu => alu.id === id);
+        document.getElementById('nomAlu').value = a.nombre;
+        document.getElementById('genAlu').value = a.genero;
+        document.getElementById('fechaNac').value = a.nacimiento || "";
+        editandoId = id;
+        document.getElementById('titReg').innerText = "📝 Editar Alumno";
+        document.getElementById('btnGuardar').innerText = "Actualizar Datos";
+        window.scrollTo({top: 200, behavior: 'smooth'});
+    }
+
+    function resetForm() {
+        document.getElementById('nomAlu').value = "";
+        document.getElementById('fechaNac').value = "";
+        document.getElementById('titReg').innerText = "📝 Registro de Alumno";
+        document.getElementById('btnGuardar').innerText = "Inscribir Alumno";
+        editandoId = null;
     }
 
     function marcar(id) {
-        let f = document.getElementById('calendarioConsulta').value;
-        if(!db.asistencias[f]) db.asistencias[f] = {};
-        db.asistencias[f][id] = !db.asistencias[f][id];
-        actualizarUI();
+        if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
+        d.asistencias[hoy][id] = !d.asistencias[hoy][id];
+        save();
+        dibujar();
     }
 
-    function actualizarUI() {
-        // Asistencia
-        let f = document.getElementById('calendarioConsulta').value;
-        const lista = document.getElementById('listaAlumnos'); lista.innerHTML = "";
-        let pres = 0;
-        const misAlu = db.alumnos.filter(a => a.grado === db.aula);
+    function dibujar() {
+        const lista = document.getElementById('listaAsistencia');
+        lista.innerHTML = "";
+        
+        // Ordenar alumnos por nombre
+        d.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-        misAlu.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
-            const estaP = db.asistencias[f] && db.asistencias[f][a.id];
-            if(estaP) pres++;
-            lista.innerHTML += `<div class="student-item">
-                <img src="${a.foto || 'https://via.placeholder.com/50'}" class="avatar">
-                <div class="info-student"><strong>${a.nombre}</strong> <small>(${a.genero})</small></div>
-                <button onclick="marcar(${a.id})" class="btn-check ${estaP?'presente':'ausente'}">${estaP?'PRESENTE':'FALTA'}</button>
-            </div>`;
+        d.alumnos.forEach(a => {
+            const asistioHoy = d.asistencias[hoy] && d.asistencias[hoy][a.id];
+            
+            // Cálculo mensual
+            let totalAsisMes = 0;
+            const diasRegistrados = Object.keys(d.asistencias).length;
+            Object.values(d.asistencias).forEach(dia => {
+                if(dia[a.id]) totalAsisMes++;
+            });
+
+            lista.innerHTML += `
+                <div class="student-card">
+                    <div style="flex-grow:1">
+                        <b style="text-transform: uppercase;">${a.nombre}</b>
+                        <span class="resumen-mensual">Asistencias mes: ${totalAsisMes} / ${diasRegistrados}</span>
+                        <button onclick="prepararEdicion(${a.id})" class="btn-edit">✏️ Editar</button>
+                    </div>
+                    <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asistioHoy ? '#27ae60' : '#ccc'}">
+                        ${asistioHoy ? 'PRES.' : 'FALTA'}
+                    </button>
+                </div>`;
         });
-
-        const porc = misAlu.length > 0 ? ((pres / misAlu.length) * 100).toFixed(0) : 0;
-        document.getElementById('barraProgreso').style.width = porc + "%";
-        document.getElementById('barraProgreso').innerText = porc + "%";
-
-        // Nómina
-        const tN = document.querySelector('#tablaNomina tbody'); tN.innerHTML = "";
-        db.nomina.forEach(p => {
-            tN.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td><button onclick="bajaPersonal(${p.id})" style="background:var(--peligro); color:white; border:none; padding:4px; border-radius:5px;">X</button></td></tr>`;
-        });
-
-        // Bienes
-        const tB = document.querySelector('#tablaBienes tbody'); tB.innerHTML = "";
-        db.bienes.forEach(b => {
-            tB.innerHTML += `<tr><td>${b.n}</td><td>${b.c}</td><td>${b.e}</td></tr>`;
-        });
-
-        localStorage.setItem('lp_master_v17', JSON.stringify(db));
     }
 
-    // --- PERSONAL Y BIENES ---
-    function altaPersonal() {
-        const n = document.getElementById('nom_p').value.toUpperCase();
-        const c = document.getElementById('car_p').value;
-        if(n) { db.nomina.push({id: Date.now(), n, c}); actualizarUI(); }
-    }
-    function bajaPersonal(id) { db.nomina = db.nomina.filter(p=>p.id!==id); actualizarUI(); }
-
-    function altaBien() {
-        const n = document.getElementById('b_nom').value.toUpperCase();
-        const c = document.getElementById('b_cant').value;
-        if(n && c) { db.bienes.push({id: Date.now(), n, c, e:'ACTIVO'}); actualizarUI(); }
+    function exportarReporte() {
+        if (d.alumnos.length === 0) return alert("No hay alumnos registrados.");
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(d));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `Asistencia_${d.aula}_${hoy}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
 
-    function guardarAula() { 
-        db.aula = document.getElementById('gradoSec').value; 
-        document.getElementById('labelAula').innerText = db.aula + " • E.B.N. Lucila Palacios";
-        actualizarUI(); 
+    function save() {
+        localStorage.setItem('ebn_asistencia_v1', JSON.stringify(d));
     }
 
-    function guardarDatos() {
-        db.pa1 = document.getElementById('pa1').value;
-        db.pa2 = document.getElementById('pa2').value;
-        db.plan = document.getElementById('plan_s').value;
-        actualizarUI();
-    }
-
-    function exportarPDF() {
-        document.getElementById('menu-principal').style.display = 'none';
-        document.querySelectorAll('.seccion').forEach(s => s.classList.add('active'));
-        const opt = { margin: 10, filename: 'REPORTE_LUCILA_PALACIOS.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-        html2pdf().set(opt).from(document.body).save().then(() => { location.reload(); });
-    }
-
-    // Carga inicial
-    document.getElementById('calendarioConsulta').value = fechaHoy;
-    document.getElementById('labelAula').innerText = db.aula + " • E.B.N. Lucila Palacios";
-    document.getElementById('pa1').value = db.pa1;
-    document.getElementById('pa2').value = db.pa2;
-    document.getElementById('plan_s').value = db.plan;
-    actualizarUI();
+    dibujar();
 </script>
+
 </body>
 </html>
