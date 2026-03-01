@@ -7,6 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -17,47 +18,75 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.marcar = async (id, e) => {
-            const h = new Date().toISOString().split('T')[0];
-            await setDoc(doc(db, "asistencia_personal", h), { [id]: e }, { merge: true });
+
+        // Función para guardar en la nube
+        window.marcar = async (id, estado) => {
+            const hoy = new Date().toISOString().split('T')[0];
+            const ref = doc(db, "asistencia_personal", hoy);
+            try {
+                await setDoc(ref, { [id]: estado }, { merge: true });
+            } catch (e) { alert("Error al guardar: " + e.message); }
         };
-        window.escuchar = (cb) => {
-            const h = new Date().toISOString().split('T')[0];
-            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data() || {}));
-        };
+
+        // Escucha cambios en tiempo real
+        const hoy = new Date().toISOString().split('T')[0];
+        onSnapshot(doc(db, "asistencia_personal", hoy), (snapshot) => {
+            const datos = snapshot.data() || {};
+            window.renderLista(datos);
+        });
     </script>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; text-align: center; }
-        header { background: #1a2a6c; color: white; padding: 20px; }
-        .fila { background: white; display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 8px auto; max-width: 500px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .info { text-align: left; }
-        .info b { display: block; font-size: 0.9rem; color: #1a2a6c; }
-        .info span { font-size: 0.7rem; color: #666; }
-        .btn { border: none; padding: 10px; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; min-width: 90px; }
+        header { background: #1a2a6c; color: white; padding: 20px; position: sticky; top: 0; z-index: 100; border-bottom: 4px solid #f39c12; }
+        .lista { padding: 10px; max-width: 500px; margin: auto; }
+        .fila { background: white; display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .info { text-align: left; line-height: 1.2; }
+        .info b { display: block; color: #1a2a6c; font-size: 0.9rem; }
+        .info span { font-size: 0.7rem; color: #666; font-weight: bold; }
+        .btn { border: none; padding: 10px; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; min-width: 95px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
     <header>
-        <h2>Registro de Personal</h2>
-        <a href="index.html" style="color: #f39c12; text-decoration: none;">← Volver al Menú</a>
+        <h2 style="margin:0;">Personal EBNLP</h2>
+        <a href="index.html" style="color: #6fbef3; text-decoration: none; font-size: 0.8rem; font-weight: bold;">← VOLVER AL MENÚ</a>
     </header>
-    <div id="contenedor" style="padding: 10px;">Cargando nómina...</div>
-    <script>
-        const nomina = "Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B".split(';').map((p, i) => ({ id: i, n: p.split(',')[0], c: p.split(',')[1] }));
+    
+    <div class="lista" id="contenedor">
+        <p>Cargando lista de personal...</p>
+    </div>
 
-        window.escuchar((datos) => {
-            const cont = document.getElementById('contenedor');
-            cont.innerHTML = "";
-            nomina.forEach(p => {
-                const asis = datos[p.id] === 1;
-                cont.innerHTML += `<div class="fila">
-                    <div class="info"><b>${p.n}</b><span>${p.c}</span></div>
-                    <button class="btn" style="background:${asis ? '#27ae60' : '#ccc'}" onclick="marcar(${p.id}, ${asis ? 0 : 1})">
-                        ${asis ? 'ASISTIÓ' : 'MARCAR'}
-                    </button>
-                </div>`;
+    <script>
+        // LISTA DE LOS 77 TRABAJADORES (ORDENADOS ALFABÉTICAMENTE)
+        const nominaCompleta = "Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante;Daher Cardier,Vigilante;Pedro González,Vigilante;Moisés Romero,Vigilante;Cesar Suárez,Vigilante;Juan Vargas,Vigilante;Guillermo Albornoz,Vigilante;Darwin Aguilera,Vigilante;Joseyver López,Vigilante".split(';').map((p, i) => {
+            const datos = p.split(',');
+            return { id: i, nombre: datos[0], cargo: datos[1] };
+        }).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        // Función para dibujar la lista en pantalla
+        window.renderLista = function(datosFirebase) {
+            const caja = document.getElementById('contenedor');
+            caja.innerHTML = ""; // Limpiar mensaje de "Cargando"
+
+            nominaCompleta.forEach(p => {
+                const asistio = datosFirebase[p.id] === 1;
+                caja.innerHTML += `
+                    <div class="fila">
+                        <div class="info">
+                            <b>${p.nombre}</b>
+                            <span>${p.cargo}</span>
+                        </div>
+                        <button class="btn" 
+                                style="background:${asistio ? '#27ae60' : '#ccc'}" 
+                                onclick="marcar(${p.id}, ${asistio ? 0 : 1})">
+                            ${asistio ? 'REGISTRADO' : 'MARCAR'}
+                        </button>
+                    </div>`;
             });
-        });
+        };
+
+        // Arranque forzado inicial (por si el internet está lento)
+        window.renderLista({});
     </script>
 </body>
 </html>
