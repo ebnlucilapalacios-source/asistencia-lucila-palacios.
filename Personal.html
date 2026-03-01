@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadística Alumnos - EBNLP</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            messagingSenderId: "368890880546",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
+        };
+        const app = initializeApp(firebaseConfig);
+        const dbCloud = getFirestore(app);
+
+        window.sincronizarSeccion = (sec, cb) => onSnapshot(doc(dbCloud, "secciones", sec), (s) => cb(s.data()));
+        window.guardarSeccion = async (sec, data) => await setDoc(doc(dbCloud, "secciones", sec), data);
+    </script>
+    <style>
+        :root { --azul: #1a2a6c; --exito: #27ae60; --gris: #f4f7f6; }
+        body { font-family: sans-serif; background: var(--gris); margin: 0; padding-bottom: 40px; }
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; }
+        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-marcar { width: 45px; height: 35px; border-radius: 5px; border: none; color: white; font-weight: bold; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Control de Alumnos</h2>
+        <a href="index.html" class="no-print" style="color:white; text-decoration:none;">⬅ Volver al Menú</a>
+    </header>
+    <div class="container">
+        <div class="card no-print">
+            <h3>🔑 Grado y Sección</h3>
+            <input type="text" id="secIn" placeholder="Ej: 1A" style="width:70%; padding:10px;">
+            <button onclick="conectar()" style="padding:10px; background:var(--azul); color:white; border:none;">Entrar</button>
+        </div>
+        <div id="panel" style="display:none;">
+            <div class="card">
+                <h3>📊 Matrícula Actual</h3>
+                <p>Hembras: <span id="mH">0</span> | Varones: <span id="mV">0</span> | Total: <span id="mT">0</span></p>
+                <button onclick="window.print()" class="no-print">🖨️ Imprimir Reporte</button>
+            </div>
+            <div class="card">
+                <h4>Pase de Lista Hoy</h4>
+                <div id="lista"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let dbS = { alumnos: [], asistencias: {} };
+        let cS = "";
+        function conectar() {
+            cS = document.getElementById('secIn').value.toUpperCase().trim();
+            if(!cS) return;
+            window.sincronizarSeccion(cS, (data) => {
+                dbS = data || { alumnos: [], asistencias: {} };
+                document.getElementById('panel').style.display = 'block';
+                const h = dbS.alumnos.filter(a => a.genero === 'F').length;
+                const v = dbS.alumnos.filter(a => a.genero === 'M').length;
+                document.getElementById('mH').innerText = h;
+                document.getElementById('mV').innerText = v;
+                document.getElementById('mT').innerText = h + v;
+                render();
+            });
+        }
+        function render() {
+            const cont = document.getElementById('lista');
+            cont.innerHTML = "";
+            const hoy = new Date().toISOString().split('T')[0];
+            dbS.alumnos.forEach(a => {
+                const p = dbS.asistencias[hoy]?.[a.id] === 1;
+                cont.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>${a.nombre}</span>
+                    <button class="btn-marcar" style="background:${p?'var(--exito)':'#ccc'}" onclick="marcar(${a.id})">${p?'P':'F'}</button>
+                </div>`;
+            });
+        }
+        async function marcar(id) {
+            const hoy = new Date().toISOString().split('T')[0];
+            if(!dbS.asistencias[hoy]) dbS.asistencias[hoy] = {};
+            dbS.asistencias[hoy][id] = dbS.asistencias[hoy][id] === 1 ? 0 : 1;
+            await window.guardarSeccion(cS, dbS);
+        }
+    </script>
+</body>
+</html>
