@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadística EBNLP - Cloud</title>
-    
+    <title>Estadística Alumnos - EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Credenciales sincronizadas
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -18,175 +16,80 @@
             messagingSenderId: "368890880546",
             appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
-
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
 
         window.sincronizarSeccion = (sec, cb) => onSnapshot(doc(dbCloud, "secciones", sec), (s) => cb(s.data()));
         window.guardarSeccion = async (sec, data) => await setDoc(doc(dbCloud, "secciones", sec), data);
     </script>
-
     <style>
-        :root { --azul: #1a2a6c; --naranja: #f39c12; --exito: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
-        
-        /* Estilos Visuales */
-        header { background: linear-gradient(135deg, var(--azul), #154360); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
-        .logo-escuela { width: 80px; height: 80px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; }
-        .container { max-width: 900px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
-        
-        /* Matrícula */
-        .resumen-matricula { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-        .stat-box { padding: 15px; border-radius: 10px; color: white; text-align: center; font-weight: bold; }
-        
-        /* Tablas */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
-        th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
-        th { background: #f8f9fa; }
-
-        .btn-print { background: #34495e; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-        /* CONFIGURACIÓN PARA IMPRESIÓN */
-        @media print {
-            .no-print, button, input, select { display: none !important; }
-            body { background: white; }
-            .card { box-shadow: none; border: 1px solid #eee; margin-bottom: 10px; }
-            .container { max-width: 100%; width: 100%; }
-            header { background: white !important; color: black !important; border-bottom: 2px solid black; }
-            .logo-escuela { border: 1px solid black; }
-        }
+        :root { --azul: #1a2a6c; --exito: #27ae60; --gris: #f4f7f6; }
+        body { font-family: sans-serif; background: var(--gris); margin: 0; padding-bottom: 40px; }
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; }
+        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-marcar { width: 45px; height: 35px; border-radius: 5px; border: none; color: white; font-weight: bold; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
-
-<header>
-    <img src="https://ebnlucilapalacios-source.github.io/asistencia-lucila-palacios/IMG_20260225_005025_993.png" class="logo-escuela">
-    <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p>Reporte Estadístico de Matrícula y Asistencia</p>
-</header>
-
-<div class="container">
-    <div class="card no-print">
-        <h3>🔑 Acceso por Sección</h3>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="seccionInput" placeholder="Grado y Sección (Ej: 1A)" style="flex-grow:1; padding:10px;">
-            <button onclick="conectarSeccion()" style="background:var(--azul); color:white; padding:10px 20px; border-radius:8px; border:none;">Cargar</button>
+    <header>
+        <h2>Control de Alumnos</h2>
+        <a href="index.html" class="no-print" style="color:white; text-decoration:none;">⬅ Volver al Menú</a>
+    </header>
+    <div class="container">
+        <div class="card no-print">
+            <h3>🔑 Grado y Sección</h3>
+            <input type="text" id="secIn" placeholder="Ej: 1A" style="width:70%; padding:10px;">
+            <button onclick="conectar()" style="padding:10px; background:var(--azul); color:white; border:none;">Entrar</button>
         </div>
-    </div>
-
-    <div id="panelPrincipal" style="display:none;">
-        <div class="card">
-            <h3 style="text-align: center;">RESUMEN DE MATRÍCULA: SECCIÓN <span id="labelSec"></span></h3>
-            <div class="resumen-matricula">
-                <div class="stat-box" style="background: #e84393;">Hembras: <span id="mH">0</span></div>
-                <div class="stat-box" style="background: #0984e3;">Varones: <span id="mV">0</span></div>
-                <div class="stat-box" style="background: var(--azul);">Total: <span id="mT">0</span></div>
+        <div id="panel" style="display:none;">
+            <div class="card">
+                <h3>📊 Matrícula Actual</h3>
+                <p>Hembras: <span id="mH">0</span> | Varones: <span id="mV">0</span> | Total: <span id="mT">0</span></p>
+                <button onclick="window.print()" class="no-print">🖨️ Imprimir Reporte</button>
             </div>
-            
-            <div class="no-print" style="background:#f9f9f9; padding:15px; border-radius:10px; border:1px dashed #ccc;">
-                <h4>+ Registrar Nuevo Alumno</h4>
-                <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px;">
-                    <input type="text" id="newN" placeholder="Nombres y Apellidos">
-                    <select id="newG"><option value="F">H</option><option value="M">V</option></select>
-                    <button onclick="addAlum()" style="background:var(--exito); color:white; border:none; border-radius:5px;">Añadir</button>
-                </div>
+            <div class="card">
+                <h4>Pase de Lista Hoy</h4>
+                <div id="lista"></div>
             </div>
         </div>
-
-        <div class="card">
-            <h3 class="no-print">📅 Pase de Lista Diario</h3>
-            <input type="date" id="fechaD" class="no-print" onchange="renderLista()">
-            <div id="listaD"></div>
-        </div>
-
-        <div class="card">
-            <h3>📋 Registro Mensual Detallado</h3>
-            <input type="month" id="mesF" class="no-print" onchange="renderMes()">
-            <div id="tablaM" style="overflow-x:auto;"></div>
-            
-            <button onclick="window.print()" class="btn-print">🖨️ IMPRIMIR REPORTE PARA DIRECCIÓN</button>
-        </div>
     </div>
-</div>
-
-<script>
-    let dbS = { alumnos: [], asistencias: {} };
-    let cSec = "";
-
-    function conectarSeccion() {
-        cSec = document.getElementById('seccionInput').value.toUpperCase().trim();
-        if(!cSec) return;
-        document.getElementById('fechaD').valueAsDate = new Date();
-        document.getElementById('mesF').value = new Date().toISOString().substring(0, 7);
-
-        window.sincronizarSeccion(cSec, (data) => {
-            dbS = data || { alumnos: [], asistencias: {} };
-            document.getElementById('labelSec').innerText = cSec;
-            document.getElementById('panelPrincipal').style.display = 'block';
-            actualizarUI();
-        });
-    }
-
-    async function addAlum() {
-        const n = document.getElementById('newN').value.toUpperCase().trim();
-        const g = document.getElementById('newG').value;
-        if(!n) return;
-        dbS.alumnos.push({ id: Date.now(), nombre: n, genero: g });
-        await window.guardarSeccion(cSec, dbS);
-        document.getElementById('newN').value = "";
-    }
-
-    function actualizarUI() {
-        const h = dbS.alumnos.filter(a => a.genero === 'F').length;
-        const v = dbS.alumnos.filter(a => a.genero === 'M').length;
-        document.getElementById('mH').innerText = h;
-        document.getElementById('mV').innerText = v;
-        document.getElementById('mT').innerText = h + v;
-        renderLista();
-        renderMes();
-    }
-
-    function renderLista() {
-        const f = document.getElementById('fechaD').value;
-        const cont = document.getElementById('listaD');
-        cont.innerHTML = "";
-        dbS.alumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
-            const e = dbS.asistencias[f]?.[a.id] === 1;
-            cont.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
-                    <span>${a.nombre}</span>
-                    <button onclick="marcar(${a.id})" style="background:${e?'var(--exito)':'#ccc'}; color:white; border:none; padding:5px 10px; border-radius:4px;">${e?'P':'F'}</button>
-                </div>`;
-        });
-    }
-
-    async function marcar(id) {
-        const f = document.getElementById('fechaD').value;
-        if(!dbS.asistencias[f]) dbS.asistencias[f] = {};
-        dbS.asistencias[f][id] = dbS.asistencias[f][id] === 1 ? 0 : 1;
-        await window.guardarSeccion(cSec, dbS);
-    }
-
-    function renderMes() {
-        const m = document.getElementById('mesF').value;
-        const dias = Object.keys(dbS.asistencias).filter(d => d.startsWith(m)).sort();
-        let html = `<table><tr><th>Alumno</th>`;
-        dias.forEach(d => html += `<th>${d.split('-')[2]}</th>`);
-        html += `<th>%</th></tr>`;
-        dbS.alumnos.forEach(a => {
-            let c = 0;
-            html += `<tr><td style="text-align:left">${a.nombre}</td>`;
-            dias.forEach(d => {
-                const p = dbS.asistencias[d][a.id] === 1;
-                if(p) c++;
-                html += `<td>${p?'P':'F'}</td>`;
+    <script>
+        let dbS = { alumnos: [], asistencias: {} };
+        let cS = "";
+        function conectar() {
+            cS = document.getElementById('secIn').value.toUpperCase().trim();
+            if(!cS) return;
+            window.sincronizarSeccion(cS, (data) => {
+                dbS = data || { alumnos: [], asistencias: {} };
+                document.getElementById('panel').style.display = 'block';
+                const h = dbS.alumnos.filter(a => a.genero === 'F').length;
+                const v = dbS.alumnos.filter(a => a.genero === 'M').length;
+                document.getElementById('mH').innerText = h;
+                document.getElementById('mV').innerText = v;
+                document.getElementById('mT').innerText = h + v;
+                render();
             });
-            const p = dias.length > 0 ? Math.round((c/dias.length)*100) : 0;
-            html += `<td>${p}%</td></tr>`;
-        });
-        document.getElementById('tablaM').innerHTML = html + "</table>";
-    }
-</script>
+        }
+        function render() {
+            const cont = document.getElementById('lista');
+            cont.innerHTML = "";
+            const hoy = new Date().toISOString().split('T')[0];
+            dbS.alumnos.forEach(a => {
+                const p = dbS.asistencias[hoy]?.[a.id] === 1;
+                cont.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>${a.nombre}</span>
+                    <button class="btn-marcar" style="background:${p?'var(--exito)':'#ccc'}" onclick="marcar(${a.id})">${p?'P':'F'}</button>
+                </div>`;
+            });
+        }
+        async function marcar(id) {
+            const hoy = new Date().toISOString().split('T')[0];
+            if(!dbS.asistencias[hoy]) dbS.asistencias[hoy] = {};
+            dbS.asistencias[hoy][id] = dbS.asistencias[hoy][id] === 1 ? 0 : 1;
+            await window.guardarSeccion(cS, dbS);
+        }
+    </script>
 </body>
 </html>
