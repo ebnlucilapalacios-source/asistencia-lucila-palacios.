@@ -3,107 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docente - Lucila Palacios</title>
+    <title>EBNLP v17.0 - Control de Asistencia en la Nube</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Tus credenciales configuradas
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            messagingSenderId: "368890880546",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Funciones Globales para la App
+        window.db_guardar = async (datos) => {
+            const id = `${datos.fec}_${datos.nombre.replace(/\s+/g, '_')}`;
+            await setDoc(doc(db, "asistencias", id), datos);
+        };
+
+        window.db_escuchar = (fecha, alCambiar) => {
+            const q = query(collection(db, "asistencias"), where("fec", "==", fecha));
+            return onSnapshot(q, (snap) => {
+                const lista = [];
+                snap.forEach(d => lista.push(d.data()));
+                alCambiar(lista);
+            });
+        };
+    </script>
+
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
-        header { background: var(--azul); color: white; padding: 25px 15px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
-        #logoEscuela { width: 90px; height: 90px; border-radius: 50%; background: white; padding: 3px; border: 3px solid var(--naranja); object-fit: contain; margin-bottom: 10px; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-asis { width: 65px; height: 45px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
-        .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; }
-        .resumen-mensual { font-size: 0.8rem; color: var(--celeste); margin-top: 5px; font-weight: bold; }
+        :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 12px; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        header { text-align: center; border-bottom: 4px solid var(--naranja); margin-bottom: 20px; padding-bottom: 10px; }
+        .logo { height: 80px; width: auto; display: block; margin: 0 auto 5px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border-left: 5px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-card h2 { margin: 0; color: var(--azul); font-size: 1.4rem; }
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .panel { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 10px; }
+        label { font-weight: bold; color: var(--azul); display: block; margin-top: 8px; }
+        input, select, button { width: 100%; padding: 8px; margin: 4px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 12px; }
+        button { color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-save { background: var(--verde); height: 40px; }
+        .btn-pdf { background: var(--rojo); margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: var(--azul); color: white; }
+        .retardo { background: #fff1f0 !important; color: #cf1322; font-weight: bold; }
+        .asistio { background: #f6ffed !important; }
+        .firmas { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 40px; text-align: center; }
+        .linea { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 10px; }
+        @media print { .no-print { display: none !important; } .firmas { display: grid !important; } }
+        @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-<header>
-    <img src="IMG_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
-    <h1 style="font-size: 1.3rem; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin: 5px 0 0; opacity: 0.9;">Control Docente Mensual</p>
-</header>
-<div class="container">
-    <div class="card">
-        <h3>👤 Configurar Aula</h3>
-        <input type="text" id="profe" placeholder="Nombre del Docente">
-        <input type="text" id="aula" placeholder="Grado y Sección">
-        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Aula</button>
+
+<div class="container" id="areaReporte">
+    <header>
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
+             alt="Logo" class="logo" crossorigin="anonymous">
+        <h1 style="margin:0; color:var(--azul); font-size: 1.5rem;">E.B.N. "LUCILA PALACIOS"</h1>
+        <p style="margin:0; font-weight:bold; color:#555;">CONTROL DE ASISTENCIA SINCRONIZADO</p>
+    </header>
+
+    <div class="stats">
+        <div class="stat-card"><h2><span id="pDia">0%</span></h2><p style="margin:0; font-size:9px;">ASISTENCIA DÍA</p></div>
+        <div class="stat-card" style="border-color: var(--naranja)"><h2><span id="rHoy">0</span></h2><p style="margin:0; font-size:9px;">RETARDOS HOY</p></div>
     </div>
-    <div class="card">
-        <h3>📝 Inscripción</h3>
-        <input type="text" id="nomAlu" placeholder="Nombre del alumno">
-        <select id="genAlu">
-            <option value="F">Femenino (Hembra)</option>
-            <option value="M">Masculino (Varón)</option>
-        </select>
-        <button onclick="registrar()" style="background:var(--exito); color:white; font-weight:bold;">Inscribir Alumno</button>
+
+    <div class="grid">
+        <div class="no-print">
+            <div class="panel">
+                <label>Fecha de Control:</label>
+                <input type="date" id="fec" onchange="conectar()">
+                
+                <label>Seleccionar Personal:</label>
+                <select id="pers" onchange="sugerirHoras()"></select>
+                
+                <label>Estatus:</label>
+                <select id="est" onchange="verHoras()">
+                    <option value="Asistencia">Asistencia ✅</option>
+                    <option value="Inasistencia">Falta ❌</option>
+                    <option value="Permiso">Permiso 📝</option>
+                    <option value="Reposo">Reposo 🏥</option>
+                </select>
+
+                <div id="divHoras">
+                    <label>Entrada Real:</label><input type="time" id="hE">
+                    <label>Salida Real:</label><input type="time" id="hS">
+                </div>
+
+                <button onclick="guardar()" class="btn-save" style="margin-top:10px;">💾 GUARDAR Y SINCRONIZAR</button>
+                <button onclick="bajarPDF()" class="btn-pdf">📄 DESCARGAR REPORTE DIARIO</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-top:0; text-align:center;">Listado Diario: <span id="titFec"></span></h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr><th>Nombre</th><th>H. Oficial</th><th>H. Real</th><th>Estatus</th><th>Min.</th></tr>
+                    </thead>
+                    <tbody id="tabla"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="card">
-        <h3>📅 Hoy: <span id="fechaHoy"></span></h3>
-        <div id="listaAsistencia"></div>
-        <button onclick="exportar()" style="background:var(--naranja); color:white; margin-top:20px; padding: 15px; font-size: 1.1rem;">📤 Enviar Reporte a Dirección</button>
+
+    <div class="firmas">
+        <div class="linea">SECRETARÍA</div>
+        <div class="linea">SUBDIRECCIÓN</div>
+        <div class="linea">DIRECCIÓN / SELLO</div>
     </div>
 </div>
+
 <script>
-    let d = JSON.parse(localStorage.getItem('ebn_docente_v4')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
-    let hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaHoy').innerText = hoy;
+    const configH = { "Docente": {e:"07:00",s:"12:00"}, "Obrero": {e:"06:45",s:"12:45"}, "Administrativo": {e:"06:45",s:"12:45"}, "Cocinera": {e:"07:00",s:"14:00"}, "Directivo": {e:"07:00",s:"15:00"} };
+    const nomina = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`.split(';').map(x => ({n: x.split(',')[0], c: x.split(',')[1]})).sort((a,b)=>a.n.localeCompare(b.n));
 
-    function guardarConfig() {
-        d.profe = document.getElementById('profe').value;
-        d.aula = document.getElementById('aula').value.toUpperCase();
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d));
-        alert("Configuración guardada");
+    let datosNube = [];
+    let stop = null;
+
+    function conectar() {
+        const f = document.getElementById('fec').value;
+        if(stop) stop();
+        stop = window.db_escuchar(f, (res) => { datosNube = res; render(); });
     }
 
-    function registrar() {
-        const n = document.getElementById('nomAlu').value.trim();
-        const g = document.getElementById('genAlu').value;
-        if(!n || !d.aula) return alert("Faltan datos");
-        d.alumnos.push({ id: Date.now(), nombre: n, genero: g, seccion: d.aula, docente: d.profe });
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d));
-        document.getElementById('nomAlu').value = ""; dibujar();
-    }
+    function render() {
+        const f = document.getElementById('fec').value;
+        const hoy = new Date(f + "T00:00:00");
+        document.getElementById('titFec').innerText = f;
+        const tbody = document.getElementById('tabla');
+        tbody.innerHTML = "";
+        
+        let aD = 0, eD = 0, rD = 0;
 
-    function marcar(id) {
-        if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
-        d.asistencias[hoy][id] = !d.asistencias[hoy][id];
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d)); dibujar();
-    }
-
-    function dibujar() {
-        const lista = document.getElementById('listaAsistencia'); lista.innerHTML = "";
-        const diasDelMes = Object.keys(d.asistencias).length || 1;
-
-        d.alumnos.forEach(a => {
-            const asisHoy = d.asistencias[hoy] && d.asistencias[hoy][a.id];
+        nomina.forEach(p => {
+            const reg = datosNube.find(r => r.nombre === p.n);
+            const hOfi = p.c.includes("Vigilante") ? {e:"06:00",s:"18:00"} : configH[p.c];
+            let toca = (hoy.getDay() !== 0 && hoy.getDay() !== 6) || p.c.includes("Vigilante");
             
-            // Calcular asistencias totales del alumno en el mes
-            let totalAsisMes = 0;
-            Object.values(d.asistencias).forEach(dia => {
-                if(dia[a.id]) totalAsisMes++;
-            });
+            if(toca) eD++;
+            if(reg?.est === "Asistencia") { aD++; if(reg.minT > 0) rD++; }
 
-            lista.innerHTML += `<div class="student-card">
-                <div style="flex-grow:1">
-                    <b>${a.nombre}</b><br>
-                    <span class="resumen-mensual">Mes: ${totalAsisMes} asistencias de ${diasDelMes} días</span>
-                </div>
-                <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asisHoy?'#27ae60':'#ccc'}">${asisHoy?'P':'F'}</button>
-            </div>`;
+            const cls = reg?.minT > 0 ? "retardo" : (reg?.est === "Asistencia" ? "asistio" : "");
+            tbody.innerHTML += `<tr class="${cls}">
+                <td style="text-align:left">${p.n}</td>
+                <td>${hOfi.e}-${hOfi.s}</td>
+                <td>${reg?.hE || '---'}</td>
+                <td>${reg ? reg.est : (toca ? "PENDIENTE" : "LIBRE")}</td>
+                <td>${reg?.minT || 0}</td>
+            </tr>`;
         });
+
+        document.getElementById('pDia').innerText = eD > 0 ? Math.round((aD/eD)*100)+"%" : "0%";
+        document.getElementById('rHoy').innerText = rD;
     }
 
-    function exportar() {
-        const b = new Blob([JSON.stringify(d)], {type: "application/json"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-        a.download = `Asistencia_${d.aula}_${hoy}.json`; a.click();
+    async function guardar() {
+        const p = nomina[document.getElementById('pers').value];
+        const hOfiE = p.c.includes("Vigilante") ? "06:00" : configH[p.c].e;
+        const hEnt = document.getElementById('hE').value;
+        
+        let m = 0;
+        if(document.getElementById('est').value === "Asistencia") {
+            const tO = parseInt(hOfiE.split(':')[0])*60 + parseInt(hOfiE.split(':')[1]);
+            const tR = parseInt(hEnt.split(':')[0])*60 + parseInt(hEnt.split(':')[1]);
+            m = tR > tO ? tR - tO : 0;
+        }
+
+        await window.db_guardar({
+            nombre: p.n, cargo: p.c, fec: document.getElementById('fec').value,
+            est: document.getElementById('est').value, hE: hEnt, hS: document.getElementById('hS').value, minT: m
+        });
+        alert("¡Sincronizado!");
     }
 
-    document.getElementById('profe').value = d.profe;
-    document.getElementById('aula').value = d.aula;
-    dibujar();
+    function sugerirHoras() {
+        const p = nomina[document.getElementById('pers').value];
+        const h = p.c.includes("Vigilante") ? {e:"06:00",s:"18:00"} : configH[p.c];
+        document.getElementById('hE').value = h.e;
+        document.getElementById('hS').value = h.s;
+    }
+
+    function verHoras() { document.getElementById('divHoras').style.display = (document.getElementById('est').value === "Asistencia") ? "block" : "none"; }
+    function bajarPDF() { document.querySelector('.firmas').style.display='grid'; html2pdf().set({margin:10, filename:`Asistencia_${document.getElementById('fec').value}.pdf`, html2canvas:{scale:2, useCORS:true}, jsPDF:{orientation:'landscape'}}).from(document.getElementById('areaReporte')).save().then(()=>document.querySelector('.firmas').style.display='none'); }
+
+    // Inicio
+    document.getElementById('fec').valueAsDate = new Date();
+    document.getElementById('pers').innerHTML = nomina.map((p,i) => `<option value="${i}">${p.n}</option>`).join('');
+    conectar();
 </script>
 </body>
 </html>
