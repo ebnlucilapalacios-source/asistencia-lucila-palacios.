@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas EBNLP</title>
+    <title>Estadísticas - EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -17,72 +18,86 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
         window.syncSec = (s, cb) => onSnapshot(doc(db, "secciones", s), (d) => cb(d.data()));
         window.saveSec = async (s, d) => await setDoc(doc(db, "secciones", s), d);
     </script>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; text-align: center; }
-        .card { background: white; padding: 20px; margin: 15px auto; max-width: 450px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .btn-blue { background: #2980b9; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        header { background: #2980b9; color: white; padding: 20px; border-bottom: 4px solid #f39c12; }
+        .card { background: white; padding: 20px; margin: 15px auto; max-width: 400px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input { padding: 12px; width: 80%; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
+        .btn { background: #2980b9; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
-    <header style="background: #2980b9; color: white; padding: 25px;">
-        <h2 style="margin:0;">Control de Alumnos</h2>
-        <a href="index.html" class="no-print" style="color: white; text-decoration: none; font-size: 0.9rem;">← Volver al Menú</a>
+    <header>
+        <h2 style="margin:0;">Estadísticas y Matrícula</h2>
+        <a href="index.html" style="color: white; text-decoration: none; font-size: 0.8rem;">← VOLVER AL MENÚ</a>
     </header>
+
     <div class="card no-print">
-        <h3>Grado y Sección</h3>
-        <input type="text" id="seccionInput" placeholder="Ej: 1A" style="padding:12px; width:70%; margin-bottom:15px; border:1px solid #ccc; border-radius:8px;">
+        <h3>Introducir Sección</h3>
+        <input type="text" id="secIn" placeholder="Ejemplo: 1A o 6B">
         <br>
-        <button class="btn-blue" onclick="cargarSeccion()">ENTRAR</button>
+        <button class="btn" onclick="conectar()">ENTRAR</button>
     </div>
-    <div id="panelSeccion" style="display:none;">
+
+    <div id="panel" style="display:none;">
         <div class="card">
-            <h3>Matrícula Total: <span id="txtTotal">0</span></h3>
+            <h4>Sección: <span id="txtSec"></span></h4>
+            <p>Total Matrícula: <b id="txtT">0</b></p>
             <p>Hembras: <span id="txtH">0</span> | Varones: <span id="txtV">0</span></p>
-            <button class="no-print" onclick="window.print()" style="padding:8px; cursor:pointer;">🖨️ Imprimir Reporte</button>
+            <button class="no-print" onclick="window.print()">🖨️ Imprimir Reporte</button>
         </div>
         <div class="card">
-            <h4>Pase de Lista Hoy</h4>
-            <div id="listaAlumnos"></div>
+            <h4>Asistencia de Hoy</h4>
+            <div id="lista"></div>
         </div>
     </div>
+
     <script>
-        let datosSeccion = { alumnos: [], asistencias: {} };
-        let secActiva = "";
-        function cargarSeccion() {
-            secActiva = document.getElementById('seccionInput').value.toUpperCase().trim();
-            if(!secActiva) return;
-            window.syncSec(secActiva, (data) => {
-                datosSeccion = data || { alumnos: [], asistencias: {} };
-                document.getElementById('panelSeccion').style.display = 'block';
-                renderAlumnos();
+        let actualData = { alumnos: [], asistencias: {} };
+        let sec = "";
+
+        function conectar() {
+            sec = document.getElementById('secIn').value.toUpperCase().trim();
+            if(!sec) return alert("Escribe una sección");
+            window.syncSec(sec, (data) => {
+                actualData = data || { alumnos: [], asistencias: {} };
+                document.getElementById('panel').style.display = 'block';
+                document.getElementById('txtSec').innerText = sec;
+                dibujar();
             });
         }
-        function renderAlumnos() {
-            const h = datosSeccion.alumnos.filter(a => a.g === 'F').length;
-            const v = datosSeccion.alumnos.filter(a => a.g === 'M').length;
+
+        function dibujar() {
+            const h = actualData.alumnos.filter(a => a.g === 'F').length;
+            const v = actualData.alumnos.filter(a => a.g === 'M').length;
             document.getElementById('txtH').innerText = h;
             document.getElementById('txtV').innerText = v;
-            document.getElementById('txtTotal').innerText = h + v;
-            const cont = document.getElementById('listaAlumnos');
-            cont.innerHTML = "";
+            document.getElementById('txtT').innerText = h + v;
+
+            const lista = document.getElementById('lista');
+            lista.innerHTML = "";
             const hoy = new Date().toISOString().split('T')[0];
-            datosSeccion.alumnos.forEach(a => {
-                const p = datosSeccion.asistencias[hoy]?.[a.id] === 1;
-                cont.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:8px;">
+            
+            actualData.alumnos.forEach(a => {
+                const p = actualData.asistencias[hoy]?.[a.id] === 1;
+                lista.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
                     <span>${a.n}</span>
-                    <button style="background:${p?'#27ae60':'#ccc'}; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;" onclick="marcarAsis(${a.id})">${p?'P':'F'}</button>
+                    <button style="background:${p?'#27ae60':'#ccc'}; color:white; border:none; padding:5px 10px; border-radius:4px;" 
+                            onclick="marcar(${a.id})">${p?'P':'F'}</button>
                 </div>`;
             });
         }
-        async function marcarAsis(id) {
+
+        async function marcar(id) {
             const hoy = new Date().toISOString().split('T')[0];
-            if(!datosSeccion.asistencias[hoy]) datosSeccion.asistencias[hoy] = {};
-            datosSeccion.asistencias[hoy][id] = datosSeccion.asistencias[hoy][id] === 1 ? 0 : 1;
-            await window.saveSec(secActiva, datosSeccion);
+            if(!actualData.asistencias[hoy]) actualData.asistencias[hoy] = {};
+            actualData.asistencias[hoy][id] = actualData.asistencias[hoy][id] === 1 ? 0 : 1;
+            await window.saveSec(sec, actualData);
         }
     </script>
 </body>
