@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EBNLP v18.0 - Control de Asistencia Sincronizado</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script type="module">
@@ -22,32 +23,31 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Funciones de comunicación con la nube
-        window.guardarEnNube = async (registro) => {
-            const idDoc = `${registro.fec}_${registro.nombre.replace(/\s+/g, '_')}`;
-            await setDoc(doc(db, "asistencias", idDoc), registro);
+        // Funciones para la nube
+        window.guardarEnNube = async (reg) => {
+            const idDoc = `${reg.fec}_${reg.nombre.replace(/\s+/g, '_')}`;
+            await setDoc(doc(db, "asistencias", idDoc), reg);
         };
 
         window.escucharNube = (fecha, callback) => {
             const q = query(collection(db, "asistencias"), where("fec", "==", fecha));
-            return onSnapshot(q, (snapshot) => {
-                const registros = [];
-                snapshot.forEach((doc) => registros.push(doc.data()));
-                callback(registros);
+            return onSnapshot(q, (snap) => {
+                const lista = [];
+                snap.forEach(d => lista.push(d.data()));
+                callback(lista);
             });
         };
 
-        // Escucha para estadísticas mensuales
-        window.escucharMes = (mes, anio, callback) => {
+        window.escucharTodoElMes = (mes, anio, callback) => {
             const q = collection(db, "asistencias");
-            return onSnapshot(q, (snapshot) => {
-                const registros = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
+            return onSnapshot(q, (snap) => {
+                const lista = [];
+                snap.forEach(d => {
+                    const data = d.data();
                     const f = new Date(data.fec + "T00:00:00");
-                    if(f.getMonth() === mes && f.getFullYear() === anio) registros.push(data);
+                    if(f.getMonth() === mes && f.getFullYear() === anio) lista.push(data);
                 });
-                callback(registros);
+                callback(lista);
             });
         };
     </script>
@@ -70,15 +70,13 @@
         .btn-reg { background: var(--verde); height: 45px; font-size: 14px; }
         .btn-pdf { background: var(--rojo); }
         .btn-mes { background: var(--azul); }
-        button:hover { filter: brightness(0.8); }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background: var(--azul); color: white; text-transform: uppercase; }
+        th { background: var(--azul); color: white; }
         .fila-retardo { background-color: #fff2f2 !important; color: #d9534f; font-weight: bold; }
         .fila-asistio { background-color: #f0fff4 !important; }
-        .nocturno { background-color: #e8f4fd !important; }
         .firmas-area { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 60px; text-align: center; }
-        .linea-firma { border-top: 2px solid #000; margin-top: 40px; padding-top: 8px; font-size: 11px; font-weight: bold; }
+        .linea-firma { border-top: 2px solid #000; margin-top: 40px; padding-top: 8px; font-weight: bold; }
         @media print { .no-print { display: none !important; } .firmas-area { display: grid !important; } }
         @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
     </style>
@@ -88,7 +86,7 @@
 <div class="container" id="reporteArea">
     <header>
         <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
-             alt="Logo EBNLP" class="logo" crossorigin="anonymous">
+             alt="Logo EBNLP" class="logo" id="mainLogo" crossorigin="anonymous">
         <h1 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h1>
         <p style="margin:0; font-weight:bold; color: #333;">SISTEMA INTEGRAL DE CONTROL DE ASISTENCIA Y VIGILANCIA</p>
     </header>
@@ -105,11 +103,9 @@
             <div class="card">
                 <h3 style="margin-top:0; color:var(--azul);">📋 Registro de Jornada</h3>
                 <label>Fecha Seleccionada:</label>
-                <input type="date" id="fecReg" onchange="iniciarSincronizacion()">
-                
+                <input type="date" id="fecReg" onchange="conectarNube()">
                 <label>Persona:</label>
                 <select id="selPers" onchange="actualizarHorarioSugerido()"></select>
-                
                 <label>Estatus:</label>
                 <select id="selEst" onchange="toggleReloj()">
                     <option value="Asistencia">Asistencia ✅</option>
@@ -118,7 +114,6 @@
                     <option value="Reposo">Reposo 🏥</option>
                     <option value="Vacaciones">Vacaciones 🌴</option>
                 </select>
-
                 <div id="panelHoras">
                     <div style="background:#fff3cd; padding:10px; border-radius:8px; margin:10px 0; font-size:11px; text-align:center;">
                         <strong>Horario Reglamentario:</strong><br><span id="txtHorarioOfi">--</span>
@@ -128,33 +123,23 @@
                         <div style="flex:1;"><label>Hora Salida:</label><input type="time" id="hSalida"></div>
                     </div>
                 </div>
-
                 <button onclick="registrar()" class="btn-reg" style="margin-top:20px;">💾 GUARDAR EN LA NUBE</button>
-                <button onclick="generarReportePDF()" class="btn-pdf" style="margin-top:10px;">📄 DESCARGAR PDF DIARIO</button>
+                <button onclick="generarReportePDF()" class="btn-pdf" style="margin-top:10px;">📄 PDF DIARIO</button>
                 <button onclick="generarReporteMensualPDF()" class="btn-mes" style="margin-top:10px;">📊 REPORTE MENSUAL</button>
             </div>
         </div>
-
         <div class="card">
             <h3 style="text-align:center; margin-top:0;">Control Diario: <span id="fechaTit"></span></h3>
             <div style="overflow-x:auto;">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Nombre del Trabajador</th>
-                            <th>Cargo</th>
-                            <th>H. Oficial</th>
-                            <th>H. Entrada Real</th>
-                            <th>Estatus</th>
-                            <th>Retardo</th>
-                        </tr>
+                        <tr><th>Trabajador</th><th>Cargo</th><th>H. Oficial</th><th>Entrada Real</th><th>Estatus</th><th>Retardo</th></tr>
                     </thead>
                     <tbody id="tablaCuerpo"></tbody>
                 </table>
             </div>
         </div>
     </div>
-
     <div class="firmas-area" id="firmasPDF">
         <div><div class="linea-firma">SECRETARÍA (ELABORA)</div></div>
         <div><div class="linea-firma">SUBDIRECCIÓN (REVISA)</div></div>
@@ -164,11 +149,11 @@
 
 <script>
     const horariosFijos = { "Docente": { e: "07:00", s: "12:00" }, "Obrero": { e: "06:45", s: "12:45" }, "Administrativo": { e: "06:45", s: "12:45" }, "Cocinera": { e: "07:00", s: "14:00" }, "Directivo": { e: "07:00", s: "15:00" } };
-    const inicialStr = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
-    
-    let nomina = inicialStr.split(';').map(p => ({nombre: p.split(',')[0], cargo: p.split(',')[1]}));
+    const nominaRaw = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
+    let nomina = nominaRaw.split(';').map(p => ({nombre: p.split(',')[0], cargo: p.split(',')[1]})).sort((a,b) => a.nombre.localeCompare(b.nombre));
+
     let registrosActuales = [];
-    let registrosMes = [];
+    let registrosDelMes = [];
     let unsubDiario = null;
     let unsubMensual = null;
 
@@ -179,140 +164,93 @@
             const diasRef = Math.floor((fecha - new Date("2024-01-01T00:00:00")) / 86400000);
             const gAct = (diasRef % 2 === 0) ? "Vigilante-B" : "Vigilante-A";
             if (esFinSemana) return { e: "18:00", s: "06:00", t: "Nocturno F.S." };
-            if (p.cargo === gAct) return { e: "06:00", s: "18:00", t: "Diurno" };
-            return { e: "18:00", s: "06:00", t: "Nocturno" };
+            return (p.cargo === gAct) ? { e: "06:00", s: "18:00", t: "Diurno" } : { e: "18:00", s: "06:00", t: "Nocturno" };
         }
         return { ...horariosFijos[p.cargo], t: "Estándar" };
     }
 
     function actualizarHorarioSugerido() {
-        const sel = document.getElementById('selPers').value;
-        const p = [...nomina].sort((a,b) => a.nombre.localeCompare(b.nombre))[sel];
+        const p = nomina[document.getElementById('selPers').value];
         const h = calcularHorarioOficial(p, document.getElementById('fecReg').value);
         document.getElementById('txtHorarioOfi').innerText = `${h.e} - ${h.s} (${h.t})`;
         document.getElementById('hEntrada').value = h.e;
         document.getElementById('hSalida').value = h.s;
     }
 
-    function toggleReloj() {
-        document.getElementById('panelHoras').style.display = (document.getElementById('selEst').value === "Asistencia") ? "block" : "none";
-    }
+    function toggleReloj() { document.getElementById('panelHoras').style.display = (document.getElementById('selEst').value === "Asistencia") ? "block" : "none"; }
 
     async function registrar() {
-        const idx = document.getElementById('selPers').value;
-        const p = [...nomina].sort((a,b) => a.nombre.localeCompare(b.nombre))[idx];
-        const est = document.getElementById('selEst').value;
-        const hEnt = document.getElementById('hEntrada').value;
-        const hSal = document.getElementById('hSalida').value;
+        const p = nomina[document.getElementById('selPers').value];
         const fec = document.getElementById('fecReg').value;
         const hOfi = calcularHorarioOficial(p, fec);
-        
+        const hEnt = document.getElementById('hEntrada').value;
         let minT = 0;
-        if(est === "Asistencia") {
+        if(document.getElementById('selEst').value === "Asistencia") {
             const tOfi = (hOfi.e.split(':').map(Number)[0] * 60) + hOfi.e.split(':').map(Number)[1];
             const tReal = (hEnt.split(':').map(Number)[0] * 60) + hEnt.split(':').map(Number)[1];
             minT = tReal > tOfi ? tReal - tOfi : 0;
         }
-
-        const registro = { nombre: p.nombre, cargo: p.cargo, est, fec, hEnt, hSal, minT };
-        await window.guardarEnNube(registro);
-        alert("¡Sincronizado con éxito!");
+        await window.guardarEnNube({
+            nombre: p.nombre, cargo: p.cargo, fec, minT,
+            est: document.getElementById('selEst').value,
+            hEnt: hEnt, hSal: document.getElementById('hSalida').value
+        });
+        alert("Sincronizado ✅");
     }
 
-    function iniciarSincronizacion() {
+    function conectarNube() {
         const fec = document.getElementById('fecReg').value;
         const hoy = new Date(fec + "T00:00:00");
-        
         if(unsubDiario) unsubDiario();
         if(unsubMensual) unsubMensual();
-
-        unsubDiario = window.escucharNube(fec, (datos) => {
-            registrosActuales = datos;
-            procesarUI();
-        });
-
-        unsubMensual = window.escucharMes(hoy.getMonth(), hoy.getFullYear(), (datos) => {
-            registrosMes = datos;
-            procesarUI();
-        });
+        unsubDiario = window.escucharNube(fec, (datos) => { registrosActuales = datos; renderUI(); });
+        unsubMensual = window.escucharTodoElMes(hoy.getMonth(), hoy.getFullYear(), (datos) => { registrosDelMes = datos; renderUI(); });
     }
 
-    function procesarUI() {
+    function renderUI() {
         const fec = document.getElementById('fecReg').value;
         const hoy = new Date(fec + "T00:00:00");
         document.getElementById('fechaTit').innerText = fec;
         const tbody = document.getElementById('tablaCuerpo');
-        const sel = document.getElementById('selPers');
+        tbody.innerHTML = "";
         
-        const valorPrevio = sel.value;
-        tbody.innerHTML = ""; sel.innerHTML = "";
-        
-        let asisH = 0, espH = 0, retH = 0, retM = 0, asisM = 0;
-        const listaOrdenada = [...nomina].sort((a,b) => a.nombre.localeCompare(b.nombre));
-
-        listaOrdenada.forEach((p, i) => {
-            sel.innerHTML += `<option value="${i}">${p.nombre}</option>`;
-            const hOfi = calcularHorarioOficial(p, fec);
+        let aD = 0, eD = 0, rD = 0, rM = 0, aM = 0;
+        nomina.forEach((p, i) => {
+            const h = calcularHorarioOficial(p, fec);
             const reg = registrosActuales.find(r => r.nombre === p.nombre);
-            
-            let toca = true;
-            if(!p.cargo.includes("Vigilante") && (hoy.getDay() === 0 || hoy.getDay() === 6)) toca = false;
-            if(toca) espH++;
-            if(reg && reg.est === "Asistencia") { asisH++; if(reg.minT > 0) retH++; }
-
-            let clase = (reg && reg.minT > 0) ? "fila-retardo" : (reg && reg.est === "Asistencia" ? "fila-asistio" : "");
-            if(hOfi.t.includes("Nocturno")) clase += " nocturno";
-
-            tbody.innerHTML += `<tr class="${clase}">
-                <td style="text-align:left;">${p.nombre}</td>
-                <td>${p.cargo}</td>
-                <td>${hOfi.e} - ${hOfi.s}</td>
-                <td>${reg && reg.est === "Asistencia" ? reg.hEnt : "---"}</td>
-                <td>${reg ? reg.est : (toca ? "PENDIENTE" : "LIBRE")}</td>
-                <td>${reg && reg.minT > 0 ? reg.minT + ' min' : '0'}</td>
-            </tr>`;
+            let toca = !(!p.cargo.includes("Vigilante") && (hoy.getDay() === 0 || hoy.getDay() === 6));
+            if(toca) eD++;
+            if(reg?.est === "Asistencia") { aD++; if(reg.minT > 0) rD++; }
+            let clase = reg?.minT > 0 ? "fila-retardo" : (reg?.est === "Asistencia" ? "fila-asistio" : "");
+            tbody.innerHTML += `<tr class="${clase}"><td>${p.nombre}</td><td>${p.cargo}</td><td>${h.e}-${h.s}</td><td>${reg?.hEnt || "---"}</td><td>${reg?.est || (toca ? "PENDIENTE" : "LIBRE")}</td><td>${reg?.minT || 0} min</td></tr>`;
         });
 
-        // Cálculo estadísticas mensuales desde la nube
-        registrosMes.forEach(r => { if(r.est === "Asistencia") { asisM++; retM += r.minT; } });
-
-        document.getElementById('percDia').innerText = espH > 0 ? ((asisH/espH)*100).toFixed(0) + "%" : "0%";
-        document.getElementById('retHoy').innerText = retH;
-        document.getElementById('retMes').innerText = retM + " min";
-        
-        let pMes = (asisM / (nomina.length * (hoy.getDate()))) * 100;
-        document.getElementById('percMes').innerText = Math.min(pMes, 100).toFixed(1) + "%";
-        if(valorPrevio) sel.value = valorPrevio;
+        registrosDelMes.forEach(r => { if(r.est === "Asistencia") { aM++; rM += r.minT; } });
+        document.getElementById('percDia').innerText = eD > 0 ? Math.round((aD/eD)*100)+"%" : "0%";
+        document.getElementById('retHoy').innerText = rD;
+        document.getElementById('retMes').innerText = rM + " min";
+        let pM = (aM / (nomina.length * hoy.getDate())) * 100;
+        document.getElementById('percMes').innerText = Math.min(pM, 100).toFixed(1) + "%";
     }
 
-    function generarReportePDF() {
-        document.getElementById('firmasPDF').style.display = 'grid';
-        html2pdf().set({
-            margin: 10, filename: `Asistencia_${document.getElementById('fecReg').value}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' }
-        }).from(document.getElementById('reporteArea')).save().then(() => {
-            document.getElementById('firmasPDF').style.display = 'none';
-        });
-    }
-
+    function generarReportePDF() { document.getElementById('firmasPDF').style.display='grid'; html2pdf().set({margin:10, filename:`Asistencia_${document.getElementById('fecReg').value}.pdf`, html2canvas:{scale:2, useCORS:true}, jsPDF:{orientation:'landscape'}}).from(document.getElementById('reporteArea')).save().then(()=>document.getElementById('firmasPDF').style.display='none'); }
     function generarReporteMensualPDF() {
-        const fec = document.getElementById('fecReg').value;
-        const d = new Date(fec + "T00:00:00");
-        const mesNom = d.toLocaleString('es-ES', { month: 'long' }).toUpperCase();
-        let html = `<div style="padding:20px; font-family:sans-serif;"><h2 style="text-align:center; color:#1a2a6c;">E.B.N. "LUCILA PALACIOS"</h2><h3 style="text-align:center;">REPORTE MENSUAL: ${mesNom} ${d.getFullYear()}</h3><table style="width:100%; border-collapse:collapse; font-size:10px;"><thead><tr style="background:#1a2a6c; color:white;"><th style="border:1px solid #000; padding:5px;">NOMBRE</th><th style="border:1px solid #000; padding:5px;">CARGO</th><th style="border:1px solid #000; padding:5px;">ASISTENCIAS</th><th style="border:1px solid #000; padding:5px;">RETARDOS (MIN)</th></tr></thead><tbody>`;
-        [...nomina].sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(p => {
-            let asis = 0, mins = 0;
-            registrosMes.filter(r => r.nombre === p.nombre).forEach(r => { if(r.est === "Asistencia") { asis++; mins += r.minT; } });
-            html += `<tr><td style="border:1px solid #ddd; padding:5px;">${p.nombre}</td><td style="border:1px solid #ddd; padding:5px; text-align:center;">${p.cargo}</td><td style="border:1px solid #ddd; padding:5px; text-align:center;">${asis}</td><td style="border:1px solid #ddd; padding:5px; text-align:center;">${mins}</td></tr>`;
+        const d = new Date(document.getElementById('fecReg').value + "T00:00:00");
+        let html = `<div style="padding:20px; font-family:sans-serif;"><h2 style="text-align:center; color:#1a2a6c;">E.B.N. "LUCILA PALACIOS"</h2><h3 style="text-align:center;">REPORTE MENSUAL: ${d.toLocaleString('es-ES',{month:'long'}).toUpperCase()}</h3><table style="width:100%; border-collapse:collapse; font-size:10px;"><thead><tr style="background:#1a2a6c; color:white;"><th>NOMBRE</th><th>CARGO</th><th>ASISTENCIAS</th><th>RETARDOS (MIN)</th></tr></thead><tbody>`;
+        nomina.forEach(p => {
+            let as = 0, mi = 0;
+            registrosDelMes.filter(r => r.nombre === p.nombre).forEach(r => { if(r.est === "Asistencia") { as++; mi += r.minT; } });
+            html += `<tr><td>${p.nombre}</td><td>${p.cargo}</td><td style="text-align:center;">${as}</td><td style="text-align:center;">${mi}</td></tr>`;
         });
         html += `</tbody></table></div>`;
-        const temp = document.createElement('div'); temp.innerHTML = html;
-        html2pdf().set({ margin: 15, filename: `Resumen_${mesNom}.pdf`, jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' } }).from(temp).save();
+        const div = document.createElement('div'); div.innerHTML = html;
+        html2pdf().set({margin:15, filename:'Reporte_Mensual.pdf', jsPDF:{format:'letter'}}).from(div).save();
     }
 
+    // Inicio
     document.getElementById('fecReg').valueAsDate = new Date();
-    setTimeout(() => { iniciarSincronizacion(); actualizarHorarioSugerido(); }, 1000);
+    document.getElementById('selPers').innerHTML = nomina.map((p,i) => `<option value="${i}">${p.nombre}</option>`).join('');
+    setTimeout(conectarNube, 1000);
 </script>
 </body>
 </html>
