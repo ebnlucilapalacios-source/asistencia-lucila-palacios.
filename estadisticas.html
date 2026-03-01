@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas - EBNLP</title>
+    <title>Estadísticas EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -18,7 +17,6 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         window.syncSec = (s, cb) => onSnapshot(doc(db, "secciones", s), (d) => cb(d.data()));
         window.saveSec = async (s, d) => await setDoc(doc(db, "secciones", s), d);
     </script>
@@ -26,78 +24,38 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; text-align: center; }
         header { background: #2980b9; color: white; padding: 20px; border-bottom: 4px solid #f39c12; }
         .card { background: white; padding: 20px; margin: 15px auto; max-width: 400px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        input { padding: 12px; width: 80%; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
         .btn { background: #2980b9; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
     <header>
-        <h2 style="margin:0;">Estadísticas y Matrícula</h2>
+        <h2 style="margin:0;">Estadísticas de Alumnos</h2>
         <a href="index.html" style="color: white; text-decoration: none; font-size: 0.8rem;">← VOLVER AL MENÚ</a>
     </header>
-
-    <div class="card no-print">
+    <div class="card">
         <h3>Introducir Sección</h3>
-        <input type="text" id="secIn" placeholder="Ejemplo: 1A o 6B">
-        <br>
+        <input type="text" id="secIn" placeholder="Ej: 1A" style="padding:10px; width:70%; border-radius:5px; border:1px solid #ccc;">
+        <br><br>
         <button class="btn" onclick="conectar()">ENTRAR</button>
     </div>
-
-    <div id="panel" style="display:none;">
-        <div class="card">
-            <h4>Sección: <span id="txtSec"></span></h4>
-            <p>Total Matrícula: <b id="txtT">0</b></p>
-            <p>Hembras: <span id="txtH">0</span> | Varones: <span id="txtV">0</span></p>
-            <button class="no-print" onclick="window.print()">🖨️ Imprimir Reporte</button>
-        </div>
-        <div class="card">
-            <h4>Asistencia de Hoy</h4>
-            <div id="lista"></div>
-        </div>
+    <div id="panel" style="display:none;" class="card">
+        <h4 id="txtSec"></h4>
+        <p>Matrícula: <b id="txtT">0</b> (H: <span id="txtH">0</span> | V: <span id="txtV">0</span>)</p>
     </div>
-
     <script>
-        let actualData = { alumnos: [], asistencias: {} };
-        let sec = "";
-
         function conectar() {
-            sec = document.getElementById('secIn').value.toUpperCase().trim();
-            if(!sec) return alert("Escribe una sección");
-            window.syncSec(sec, (data) => {
-                actualData = data || { alumnos: [], asistencias: {} };
+            const s = document.getElementById('secIn').value.toUpperCase().trim();
+            if(!s) return;
+            window.syncSec(s, (data) => {
                 document.getElementById('panel').style.display = 'block';
-                document.getElementById('txtSec').innerText = sec;
-                dibujar();
+                document.getElementById('txtSec').innerText = "Sección: " + s;
+                const d = data || { alumnos: [] };
+                const h = d.alumnos.filter(a => a.g === 'F').length;
+                const v = d.alumnos.filter(a => a.g === 'M').length;
+                document.getElementById('txtH').innerText = h;
+                document.getElementById('txtV').innerText = v;
+                document.getElementById('txtT').innerText = h + v;
             });
-        }
-
-        function dibujar() {
-            const h = actualData.alumnos.filter(a => a.g === 'F').length;
-            const v = actualData.alumnos.filter(a => a.g === 'M').length;
-            document.getElementById('txtH').innerText = h;
-            document.getElementById('txtV').innerText = v;
-            document.getElementById('txtT').innerText = h + v;
-
-            const lista = document.getElementById('lista');
-            lista.innerHTML = "";
-            const hoy = new Date().toISOString().split('T')[0];
-            
-            actualData.alumnos.forEach(a => {
-                const p = actualData.asistencias[hoy]?.[a.id] === 1;
-                lista.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                    <span>${a.n}</span>
-                    <button style="background:${p?'#27ae60':'#ccc'}; color:white; border:none; padding:5px 10px; border-radius:4px;" 
-                            onclick="marcar(${a.id})">${p?'P':'F'}</button>
-                </div>`;
-            });
-        }
-
-        async function marcar(id) {
-            const hoy = new Date().toISOString().split('T')[0];
-            if(!actualData.asistencias[hoy]) actualData.asistencias[hoy] = {};
-            actualData.asistencias[hoy][id] = actualData.asistencias[hoy][id] === 1 ? 0 : 1;
-            await window.saveSec(sec, actualData);
         }
     </script>
 </body>
