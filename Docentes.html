@@ -7,23 +7,31 @@
     <style>
         :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; --morado: #8e44ad; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 50px; }
+        
         header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
-        .logo-escuela { width: 100px; height: 100px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; }
+        .logo-escuela { width: 100px; height: 100px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
+        
         .container { max-width: 900px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
         
-        /* Gráfico de Asistencia */
-        .chart-container { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding: 20px 0; border-bottom: 2px solid #ddd; margin-top: 10px; }
-        .bar { background: var(--naranja); min-width: 30px; border-radius: 5px 5px 0 0; position: relative; transition: height 0.5s; }
-        .bar-label { position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; }
-        .bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; }
+        /* Cuadro de Honor */
+        .cuadro-honor { background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%); border: 3px solid var(--oro); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        .foto-honor { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--oro); background: #eee; }
+
+        /* Gráfico */
+        .chart-container { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 20px 0; border-bottom: 2px solid #ddd; margin: 10px 0; justify-content: center; }
+        .bar { background: var(--azul); min-width: 25px; border-radius: 4px 4px 0 0; position: relative; transition: height 0.3s; }
+        .bar-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: bold; }
 
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
+        
         .student-item { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
         th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
         th { background: #f8f9fa; }
+
+        .resumen-final { background: var(--celeste); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
 
         @media print {
             .no-print, button, input, select { display: none !important; }
@@ -37,26 +45,33 @@
 <header>
     <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-escuela" alt="Logo">
     <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p>San Félix - Reporte de Asistencia Mensual</p>
+    <p>San Félix - Reporte Estadístico de Asistencia</p>
 </header>
 
 <div class="container">
+    
     <div class="card no-print">
-        <h3>👤 Datos del Docente</h3>
+        <h3>👤 Identificación Docente</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <input type="text" id="docente" placeholder="Nombre del Docente" onchange="saveConfig()">
             <input type="text" id="seccion" placeholder="Grado y Sección" onchange="saveConfig()">
         </div>
     </div>
 
+    <div id="honorCard" class="cuadro-honor">
+        <h2 style="color:var(--naranja); margin:0 0 10px 0;">🏆 Cuadro de Honor</h2>
+        <div id="honorContent">
+            <p>Cargue datos para identificar al estudiante con mejor asistencia.</p>
+        </div>
+    </div>
+
     <div class="card">
-        <h3>📈 Variación de Asistencia (Últimos 7 días)</h3>
-        <div id="graficoAsistencia" class="chart-container">
-            </div>
+        <h3>📈 Variación de Asistencia (Últimos Días)</h3>
+        <div id="graficoAsistencia" class="chart-container"></div>
     </div>
 
     <div class="card no-print">
-        <h3>➕ Incorporar Alumno</h3>
+        <h3>➕ Registro / Ingreso de Alumno</h3>
         <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
         <div style="display: flex; gap: 10px;">
             <select id="newGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
@@ -67,28 +82,33 @@
     </div>
 
     <div class="card">
-        <h3>📅 Pase de Lista: <span id="fechaActual"></span></h3>
+        <h3>📅 Pase de Lista Hoy: <span id="fechaActual"></span></h3>
         <div id="listaAsistencia"></div>
     </div>
 
     <div class="card">
-        <h2 style="text-align: center; color: var(--celeste);">REPORTE ESTADÍSTICO FINAL</h2>
+        <h2 style="text-align: center; color: var(--celeste);">REPORTE ESTADÍSTICO MENSUAL</h2>
         <p><b>Docente:</b> <span id="repDocente"></span> | <b>Sección:</b> <span id="repSeccion"></span></p>
         
-        <h4>📊 Distribución por Edades</h4>
+        <div class="resumen-final">
+            <span style="font-size: 1.1rem;">Porcentaje de Asistencia de la Matrícula en el Mes:</span><br>
+            <span id="porcentajeGlobalMensual" style="font-size: 2.5rem; font-weight: bold;">0%</span>
+        </div>
+
+        <h4>📊 Distribución por Edades y Género</h4>
         <div id="tablaEdades"></div>
 
-        <h4 style="margin-top:20px;">📋 Registro de Asistencia Detallado</h4>
+        <h4 style="margin-top:20px;">📋 Registro Mensual Detallado</h4>
         <div id="tablaMensual" style="overflow-x: auto;"></div>
 
         <div style="margin-top:20px;" class="no-print">
-            <button onclick="window.print()" style="background:var(--azul); color:white;">🖨️ Generar Reporte PDF</button>
+            <button onclick="window.print()" style="background:var(--azul); color:white; font-weight: bold;">🖨️ Imprimir / Guardar PDF para Dirección</button>
         </div>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('ebn_v13')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
+    let db = JSON.parse(localStorage.getItem('ebn_v14')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
     let hoy = new Date().toISOString().split('T')[0];
 
     function init() {
@@ -109,7 +129,7 @@
         const gen = document.getElementById('newGen').value;
         const nac = document.getElementById('newNac').value;
         const fotoFile = document.getElementById('newFoto').files[0];
-        if(!nom || !nac) return alert("Faltan datos.");
+        if(!nom || !nac) return alert("Complete los datos.");
 
         let fotoBase64 = "";
         if(fotoFile) {
@@ -130,16 +150,14 @@
     function marcar(id) {
         if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
         let actual = db.asistencias[hoy][id] || 0;
-        db.asistencias[hoy][id] = (actual + 1) % 3;
+        db.asistencias[hoy][id] = (actual + 1) % 3; // 0:Falta, 1:Presente, 2:Justificado
         save(); render();
     }
 
     function render() {
-        // Actualizar encabezados de reporte
         document.getElementById('repDocente').innerText = db.docente;
         document.getElementById('repSeccion').innerText = db.seccion;
 
-        // Lista de alumnos
         const lista = document.getElementById('listaAsistencia');
         lista.innerHTML = "";
         db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
@@ -151,64 +169,90 @@
             lista.innerHTML += `<div class="student-item">
                 <img src="${a.foto || 'https://via.placeholder.com/40'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
                 <div style="flex-grow:1"><b>${a.nombre}</b></div>
-                <button onclick="marcar(${a.id})" style="width:40px; background:${color}; color:white; border:none; border-radius:5px;">${texto}</button>
+                <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; font-weight:bold;">${texto}</button>
             </div>`;
         });
 
         dibujarGrafico();
-        actualizarTablas();
+        actualizarTablasYPorcentajes();
+        verificarHonor();
     }
 
     function dibujarGrafico() {
         const grafico = document.getElementById('graficoAsistencia');
         grafico.innerHTML = "";
-        const dias = Object.keys(db.asistencias).sort().slice(-7);
-        
+        const dias = Object.keys(db.asistencias).sort().slice(-10);
         dias.forEach(d => {
-            let presentes = Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
-            let porcentaje = db.alumnos.length > 0 ? (presentes / db.alumnos.length) * 100 : 0;
-            
-            grafico.innerHTML += `<div class="bar" style="height: ${porcentaje}%">
-                <span class="bar-value">${Math.round(porcentaje)}%</span>
-                <span class="bar-label">${d.split('-')[2]}</span>
-            </div>`;
+            let pres = Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
+            let porc = db.alumnos.length > 0 ? (pres / db.alumnos.length) * 100 : 0;
+            grafico.innerHTML += `<div class="bar" style="height: ${porc}%"><span class="bar-label">${d.split('-')[2]}</span></div>`;
         });
     }
 
-    function actualizarTablas() {
-        // Tabla Edades
+    function actualizarTablasYPorcentajes() {
+        // 1. Tabla de Edades
         let ed = {}; let tH=0, tV=0;
         db.alumnos.forEach(a => {
             let e = new Date().getFullYear() - new Date(a.nacimiento).getFullYear();
             if(!ed[e]) ed[e] = {f:0, m:0};
             a.genero === 'F' ? (ed[e].f++, tH++) : (ed[e].m++, tV++);
         });
-        let hE = `<table><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th><th>%</th></tr>`;
+        let hE = `<table><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr>`;
         Object.keys(ed).sort().forEach(e => {
-            let suma = ed[e].f + ed[e].m;
-            hE += `<tr><td>${e} años</td><td>${ed[e].f}</td><td>${ed[e].m}</td><td>${suma}</td><td>${Math.round((suma/db.alumnos.length)*100)}%</td></tr>`;
+            hE += `<tr><td>${e} años</td><td>${ed[e].f}</td><td>${ed[e].m}</td><td>${ed[e].f+ed[e].m}</td></tr>`;
         });
-        document.getElementById('tablaEdades').innerHTML = hE + `<tr><td><b>TOTAL</b></td><td>${tH}</td><td>${tV}</td><td>${db.alumnos.length}</td><td>100%</td></tr></table>`;
+        document.getElementById('tablaEdades').innerHTML = hE + `<tr><td><b>TOTAL</b></td><td>${tH}</td><td>${tV}</td><td><b>${db.alumnos.length}</b></td></tr></table>`;
 
-        // Tabla Mensual
-        const dias = Object.keys(db.asistencias).sort().slice(-10);
+        // 2. Tabla Mensual y Cálculo de Porcentaje Global
+        const dias = Object.keys(db.asistencias).sort();
+        let sumaPorcentajesDiarios = 0;
+        
         let hM = `<table><tr><th>Estudiante</th>`;
-        dias.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
+        const ultimosDias = dias.slice(-10);
+        ultimosDias.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
         hM += `<th>%</th></tr>`;
+
         db.alumnos.forEach(a => {
             let c = 0;
             hM += `<tr><td style="text-align:left">${a.nombre}</td>`;
-            dias.forEach(d => {
+            ultimosDias.forEach(d => {
                 let s = db.asistencias[d][a.id];
                 if(s === 1 || s === 2) c++;
                 hM += `<td>${s===1?'P':(s===2?'J':'F')}</td>`;
             });
-            hM += `<td><b>${dias.length>0?Math.round((c/dias.length)*100):0}%</b></td></tr>`;
+            let pInd = ultimosDias.length > 0 ? Math.round((c/ultimosDias.length)*100) : 0;
+            hM += `<td><b>${pInd}%</b></td></tr>`;
         });
         document.getElementById('tablaMensual').innerHTML = hM + "</table>";
+
+        // Cálculo Global Mensual (Matrícula total)
+        let totalAsistenciasPosibles = db.alumnos.length * dias.length;
+        let totalAsistenciasReales = 0;
+        dias.forEach(d => {
+            totalAsistenciasReales += Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
+        });
+        let porcGlobal = totalAsistenciasPosibles > 0 ? Math.round((totalAsistenciasReales / totalAsistenciasPosibles) * 100) : 0;
+        document.getElementById('porcentajeGlobalMensual').innerText = porcGlobal + "%";
     }
 
-    function save() { localStorage.setItem('ebn_v13', JSON.stringify(db)); }
+    function verificarHonor() {
+        let max = -1, mejor = null;
+        db.alumnos.forEach(a => {
+            let totalDias = Object.keys(db.asistencias).length;
+            let asist = Object.values(db.asistencias).filter(d => d[a.id] === 1 || d[a.id] === 2).length;
+            let p = totalDias > 0 ? (asist/totalDias)*100 : 0;
+            if(p > max) { max = p; mejor = a; }
+        });
+        if(mejor && max >= 90) {
+            document.getElementById('honorContent').innerHTML = `
+                <img src="${mejor.foto || 'https://via.placeholder.com/80'}" class="foto-honor">
+                <h3 style="margin:10px 0 0 0;">${mejor.nombre}</h3>
+                <p style="color:var(--exito); font-weight:bold;">Excelente Asistencia: ${Math.round(max)}%</p>
+            `;
+        }
+    }
+
+    function save() { localStorage.setItem('ebn_v14', JSON.stringify(db)); }
     init();
 </script>
 </body>
