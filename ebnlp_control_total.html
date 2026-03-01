@@ -2,73 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema Maestro EBNLP - Nube Directiva</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Maestro - EBN Lucila Palacios</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 13px; }
         .container { max-width: 1200px; margin: auto; }
-        header { background: var(--azul); color: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--naranja); margin-bottom: 15px; }
+        
+        /* Encabezado Institucional */
+        header { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { max-height: 120px; vertical-align: middle; }
+        .header-text { display: inline-block; vertical-align: middle; text-align: center; padding: 0 15px; }
+
+        /* Dashboard de Eficiencia */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-top: 5px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-card h2 { margin: 5px 0; color: var(--azul); font-size: 2rem; }
+        .stat-card p { margin: 0; font-weight: bold; color: #666; font-size: 0.8rem; }
+
         .grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        select, input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
+        
+        select, input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
+        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        button:hover { background: #0d1640; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #f8f9fa; color: var(--azul); text-transform: uppercase; }
+        
+        .asistio { background-color: #d4edda !important; font-weight: bold; color: #155724; }
+        .falto { background-color: #f8d7da !important; font-weight: bold; color: #721c24; }
         .peligro { color: var(--rojo); font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 10px; }
-        th, td { border: 1px solid #333; padding: 6px; text-align: center; }
-        #area-memo { padding: 40px; display: none; background: white; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+        #area-memo { padding: 40px; display: none; background: white; border: 1px solid #000; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .logo { max-height: 80px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h2 style="margin:0">E.B.N. "LUCILA PALACIOS"</h2>
-        <span>Control Directivo - Conexión Satelital a Google Sheets</span>
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/421692.png" alt="Logo EBNLP" class="logo">
+        <div class="header-text">
+            <h1 style="margin:0; color:var(--azul); font-size: 1.5rem;">E.B.N. "LUCILA PALACIOS"</h1>
+            <p style="margin:5px 0; font-weight:bold; color:var(--naranja);">SISTEMA MAESTRO DE CONTROL SATELITAL</p>
+            <small>San Félix, Estado Bolívar • Gestión: Yanitza Malavé</small>
+        </div>
     </header>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-color: var(--verde);">
+            <p>EFICIENCIA DEL DÍA</p>
+            <h2 id="percAsis">0%</h2>
+        </div>
+        <div class="stat-card">
+            <p>PRESENTES</p>
+            <h2 id="countPres">0</h2>
+        </div>
+        <div class="stat-card" style="border-color: var(--rojo);">
+            <p>AUSENTES / NOVEDAD</p>
+            <h2 id="countAus">0</h2>
+        </div>
+        <div class="stat-card" style="border-color: var(--naranja);">
+            <p>TOTAL PERSONAL</p>
+            <h2 id="totalP">0</h2>
+        </div>
+    </div>
 
     <div class="grid">
         <div class="side no-print">
             <div class="card">
-                <h3>📥 Registrar Novedad</h3>
+                <h3 style="margin-top:0; color:var(--azul);">📝 Registro Diario</h3>
                 <label>Seleccionar Personal:</label>
                 <select id="selPers"></select>
                 
-                <label>Estatus de hoy:</label>
+                <label>Estatus:</label>
                 <select id="selEst" onchange="verCampos()">
                     <option value="Asistencia">Asistencia Puntual</option>
                     <option value="Tarde">Llegada Tarde</option>
                     <option value="Permiso">Permiso Personal</option>
                     <option value="Falta Injustificada">Falta Injustificada</option>
                     <option value="Reposo">Reposo Médico</option>
-                    <option value="Vacaciones">Vacaciones</option>
                 </select>
 
-                <div id="divMins" style="display:none; background:#fff3cd; padding:5px; border-radius:5px;">
+                <div id="divMins" style="display:none; background:#fff3cd; padding:8px; border-radius:5px; margin: 5px 0;">
                     <label>Minutos de Retraso:</label>
-                    <input type="number" id="numMins" placeholder="Ej: 15">
+                    <input type="number" id="numMins" placeholder="Ej: 20">
                 </div>
 
-                <label>Fecha del Registro:</label>
-                <input type="date" id="fecReg">
+                <label>Fecha del Control:</label>
+                <input type="date" id="fecReg" onchange="procesar()">
                 
-                <button onclick="registrar()" style="background:var(--verde); font-size:1.1rem;">💾 GUARDAR Y SUBIR A NUBE</button>
-                <p id="msgNube" style="color:var(--verde); font-weight:bold; text-align:center; display:none;">¡Sincronizado con Google!</p>
+                <button onclick="registrar()" style="background:var(--verde); font-size:1.1rem; height: 50px;">💾 GUARDAR EN NUBE</button>
+                <p id="msgNube" style="color:var(--verde); font-weight:bold; text-align:center; display:none;">¡Sincronizado con Google Sheets!</p>
             </div>
-            <button onclick="generarPDF()" style="background:var(--rojo); margin-top:10px;">📄 REPORTE MENSUAL (PDF)</button>
+            <button onclick="generarPDF()" style="background:var(--rojo); margin-top:15px;">📄 EXPORTAR REPORTE (PDF)</button>
         </div>
 
         <div class="card">
+            <h3 id="tituloLista" style="text-align:center; color:var(--azul); margin-top:0;">Control de Asistencia</h3>
             <div style="overflow-x:auto;">
-                <table>
+                <table id="tablaMaestra">
                     <thead>
                         <tr>
                             <th>Nombre y Apellido</th>
-                            <th>Cargo/Horario</th>
-                            <th>P.P.</th>
-                            <th>Faltas</th>
-                            <th>Retraso Acum.</th>
+                            <th>Estatus Hoy</th>
+                            <th>Faltas/Retrasos</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
@@ -81,16 +122,17 @@
 
 <div id="area-memo">
     <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom:10px;">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/421692.png" style="height:80px;"><br>
         <strong>REPÚBLICA BOLIVARIANA DE VENEZUELA</strong><br>
         MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN<br>
-        E.B.N. "LUCILA PALACIOS" - GUAYANA
+        E.B.N. "LUCILA PALACIOS" - SAN FÉLIX
     </div>
     <br>
-    <div style="text-align:center;"><strong>CITACIÓN DE DIRECCIÓN</strong></div>
+    <div style="text-align:center; font-size: 1.2rem;"><strong>NOTIFICACIÓN DE COMPARECENCIA</strong></div>
     <br>
-    <p>Se cita formalmente al ciudadano(a): <strong id="memoNom"></strong></p>
-    <p>Motivo: <span id="memoMot"></span></p>
-    <p>Fecha de Comparecencia: ________________ (Próximo día hábil)</p>
+    <p>Por medio de la presente, se cita al ciudadano(a): <strong id="memoNom"></strong></p>
+    <p><strong>Motivo:</strong> <span id="memoMot"></span></p>
+    <p><strong>Fecha de la cita:</strong> ________________ (Siguiente día hábil)</p>
     <br><br><br>
     <div style="text-align:center;">
         ___________________________<br>
@@ -100,13 +142,11 @@
 </div>
 
 <script>
-    // ESTA ES TU LLAVE MAESTRA YA CONFIGURADA
     const URL_NUBE = "https://script.google.com/macros/s/AKfycbyWt4l2_S3_OsAoj2cFK1zRXcQA6AiEbgynRwfFUw3GJWAmI51PrtMwfHxtOQN7fbhIKg/exec";
 
-    // LISTA CARGADA DEL PERSONAL EBNLP
     const nomina = `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nYuraima Bastardo,Adm. Mañana\nMirlnis Carvajal,Adm. Mañana\nDayana Jiménez,Doc. Mañana\nLorraine Brito,Doc. Mañana\nRosa Nacaratto,Doc. Mañana\nNeviss Guerra,Doc. Mañana\nRusmary Larez,Doc. Mañana\nGénesis Morillo,Doc. Mañana\nYunequi Valdez,Doc. Mañana\nJunior San Vicente,Doc. Mañana\nYulimar Aguanes,Doc. Mañana\nLuisa Jimenez,Doc. Mañana\nYomaira Cáceres,Doc. Mañana\nAna David,Doc. Mañana\nEliday Salazar,Doc. Mañana\nRoselba Terán,Doc. Mañana\nYorvis Bolivar,Doc. Mañana\nYubiry Martinez,Doc. Mañana\nDalia Luces,Doc. Mañana\nJoleth Guzmán,Doc. Mañana\nAngel Figuera,Doc. Mañana\nFrancelis Montaño,Doc. Mañana\nGaudy Rodríguez,Doc. Mañana\nMagloris Fernández,Doc. Mañana\nNorelis Pérez,Obr. Mañana\nGilda Villarroel,Obr. Mañana\nAna Figuera,Obr. Mañana\nMarleny Serrano,Obr. Mañana\nRuth Campos,Obr. Mañana\nDayana García,Obr. Mañana\nLuisana Quintana,Obr. Mañana\nCarlos Castillo,Obr. Mañana\nEdgar Martinez,Obr. Mañana\nJonathan Cedeño,Obr. Mañana\nLuis Figueroa,Obr. Mañana\nJunior Morgado,Obr. Mañana\nRaiza Vallenilla,Cocina\nGenesis Camero,Cocina\nIrma Jaramillo,Cocina\nDovelis Conde,Cocina\nYureima Pimentel,Cocina\nRosa Rivero,Cocina\nMarcia Guzmán,Cocina\nLianna Carvajal,Adm. Tarde\nMaría Marchan,Adm. Tarde\nGlenis Salazar,Doc. Tarde\nMargoris Rodríguez,Doc. Tarde\nLuisa Sosa,Doc. Tarde\nMilvida Torres,Doc. Tarde\nGladys Salcedo,Doc. Tarde\nYanitza Alexander,Doc. Tarde\nAndreina Flores,Doc. Tarde\nNelida Castellanos,Doc. Tarde\nOnexis Rocca,Doc. Tarde\nJustina Fernández,Doc. Tarde\nLeosmary Loroño,Doc. Tarde\nJosé Shijan Brito,Doc. Tarde\nMayerlin Chacon,Doc. Tarde\nNaileth Vargas,Obr. Tarde\nYoelis Solorzano,Obr. Tarde\nYelitza Medina,Obr. Tarde\nEvelyn Carmona,Obr. Tarde\nDanielys Campos,Obr. Tarde\nJeanmaikol Díaz,Obr. Tarde\nOsmil Sanabria,Vigilante A\nDaher Cardier,Vigilante A\nPedro González,Vigilante A\nMoisés Romero,Vigilante A\nCesar Suárez,Vigilante B\nJuan Vargas,Vigilante B\nGuillermo Albornoz,Vigilante B\nDarwin Aguilera,Vigilante B\nJoseyver López,Vigilante B`;
 
-    let db = JSON.parse(localStorage.getItem('ebnlp_cloud')) || { registros: [] };
+    let db = JSON.parse(localStorage.getItem('ebnlp_master_v1')) || { registros: [] };
 
     function verCampos() {
         document.getElementById('divMins').style.display = (document.getElementById('selEst').value === "Tarde") ? "block" : "none";
@@ -119,20 +159,18 @@
         const fec = document.getElementById('fecReg').value;
         const [nombre, cargo] = nomina.split('\n')[id].split(',');
 
-        if(!fec) return alert("Por favor seleccione una fecha.");
+        if(!fec) return alert("Seleccione una fecha");
 
-        const datos = { nombre, cargo, est, mins, fec };
+        // Enviar a Google Sheets
+        fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ nombre, cargo, est, mins, fec }) });
 
-        // ENVÍO A LA NUBE (GOOGLE SHEETS)
-        fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify(datos) })
-        .then(() => {
-            document.getElementById('msgNube').style.display = "block";
-            setTimeout(() => document.getElementById('msgNube').style.display = "none", 3000);
-        });
-
-        // GUARDADO LOCAL PARA REPORTE INMEDIATO
+        // Guardar local
+        db.registros = db.registros.filter(r => !(r.id === id && r.fec === fec)); 
         db.registros.push({ id, est, mins, fec });
-        localStorage.setItem('ebnlp_cloud', JSON.stringify(db));
+        localStorage.setItem('ebnlp_master_v1', JSON.stringify(db));
+        
+        document.getElementById('msgNube').style.display = "block";
+        setTimeout(() => document.getElementById('msgNube').style.display = "none", 2500);
         
         document.getElementById('numMins').value = "";
         procesar();
@@ -140,44 +178,60 @@
 
     function procesar() {
         const tbody = document.getElementById('tablaCuerpo');
+        const hoy = document.getElementById('fecReg').value;
+        document.getElementById('tituloLista').innerText = `Control Institucional: ${hoy}`;
         tbody.innerHTML = "";
-        nomina.split('\n').forEach((linea, i) => {
+        
+        let pres = 0;
+        const lista = nomina.split('\n');
+
+        lista.forEach((linea, i) => {
             const [nombre, cargo] = linea.split(',');
             const misRegs = db.registros.filter(r => parseInt(r.id) === i);
-            const pps = misRegs.filter(r => r.est === "Permiso").length;
+            const regHoy = misRegs.find(r => r.fec === hoy);
+            
+            // Acumulados
             const fis = misRegs.filter(r => r.est === "Falta Injustificada").length;
-            const tMins = misRegs.reduce((acc, r) => acc + parseInt(r.mins), 0);
+            const tars = misRegs.filter(r => r.est === "Tarde").length;
 
-            let btn = "";
-            if(pps >= 3 || fis >= 3 || tMins >= 60) {
-                btn = `<button onclick="citar('${nombre}')" style="background:orange; padding:4px; font-size:10px; width:auto;">CITAR</button>`;
+            let estTxt = "---";
+            let clase = "";
+            if(regHoy) {
+                estTxt = regHoy.est;
+                if(estTxt === "Asistencia" || estTxt === "Tarde") { pres++; clase = "asistio"; }
+                else { clase = "falto"; }
             }
 
-            tbody.innerHTML += `<tr>
-                <td style="text-align:left">${nombre}</td>
-                <td style="font-size:0.6rem">${cargo}</td>
-                <td class="${pps>=3?'peligro':''}">${pps}/3</td>
-                <td class="${fis>=3?'peligro':''}">${fis}</td>
-                <td class="${tMins>0?'peligro':''}">${Math.floor(tMins/60)}h ${tMins%60}m</td>
+            let btn = (fis >= 3 || tars >= 3) ? `<button onclick="citar('${nombre}')" style="background:orange; padding:4px; font-size:10px; width:auto;">CITAR</button>` : "";
+
+            tbody.innerHTML += `<tr class="${clase}">
+                <td style="text-align:left"><strong>${nombre}</strong><br><small>${cargo}</small></td>
+                <td>${estTxt}</td>
+                <td>${fis} F / ${tars} T</td>
                 <td>${btn}</td>
             </tr>`;
         });
+
+        document.getElementById('totalP').innerText = lista.length;
+        document.getElementById('countPres').innerText = pres;
+        document.getElementById('countAus').innerText = lista.length - pres;
+        document.getElementById('percAsis').innerText = ((pres / lista.length) * 100).toFixed(1) + "%";
     }
 
     function citar(nom) {
         document.getElementById('memoNom').innerText = nom;
-        document.getElementById('memoMot').innerText = "Reincidencia en retardos o exceso de inasistencias injustificadas acumuladas en el mes.";
+        document.getElementById('memoMot').innerText = "Inasistencias o retardos reincidentes detectados en el sistema.";
         const memo = document.getElementById('area-memo');
         memo.style.display = "block";
         html2pdf().set({ margin: 20, filename: `Citacion_${nom}.pdf` }).from(memo).save().then(()=>memo.style.display="none");
     }
 
     function generarPDF() {
-        const table = document.querySelector('table');
-        html2pdf().set({ margin: 10, filename: 'Asistencia_EBNLP.pdf', html2canvas: { scale: 2 } }).from(table).save();
+        const element = document.getElementById('tablaMaestra');
+        html2pdf().set({ margin: 10, filename: `Asistencia_EBNLP_${document.getElementById('fecReg').value}.pdf`, html2canvas: { scale: 2 } }).from(element).save();
     }
 
-    // CARGA INICIAL
+    // Inicialización
     const s = document.getElementById('selPers');
     nomina.split('\n').forEach((l, i) => s.innerHTML += `<option value="${i}">${l.split(',')[0]}</option>`);
     document.getElementById('fecReg').valueAsDate = new Date();
