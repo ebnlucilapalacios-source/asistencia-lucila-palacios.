@@ -3,175 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docente - Lucila Palacios</title>
-    <link rel="icon" type="image/png" href="IMG_20260225_005025_993.png">
+    <title>E.B.N. Lucila Palacios - Sistema Integral</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
-        header { background: linear-gradient(to right, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
-        header img { width: 60px; margin-bottom: 10px; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --rojo: #c0392b; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
+        
+        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        #logoEscuela { width: 85px; height: 85px; border-radius: 50%; background: white; padding: 3px; border: 2px solid var(--naranja); margin-bottom: 8px; object-fit: contain; }
+        
+        nav { background: var(--celeste); display: flex; justify-content: space-around; padding: 10px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        nav button { background: none; border: 1px solid white; color: white; padding: 7px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        nav button.active { background: var(--naranja); border-color: var(--naranja); }
+
         .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-registro { background: var(--exito); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; }
-        .btn-edit { background: none; border: 1px solid var(--naranja); color: var(--naranja); width: auto; padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; cursor: pointer; margin-top: 5px; }
-        .btn-asis { width: 65px; height: 45px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
-        .resumen-mensual { display: block; font-size: 0.75rem; color: #666; margin-top: 5px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; border-top: 4px solid var(--celeste); }
+        .seccion { display: none; }
+        .seccion.active { display: block; }
+
+        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
+        button { background: var(--celeste); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-registro { background: var(--exito); }
+        
+        /* ESTUDIANTES */
+        .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; gap: 10px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid var(--celeste); }
+        .btn-check { width: 85px; padding: 8px; font-size: 0.75rem; border-radius: 20px; border:none; color:white; font-weight:bold; }
+        .presente { background: var(--exito); }
+        .ausente { background: #dcdde1; color: #7f8c8d; }
+
+        .progress-container { background: #e0e0e0; border-radius: 10px; height: 22px; margin: 15px 0; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold; background: linear-gradient(90deg, var(--azul), var(--exito)); }
+
+        /* NÓMINA Y TABLAS */
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 15px; }
+        .stat-box { background: #f0f4f8; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #d1d9e6; }
+        .stat-box b { color: var(--azul); font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; color: var(--azul); }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="IMG_20260225_005025_993.png" alt="Escudo">
-    <h1 style="font-size: 1.3rem; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin: 5px 0 0; opacity: 0.9;">Control Docente Mensual</p>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
+    <h1 style="margin:0; font-size: 1.2rem;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p id="subt" style="font-size: 0.8rem; opacity:0.9; margin:4px 0;">Gestión Directiva</p>
 </header>
 
-<div class="container">
-    <div class="card">
-        <h3>👤 Configurar Aula</h3>
-        <input type="text" id="profe" placeholder="Nombre del Docente">
-        <input type="text" id="aula" placeholder="Grado y Sección (Ej: 1-A)">
-        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Aula</button>
+<nav id="navbar">
+    <button onclick="ver('control')" id="nav-con" class="active">📅 CONTROL</button>
+    <button onclick="ver('nomina')" id="nav-nom">👔 NÓMINA</button>
+    <button onclick="ver('bienes')" id="nav-bie">🏫 BIENES</button>
+    <button onclick="ver('pedagogico')" id="nav-ped">📚 P.A.</button>
+</nav>
+
+<div class="container" id="main-content">
+
+    <div id="control" class="seccion active">
+        <details class="card">
+            <summary style="cursor:pointer; color:var(--celeste); font-weight:bold;">⚙️ Matrícula (Agregar Alumno)</summary>
+            <div style="margin-top:15px;">
+                <input type="text" id="nomAlu" placeholder="Nombre del estudiante">
+                <select id="genAlu"><option value="M">Varon</option><option value="F">Hembra</option></select>
+                <input type="file" id="fotoAlu" accept="image/*" capture="user">
+                <button onclick="registrarAlumno()" class="btn-registro">Guardar en Matrícula</button>
+            </div>
+        </details>
+
+        <div class="card">
+            <h3>📅 Control Diario</h3>
+            <input type="date" id="fechaControl" onchange="renderAlumnos()">
+            <div class="progress-container"><div id="barraProgreso" class="progress-bar">0%</div></div>
+            <div id="listaAlumnos"></div>
+        </div>
     </div>
 
-    <div class="card">
-        <h3 id="titReg">📝 Registro de Alumno</h3>
-        <input type="text" id="nomAlu" placeholder="Nombre completo">
-        <select id="genAlu">
-            <option value="F">Femenino (Hembra)</option>
-            <option value="M">Masculino (Varón)</option>
-        </select>
-        <input type="date" id="fechaNac">
-        <button onclick="registrarAlumno()" id="btnGuardar" class="btn-registro">Inscribir Alumno</button>
+    <div id="nomina" class="seccion">
+        <div class="card">
+            <h3>👔 Nómina Institucional</h3>
+            <div class="stat-grid" id="conteoNomina"></div>
+            
+            <div style="background:#eef2f3; padding:12px; border-radius:10px; margin-bottom:15px;">
+                <input type="text" id="n_per" placeholder="Nombre completo">
+                <select id="c_per">
+                    <option value="Docente">Docente</option>
+                    <option value="Obrero">Obrero</option>
+                    <option value="Vigilante">Vigilante</option>
+                    <option value="Cocinera">Cocinera</option>
+                    <option value="Administrativo">Administrativo</option>
+                </select>
+                <button onclick="altaPersonal()" style="background:var(--azul);">Añadir Personal</button>
+            </div>
+
+            <table>
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead>
+                <tbody id="tablaNomina"></tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>📅 Hoy: <span id="fechaHoy"></span></h3>
-        <div id="listaAsistencia"></div>
-        <button onclick="exportarReporte()" style="background:var(--naranja); color:white; margin-top:20px; padding: 15px; font-size: 1.1rem; font-weight: bold;">📤 Enviar Reporte a Dirección</button>
+    <div id="bienes" class="seccion">
+        <div class="card">
+            <h3>🏫 Bienes Nacionales</h3>
+            <input type="text" id="b_nom" placeholder="Bien (Ej: Escritorio)">
+            <input type="number" id="b_cant" placeholder="Cantidad">
+            <button onclick="altaBien()">Registrar Bien</button>
+            <table>
+                <thead><tr><th>Bien</th><th>Cant.</th><th>Estado</th></tr></thead>
+                <tbody id="tablaBienes"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="pedagogico" class="seccion">
+        <div class="card">
+            <h3>📚 Proyectos y Plan</h3>
+            <input type="text" id="pa1" placeholder="Proyecto 1" onchange="guardarDatos()">
+            <input type="text" id="pa2" placeholder="Proyecto 2" onchange="guardarDatos()">
+            <textarea id="plan" placeholder="Planificación semanal..." onchange="guardarDatos()"></textarea>
+        </div>
+    </div>
+
+    <div style="text-align:center; padding: 20px 0;">
+        <button onclick="generarPDF()" style="background:var(--naranja); padding:15px; width:90%; font-size:16px;">📄 DESCARGAR REPORTE FINAL PDF</button>
     </div>
 </div>
 
 <script>
-    // Inicialización de datos
-    let d = JSON.parse(localStorage.getItem('ebn_asistencia_v1')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
+    let db = JSON.parse(localStorage.getItem('ebnlp_v19')) || { alumnos: [], asistencias: {}, nomina: [], bienes: [], pa:{} };
     let hoy = new Date().toISOString().split('T')[0];
-    let editandoId = null;
 
-    document.getElementById('fechaHoy').innerText = hoy;
-    document.getElementById('profe').value = d.profe;
-    document.getElementById('aula').value = d.aula;
-
-    function guardarConfig() {
-        d.profe = document.getElementById('profe').value;
-        d.aula = document.getElementById('aula').value.toUpperCase();
-        save();
-        alert("Configuración actualizada.");
+    function init() {
+        document.getElementById('fechaControl').value = hoy;
+        document.getElementById('pa1').value = db.pa.pa1 || '';
+        document.getElementById('pa2').value = db.pa.pa2 || '';
+        document.getElementById('plan').value = db.pa.plan || '';
+        actualizarTodo();
     }
 
+    function ver(id) {
+        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('nav-' + id.substring(0,3)).classList.add('active');
+    }
+
+    // ALUMNOS
     function registrarAlumno() {
-        const nombre = document.getElementById('nomAlu').value.trim();
-        const genero = document.getElementById('genAlu').value;
-        const nacimiento = document.getElementById('fechaNac').value;
+        const n = document.getElementById('nomAlu').value;
+        const g = document.getElementById('genAlu').value;
+        const f = document.getElementById('fotoAlu').files[0];
+        if(!n) return;
 
-        if(!nombre || !d.aula) return alert("Por favor, ingrese el nombre y configure el aula.");
+        const save = (img) => {
+            db.alumnos.push({ id: Date.now(), n, g, f: img || '' });
+            actualizarTodo(); document.getElementById('nomAlu').value = "";
+        };
 
-        if (editandoId) {
-            const idx = d.alumnos.findIndex(a => a.id === editandoId);
-            d.alumnos[idx] = { ...d.alumnos[idx], nombre, genero, nacimiento };
-            editandoId = null;
-        } else {
-            d.alumnos.push({ 
-                id: Date.now(), 
-                nombre, 
-                genero, 
-                nacimiento, 
-                seccion: d.aula, 
-                docente: d.profe 
-            });
-        }
-        
-        save();
-        resetForm();
-        dibujar();
-    }
-
-    function prepararEdicion(id) {
-        const a = d.alumnos.find(alu => alu.id === id);
-        document.getElementById('nomAlu').value = a.nombre;
-        document.getElementById('genAlu').value = a.genero;
-        document.getElementById('fechaNac').value = a.nacimiento || "";
-        editandoId = id;
-        document.getElementById('titReg').innerText = "📝 Editar Alumno";
-        document.getElementById('btnGuardar').innerText = "Actualizar Datos";
-        window.scrollTo({top: 200, behavior: 'smooth'});
-    }
-
-    function resetForm() {
-        document.getElementById('nomAlu').value = "";
-        document.getElementById('fechaNac').value = "";
-        document.getElementById('titReg').innerText = "📝 Registro de Alumno";
-        document.getElementById('btnGuardar').innerText = "Inscribir Alumno";
-        editandoId = null;
+        if(f) { const r = new FileReader(); r.onloadend = () => save(r.result); r.readAsDataURL(f); }
+        else save(null);
     }
 
     function marcar(id) {
-        if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
-        d.asistencias[hoy][id] = !d.asistencias[hoy][id];
-        save();
-        dibujar();
+        const f = document.getElementById('fechaControl').value;
+        if(!db.asistencias[f]) db.asistencias[f] = {};
+        db.asistencias[f][id] = !db.asistencias[f][id];
+        actualizarTodo();
     }
 
-    function dibujar() {
-        const lista = document.getElementById('listaAsistencia');
-        lista.innerHTML = "";
-        
-        // Ordenar alumnos por nombre
-        d.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    // NÓMINA
+    function altaPersonal() {
+        const n = document.getElementById('n_per').value.toUpperCase();
+        const c = document.getElementById('c_per').value;
+        if(n) { db.nomina.push({id: Date.now(), n, c}); actualizarTodo(); document.getElementById('n_per').value=""; }
+    }
+    function bajaPersonal(id) { db.nomina = db.nomina.filter(p=>p.id!==id); actualizarTodo(); }
 
-        d.alumnos.forEach(a => {
-            const asistioHoy = d.asistencias[hoy] && d.asistencias[hoy][a.id];
-            
-            // Cálculo mensual
-            let totalAsisMes = 0;
-            const diasRegistrados = Object.keys(d.asistencias).length;
-            Object.values(d.asistencias).forEach(dia => {
-                if(dia[a.id]) totalAsisMes++;
-            });
+    // BIENES
+    function altaBien() {
+        const n = document.getElementById('b_nom').value.toUpperCase();
+        const c = document.getElementById('b_cant').value;
+        if(n && c) { db.bienes.push({id: Date.now(), n, c, e:'ACTIVO'}); actualizarTodo(); }
+    }
 
-            lista.innerHTML += `
-                <div class="student-card">
-                    <div style="flex-grow:1">
-                        <b style="text-transform: uppercase;">${a.nombre}</b>
-                        <span class="resumen-mensual">Asistencias mes: ${totalAsisMes} / ${diasRegistrados}</span>
-                        <button onclick="prepararEdicion(${a.id})" class="btn-edit">✏️ Editar</button>
-                    </div>
-                    <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asistioHoy ? '#27ae60' : '#ccc'}">
-                        ${asistioHoy ? 'PRES.' : 'FALTA'}
-                    </button>
-                </div>`;
+    function actualizarTodo() {
+        // Render Alumnos
+        const f = document.getElementById('fechaControl').value;
+        const list = document.getElementById('listaAlumnos'); list.innerHTML = "";
+        let pres = 0;
+        db.alumnos.forEach(a => {
+            const isP = db.asistencias[f] && db.asistencias[f][a.id];
+            if(isP) pres++;
+            list.innerHTML += `<div class="student-item">
+                <img src="${a.f || 'https://via.placeholder.com/50'}" class="avatar">
+                <div class="info-student"><strong>${a.n}</strong></div>
+                <button onclick="marcar(${a.id})" class="btn-check ${isP?'presente':'ausente'}">${isP?'P':'F'}</button>
+            </div>`;
         });
+        const porc = db.alumnos.length ? Math.round((pres/db.alumnos.length)*100) : 0;
+        document.getElementById('barraProgreso').style.width = porc+"%";
+        document.getElementById('barraProgreso').innerText = porc+"% ASISTENCIA";
+
+        // Render Nómina
+        const tN = document.querySelector('#tablaNomina tbody'); tN.innerHTML = "";
+        let c = {Docente:0, Obrero:0, Vigilante:0, Cocinera:0, Administrativo:0};
+        db.nomina.forEach(p => {
+            c[p.c]++;
+            tN.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td><button onclick="bajaPersonal(${p.id})" style="background:var(--rojo); padding:5px;">X</button></td></tr>`;
+        });
+        const grid = document.getElementById('conteoNomina'); grid.innerHTML = "";
+        for(let x in c) grid.innerHTML += `<div class="stat-box">${x}s<br><b>${c[x]}</b></div>`;
+
+        // Render Bienes
+        const tB = document.querySelector('#tablaBienes tbody'); tB.innerHTML = "";
+        db.bienes.forEach(b => { tB.innerHTML += `<tr><td>${b.n}</td><td>${b.c}</td><td>${b.e}</td></tr>`; });
+
+        localStorage.setItem('ebnlp_v19', JSON.stringify(db));
     }
 
-    function exportarReporte() {
-        if (d.alumnos.length === 0) return alert("No hay alumnos registrados.");
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(d));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `Asistencia_${d.aula}_${hoy}.json`);
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+    function guardarDatos() {
+        db.pa = { pa1: document.getElementById('pa1').value, pa2: document.getElementById('pa2').value, plan: document.getElementById('plan').value };
+        localStorage.setItem('ebnlp_v19', JSON.stringify(db));
     }
 
-    function save() {
-        localStorage.setItem('ebn_asistencia_v1', JSON.stringify(d));
+    function generarPDF() {
+        document.getElementById('navbar').style.display = 'none';
+        document.querySelectorAll('.seccion').forEach(s => s.classList.add('active'));
+        const opt = { margin: 10, filename: 'REPORTE_LUCILA_PALACIOS.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(document.body).save().then(() => { location.reload(); });
     }
 
-    dibujar();
+    init();
 </script>
-
 </body>
 </html>
