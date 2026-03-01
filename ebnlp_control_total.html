@@ -2,209 +2,185 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control Maestro EBNLP - Gestión de Citaciones</title>
+    <title>Sistema Maestro EBNLP - Nube Directiva</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 13px; }
-        .container { max-width: 1300px; margin: auto; }
+        .container { max-width: 1200px; margin: auto; }
         header { background: var(--azul); color: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--naranja); margin-bottom: 15px; }
-        .grid-main { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px; }
-        .btn-citacion { background: var(--naranja); font-size: 0.7rem; padding: 4px; width: auto; }
+        select, input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
         .peligro { color: var(--rojo); font-weight: bold; }
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 10px; }
         th, td { border: 1px solid #333; padding: 6px; text-align: center; }
-        
-        /* Estilos para el PDF del Reporte y el Memo */
-        #area-reporte, #area-memo { background: white; padding: 30px; }
-        .pdf-header { text-align: center; line-height: 1.2; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        #area-memo { padding: 40px; display: none; background: white; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header class="no-print">
+    <header>
         <h2 style="margin:0">E.B.N. "LUCILA PALACIOS"</h2>
-        <span>Control de Asistencia, Tiempos y Medidas Disciplinarias</span>
+        <span>Control Directivo - Conexión Satelital a Google Sheets</span>
     </header>
 
-    <div class="grid-main">
+    <div class="grid">
         <div class="side no-print">
             <div class="card">
-                <h3>📥 Carga de Novedad</h3>
-                <label>Personal:</label>
-                <select id="selPers" onchange="gestionarCampos()"></select>
+                <h3>📥 Registrar Novedad</h3>
+                <label>Seleccionar Personal:</label>
+                <select id="selPers"></select>
                 
-                <label>Estatus:</label>
-                <select id="selEst" onchange="gestionarCampos()">
+                <label>Estatus de hoy:</label>
+                <select id="selEst" onchange="verCampos()">
                     <option value="Asistencia">Asistencia Puntual</option>
                     <option value="Tarde">Llegada Tarde</option>
                     <option value="Permiso">Permiso Personal</option>
                     <option value="Falta Injustificada">Falta Injustificada</option>
                     <option value="Reposo">Reposo Médico</option>
                     <option value="Vacaciones">Vacaciones</option>
-                    <option value="Libre">Día Libre</option>
                 </select>
 
-                <div id="divMinutos" style="display:none; background:#fff3cd; padding:8px; margin:5px 0;">
-                    <label>Minutos de retraso:</label>
-                    <input type="number" id="numMinutos" placeholder="Ej: 20">
+                <div id="divMins" style="display:none; background:#fff3cd; padding:5px; border-radius:5px;">
+                    <label>Minutos de Retraso:</label>
+                    <input type="number" id="numMins" placeholder="Ej: 15">
                 </div>
 
-                <div id="divRango" style="display:none; background:#eee; padding:8px; margin:5px 0;">
-                    <label>Desde:</label><input type="date" id="fecInicio">
-                    <label>Hasta:</label><input type="date" id="fecFin">
-                </div>
-
-                <div id="divSimple">
-                    <label>Fecha:</label><input type="date" id="fecReg">
-                </div>
-
-                <button onclick="registrar()">GUARDAR EN LIBRO</button>
+                <label>Fecha del Registro:</label>
+                <input type="date" id="fecReg">
+                
+                <button onclick="registrar()" style="background:var(--verde); font-size:1.1rem;">💾 GUARDAR Y SUBIR A NUBE</button>
+                <p id="msgNube" style="color:var(--verde); font-weight:bold; text-align:center; display:none;">¡Sincronizado con Google!</p>
             </div>
-            
-            <button style="background:var(--rojo); margin-top:15px;" onclick="generarPDF()">📄 DESCARGAR REPORTE GENERAL</button>
-            <button style="background:#555;" onclick="abrirConfig()">⚙️ EDITAR NÓMINA</button>
+            <button onclick="generarPDF()" style="background:var(--rojo); margin-top:10px;">📄 REPORTE MENSUAL (PDF)</button>
         </div>
 
-        <div id="area-reporte" class="card">
-            <div id="headerPDF" style="display:none;" class="pdf-header">
-                <strong>REPÚBLICA BOLIVARIANA DE VENEZUELA</strong><br>
-                MPPE - E.B.N. "LUCILA PALACIOS"<br>
-                ESTADO BOLÍVAR
+        <div class="card">
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre y Apellido</th>
+                            <th>Cargo/Horario</th>
+                            <th>P.P.</th>
+                            <th>Faltas</th>
+                            <th>Retraso Acum.</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCuerpo"></tbody>
+                </table>
             </div>
-
-            <div id="alertasInmediatas"></div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Cargo</th>
-                        <th>P.P. (30d)</th>
-                        <th>F. Inj</th>
-                        <th>Tiem. Perdido</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCuerpo"></tbody>
-            </table>
         </div>
     </div>
 </div>
 
-<div style="display:none;">
-    <div id="area-memo">
-        <div class="pdf-header">
-            <strong>REPÚBLICA BOLIVARIANA DE VENEZUELA</strong><br>
-            MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN<br>
-            E.B.N. "LUCILA PALACIOS" - GUAYANA CITY
-        </div>
-        <div style="text-align: right; margin-bottom: 30px;"><strong>MEMORÁNDUM DE CITACIÓN</strong></div>
-        <p><strong>DE:</strong> Dirección E.B.N. "Lucila Palacios"</p>
-        <p><strong>PARA:</strong> <span id="memoNombre"></span></p>
-        <p><strong>FECHA:</strong> <span id="memoFecha"></span></p>
-        <br>
-        <p style="text-align: justify;">
-            Por medio de la presente, se le cita a comparecer ante esta Dirección con carácter de obligatoriedad el próximo día hábil, con el fin de tratar asuntos relacionados con su registro de asistencia y puntualidad, específicamente por: <strong><span id="memoMotivo"></span></strong>.
-        </p>
-        <p>El incumplimiento de esta citación será reportado a las instancias superiores.</p>
-        <br><br><br>
-        <div style="text-align:center;">
-            __________________________<br>
-            <strong>YANITZA MALAVÉ</strong><br>
-            Directora (E)
-        </div>
+<div id="area-memo">
+    <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom:10px;">
+        <strong>REPÚBLICA BOLIVARIANA DE VENEZUELA</strong><br>
+        MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN<br>
+        E.B.N. "LUCILA PALACIOS" - GUAYANA
+    </div>
+    <br>
+    <div style="text-align:center;"><strong>CITACIÓN DE DIRECCIÓN</strong></div>
+    <br>
+    <p>Se cita formalmente al ciudadano(a): <strong id="memoNom"></strong></p>
+    <p>Motivo: <span id="memoMot"></span></p>
+    <p>Fecha de Comparecencia: ________________ (Próximo día hábil)</p>
+    <br><br><br>
+    <div style="text-align:center;">
+        ___________________________<br>
+        <strong>YANITZA MALAVÉ</strong><br>
+        Directora (E)
     </div>
 </div>
 
 <script>
-    // Se cargan todos los nombres proporcionados anteriormente automáticamente
-    let storage = JSON.parse(localStorage.getItem('ebnlp_v12')) || {
-        config: `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nDayana Jiménez,Docente\nLorraine Brito,Docente\nRosa Nacaratto,Docente\nNorelis Pérez,Obrero\nRaiza Vallenilla,Cocinera\nOsmil Sanabria,Vigilante A\nCesar Suárez,Vigilante B`, // (Aquí iría la lista completa que ya guardamos)
-        registros: []
-    };
+    // ESTA ES TU LLAVE MAESTRA YA CONFIGURADA
+    const URL_NUBE = "https://script.google.com/macros/s/AKfycbyWt4l2_S3_OsAoj2cFK1zRXcQA6AiEbgynRwfFUw3GJWAmI51PrtMwfHxtOQN7fbhIKg/exec";
 
-    function gestionarCampos() {
-        const est = document.getElementById('selEst').value;
-        document.getElementById('divMinutos').style.display = (est === "Tarde") ? "block" : "none";
-        document.getElementById('divRango').style.display = (est === "Reposo" || est === "Vacaciones") ? "block" : "none";
-        document.getElementById('divSimple').style.display = (est === "Reposo" || est === "Vacaciones") ? "none" : "block";
+    // LISTA CARGADA DEL PERSONAL EBNLP
+    const nomina = `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nYuraima Bastardo,Adm. Mañana\nMirlnis Carvajal,Adm. Mañana\nDayana Jiménez,Doc. Mañana\nLorraine Brito,Doc. Mañana\nRosa Nacaratto,Doc. Mañana\nNeviss Guerra,Doc. Mañana\nRusmary Larez,Doc. Mañana\nGénesis Morillo,Doc. Mañana\nYunequi Valdez,Doc. Mañana\nJunior San Vicente,Doc. Mañana\nYulimar Aguanes,Doc. Mañana\nLuisa Jimenez,Doc. Mañana\nYomaira Cáceres,Doc. Mañana\nAna David,Doc. Mañana\nEliday Salazar,Doc. Mañana\nRoselba Terán,Doc. Mañana\nYorvis Bolivar,Doc. Mañana\nYubiry Martinez,Doc. Mañana\nDalia Luces,Doc. Mañana\nJoleth Guzmán,Doc. Mañana\nAngel Figuera,Doc. Mañana\nFrancelis Montaño,Doc. Mañana\nGaudy Rodríguez,Doc. Mañana\nMagloris Fernández,Doc. Mañana\nNorelis Pérez,Obr. Mañana\nGilda Villarroel,Obr. Mañana\nAna Figuera,Obr. Mañana\nMarleny Serrano,Obr. Mañana\nRuth Campos,Obr. Mañana\nDayana García,Obr. Mañana\nLuisana Quintana,Obr. Mañana\nCarlos Castillo,Obr. Mañana\nEdgar Martinez,Obr. Mañana\nJonathan Cedeño,Obr. Mañana\nLuis Figueroa,Obr. Mañana\nJunior Morgado,Obr. Mañana\nRaiza Vallenilla,Cocina\nGenesis Camero,Cocina\nIrma Jaramillo,Cocina\nDovelis Conde,Cocina\nYureima Pimentel,Cocina\nRosa Rivero,Cocina\nMarcia Guzmán,Cocina\nLianna Carvajal,Adm. Tarde\nMaría Marchan,Adm. Tarde\nGlenis Salazar,Doc. Tarde\nMargoris Rodríguez,Doc. Tarde\nLuisa Sosa,Doc. Tarde\nMilvida Torres,Doc. Tarde\nGladys Salcedo,Doc. Tarde\nYanitza Alexander,Doc. Tarde\nAndreina Flores,Doc. Tarde\nNelida Castellanos,Doc. Tarde\nOnexis Rocca,Doc. Tarde\nJustina Fernández,Doc. Tarde\nLeosmary Loroño,Doc. Tarde\nJosé Shijan Brito,Doc. Tarde\nMayerlin Chacon,Doc. Tarde\nNaileth Vargas,Obr. Tarde\nYoelis Solorzano,Obr. Tarde\nYelitza Medina,Obr. Tarde\nEvelyn Carmona,Obr. Tarde\nDanielys Campos,Obr. Tarde\nJeanmaikol Díaz,Obr. Tarde\nOsmil Sanabria,Vigilante A\nDaher Cardier,Vigilante A\nPedro González,Vigilante A\nMoisés Romero,Vigilante A\nCesar Suárez,Vigilante B\nJuan Vargas,Vigilante B\nGuillermo Albornoz,Vigilante B\nDarwin Aguilera,Vigilante B\nJoseyver López,Vigilante B`;
+
+    let db = JSON.parse(localStorage.getItem('ebnlp_cloud')) || { registros: [] };
+
+    function verCampos() {
+        document.getElementById('divMins').style.display = (document.getElementById('selEst').value === "Tarde") ? "block" : "none";
     }
 
     function registrar() {
-        const idx = document.getElementById('selPers').value;
+        const id = document.getElementById('selPers').value;
         const est = document.getElementById('selEst').value;
-        const mins = parseInt(document.getElementById('numMinutos').value) || 0;
+        const mins = document.getElementById('numMins').value || 0;
         const fec = document.getElementById('fecReg').value;
-        const inicio = document.getElementById('fecInicio').value;
-        const fin = document.getElementById('fecFin').value;
+        const [nombre, cargo] = nomina.split('\n')[id].split(',');
 
-        storage.registros.push({ idx, est, mins, fec, inicio, fin });
-        localStorage.setItem('ebnlp_v12', JSON.stringify(storage));
+        if(!fec) return alert("Por favor seleccione una fecha.");
+
+        const datos = { nombre, cargo, est, mins, fec };
+
+        // ENVÍO A LA NUBE (GOOGLE SHEETS)
+        fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify(datos) })
+        .then(() => {
+            document.getElementById('msgNube').style.display = "block";
+            setTimeout(() => document.getElementById('msgNube').style.display = "none", 3000);
+        });
+
+        // GUARDADO LOCAL PARA REPORTE INMEDIATO
+        db.registros.push({ id, est, mins, fec });
+        localStorage.setItem('ebnlp_cloud', JSON.stringify(db));
+        
+        document.getElementById('numMins').value = "";
         procesar();
     }
 
     function procesar() {
-        const cuerpo = document.getElementById('tablaCuerpo');
-        const personal = storage.config.split('\n');
-        const hoy = new Date().toISOString().split('T')[0];
-        cuerpo.innerHTML = "";
-
-        personal.forEach((linea, i) => {
-            if(!linea.trim()) return;
+        const tbody = document.getElementById('tablaCuerpo');
+        tbody.innerHTML = "";
+        nomina.split('\n').forEach((linea, i) => {
             const [nombre, cargo] = linea.split(',');
-            const regs = storage.registros.filter(r => parseInt(r.idx) === i);
-            
-            const nPP = regs.filter(r => r.est === "Permiso").length;
-            const nFI = regs.filter(r => r.est === "Falta Injustificada").length;
-            const tMinutos = regs.filter(r => r.est === "Tarde").reduce((acc, c) => acc + c.mins, 0);
+            const misRegs = db.registros.filter(r => parseInt(r.id) === i);
+            const pps = misRegs.filter(r => r.est === "Permiso").length;
+            const fis = misRegs.filter(r => r.est === "Falta Injustificada").length;
+            const tMins = misRegs.reduce((acc, r) => acc + parseInt(r.mins), 0);
 
-            // Determinar si necesita citación
-            let btnCitacion = "";
-            if(nPP >= 3 || nFI >= 3 || tMinutos >= 60) {
-                let motivo = nFI >= 3 ? "Reincidencia en Faltas Injustificadas" : "Exceso de Permisos Personales/Tardanzas";
-                btnCitacion = `<button class="btn-citacion" onclick="generarCitacion('${nombre}', '${motivo}')">⚠️ CITAR</button>`;
+            let btn = "";
+            if(pps >= 3 || fis >= 3 || tMins >= 60) {
+                btn = `<button onclick="citar('${nombre}')" style="background:orange; padding:4px; font-size:10px; width:auto;">CITAR</button>`;
             }
 
-            cuerpo.innerHTML += `<tr>
+            tbody.innerHTML += `<tr>
                 <td style="text-align:left">${nombre}</td>
-                <td>${cargo}</td>
-                <td class="${nPP>=3?'peligro':''}">${nPP}/3</td>
-                <td class="${nFI>=3?'peligro':''}">${nFI}</td>
-                <td>${Math.floor(tMinutos/60)}h ${tMinutos%60}m</td>
-                <td>${btnCitacion}</td>
+                <td style="font-size:0.6rem">${cargo}</td>
+                <td class="${pps>=3?'peligro':''}">${pps}/3</td>
+                <td class="${fis>=3?'peligro':''}">${fis}</td>
+                <td class="${tMins>0?'peligro':''}">${Math.floor(tMins/60)}h ${tMins%60}m</td>
+                <td>${btn}</td>
             </tr>`;
         });
     }
 
-    function generarCitacion(nombre, motivo) {
-        document.getElementById('memoNombre').innerText = nombre;
-        document.getElementById('memoMotivo').innerText = motivo;
-        document.getElementById('memoFecha').innerText = new Date().toLocaleDateString();
-        
+    function citar(nom) {
+        document.getElementById('memoNom').innerText = nom;
+        document.getElementById('memoMot').innerText = "Reincidencia en retardos o exceso de inasistencias injustificadas acumuladas en el mes.";
         const memo = document.getElementById('area-memo');
-        html2pdf().set({ margin: 20, filename: `Citacion_${nombre}.pdf` }).from(memo).save();
+        memo.style.display = "block";
+        html2pdf().set({ margin: 20, filename: `Citacion_${nom}.pdf` }).from(memo).save().then(()=>memo.style.display="none");
     }
 
     function generarPDF() {
-        const element = document.getElementById('area-reporte');
-        document.getElementById('headerPDF').style.display = 'block';
-        html2pdf().set({ margin: 10, filename: 'Reporte_Asistencia.pdf' }).from(element).save()
-        .then(() => document.getElementById('headerPDF').style.display = 'none');
+        const table = document.querySelector('table');
+        html2pdf().set({ margin: 10, filename: 'Asistencia_EBNLP.pdf', html2canvas: { scale: 2 } }).from(table).save();
     }
 
-    // Funciones de Configuración (Editar nómina)
-    function abrirConfig() { /* ... (igual al anterior) ... */ }
-    
-    function actualizarSelect() {
-        const s = document.getElementById('selPers'); s.innerHTML = "";
-        storage.config.split('\n').forEach((l, i) => { if(l.trim()) s.innerHTML += `<option value="${i}">${l.split(',')[0]}</option>`; });
-    }
-
-    actualizarSelect();
+    // CARGA INICIAL
+    const s = document.getElementById('selPers');
+    nomina.split('\n').forEach((l, i) => s.innerHTML += `<option value="${i}">${l.split(',')[0]}</option>`);
+    document.getElementById('fecReg').valueAsDate = new Date();
     procesar();
 </script>
 </body>
