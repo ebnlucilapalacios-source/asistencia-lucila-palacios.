@@ -18,7 +18,6 @@
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
 
-        // Funciones Globales para la Nube
         window.saveData = async (data) => { await setDoc(doc(dbCloud, "alumnos_db", "general"), data); };
         
         onSnapshot(doc(dbCloud, "alumnos_db", "general"), (snap) => {
@@ -28,37 +27,28 @@
             }
         });
     </script>
-
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; --rojo: #e74c3c; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
         header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
         .logo { width: 80px; height: 80px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
         .container { max-width: 800px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
-        .cuadro-honor { background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%); border: 3px solid var(--oro); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
-        .btn-pdf { background: var(--azul); color: white; border: none; cursor: pointer; }
         .student-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        .resumen { background: var(--celeste); color: white; padding: 15px; border-radius: 10px; text-align: center; }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo">
     <h1 style="margin:0; font-size: 1.4rem;">ESTADÍSTICAS EBNLP</h1>
     <a href="index.html" class="no-print" style="color: #f39c12; text-decoration: none; font-weight: bold;">← VOLVER AL MENÚ</a>
 </header>
 
 <div class="container">
-    <div class="cuadro-honor">
-        <h3 style="margin:0; color:var(--naranja);">🏆 Cuadro de Honor</h3>
-        <div id="mejorAlumno">Cargando...</div>
-    </div>
-
     <div class="card no-print">
         <h3>➕ Registro de Matrícula</h3>
         <input type="text" id="nomAlum" placeholder="Nombre completo del alumno">
@@ -74,14 +64,6 @@
         <input type="date" id="fechaList" onchange="window.render()">
         <div id="listaContainer" style="margin-top:15px;"></div>
     </div>
-
-    <div class="card">
-        <div class="resumen">
-            <span>Asistencia General del Mes:</span><br>
-            <b id="porcMes" style="font-size: 2.2rem;">0%</b>
-        </div>
-        <button onclick="window.print()" class="btn-pdf no-print" style="margin-top:15px;">🖨️ IMPRIMIR REPORTE ESTADÍSTICO</button>
-    </div>
 </div>
 
 <script>
@@ -92,24 +74,26 @@
         const container = document.getElementById('listaContainer');
         container.innerHTML = "";
 
-        window.db.alumnos.sort((a,b) => a.n.localeCompare(b.n)).forEach(a => {
-            const est = window.db.asistencias[fecha]?.[a.id] || 0;
-            let color = "#ccc", txt = "F";
-            if(est === 1) { color = "var(--exito)"; txt = "P"; }
-            if(est === 2) { color = "var(--oro)"; txt = "J"; }
+        if (window.db.alumnos) {
+            window.db.alumnos.sort((a,b) => a.n.localeCompare(b.n)).forEach(a => {
+                const est = window.db.asistencias[fecha]?.[a.id] || 0;
+                let color = "#ccc", txt = "F";
+                if(est === 1) { color = "var(--exito)"; txt = "P"; }
+                if(est === 2) { color = "var(--oro)"; txt = "J"; }
 
-            container.innerHTML += `
-                <div class="student-item">
-                    <span>${a.n}</span>
-                    <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; padding:5px; font-weight:bold;">${txt}</button>
-                </div>`;
-        });
-        actualizarTotales();
+                container.innerHTML += `
+                    <div class="student-item">
+                        <span>${a.n}</span>
+                        <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; padding:5px; font-weight:bold;">${txt}</button>
+                    </div>`;
+            });
+        }
     };
 
     window.agregar = () => {
         const n = document.getElementById('nomAlum').value.toUpperCase();
         if(!n) return alert("Escribe un nombre");
+        if(!window.db.alumnos) window.db.alumnos = [];
         window.db.alumnos.push({ id: Date.now(), n: n, g: document.getElementById('genAlum').value });
         window.saveData(window.db);
         document.getElementById('nomAlum').value = "";
@@ -118,18 +102,10 @@
     window.marcar = (id) => {
         const f = document.getElementById('fechaList').value;
         if(!window.db.asistencias[f]) window.db.asistencias[f] = {};
-        window.db.asistencias[f][id] = (window.db.asistencias[f][id] + 1) % 3 || 1;
+        let actual = window.db.asistencias[f][id] || 0;
+        window.db.asistencias[f][id] = (actual + 1) % 3 || 1;
         window.saveData(window.db);
     };
-
-    function actualizarTotales() {
-        const alumnos = window.db.alumnos.length;
-        if(alumnos > 0) {
-            document.getElementById('mejorAlumno').innerText = window.db.alumnos[0].n;
-            // Cálculo básico de porcentaje para el ejemplo
-            document.getElementById('porcMes').innerText = "92%"; 
-        }
-    }
 
     document.getElementById('fechaList').value = new Date().toISOString().split('T')[0];
 </script>
