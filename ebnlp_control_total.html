@@ -1,45 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Maestro EBNLP v6 - Gestión Total</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 13px; }
-        .container { max-width: 1200px; margin: auto; }
-        header { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .logo { max-height: 100px; margin-bottom: 10px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); }
-        .stat-card h2 { margin: 5px 0; color: var(--azul); font-size: 1.8rem; }
-        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 15px; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background: var(--azul); color: white; }
-        .asistio { background-color: #d4edda !important; font-weight: bold; }
-        .no-toca { background-color: #f1f1f1; color: #aaa; }
-        .btn-del { background: var(--rojo); padding: 5px; font-size: 10px; width: auto; }
-        .admin-section { border-top: 3px solid var(--naranja); padding-top: 20px; margin-top: 20px; }
-    </style>
-</head>
-<body>
+<style>
+    .matricula-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 5px solid var(--naranja);
+    }
+    .matricula-card { text-align: center; }
+    .matricula-card span { font-size: 0.8rem; color: #666; display: block; }
+    .matricula-card b { font-size: 1.2rem; color: var(--azul); }
+    
+    /* Estilo para que el PDF no corte las tablas */
+    @media print {
+        .admin-section, button { display: none !important; }
+    }
+</style>
 
-<div class="container">
+<div class="container" id="reporteArea">
     <header>
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" alt="Logo" class="logo">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
+             alt="Logo EBNLP" style="width: 100px; height: auto;">
         <h2 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h2>
-        <p style="margin:0; font-weight:bold;">CONTROL DE ASISTENCIA Y GESTIÓN DE PERSONAL</p>
+        <p style="margin:0; font-weight:bold;">SISTEMA DE GESTIÓN DE PERSONAL</p>
     </header>
 
+    <h3 style="color: var(--azul); border-bottom: 2px solid var(--naranja); padding-bottom: 5px;">📋 Matrícula Total de Personal</h3>
+    <div id="matriculaTotal" class="matricula-container">
+        </div>
+
     <div class="stats-grid">
-        <div class="stat-card"><p>ESPERADOS</p><h2 id="totalP">0</h2></div>
+        <div class="stat-card"><p>ESPERADOS HOY</p><h2 id="totalP">0</h2></div>
         <div class="stat-card" style="border-color:var(--verde);"><p>PRESENTES</p><h2 id="countPres">0</h2></div>
-        <div class="stat-card" style="border-color:var(--naranja);"><p>% GENERAL</p><h2 id="percAsis">0%</h2></div>
+        <div class="stat-card" style="border-color:var(--naranja);"><p>% ASISTENCIA</p><h2 id="percAsis">0%</h2></div>
     </div>
 
     <div class="grid">
@@ -57,21 +52,21 @@
                     <option value="Permiso">Permiso</option>
                     <option value="Reposo">Reposo</option>
                 </select>
-                <button onclick="registrar()" style="background:var(--verde);">💾 GUARDAR ASISTENCIA</button>
+                <button onclick="registrar()" style="background:var(--verde);">💾 GUARDAR</button>
+                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 DESCARGAR PDF</button>
             </div>
 
             <div class="card">
-                <h3>📊 Eficiencia por Función</h3>
+                <h3>📊 Resumen Diario</h3>
                 <table>
                     <thead><tr><th>Cargo</th><th>Esp.</th><th>%</th></tr></thead>
                     <tbody id="resumenCargos"></tbody>
                 </table>
-                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 DESCARGAR PDF</button>
             </div>
         </div>
 
         <div class="card">
-            <h3 id="tituloLista" style="text-align:center;">Lista de Control</h3>
+            <h3 style="text-align:center;">Lista de Control del Día</h3>
             <div style="overflow-x:auto;">
                 <table id="tablaMaestra">
                     <thead><tr><th>Nombre</th><th>Función</th><th>Estatus</th></tr></thead>
@@ -80,74 +75,41 @@
             </div>
         </div>
     </div>
-
-    <div class="card admin-section">
-        <h3 style="color:var(--azul);">⚙️ Panel de Secretaría (Gestión de Nómina)</h3>
-        <p>Use esta sección para ingresar nuevo personal o retirar a quienes ya no laboran.</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input type="text" id="newName" placeholder="Nombre completo" style="flex: 2;">
-            <select id="newCargo" style="flex: 1;">
-                <option value="Directivo">Directivo</option>
-                <option value="Docente">Docente</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="Obrero">Obrero</option>
-                <option value="Cocinera">Cocinera</option>
-                <option value="Vigilante-A">Vigilante Grupo A</option>
-                <option value="Vigilante-B">Vigilante Grupo B</option>
-            </select>
-            <button onclick="agregarPersona()" style="flex: 1; background:var(--azul);">➕ AGREGAR</button>
-        </div>
-        <br>
-        <h4>Nómina Actual (Haga clic en ❌ para eliminar)</h4>
-        <div id="listaAdmin" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 5px;"></div>
-    </div>
 </div>
 
 <script>
-    const URL_NUBE = "https://script.google.com/macros/s/AKfycbyWt4l2_S3_OsAoj2cFK1zRXcQA6AiEbgynRwfFUw3GJWAmI51PrtMwfHxtOQN7fbhIKg/exec";
+    // ... (Tu URL_NUBE e inicial se mantienen igual) ...
 
-    // Lista Inicial (Si la memoria está vacía)
-    const inicial = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
+    function actualizarMatriculaTotal() {
+        let conteo = { "Directivo":0, "Docente":0, "Administrativo":0, "Obrero":0, "Cocinera":0, "Vigilante":0 };
+        
+        nomina.forEach(p => {
+            let cargoLimpio = p.cargo.includes("Vigilante") ? "Vigilante" : p.cargo;
+            if(conteo[cargoLimpio] !== undefined) conteo[cargoLimpio]++;
+        });
 
-    let nomina = JSON.parse(localStorage.getItem('ebnlp_nomina')) || inicial.split(';').map(p => ({nombre: p.split(',')[0], cargo: p.split(',')[1]}));
-    let db = JSON.parse(localStorage.getItem('ebnlp_asistencia_v6')) || { registros: [] };
+        const matDiv = document.getElementById('matriculaTotal');
+        matDiv.innerHTML = "";
+        let totalTotal = 0;
 
-    function agregarPersona() {
-        const nom = document.getElementById('newName').value;
-        const car = document.getElementById('newCargo').value;
-        if(!nom) return alert("Escriba el nombre");
-        nomina.push({nombre: nom, cargo: car});
-        guardarTodo();
-        document.getElementById('newName').value = "";
-    }
-
-    function eliminarPersona(index) {
-        if(confirm(`¿Seguro que desea eliminar a ${nomina[index].nombre}?`)) {
-            nomina.splice(index, 1);
-            guardarTodo();
+        for (let cargo in conteo) {
+            totalTotal += conteo[cargo];
+            matDiv.innerHTML += `
+                <div class="matricula-card">
+                    <span>${cargo}</span>
+                    <b>${conteo[cargo]}</b>
+                </div>`;
         }
+        matDiv.innerHTML += `
+            <div class="matricula-card" style="border-left: 1px solid #ddd; margin-left: 10px;">
+                <span>TOTAL</span>
+                <b style="color:var(--rojo)">${totalTotal}</b>
+            </div>`;
     }
 
-    function guardarTodo() {
-        localStorage.setItem('ebnlp_nomina', JSON.stringify(nomina));
-        procesar();
-    }
-
-    function registrar() {
-        const id = document.getElementById('selPers').value;
-        const est = document.getElementById('selEst').value;
-        const fec = document.getElementById('fecReg').value;
-        const persona = nomina[id];
-
-        fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ nombre: persona.nombre, cargo: persona.cargo, est, fec }) });
-
-        db.registros = db.registros.filter(r => !(r.nombre === persona.nombre && r.fec === fec)); 
-        db.registros.push({ nombre: persona.nombre, est, fec });
-        localStorage.setItem('ebnlp_asistencia_v6', JSON.stringify(db));
-        procesar();
-    }
-
+    // Modificamos ligeramente tu función procesar() para incluir el conteo
     function procesar() {
+        actualizarMatriculaTotal();
         const fechaVal = document.getElementById('fecReg').value;
         const hoy = new Date(fechaVal + "T00:00:00");
         const diaSemana = hoy.getDay(); 
@@ -158,22 +120,15 @@
         const tbody = document.getElementById('tablaCuerpo');
         const rbody = document.getElementById('resumenCargos');
         const sel = document.getElementById('selPers');
-        const admin = document.getElementById('listaAdmin');
 
-        tbody.innerHTML = ""; rbody.innerHTML = ""; sel.innerHTML = ""; admin.innerHTML = "";
+        tbody.innerHTML = ""; rbody.innerHTML = ""; sel.innerHTML = "";
 
         let totales = { "Directivo":0, "Docente":0, "Administrativo":0, "Obrero":0, "Cocinera":0, "Vigilante":0 };
         let presentes = { "Directivo":0, "Docente":0, "Administrativo":0, "Obrero":0, "Cocinera":0, "Vigilante":0 };
         let esperadosHoy = 0;
 
         nomina.forEach((p, i) => {
-            // Llenar selector y admin
             sel.innerHTML += `<option value="${i}">${p.nombre}</option>`;
-            admin.innerHTML += `<div style="background:#eee; padding:5px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:11px;">${p.nombre} (${p.cargo})</span>
-                <button class="btn-del" onclick="eliminarPersona(${i})">❌</button>
-            </div>`;
-
             const reg = db.registros.find(r => r.nombre === p.nombre && r.fec === fechaVal);
             let laboraHoy = true;
             let cargoLimpio = p.cargo.includes("Vigilante") ? "Vigilante" : p.cargo;
@@ -206,11 +161,18 @@
     }
 
     function generarReportePDF() {
-        html2pdf().set({ margin: 10, filename: `Asistencia_EBNLP_${document.getElementById('fecReg').value}.pdf` }).from(document.body).save();
+        const elemento = document.getElementById('reporteArea');
+        const opt = {
+            margin: 10,
+            filename: `Reporte_Asistencia_${document.getElementById('fecReg').value}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true }, // Importante para cargar el logo
+            jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(elemento).save();
     }
-
+    
+    // Al cargar la página
     document.getElementById('fecReg').valueAsDate = new Date();
     procesar();
 </script>
-</body>
-</html>
