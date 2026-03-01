@@ -33,6 +33,8 @@
 
         .resumen-final { background: var(--celeste); color: white; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
 
+        .selector-fecha { background: #e8f4fd; padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--azul); }
+
         @media print {
             .no-print, button, input, select { display: none !important; }
             .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
@@ -66,12 +68,12 @@
     </div>
 
     <div class="card">
-        <h3>📈 Variación de Asistencia (Últimos Días)</h3>
+        <h3>📈 Variación de Asistencia (Últimos Días Registrados)</h3>
         <div id="graficoAsistencia" class="chart-container"></div>
     </div>
 
     <div class="card no-print">
-        <h3>➕ Registro / Ingreso de Alumno</h3>
+        <h3>➕ Registro de Nuevo Alumno</h3>
         <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
         <div style="display: flex; gap: 10px;">
             <select id="newGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
@@ -82,16 +84,26 @@
     </div>
 
     <div class="card">
-        <h3>📅 Pase de Lista Hoy: <span id="fechaActual"></span></h3>
+        <h3>📅 Pase de Lista</h3>
+        <div class="selector-fecha no-print">
+            <label>Seleccione Fecha para pasar Asistencia:</label>
+            <input type="date" id="fechaSeleccionada" onchange="cambiarFecha()">
+        </div>
+        <p><b>Fecha actual de registro:</b> <span id="displayFecha"></span></p>
         <div id="listaAsistencia"></div>
     </div>
 
     <div class="card">
         <h2 style="text-align: center; color: var(--celeste);">REPORTE ESTADÍSTICO MENSUAL</h2>
+        <div class="no-print" style="margin-bottom: 15px;">
+            <label>Filtrar Reporte por Mes:</label>
+            <input type="month" id="filtroMes" onchange="render()">
+        </div>
+        
         <p><b>Docente:</b> <span id="repDocente"></span> | <b>Sección:</b> <span id="repSeccion"></span></p>
         
         <div class="resumen-final">
-            <span style="font-size: 1.1rem;">Porcentaje de Asistencia de la Matrícula en el Mes:</span><br>
+            <span style="font-size: 1.1rem;">Porcentaje de Asistencia del Mes seleccionado:</span><br>
             <span id="porcentajeGlobalMensual" style="font-size: 2.5rem; font-weight: bold;">0%</span>
         </div>
 
@@ -108,13 +120,23 @@
 </div>
 
 <script>
+    // Inicialización de la Base de Datos
     let db = JSON.parse(localStorage.getItem('ebn_v14')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
+    
+    // Manejo de fechas: por defecto hoy
     let hoy = new Date().toISOString().split('T')[0];
+    let fechaTrabajo = hoy;
 
     function init() {
-        document.getElementById('fechaActual').innerText = hoy;
+        document.getElementById('fechaSeleccionada').value = hoy;
+        document.getElementById('filtroMes').value = hoy.substring(0, 7); // YYYY-MM
         document.getElementById('docente').value = db.docente || "";
         document.getElementById('seccion').value = db.seccion || "";
+        render();
+    }
+
+    function cambiarFecha() {
+        fechaTrabajo = document.getElementById('fechaSeleccionada').value;
         render();
     }
 
@@ -131,37 +153,44 @@
         const fotoFile = document.getElementById('newFoto').files[0];
         if(!nom || !nac) return alert("Complete los datos.");
 
-        let fotoBase64 = "";
         if(fotoFile) {
             const reader = new FileReader();
             reader.readAsDataURL(fotoFile);
             reader.onload = () => {
                 db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac, foto: reader.result });
                 save(); render();
-                document.getElementById('newNombre').value = "";
+                limpiarForm();
             };
         } else {
             db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac, foto: "" });
             save(); render();
-            document.getElementById('newNombre').value = "";
+            limpiarForm();
         }
     }
 
+    function limpiarForm() {
+        document.getElementById('newNombre').value = "";
+        document.getElementById('newNac').value = "";
+        document.getElementById('newFoto').value = "";
+    }
+
     function marcar(id) {
-        if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
-        let actual = db.asistencias[hoy][id] || 0;
-        db.asistencias[hoy][id] = (actual + 1) % 3; // 0:Falta, 1:Presente, 2:Justificado
+        if(!db.asistencias[fechaTrabajo]) db.asistencias[fechaTrabajo] = {};
+        let actual = db.asistencias[fechaTrabajo][id] || 0;
+        db.asistencias[fechaTrabajo][id] = (actual + 1) % 3; // 0:Falta, 1:Presente, 2:Justificado
         save(); render();
     }
 
     function render() {
+        document.getElementById('displayFecha').innerText = fechaTrabajo;
         document.getElementById('repDocente').innerText = db.docente;
         document.getElementById('repSeccion').innerText = db.seccion;
 
+        // Renderizar Lista de Asistencia para la fecha seleccionada
         const lista = document.getElementById('listaAsistencia');
         lista.innerHTML = "";
         db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-            const estado = (db.asistencias[hoy] && db.asistencias[hoy][a.id]) || 0;
+            const estado = (db.asistencias[fechaTrabajo] && db.asistencias[fechaTrabajo][a.id]) || 0;
             let color = "#ccc", texto = "F";
             if(estado === 1) { color = "var(--exito)"; texto = "P"; }
             if(estado === 2) { color = "var(--morado)"; texto = "J"; }
@@ -181,15 +210,18 @@
     function dibujarGrafico() {
         const grafico = document.getElementById('graficoAsistencia');
         grafico.innerHTML = "";
-        const dias = Object.keys(db.asistencias).sort().slice(-10);
-        dias.forEach(d => {
+        // Mostrar los últimos 10 días que tengan datos registrados
+        const diasConDatos = Object.keys(db.asistencias).sort().slice(-10);
+        diasConDatos.forEach(d => {
             let pres = Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
             let porc = db.alumnos.length > 0 ? (pres / db.alumnos.length) * 100 : 0;
-            grafico.innerHTML += `<div class="bar" style="height: ${porc}%"><span class="bar-label">${d.split('-')[2]}</span></div>`;
+            grafico.innerHTML += `<div class="bar" style="height: ${porc}%"><span class="bar-label">${d.split('-')[2]}/${d.split('-')[1]}</span></div>`;
         });
     }
 
     function actualizarTablasYPorcentajes() {
+        const mesFiltro = document.getElementById('filtroMes').value; // Formato YYYY-MM
+
         // 1. Tabla de Edades
         let ed = {}; let tH=0, tV=0;
         db.alumnos.forEach(a => {
@@ -203,35 +235,36 @@
         });
         document.getElementById('tablaEdades').innerHTML = hE + `<tr><td><b>TOTAL</b></td><td>${tH}</td><td>${tV}</td><td><b>${db.alumnos.length}</b></td></tr></table>`;
 
-        // 2. Tabla Mensual y Cálculo de Porcentaje Global
-        const dias = Object.keys(db.asistencias).sort();
-        let sumaPorcentajesDiarios = 0;
+        // 2. Tabla Mensual Filtrada
+        const diasDelMes = Object.keys(db.asistencias)
+            .filter(d => d.startsWith(mesFiltro))
+            .sort();
         
         let hM = `<table><tr><th>Estudiante</th>`;
-        const ultimosDias = dias.slice(-10);
-        ultimosDias.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
+        diasDelMes.forEach(d => hM += `<th>${d.split('-')[2]}</th>`);
         hM += `<th>%</th></tr>`;
 
+        let sumaAsistenciasMes = 0;
+
         db.alumnos.forEach(a => {
-            let c = 0;
+            let asistenciasAlumno = 0;
             hM += `<tr><td style="text-align:left">${a.nombre}</td>`;
-            ultimosDias.forEach(d => {
-                let s = db.asistencias[d][a.id];
-                if(s === 1 || s === 2) c++;
+            diasDelMes.forEach(d => {
+                let s = db.asistencias[d][a.id] || 0;
+                if(s === 1 || s === 2) {
+                    asistenciasAlumno++;
+                    sumaAsistenciasMes++;
+                }
                 hM += `<td>${s===1?'P':(s===2?'J':'F')}</td>`;
             });
-            let pInd = ultimosDias.length > 0 ? Math.round((c/ultimosDias.length)*100) : 0;
+            let pInd = diasDelMes.length > 0 ? Math.round((asistenciasAlumno/diasDelMes.length)*100) : 0;
             hM += `<td><b>${pInd}%</b></td></tr>`;
         });
         document.getElementById('tablaMensual').innerHTML = hM + "</table>";
 
-        // Cálculo Global Mensual (Matrícula total)
-        let totalAsistenciasPosibles = db.alumnos.length * dias.length;
-        let totalAsistenciasReales = 0;
-        dias.forEach(d => {
-            totalAsistenciasReales += Object.values(db.asistencias[d]).filter(v => v === 1 || v === 2).length;
-        });
-        let porcGlobal = totalAsistenciasPosibles > 0 ? Math.round((totalAsistenciasReales / totalAsistenciasPosibles) * 100) : 0;
+        // Cálculo Global Mensual
+        let totalPosibleMes = db.alumnos.length * diasDelMes.length;
+        let porcGlobal = totalPosibleMes > 0 ? Math.round((sumaAsistenciasMes / totalPosibleMes) * 100) : 0;
         document.getElementById('porcentajeGlobalMensual').innerText = porcGlobal + "%";
     }
 
@@ -239,7 +272,7 @@
         let max = -1, mejor = null;
         db.alumnos.forEach(a => {
             let totalDias = Object.keys(db.asistencias).length;
-            let asist = Object.values(db.asistencias).filter(d => d[a.id] === 1 || d[a.id] === 2).length;
+            let asist = Object.keys(db.asistencias).filter(d => db.asistencias[d][a.id] === 1 || db.asistencias[d][a.id] === 2).length;
             let p = totalDias > 0 ? (asist/totalDias)*100 : 0;
             if(p > max) { max = p; mejor = a; }
         });
@@ -249,11 +282,14 @@
                 <h3 style="margin:10px 0 0 0;">${mejor.nombre}</h3>
                 <p style="color:var(--exito); font-weight:bold;">Excelente Asistencia: ${Math.round(max)}%</p>
             `;
+        } else {
+            document.getElementById('honorContent').innerHTML = `<p>Registre más asistencias para destacar al mejor estudiante.</p>`;
         }
     }
 
     function save() { localStorage.setItem('ebn_v14', JSON.stringify(db)); }
-    init();
+    
+    window.onload = init;
 </script>
 </body>
 </html>
