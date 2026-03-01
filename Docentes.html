@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asistencia - Lucila Palacios</title>
+    <style>
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --error: #e74c3c; --oro: #f1c40f; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--gris); color: #333; }
+        
+        /* Encabezado Institucional */
+        header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 25px; text-align: center; border-bottom: 5px solid var(--naranja); position: relative; }
+        .logo-escuela { width: 100px; height: 100px; background: white; border-radius: 50%; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; }
+        
+        .container { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
+        
+        /* Cuadro de Honor */
+        .cuadro-honor { background: linear-gradient(to right, #fff9c4, #fff); border: 2px solid var(--oro); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px; display: none; }
+        .foto-honor { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--oro); object-fit: cover; }
+
+        /* Formulario y Botones */
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; }
+        .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; transition: 0.3s; }
+        .btn-main:hover { background: #219150; }
+        
+        /* Lista de Alumnos con Foto */
+        .student-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-bottom: 1px solid #eee; background: #fff; }
+        .student-photo { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .student-info { flex-grow: 1; }
+        .student-info b { font-size: 1.1rem; color: var(--celeste); }
+        
+        /* Estadísticas */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #ebf5fb; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #d4e6f1; }
+        .stat-val { display: block; font-size: 1.5rem; font-weight: bold; color: var(--azul); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; }
+        th { background: #f8f9fa; color: var(--celeste); }
+
+        @media print {
+            .no-print, button, input, select, .label-file { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #eee; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://i.ibb.co/Lzr2Cg0/421692.png" class="logo-escuela" alt="Logo">
+    <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin:5px 0 0; font-size:1.1rem;">Panel de Control Estadístico Docente</p>
+</header>
+
+<div class="container">
+    <div id="honorCard" class="cuadro-honor">
+        <h2 style="color:var(--naranja); margin-top:0;">🏆 Cuadro de Honor (Asistencia)</h2>
+        <div id="honorContent"></div>
+    </div>
+
+    <div class="card no-print">
+        <h3>👤 Información de la Sección</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="docente" placeholder="Nombre del Docente" onchange="saveConfig()">
+            <input type="text" id="seccion" placeholder="Grado y Sección" onchange="saveConfig()">
+        </div>
+    </div>
+
+    <div class="card no-print">
+        <h3>📝 Gestión de Matrícula (Ingresos)</h3>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <input type="text" id="newNombre" placeholder="Nombre Apellido">
+            <select id="newGen"><option value="F">Femenino</option><option value="M">Masculino</option></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="date" id="newNac">
+            <input type="file" id="newFoto" accept="image/*" class="label-file">
+        </div>
+        <button onclick="agregarAlumno()" class="btn-main">➕ Incorporar Alumno</button>
+    </div>
+
+    <div class="card">
+        <h3>📅 Control de Asistencia: <span id="fechaActual"></span></h3>
+        <div class="stats-grid">
+            <div class="stat-card"><span class="stat-val" id="percDiario">0%</span>Asistencia Hoy</div>
+            <div class="stat-card"><span class="stat-val" id="totalMat">0</span>Matrícula</div>
+            <div class="stat-card"><span class="stat-val" id="totalPres">0</span>Presentes</div>
+        </div>
+        <div id="listaAsistencia"></div>
+    </div>
+
+    <div class="card reporte-final">
+        <div class="print-only" style="text-align: center; display: none;">
+            <img src="https://i.ibb.co/Lzr2Cg0/421692.png" style="width:60px;">
+            <h2>REPORTE ESTADÍSTICO MENSUAL</h2>
+            <p><b>Docente:</b> <span id="repDoc"></span> | <b>Sección:</b> <span id="repSec"></span></p>
+        </div>
+
+        <h3>📊 Distribución de Edades y Género</h3>
+        <div id="tablaEdades"></div>
+
+        <h3 style="margin-top:25px;">📉 Resumen Mensual (%)</h3>
+        <div id="tablaMensual" style="overflow-x: auto;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;" class="no-print">
+            <button onclick="window.print()" style="background:var(--azul); color:white;">🖨️ Generar PDF / Imprimir</button>
+            <button onclick="enviarReporte()" style="background:var(--celeste); color:white;">📧 Enviar al Director</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('ebn_pro_v1')) || { docente: "", seccion: "", alumnos: [], asistencias: {} };
+    let hoy = new Date().toISOString().split('T')[0];
+
+    function init() {
+        document.getElementById('fechaActual').innerText = hoy;
+        document.getElementById('docente').value = db.docente;
+        document.getElementById('seccion').value = db.seccion;
+        render();
+    }
+
+    function saveConfig() {
+        db.docente = document.getElementById('docente').value;
+        db.seccion = document.getElementById('seccion').value;
+        save();
+    }
+
+    async function agregarAlumno() {
+        const nom = document.getElementById('newNombre').value.toUpperCase();
+        const gen = document.getElementById('newGen').value;
+        const nac = document.getElementById('newNac').value;
+        const fotoFile = document.getElementById('newFoto').files[0];
+        
+        if(!nom || !nac) return alert("Complete los datos");
+
+        let fotoBase64 = "";
+        if(fotoFile) {
+            fotoBase64 = await toBase64(fotoFile);
+        }
+
+        db.alumnos.push({
+            id: Date.now(),
+            nombre: nom,
+            genero: gen,
+            nacimiento: nac,
+            foto: fotoBase64,
+            activo: true
+        });
+
+        save();
+        document.getElementById('newNombre').value = "";
+        render();
+    }
+
+    const toBase64 = file => new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => res(reader.result);
+    });
+
+    function desincorporar(id) {
+        if(confirm("¿Seguro que desea desincorporar (retirar) a este alumno?")) {
+            db.alumnos = db.alumnos.filter(a => a.id !== id);
+            save(); render();
+        }
+    }
+
+    function marcar(id) {
+        if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
+        db.asistencias[hoy][id] = !db.asistencias[hoy][id];
+        save(); render();
+    }
+
+    function render() {
+        const lista = document.getElementById('listaAsistencia');
+        lista.innerHTML = "";
+        let presentes = 0;
+        let matriculaActiva = db.alumnos.length;
+
+        db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            const isPres = db.asistencias[hoy] && db.asistencias[hoy][a.id];
+            if(isPres) presentes++;
+
+            lista.innerHTML += `
+                <div class="student-item">
+                    <img src="${a.foto || 'https://via.placeholder.com/50'}" class="student-photo">
+                    <div class="student-info">
+                        <b>${a.nombre}</b><br>
+                        <small>${a.genero === 'F' ? 'Hembra' : 'Varón'} | 
+                        <span style="color:red; cursor:pointer" onclick="desincorporar(${a.id})">Desincorporar</span></small>
+                    </div>
+                    <button onclick="marcar(${a.id})" class="btn-asis" 
+                        style="width:80px; background:${isPres ? 'var(--exito)' : '#ccc'}; color:white; border:none; border-radius:10px;">
+                        ${isPres ? 'PRESENTE' : 'FALTA'}
+                    </button>
+                </div>
+            `;
+        });
+
+        // Actualizar Estadísticas
+        document.getElementById('totalMat').innerText = matriculaActiva;
+        document.getElementById('totalPres').innerText = presentes;
+        let perc = matriculaActiva > 0 ? Math.round((presentes/matriculaActiva)*100) : 0;
+        document.getElementById('percDiario').innerText = perc + "%";
+
+        actualizarTablas();
+        verificarCuadroHonor();
+    }
+
+    function actualizarTablas() {
+        // Tabla de Edades
+        let edades = {};
+        db.alumnos.forEach(a => {
+            let edad = new Date().getFullYear() - new Date(a.nacimiento).getFullYear();
+            if(!edades[edad]) edades[edad] = { f:0, m:0 };
+            a.genero === 'F' ? edades[edad].f++ : edades[edad].m++;
+        });
+
+        let htmlE = `<table><tr><th>Edad</th><th>Hembras</th><th>Varones</th><th>Total</th></tr>`;
+        Object.keys(edades).sort().forEach(e => {
+            let t = edades[e].f + edades[e].m;
+            htmlE += `<tr><td>${e} años</td><td>${edades[e].f}</td><td>${edades[e].m}</td><td>${t}</td></tr>`;
+        });
+        htmlE += `</table>`;
+        document.getElementById('tablaEdades').innerHTML = htmlE;
+
+        // Resumen Mensual (Últimos 5 días registrados)
+        const dias = Object.keys(db.asistencias).sort().slice(-5);
+        let htmlM = `<table><tr><th>Alumno</th>`;
+        dias.forEach(d => htmlM += `<th>${d.split('-')[2]}/${d.split('-')[1]}</th>`);
+        htmlM += `<th>% Asis.</th></tr>`;
+        
+        db.alumnos.forEach(a => {
+            let asistidos = 0;
+            htmlM += `<tr><td style="text-align:left">${a.nombre}</td>`;
+            dias.forEach(d => {
+                const p = db.asistencias[d][a.id];
+                if(p) asistidos++;
+                htmlM += `<td>${p ? '✔' : 'F'}</td>`;
+            });
+            let pAlu = dias.length > 0 ? Math.round((asistidos/dias.length)*100) : 0;
+            htmlM += `<td><b>${pAlu}%</b></td></tr>`;
+        });
+        htmlM += `</table>`;
+        document.getElementById('tablaMensual').innerHTML = htmlM;
+    }
+
+    function verificarCuadroHonor() {
+        const honorCard = document.getElementById('honorCard');
+        const honorContent = document.getElementById('honorContent');
+        
+        let mejores = db.alumnos.map(a => {
+            let totalDias = Object.keys(db.asistencias).length;
+            let asistidos = Object.values(db.asistencias).filter(dia => dia[a.id]).length;
+            return { ...a, porcentaje: totalDias > 0 ? (asistidos/totalDias)*100 : 0 };
+        });
+
+        let top = mejores.sort((a,b) => b.porcentaje - a.porcentaje)[0];
+
+        if(top && top.porcentaje >= 90) {
+            honorCard.style.display = "block";
+            honorContent.innerHTML = `
+                <img src="${top.foto || ''}" class="foto-honor"><br>
+                <b style="font-size:1.2rem">${top.nombre}</b><br>
+                <span>Asistencia Perfecta: ${Math.round(top.porcentaje)}%</span>
+            `;
+        } else { honorCard.style.display = "none"; }
+    }
+
+    function enviarReporte() {
+        const subject = encodeURIComponent(`Reporte Asistencia - ${db.seccion} - ${hoy}`);
+        const body = encodeURIComponent(`Director(a),\n\nAdjunto resumen de hoy:\nMatrícula: ${db.alumnos.length}\nAsistencia: ${document.getElementById('percDiario').innerText}\n\nDocente: ${db.docente}`);
+        window.location.href = `mailto:direccion@escuela.com?subject=${subject}&body=${body}`;
+    }
+
+    function save() { localStorage.setItem('ebn_pro_v1', JSON.stringify(db)); }
+    init();
+</script>
+</body>
+</html>
