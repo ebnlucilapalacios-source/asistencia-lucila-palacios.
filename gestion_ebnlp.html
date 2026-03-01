@@ -3,162 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Escolar EBNLP v9</title>
+    <title>SISTEMA MAESTRO EBN LUCILA PALACIOS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; font-size: 13px; }
-        
-        nav { background: var(--azul); display: flex; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        nav button { background: none; border: none; color: white; padding: 12px; cursor: pointer; font-weight: bold; white-space: nowrap; flex: 1; font-size: 11px; }
-        nav button.active { background: var(--naranja); color: #000; }
-
-        .container { max-width: 1200px; margin: auto; padding: 10px; }
-        header { background: white; padding: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 10px; border-radius: 0 0 10px 10px; }
-        .logo { max-height: 60px; }
-        
-        .section { display: none; padding: 5px; animation: fadeIn 0.3s; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+        :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #b22222; --verde: #27ae60; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; font-size: 11px; }
+        nav { background: var(--azul); display: flex; overflow-x: auto; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        nav button { background: none; border: none; color: white; padding: 12px; cursor: pointer; font-weight: bold; flex: 1; border-bottom: 3px solid transparent; white-space: nowrap; }
+        nav button.active { border-bottom: 3px solid var(--naranja); color: var(--naranja); }
+        .container { max-width: 1100px; margin: auto; padding: 10px; }
+        header { background: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--naranja); border-radius: 0 0 15px 15px; margin-bottom: 10px; }
+        .logo { max-height: 85px; width: auto; margin-bottom: 10px; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-        
-        input, select, button, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; }
+        input, select, button, textarea { width: 100%; padding: 8px; margin: 4px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 11px; box-sizing: border-box; }
         button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 10px; }
         th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background: #eee; color: var(--azul); }
-        
-        /* Semáforo */
-        .semaforo { width: 20px; height: 20px; border-radius: 50%; display: inline-block; border: 1px solid #999; }
-        .verde { background: var(--verde); }
-        .amarillo { background: #f1c40f; }
-        .rojo { background: var(--rojo); }
-
-        .btn-ws { background: #25D366; color: white; font-size: 14px; height: 45px; }
-        .acta-pre { background: #fff; padding: 20px; border: 1px solid #ccc; font-family: 'Times New Roman', serif; line-height: 1.6; text-align: justify; white-space: pre-wrap; }
+        th { background: #f8f9fa; color: var(--azul); font-weight: bold; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .alerta-box { background: #fff5f5; border: 2px solid var(--rojo); padding: 10px; border-radius: 8px; }
+        .permiso-box { background: #f0f7ff; border: 2px solid var(--azul); padding: 10px; border-radius: 8px; }
+        .no-toca { background: #f9f9f9 !important; color: #bbb; }
+        .asistio { background: #d4edda !important; font-weight: bold; }
+        .alerta-falta { background: #f8d7da !important; color: #721c24; font-weight: bold; border: 1px solid var(--rojo) !important; }
     </style>
 </head>
 <body>
 
 <nav>
     <button onclick="showTab('asistencia')" id="btn-asistencia" class="active">👥 ASISTENCIA</button>
-    <button onclick="showTab('comedor')" id="btn-comedor">🍲 PAE</button>
-    <button onclick="showTab('matricula')" id="btn-matricula">📊 911</button>
+    <button onclick="showTab('pae')" id="btn-pae">🍲 PAE</button>
     <button onclick="showTab('pedagogico')" id="btn-pedagogico">🍎 PEDAGÓGICO</button>
     <button onclick="showTab('bienes')" id="btn-bienes">🏫 BIENES</button>
-    <button onclick="showTab('actas')" id="btn-actas">✍️ ACTAS</button>
-    <button onclick="showTab('reporte')" id="btn-reporte">📱 REPORTE</button>
+    <button onclick="showTab('personal')" id="btn-personal">📝 NÓMINA</button>
 </nav>
 
-<div class="container">
+<div class="container" id="area-reporte">
     <header>
         <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
-        <h3 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h3>
-        <input type="date" id="globalDate" onchange="updateAll()" style="width:140px; margin:0;">
+        <h2 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h2>
+        <p style="margin:2px 0; font-weight: bold; color: #666;">REPORTE INTEGRAL DE DIRECCIÓN</p>
+        <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:10px;">
+            <input type="date" id="globalDate" onchange="updateAll()" style="width:140px;">
+            <button onclick="descargarPDF()" style="width:auto; background:var(--rojo); padding: 6px 20px;">📄 EXPORTAR PDF</button>
+        </div>
     </header>
+
+    <div id="alertasAsistencia" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div class="alerta-box">
+            <h4 style="margin:0; color:var(--rojo);">⚠️ PERSONAL CON 3+ FALTAS</h4>
+            <div id="listCriticos" style="margin-top:5px; font-weight:bold;">Ninguno</div>
+        </div>
+        <div class="permiso-box">
+            <h4 style="margin:0; color:var(--azul);">📅 PERMISOS VIGENTES</h4>
+            <div id="listPermisos" style="margin-top:5px; font-weight:bold;">Ninguno</div>
+        </div>
+    </div>
 
     <div id="asistencia" class="section active">
         <div class="card">
-            <div style="display:flex; gap:5px;">
+            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:5px;">
                 <select id="selPers"></select>
-                <select id="selEst" style="width:120px;">
+                <select id="selEst">
                     <option value="Asistencia">Asistió</option>
-                    <option value="Falta Injustificada">Falta</option>
-                    <option value="Permiso">Permiso</option>
-                    <option value="Reposo">Reposo</option>
+                    <option value="Llegada Tarde">Llegada Tarde</option>
+                    <option value="Falta Injustificada">Falta Injustificada</option>
+                    <option value="Permiso">Permiso Personal</option>
+                    <option value="Reposo">Reposo Médico</option>
+                    <option value="Vacaciones">Vacaciones</option>
                 </select>
-                <button onclick="saveAsis()" style="width:60px; background:var(--verde)">💾</button>
+                <input type="time" id="horaEntrada">
+                <button onclick="saveAsis()" style="background:var(--verde)">💾 REGISTRAR</button>
             </div>
-            <div id="asisSummary" style="margin-top:10px; font-weight:bold; color:var(--azul);"></div>
-        </div>
-        <div class="card" style="overflow-x:auto;">
             <table id="tableAsis">
-                <thead><tr><th>Nombre</th><th>Función</th><th>Estatus</th></tr></thead>
+                <thead>
+                    <tr><th>Trabajador</th><th>Cargo/Horario</th><th>Estatus</th><th>Entrada</th><th>Faltas</th></tr>
+                </thead>
                 <tbody id="bodyAsis"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="comedor" class="section">
+    <div id="pae" class="section">
         <div class="card">
-            <h3>Control Diario PAE</h3>
-            <input type="text" id="paeMenu" placeholder="Menú del día">
-            <input type="number" id="paePlatos" placeholder="N° Platos Servidos">
-            <button onclick="savePAE()" style="background:var(--naranja); color:black;">💾 REGISTRAR</button>
-        </div>
-    </div>
-
-    <div id="matricula" class="section">
-        <div class="card">
-            <h3>Resumen Matrícula 911</h3>
-            <table id="table911">
-                <thead><tr><th>Grado</th><th>V</th><th>H</th><th>Total</th></tr></thead>
-                <tbody id="body911"></tbody>
-            </table>
-            <button onclick="save911()" style="margin-top:10px;">💾 ACTUALIZAR</button>
+            <h3>🍲 PAE - Comedor y Almacén</h3>
+            <select id="paeCocino" onchange="togglePae(this.value)">
+                <option value="si">SÍ se cocinó</option>
+                <option value="no">NO se cocinó</option>
+            </select>
+            <div id="paeSi">
+                <input type="text" id="paeMenu" placeholder="Menú del día">
+                <input type="number" id="paeCom" placeholder="N° Comensales">
+                <textarea id="paeRubU" placeholder="Rubros UTILIZADOS hoy"></textarea>
+            </div>
+            <div id="paeNo" style="display:none;"><textarea id="paeMot" placeholder="Motivo de no cocina"></textarea></div>
+            <textarea id="paeRec" placeholder="Rubros RECIBIDOS hoy (CNAE)"></textarea>
+            <textarea id="paeInv" placeholder="INVENTARIO TOTAL en depósito"></textarea>
+            <button onclick="savePAE()" style="background:var(--verde)">💾 GUARDAR PAE</button>
         </div>
     </div>
 
     <div id="pedagogico" class="section">
         <div class="card">
-            <h3>Semáforo de Proyectos (PA)</h3>
-            <p><small>🔴 Pendiente | 🟡 En Revisión | 🟢 Aprobado</small></p>
-            <table id="tablePA">
-                <thead><tr><th>Docente</th><th>Estatus PA</th><th>Acción</th></tr></thead>
-                <tbody id="bodyPA"></tbody>
+            <h3>🍎 Control de Docentes</h3>
+            <table id="tablePed">
+                <thead><tr><th>Docente</th><th>Proyecto (P.A.)</th><th>Planif.</th><th>Observaciones</th></tr></thead>
+                <tbody id="bodyPed"></tbody>
             </table>
         </div>
     </div>
 
     <div id="bienes" class="section">
         <div class="card">
-            <h3>Inventario de Bienes</h3>
+            <h3>🏫 Bienes Nacionales</h3>
             <div style="display:flex; gap:5px;">
-                <input type="text" id="itemNom" placeholder="Ej: Aires acond.">
-                <input type="number" id="itemCant" style="width:80px;">
-                <button onclick="addItem()" style="width:50px;">➕</button>
+                <input type="text" id="bNom" placeholder="Nombre del Bien">
+                <input type="number" id="bCant" style="width:70px;" placeholder="Cant.">
+                <button onclick="addBien()" style="width:60px;">➕</button>
             </div>
-            <div id="listBienes" style="margin-top:10px;"></div>
+            <table id="tableBienes">
+                <thead><tr><th>Bien</th><th>Cant.</th><th>Estado</th><th>Acción</th></tr></thead>
+                <tbody id="bodyBienes"></tbody>
+            </table>
         </div>
     </div>
 
-    <div id="actas" class="section">
+    <div id="personal" class="section">
         <div class="card">
-            <h3>Generador de Actas</h3>
-            <select id="tipoActa">
-                <option value="Consejo Técnico">Consejo Técnico de Docentes</option>
-                <option value="Asamblea de Padres">Asamblea de Representantes</option>
-                <option value="Novedad General">Novedad Administrativa</option>
-            </select>
-            <textarea id="actaTemas" rows="4" placeholder="Escriba los puntos tratados (uno por línea)"></textarea>
-            <button onclick="genActa()">📝 GENERAR BORRADOR</button>
-            <div id="previewActa" class="acta-pre" style="margin-top:15px; display:none;"></div>
-            <button id="btnPdfActa" onclick="pdfActa()" style="background:var(--rojo); display:none; margin-top:10px;">📄 DESCARGAR ACTA</button>
-        </div>
-    </div>
-
-    <div id="reporte" class="section">
-        <div class="card" style="text-align:center;">
-            <div id="previewReporte" style="text-align:left; background:#f9f9f9; padding:10px; border:1px solid #ddd; font-family:monospace; font-size:11px;"></div>
-            <button class="btn-ws" onclick="sendWS()" style="margin-top:10px;">📲 ENVIAR REPORTE DIARIO</button>
+            <h3>👥 Nómina de Personal</h3>
+            <div style="display:grid; grid-template-columns: 2fr 1fr 50px; gap:5px;">
+                <input type="text" id="addNom" placeholder="Nombre completo">
+                <select id="addGrup">
+                    <option value="Docente-M">Docente Mañana</option><option value="Docente-T">Docente Tarde</option>
+                    <option value="Obrero-M">Obrero Mañana</option><option value="Obrero-T">Obrero Tarde</option>
+                    <option value="Admin-M">Admin Mañana</option><option value="Admin-T">Admin Tarde</option>
+                    <option value="Cocinera">Cocinera</option><option value="Vigilante-A">Vigilante Grupo A</option>
+                    <option value="Vigilante-B">Vigilante Grupo B</option><option value="Directivo">Directivo</option>
+                </select>
+                <button onclick="addStaff()">➕</button>
+            </div>
+            <div id="listaPersonal" style="margin-top:10px; max-height:300px; overflow-y:auto; border:1px solid #ddd;"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- DATOS Y LOGICA ---
-    const inicial = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
+    const nominaOriginal = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Admin-M;Mirlnis Carvajal,Admin-M;Lianna Carvajal,Admin-T;María Marchan,Admin-T;Dayana Jiménez,Docente-M;Lorraine Brito,Docente-M;Rosa Nacaratto,Docente-M;Neviss Guerra,Docente-M;Rusmary Larez,Docente-M;Génesis Morillo,Docente-M;Yunequi Valdez,Docente-M;Junior San Vicente,Docente-M;Yulimar Aguanes,Docente-M;Luisa Jimenez,Docente-M;Yomaira Cáceres,Docente-M;Ana David,Docente-M;Eliday Salazar,Docente-M;Roselba Terán,Docente-T;Yorvis Bolivar,Docente-T;Yubiry Martinez,Docente-T;Dalia Luces,Docente-T;Joleth Guzmán,Docente-T;Angel Figuera,Docente-T;Francelis Montaño,Docente-T;Gaudy Rodríguez,Docente-T;Magloris Fernández,Docente-T;Glenis Salazar,Docente-T;Margoris Rodríguez,Docente-T;Luisa Sosa,Docente-T;Milvida Torres,Docente-T;Gladys Salcedo,Docente-T;Yanitza Alexander,Docente-T;Andreina Flores,Docente-T;Nelida Castellanos,Docente-T;Onexis Rocca,Docente-T;Justina Fernández,Docente-T;Leosmary Loroño,Docente-T;José Shijan Brito,Docente-T;Mayerlin Chacon,Docente-T;Norelis Pérez,Obrero-M;Gilda Villarroel,Obrero-M;Ana Figuera,Obrero-M;Marleny Serrano,Obrero-M;Ruth Campos,Obrero-M;Dayana García,Obrero-M;Luisana Quintana,Obrero-M;Carlos Castillo,Obrero-T;Edgar Martinez,Obrero-T;Jonathan Cedeño,Obrero-T;Luis Figueroa,Obrero-T;Junior Morgado,Obrero-T;Naileth Vargas,Obrero-T;Yoelis Solorzano,Obrero-T;Yelitza Medina,Obrero-T;Evelyn Carmona,Obrero-T;Danielys Campos,Obrero-T;Jeanmaikol Díaz,Obrero-T;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
+
+    const h_map = {
+        "Directivo":"Variado", "Cocinera":"7am-2pm", "Vigilante-A":"6am-6am", "Vigilante-B":"6am-6am",
+        "Docente-M":"7am-12pm", "Docente-T":"12pm-5pm", "Obrero-M":"7am-1pm", "Obrero-T":"11:30am-5:30pm",
+        "Admin-M":"7am-1pm", "Admin-T":"12pm-6pm"
+    };
 
     let db = {
-        nom: JSON.parse(localStorage.getItem('v9_nom')) || inicial.split(';').map(l => ({n:l.split(',')[0], c:l.split(',')[1]})),
-        asis: JSON.parse(localStorage.getItem('v9_asis')) || [],
-        pae: JSON.parse(localStorage.getItem('v9_pae')) || {},
-        mat: JSON.parse(localStorage.getItem('v9_mat')) || [{g:"Inicial",v:0,h:0},{g:"1ero",v:0,h:0},{g:"2do",v:0,h:0},{g:"3ero",v:0,h:0},{g:"4to",v:0,h:0},{g:"5to",v:0,h:0},{g:"6to",v:0,h:0}],
-        bienes: JSON.parse(localStorage.getItem('v9_bienes')) || [],
-        pedago: JSON.parse(localStorage.getItem('v9_pedago')) || {}
+        nom: JSON.parse(localStorage.getItem('v18_nom')) || nominaOriginal.split(';').map(l => ({n:l.split(',')[0], c:l.split(',')[1]})),
+        asis: JSON.parse(localStorage.getItem('v18_asis')) || [],
+        pae: JSON.parse(localStorage.getItem('v18_pae')) || {},
+        ped: JSON.parse(localStorage.getItem('v18_ped')) || {},
+        bienes: JSON.parse(localStorage.getItem('v18_bie')) || [{n:"Sillas",c:100,e:"Activo"}]
     };
 
     function showTab(t) {
@@ -166,22 +170,21 @@
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById(t).classList.add('active');
         document.getElementById('btn-'+t).classList.add('active');
-        if(t==='reporte') genReportPreview();
     }
 
-    function updateAll() {
-        renderAsis(); render911(); renderPAE(); renderBienes(); renderPedago();
-    }
+    function togglePae(v) { document.getElementById('paeSi').style.display = (v === 'si' ? 'block' : 'none'); document.getElementById('paeNo').style.display = (v === 'no' ? 'block' : 'none'); }
 
-    // --- FUNCIONES ESPECÍFICAS ---
+    function updateAll() { renderAsis(); renderPAE(); renderPed(); renderBienes(); renderStaff(); }
+
     function saveAsis() {
         const id = document.getElementById('selPers').value;
         const fec = document.getElementById('globalDate').value;
         const est = document.getElementById('selEst').value;
+        const hor = document.getElementById('horaEntrada').value;
         db.asis = db.asis.filter(a => !(a.n === db.nom[id].n && a.f === fec));
-        db.asis.push({n: db.nom[id].n, f: fec, e: est});
-        localStorage.setItem('v9_asis', JSON.stringify(db.asis));
-        renderAsis();
+        db.asis.push({n: db.nom[id].n, f: fec, e: est, h: hor, g: db.nom[id].c});
+        localStorage.setItem('v18_asis', JSON.stringify(db.asis));
+        updateAll();
     }
 
     function renderAsis() {
@@ -195,97 +198,67 @@
         const sel = document.getElementById('selPers');
         body.innerHTML = ""; sel.innerHTML = "";
         
-        let esp = 0, pres = 0;
+        let criticosHTML = ""; let permisosHTML = "";
+
         db.nom.forEach((p, i) => {
             sel.innerHTML += `<option value="${i}">${p.n}</option>`;
-            let labora = p.c.includes("Vigilante") ? (p.c === grupoActivo) : (diaSem !== 0 && diaSem !== 6);
-            const r = db.asis.find(a => a.n === p.n && a.f === fec);
-            if(labora) { esp++; if(r && r.e === "Asistencia") pres++; }
-            body.innerHTML += `<tr class="${!labora?'no-toca':(r&&r.e==='Asistencia'?'asistio':'')}"><td>${p.n}</td><td>${p.c}</td><td>${r?r.e:(labora?'Pendiente':'Libre')}</td></tr>`;
-        });
-        document.getElementById('asisSummary').innerText = `Esperados: ${esp} | Presentes: ${pres} (${esp>0?((pres/esp)*100).toFixed(0):0}%)`;
-    }
+            let labora = false;
+            if(p.c.includes("Vigilante")) labora = (p.c === grupoActivo);
+            else if(diaSem >= 1 && diaSem <= 5) labora = true;
 
-    function renderPedago() {
-        const body = document.getElementById('bodyPA');
-        body.innerHTML = "";
-        db.nom.filter(p => p.c === "Docente").forEach(p => {
-            const status = db.pedago[p.n] || "rojo";
-            body.innerHTML += `<tr>
-                <td>${p.n}</td>
-                <td><span class="semaforo ${status}"></span></td>
-                <td><select onchange="updatePA('${p.n}', this.value)">
-                    <option value="rojo" ${status==='rojo'?'selected':''}>Pendiente</option>
-                    <option value="amarillo" ${status==='amarillo'?'selected':''}>Revisión</option>
-                    <option value="verde" ${status==='verde'?'selected':''}>Aprobado</option>
-                </select></td>
-            </tr>`;
+            const r = db.asis.find(a => a.n === p.n && a.f === fec);
+            const f_injust = db.asis.filter(a => a.n === p.n && a.e === "Falta Injustificada").length;
+            const tienePermiso = db.asis.find(a => a.n === p.n && a.f === fec && a.e === "Permiso");
+
+            if(f_injust >= 3) criticosHTML += `<div>❌ ${p.n} (${f_injust} faltas)</div>`;
+            if(tienePermiso) permisosHTML += `<div>✅ ${p.n} (Permiso Activo)</div>`;
+
+            const clase = !labora ? "no-toca" : (r && (r.e==='Asistencia' || r.e==='Llegada Tarde') ? "asistio" : (f_injust>=3?'alerta-falta':''));
+
+            body.innerHTML += `<tr class="${clase}">
+                <td>${p.n}</td><td>${p.c}<br><small>${h_map[p.c]||'7am'}</small></td>
+                <td>${r?r.e:(labora?'Pendiente':'Libre')}</td><td>${r&&r.h?r.h:'-'}</td><td>${f_injust}</td></tr>`;
         });
+        document.getElementById('listCriticos').innerHTML = criticosHTML || "Sin alertas.";
+        document.getElementById('listPermisos').innerHTML = permisosHTML || "Sin permisos hoy.";
     }
-    function updatePA(nom, val) { db.pedago[nom] = val; localStorage.setItem('v9_pedago', JSON.stringify(db.pedago)); renderPedago(); }
 
     function savePAE() {
-        const fec = document.getElementById('globalDate').value;
-        db.pae[fec] = { m: document.getElementById('paeMenu').value, p: document.getElementById('paePlatos').value };
-        localStorage.setItem('v9_pae', JSON.stringify(db.pae));
-        alert("PAE Guardado");
+        const f = document.getElementById('globalDate').value;
+        db.pae[f] = { coc: document.getElementById('paeCocino').value, m: document.getElementById('paeMenu').value, c: document.getElementById('paeCom').value, ru: document.getElementById('paeRubU').value, rr: document.getElementById('paeRec').value, inv: document.getElementById('paeInv').value, mot: document.getElementById('paeMot').value };
+        localStorage.setItem('v18_pae', JSON.stringify(db.pae)); alert("Datos guardados.");
     }
-
     function renderPAE() {
-        const fec = document.getElementById('globalDate').value;
-        const d = db.pae[fec] || {m:"", p:0};
-        document.getElementById('paeMenu').value = d.m;
-        document.getElementById('paePlatos').value = d.p;
+        const d = db.pae[document.getElementById('globalDate').value] || {coc:'si', m:'', c:'', ru:'', rr:'', inv:'', mot:''};
+        document.getElementById('paeCocino').value = d.coc; togglePae(d.coc);
+        document.getElementById('paeMenu').value = d.m; document.getElementById('paeCom').value = d.c;
+        document.getElementById('paeRubU').value = d.ru; document.getElementById('paeRec').value = d.rr;
+        document.getElementById('paeInv').value = d.inv; document.getElementById('paeMot').value = d.mot;
     }
 
-    function render911() {
-        document.getElementById('body911').innerHTML = db.mat.map((m, i) => `
-            <tr><td>${m.g}</td>
-            <td><input type="number" value="${m.v}" onchange="db.mat[${i}].v=this.value"></td>
-            <td><input type="number" value="${m.h}" onchange="db.mat[${i}].h=this.value"></td>
-            <td><b>${parseInt(m.v)+parseInt(m.h)}</b></td></tr>
-        `).join('');
+    function renderPed() {
+        const body = document.getElementById('bodyPed'); body.innerHTML = "";
+        db.nom.filter(p => p.c.includes("Docente")).forEach(p => {
+            const d = db.ped[p.n] || {pa:'', plan:'No', obs:''};
+            body.innerHTML += `<tr><td>${p.n}</td>
+            <td><input type="text" value="${d.pa}" onchange="upPed('${p.n}','pa',this.value)"></td>
+            <td><select onchange="upPed('${p.n}','plan',this.value)"><option ${d.plan=='No'?'selected':''}>No</option><option ${d.plan=='Sí'?'selected':''}>Sí</option></select></td>
+            <td><input type="text" value="${d.obs}" onchange="upPed('${p.n}','obs',this.value)"></td></tr>`;
+        });
     }
-    function save911() { localStorage.setItem('v9_mat', JSON.stringify(db.mat)); render911(); alert("911 Actualizado"); }
+    function upPed(n, k, v) { if(!db.ped[n]) db.ped[n]={}; db.ped[n][k]=v; localStorage.setItem('v18_ped', JSON.stringify(db.ped)); }
 
-    function addItem() {
-        const n = document.getElementById('itemNom').value;
-        const c = document.getElementById('itemCant').value;
-        if(n) { db.bienes.push({n, c}); localStorage.setItem('v9_bienes', JSON.stringify(db.bienes)); renderBienes(); }
-    }
-    function renderBienes() {
-        document.getElementById('listBienes').innerHTML = db.bienes.map((b, i) => `
-            <div style="background:white; padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                ${b.n}: <b>${b.c}</b> <button onclick="db.bienes.splice(${i},1);renderBienes()" style="width:25px; background:red;">X</button>
-            </div>
-        `).join('');
-    }
+    function addStaff() { const n = document.getElementById('addNom').value; const g = document.getElementById('addGrup').value; if(n){ db.nom.push({n, c:g}); localStorage.setItem('v18_nom', JSON.stringify(db.nom)); updateAll(); } }
+    function delStaff(i) { if(confirm("¿Eliminar?")){ db.nom.splice(i,1); localStorage.setItem('v18_nom', JSON.stringify(db.nom)); updateAll(); } }
+    function renderStaff() { document.getElementById('listaPersonal').innerHTML = db.nom.map((p,i) => `<div style="padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>${p.n} (<b>${p.c}</b>)</span><button onclick="delStaff(${i})" style="width:25px; background:red;">X</button></div>`).join(''); }
 
-    // --- LIBRO DE ACTAS ---
-    function genActa() {
-        const tipo = document.getElementById('tipoActa').value;
-        const fecha = document.getElementById('globalDate').value;
-        const temas = document.getElementById('actaTemas').value.split('\n').filter(t => t.trim() !== "");
-        let bodyTemas = temas.map((t, i) => `${i+1}. ${t}`).join('\n');
-        
-        const texto = `ACTA DE REUNIÓN - E.B.N. "LUCILA PALACIOS"\n\nSiendo el día ${fecha}, se reúnen en las instalaciones de la institución las autoridades directivas y el personal correspondiente para tratar puntos sobre: ${tipo}.\n\nDESARROLLO DE LOS PUNTOS:\n${bodyTemas}\n\nSin más que tratar, se da por finalizada la sesión firmando los presentes de conformidad.`;
-        
-        const div = document.getElementById('previewActa');
-        div.innerText = texto; div.style.display = "block";
-        document.getElementById('btnPdfActa').style.display = "block";
-    }
-    function pdfActa() { html2pdf().from(document.getElementById('previewActa')).save(`Acta_${document.getElementById('globalDate').value}.pdf`); }
+    function addBien() { const n = document.getElementById('bNom').value; const c = document.getElementById('bCant').value; if(n){ db.bienes.push({n, c, e:"Activo"}); localStorage.setItem('v18_bie', JSON.stringify(db.bienes)); renderBienes(); } }
+    function renderBienes() { document.getElementById('bodyBienes').innerHTML = db.bienes.map((b,i) => `<tr><td>${b.n}</td><td>${b.c}</td><td>${b.e}</td><td><button onclick="db.bienes[${i}].e='Dañado';renderBienes()" style="background:red;">X</button></td></tr>`).join(''); }
 
-    // --- REPORTE WHATSAPP ---
-    function genReportPreview() {
-        const fec = document.getElementById('globalDate').value;
-        const asis = document.getElementById('asisSummary').innerText;
-        const p = db.pae[fec] || {m:"Sin registro", p:0};
-        let tMat = 0; db.mat.forEach(m => tMat += (parseInt(m.v)+parseInt(m.h)));
-        const txt = `📊 *REPORTE EBNLP* 📊\n📅 *FECHA:* ${fec}\n\n👥 *ASISTENCIA:*\n${asis}\n\n🍲 *COMEDOR PAE:*\n- Menú: ${p.m}\n- Platos: ${p.p}\n\n📝 *MATRÍCULA:* ${tMat} Estudiantes\n\n✅ _Control Maestro Directivo_`;
-        document.getElementById('previewReporte').innerText = txt;
+    function descargarPDF() {
+        const opt = { margin: 5, filename: `Reporte_LucilaPalacios_${document.getElementById('globalDate').value}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(document.getElementById('area-reporte')).save();
     }
-    function sendWS() { window.open(`https://wa.me/?text=${encodeURIComponent(document.getElementById('previewReporte').innerText)}`); }
 
     document.getElementById('globalDate').valueAsDate = new Date();
     updateAll();
