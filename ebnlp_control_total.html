@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Maestro EBNLP - Control 24/7</title>
+    <title>Control Maestro EBNLP</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 13px; }
         .container { max-width: 1200px; margin: auto; }
-        header { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 15px; }
-        .logo { max-height: 100px; }
+        header { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .logo { max-height: 120px; width: auto; margin-bottom: 10px; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: white; padding: 15px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .stat-card h2 { margin: 5px 0; color: var(--azul); font-size: 1.8rem; }
+        .stat-card h2 { margin: 5px 0; color: var(--azul); font-size: 2rem; }
         .grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
         .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        select, input, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        select, input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
         button { background: var(--azul); color: white; font-weight: bold; cursor: pointer; border: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: white; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: var(--azul); color: white; }
         .asistio { background-color: #d4edda !important; font-weight: bold; }
-        .no-toca { background-color: #f1f1f1; color: #aaa; font-style: italic; }
+        .no-toca { background-color: #f8f9fa; color: #bbb; font-style: italic; }
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -30,9 +30,9 @@
 
 <div class="container">
     <header>
-        <img src="https://i.ibb.co/L5fX0y0/logo-ebnlp.png" alt="Logo" class="logo">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" alt="Logo EBNLP" class="logo">
         <h2 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h2>
-        <p style="margin:0; font-weight:bold; color:var(--naranja);">CONTROL DE ASISTENCIA 24/7 (INTERDIARIO)</p>
+        <p style="margin:0; font-weight:bold; color:var(--naranja);">CONTROL DE ASISTENCIA 24/7</p>
     </header>
 
     <div class="stats-grid">
@@ -45,7 +45,7 @@
     <div class="grid">
         <div class="side">
             <div class="card">
-                <h3>📥 Cargar Novedad</h3>
+                <h3>📥 Cargar Asistencia</h3>
                 <label>Personal:</label>
                 <select id="selPers"></select>
                 <label>Estatus:</label>
@@ -57,25 +57,25 @@
                 </select>
                 <label>Fecha:</label>
                 <input type="date" id="fecReg" onchange="procesar()">
-                <button onclick="registrar()" style="background:var(--verde);">💾 GUARDAR Y SUBIR</button>
+                <button onclick="registrar()" style="background:var(--verde); height: 45px;">💾 GUARDAR REGISTRO</button>
             </div>
             
             <div class="card">
-                <h3>📊 Cuadro Estadístico</h3>
-                <table style="font-size: 0.7rem;">
+                <h3>📊 Estadística Diaria</h3>
+                <table style="font-size: 0.75rem;">
                     <thead><tr><th>Cargo</th><th>Total</th><th>Asis</th></tr></thead>
                     <tbody id="resumenCargos"></tbody>
                 </table>
-                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 EXPORTAR REPORTE</button>
+                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 DESCARGAR PDF</button>
             </div>
         </div>
 
         <div class="card">
-            <h3 id="tituloLista" style="text-align:center;">Lista del Personal</h3>
+            <h3 id="tituloLista" style="text-align:center;">Lista de Personal</h3>
             <div style="overflow-x:auto;">
                 <table id="tablaMaestra">
                     <thead>
-                        <tr><th>Nombre</th><th>Cargo</th><th>Estatus</th></tr>
+                        <tr><th>Nombre y Apellido</th><th>Función</th><th>Estatus</th></tr>
                     </thead>
                     <tbody id="tablaCuerpo"></tbody>
                 </table>
@@ -87,9 +87,84 @@
 <script>
     const URL_NUBE = "https://script.google.com/macros/s/AKfycbyWt4l2_S3_OsAoj2cFK1zRXcQA6AiEbgynRwfFUw3GJWAmI51PrtMwfHxtOQN7fbhIKg/exec";
 
-    const nomina = `Yanitza Malave,Directivo\nMaría Muñoz,Directivo\nKarelys Yanez,Directivo\nYuraima Bastardo,Administrativo\nMirlnis Carvajal,Administrativo\nLianna Carvajal,Administrativo\nMaría Marchan,Administrativo\nDayana Jiménez,Docente\nLorraine Brito,Docente\nRosa Nacaratto,Docente\nNeviss Guerra,Docente\nRusmary Larez,Docente\nGénesis Morillo,Docente\nYunequi Valdez,Docente\nJunior San Vicente,Docente\nYulimar Aguanes,Docente\nLuisa Jimenez,Docente\nYomaira Cáceres,Docente\nAna David,Docente\nEliday Salazar,Docente\nRoselba Terán,Docente\nYorvis Bolivar,Docente\nYubiry Martinez,Docente\nDalia Luces,Docente\nJoleth Guzmán,Docente\nAngel Figuera,Docente\nFrancelis Montaño,Docente\nGaudy Rodríguez,Docente\nMagloris Fernández,Docente\nGlenis Salazar,Docente\nMargoris Rodríguez,Docente\nLuisa Sosa,Docente\nMilvida Torres,Docente\nGladys Salcedo,Docente\nYanitza Alexander,Docente\nAndreina Flores,Docente\nNelida Castellanos,Docente\nOnexis Rocca,Docente\nJustina Fernández,Docente\nLeosmary Loroño,Docente\nJosé Shijan Brito,Docente\nMayerlin Chacon,Docente\nNorelis Pérez,Obrero\nGilda Villarroel,Obrero\nAna Figuera,Obrero\nMarleny Serrano,Obrero\nRuth Campos,Obrero\nDayana García,Obrero\nLuisana Quintana,Obrero\nCarlos Castillo,Obrero\nEdgar Martinez,Obrero\nJonathan Cedeño,Obrero\nLuis Figueroa,Obrero\nJunior Morgado,Obrero\nNaileth Vargas,Obrero\nYoelis Solorzano,Obrero\nYelitza Medina,Obrero\nEvelyn Carmona,Obrero\nDanielys Campos,Obrero\nJeanmaikol Díaz,Obrero\nRaiza Vallenilla,Cocinera\nGenesis Camero,Cocinera\nIrma Jaramillo,Cocinera\nDovelis Conde,Cocinera\nYureima Pimentel,Cocinera\nRosa Rivero,Cocinera\nMarcia Guzmán,Cocinera\nOsmil Sanabria,Vigilante-A\nDaher Cardier,Vigilante-A\nPedro González,Vigilante-A\nMoisés Romero,Vigilante-A\nCesar Suárez,Vigilante-B\nJuan Vargas,Vigilante-B\nGuillermo Albornoz,Vigilante-B\nDarwin Aguilera,Vigilante-B\nJoseyver López,Vigilante-B`;
+    const nomina = `Yanitza Malave,Directivo
+María Muñoz,Directivo
+Karelys Yanez,Directivo
+Yuraima Bastardo,Administrativo
+Mirlnis Carvajal,Administrativo
+Lianna Carvajal,Administrativo
+María Marchan,Administrativo
+Dayana Jiménez,Docente
+Lorraine Brito,Docente
+Rosa Nacaratto,Docente
+Neviss Guerra,Docente
+Rusmary Larez,Docente
+Génesis Morillo,Docente
+Yunequi Valdez,Docente
+Junior San Vicente,Docente
+Yulimar Aguanes,Docente
+Luisa Jimenez,Docente
+Yomaira Cáceres,Docente
+Ana David,Docente
+Eliday Salazar,Docente
+Roselba Terán,Docente
+Yorvis Bolivar,Docente
+Yubiry Martinez,Docente
+Dalia Luces,Docente
+Joleth Guzmán,Docente
+Angel Figuera,Docente
+Francelis Montaño,Docente
+Gaudy Rodríguez,Docente
+Magloris Fernández,Docente
+Glenis Salazar,Docente
+Margoris Rodríguez,Docente
+Luisa Sosa,Docente
+Milvida Torres,Docente
+Gladys Salcedo,Docente
+Yanitza Alexander,Docente
+Andreina Flores,Docente
+Nelida Castellanos,Docente
+Onexis Rocca,Docente
+Justina Fernández,Docente
+Leosmary Loroño,Docente
+José Shijan Brito,Docente
+Mayerlin Chacon,Docente
+Norelis Pérez,Obrero
+Gilda Villarroel,Obrero
+Ana Figuera,Obrero
+Marleny Serrano,Obrero
+Ruth Campos,Obrero
+Dayana García,Obrero
+Luisana Quintana,Obrero
+Carlos Castillo,Obrero
+Edgar Martinez,Obrero
+Jonathan Cedeño,Obrero
+Luis Figueroa,Obrero
+Junior Morgado,Obrero
+Naileth Vargas,Obrero
+Yoelis Solorzano,Obrero
+Yelitza Medina,Obrero
+Evelyn Carmona,Obrero
+Danielys Campos,Obrero
+Jeanmaikol Díaz,Obrero
+Raiza Vallenilla,Cocinera
+Genesis Camero,Cocinera
+Irma Jaramillo,Cocinera
+Dovelis Conde,Cocinera
+Yureima Pimentel,Cocinera
+Rosa Rivero,Cocinera
+Marcia Guzmán,Cocinera
+Osmil Sanabria,Vigilante-A
+Daher Cardier,Vigilante-A
+Pedro González,Vigilante-A
+Moisés Romero,Vigilante-A
+Cesar Suárez,Vigilante-B
+Juan Vargas,Vigilante-B
+Guillermo Albornoz,Vigilante-B
+Darwin Aguilera,Vigilante-B
+Joseyver López,Vigilante-B`;
 
-    let db = JSON.parse(localStorage.getItem('ebnlp_247_v1')) || { registros: [] };
+    let db = JSON.parse(localStorage.getItem('ebnlp_final_v4')) || { registros: [] };
 
     function registrar() {
         const id = document.getElementById('selPers').value;
@@ -99,18 +174,19 @@
         fetch(URL_NUBE, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ nombre, cargo, est, mins:0, fec }) });
         db.registros = db.registros.filter(r => !(r.id === id && r.fec === fec)); 
         db.registros.push({ id, est, fec });
-        localStorage.setItem('ebnlp_247_v1', JSON.stringify(db));
+        localStorage.setItem('ebnlp_final_v4', JSON.stringify(db));
         procesar();
     }
 
     function procesar() {
-        const fechaInput = document.getElementById('fecReg').value;
-        const hoy = new Date(fechaInput + "T00:00:00");
-        const diaSemana = hoy.getDay(); // 0:Dom, 6:Sab
-        const diaMes = hoy.getDate();
+        const fechaVal = document.getElementById('fecReg').value;
+        const hoy = new Date(fechaVal + "T00:00:00");
+        const diaSemana = hoy.getDay(); 
         
-        // Rotación de vigilantes: Impar=A, Par=B
-        const grupoActivo = (diaMes % 2 !== 0) ? "Vigilante-A" : "Vigilante-B";
+        // Lógica interdiaria 24/7 real (usa los días transcurridos desde una fecha base)
+        const inicioReferencia = new Date("2024-01-01T00:00:00");
+        const diasTranscurridos = Math.floor((hoy - inicioReferencia) / (1000 * 60 * 60 * 24));
+        const grupoActivo = (diasTranscurridos % 2 === 0) ? "Vigilante-A" : "Vigilante-B";
 
         const lista = nomina.split('\n');
         const tbody = document.getElementById('tablaCuerpo');
@@ -124,7 +200,7 @@
         lista.forEach((linea, i) => {
             if(!linea) return;
             const [nombre, cargo] = linea.split(',');
-            const reg = db.registros.find(r => parseInt(r.id) === i && r.fec === fechaInput);
+            const reg = db.registros.find(r => parseInt(r.id) === i && r.fec === fechaVal);
             
             let laboraHoy = true;
             let cargoLimpio = cargo.includes("Vigilante") ? "Vigilante" : cargo;
@@ -140,7 +216,7 @@
                 esperadosHoy++;
             }
 
-            let estTxt = reg ? reg.est : (laboraHoy ? "S/R" : "No Laborable");
+            let estTxt = reg ? reg.est : (laboraHoy ? "Pendiente" : "Libre");
             let clase = !laboraHoy ? "no-toca" : (reg && reg.est === "Asistencia" ? "asistio" : "");
             
             if(reg && reg.est === "Asistencia" && laboraHoy) presentes[cargoLimpio]++;
@@ -161,7 +237,7 @@
     }
 
     function generarReportePDF() {
-        html2pdf().set({ margin: 5, filename: `Reporte_EBNLP_${document.getElementById('fecReg').value}.pdf` }).from(document.body).save();
+        html2pdf().set({ margin: 10, filename: `Reporte_EBNLP_${document.getElementById('fecReg').value}.pdf` }).from(document.body).save();
     }
 
     const s = document.getElementById('selPers');
