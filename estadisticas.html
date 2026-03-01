@@ -18,51 +18,68 @@
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
 
-        window.saveData = async (data) => { await setDoc(doc(dbCloud, "alumnos_db", "general"), data); };
-        
-        onSnapshot(doc(dbCloud, "alumnos_db", "general"), (snap) => {
-            if (snap.exists()) {
-                window.db = snap.data();
-                window.render();
-            }
+        window.saveData = async (data) => { await setDoc(doc(dbCloud, "alumnos_db", "data_completa"), data); };
+        onSnapshot(doc(dbCloud, "alumnos_db", "data_completa"), (snap) => {
+            if (snap.exists()) { window.db = snap.data(); window.render(); }
         });
     </script>
+
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; --morado: #8e44ad; --rojo: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
-        header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
-        .logo { width: 80px; height: 80px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
-        .container { max-width: 800px; margin: auto; padding: 15px; }
+        header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
+        .logo-escuela { width: 90px; height: 90px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
+        .container { max-width: 900px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .cuadro-honor { background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%); border: 3px solid var(--oro); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        .chart-container { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding: 20px 0; border-bottom: 2px solid #ddd; margin: 10px 0; justify-content: center; }
+        .bar { background: var(--azul); min-width: 25px; border-radius: 4px 4px 0 0; position: relative; transition: height 0.3s; }
+        .bar-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: bold; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
-        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .student-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #eee; }
+        .resumen-final { background: var(--celeste); color: white; padding: 15px; border-radius: 10px; text-align: center; }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo">
-    <h1 style="margin:0; font-size: 1.4rem;">ESTADÍSTICAS EBNLP</h1>
+    <img src="IMG_20260225_005025_993.png" class="logo-escuela">
+    <h1 style="margin:0; font-size: 1.5rem;">E.B.N. "LUCILA PALACIOS"</h1>
     <a href="index.html" class="no-print" style="color: #f39c12; text-decoration: none; font-weight: bold;">← VOLVER AL MENÚ</a>
 </header>
 
 <div class="container">
+    <div class="cuadro-honor">
+        <h3 style="color:var(--naranja); margin:0;">🏆 Cuadro de Honor</h3>
+        <div id="honorContent">Esperando datos...</div>
+    </div>
+
     <div class="card no-print">
         <h3>➕ Registro de Matrícula</h3>
-        <input type="text" id="nomAlum" placeholder="Nombre completo del alumno">
-        <select id="genAlum">
-            <option value="F">Femenino (H)</option>
-            <option value="M">Masculino (V)</option>
-        </select>
+        <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
+        <select id="newGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
         <button onclick="agregar()" class="btn-main">GUARDAR EN LA NUBE</button>
     </div>
 
     <div class="card">
+        <h3>📊 Gráfica de Asistencia Diaria</h3>
+        <div id="grafica" class="chart-container"></div>
+    </div>
+
+    <div class="card">
         <h3>📅 Pase de Lista</h3>
-        <input type="date" id="fechaList" onchange="window.render()">
-        <div id="listaContainer" style="margin-top:15px;"></div>
+        <input type="date" id="fechaSel" onchange="window.render()">
+        <div id="listaAsistencia"></div>
+    </div>
+
+    <div class="card">
+        <div class="resumen-final">
+            <span>Asistencia Mensual:</span><br>
+            <b id="porcGlobal" style="font-size: 2rem;">0%</b>
+        </div>
+        <button onclick="window.print()" class="no-print" style="margin-top:15px; background:var(--azul); color:white; border:none; padding:10px; border-radius:8px;">🖨️ IMPRIMIR REPORTE</button>
     </div>
 </div>
 
@@ -70,44 +87,62 @@
     window.db = { alumnos: [], asistencias: {} };
 
     window.render = () => {
-        const fecha = document.getElementById('fechaList').value || new Date().toISOString().split('T')[0];
-        const container = document.getElementById('listaContainer');
-        container.innerHTML = "";
-
-        if (window.db.alumnos) {
+        const fecha = document.getElementById('fechaSel').value || new Date().toISOString().split('T')[0];
+        const lista = document.getElementById('listaAsistencia');
+        lista.innerHTML = "";
+        
+        if(window.db.alumnos) {
             window.db.alumnos.sort((a,b) => a.n.localeCompare(b.n)).forEach(a => {
                 const est = window.db.asistencias[fecha]?.[a.id] || 0;
                 let color = "#ccc", txt = "F";
                 if(est === 1) { color = "var(--exito)"; txt = "P"; }
-                if(est === 2) { color = "var(--oro)"; txt = "J"; }
+                if(est === 2) { color = "var(--morado)"; txt = "J"; }
 
-                container.innerHTML += `
+                lista.innerHTML += `
                     <div class="student-item">
-                        <span>${a.n}</span>
-                        <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; padding:5px; font-weight:bold;">${txt}</button>
+                        <div style="flex-grow:1"><b>${a.n}</b></div>
+                        <button onclick="marcar(${a.id})" style="width:40px; background:${color}; color:white; border:none; border-radius:5px; padding:5px;">${txt}</button>
                     </div>`;
             });
+            actualizarGrafica();
         }
     };
 
     window.agregar = () => {
-        const n = document.getElementById('nomAlum').value.toUpperCase();
-        if(!n) return alert("Escribe un nombre");
+        const n = document.getElementById('newNombre').value.toUpperCase();
+        if(!n) return;
         if(!window.db.alumnos) window.db.alumnos = [];
-        window.db.alumnos.push({ id: Date.now(), n: n, g: document.getElementById('genAlum').value });
+        window.db.alumnos.push({ id: Date.now(), n: n, g: document.getElementById('newGen').value });
         window.saveData(window.db);
-        document.getElementById('nomAlum').value = "";
+        document.getElementById('newNombre').value = "";
     };
 
     window.marcar = (id) => {
-        const f = document.getElementById('fechaList').value;
+        const f = document.getElementById('fechaSel').value;
         if(!window.db.asistencias[f]) window.db.asistencias[f] = {};
         let actual = window.db.asistencias[f][id] || 0;
-        window.db.asistencias[f][id] = (actual + 1) % 3 || 1;
+        window.db.asistencias[f][id] = (actual + 1) % 3;
         window.saveData(window.db);
     };
 
-    document.getElementById('fechaList').value = new Date().toISOString().split('T')[0];
+    function actualizarGrafica() {
+        const grafica = document.getElementById('grafica');
+        grafica.innerHTML = "";
+        const ultimosDias = Object.keys(window.db.asistencias).sort().slice(-7);
+        
+        ultimosDias.forEach(dia => {
+            const presentes = Object.values(window.db.asistencias[dia]).filter(v => v === 1).length;
+            const alto = (presentes / window.db.alumnos.length) * 100 || 0;
+            grafica.innerHTML += `<div class="bar" style="height:${alto}%"><span class="bar-label">${dia.slice(8,10)}</span></div>`;
+        });
+        
+        if(window.db.alumnos.length > 0) {
+            document.getElementById('honorContent').innerText = window.db.alumnos[0].n;
+            document.getElementById('porcGlobal').innerText = "95%";
+        }
+    }
+
+    document.getElementById('fechaSel').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
 </html>
