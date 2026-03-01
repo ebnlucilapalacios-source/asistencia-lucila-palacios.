@@ -3,106 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docente - Lucila Palacios</title>
+    <title>Docente - Lucila Palacios (Reporte Maestro)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
-        header { background: var(--azul); color: white; padding: 25px 15px; text-align: center; border-bottom: 4px solid var(--naranja); display: flex; flex-direction: column; align-items: center; }
-        #logoEscuela { width: 90px; height: 90px; border-radius: 50%; background: white; padding: 3px; border: 3px solid var(--naranja); object-fit: contain; margin-bottom: 10px; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 4px solid var(--celeste); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-asis { width: 65px; height: 45px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; }
-        .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; }
-        .resumen-mensual { font-size: 0.8rem; color: var(--celeste); margin-top: 5px; font-weight: bold; }
+        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f8f9f9; --exito: #27ae60; --rojo: #b22222; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; font-size: 13px; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--naranja); }
+        .logo { width: 65px; height: 65px; background: white; border-radius: 50%; padding: 2px; }
+        .container { max-width: 650px; margin: auto; padding: 10px; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h3 { margin-top: 0; color: var(--azul); border-bottom: 2px solid #eee; padding-bottom: 5px; font-size: 1.1rem; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .grid-estat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; margin-bottom: 10px; }
+        .estat-val { background: #eef2f3; padding: 8px; border-radius: 8px; font-weight: bold; border: 1px solid #d1d8e0; }
+        .student-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .btn-check { width: 45px; height: 35px; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        th { background: #f2f2f2; color: var(--azul); }
+        .porcentaje { font-weight: bold; color: var(--celeste); }
+        .alerta-baja { color: var(--rojo); font-weight: bold; }
     </style>
 </head>
 <body>
-<header>
-    <img src="IMG_20260225_005025_993.png" id="logoEscuela" alt="Escudo">
-    <h1 style="font-size: 1.3rem; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin: 5px 0 0; opacity: 0.9;">Control Docente Mensual</p>
+
+<header id="header-main">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
+    <h2 style="margin:5px 0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:0; font-weight: bold;">REPORTE ESTADÍSTICO DE AULA</p>
 </header>
-<div class="container">
+
+<div class="container" id="contenido-reporte">
     <div class="card">
-        <h3>👤 Configurar Aula</h3>
-        <input type="text" id="profe" placeholder="Nombre del Docente">
-        <input type="text" id="aula" placeholder="Grado y Sección">
-        <button onclick="guardarConfig()" style="background:var(--celeste); color:white;">Guardar Aula</button>
+        <h3>📊 Estadística General (911)</h3>
+        <div class="grid-estat">
+            <div class="estat-val">V: <span id="vTotal">0</span></div>
+            <div class="estat-val">H: <span id="hTotal">0</span></div>
+            <div class="estat-val">Total: <span id="tTotal">0</span></div>
+            <div class="estat-val" style="background:var(--naranja); color:white;">%: <span id="pTotal">0</span></div>
+        </div>
+        <div id="infoDocente" style="margin: 10px 0; font-style: italic; color: #555;"></div>
+        
+        <table id="tablaEdades">
+            <thead><tr><th>Edad</th><th>Varones</th><th>Hembras</th><th>Sub-Total</th></tr></thead>
+            <tbody id="bodyEdades"></tbody>
+        </table>
     </div>
+
     <div class="card">
-        <h3>📝 Inscripción</h3>
-        <input type="text" id="nomAlu" placeholder="Nombre del alumno">
-        <select id="genAlu">
-            <option value="F">Femenino (Hembra)</option>
-            <option value="M">Masculino (Varón)</option>
-        </select>
-        <button onclick="registrar()" style="background:var(--exito); color:white; font-weight:bold;">Inscribir Alumno</button>
-    </div>
-    <div class="card">
-        <h3>📅 Hoy: <span id="fechaHoy"></span></h3>
-        <div id="listaAsistencia"></div>
-        <button onclick="exportar()" style="background:var(--naranja); color:white; margin-top:20px; padding: 15px; font-size: 1.1rem;">📤 Enviar Reporte a Dirección</button>
+        <h3>📝 Control de Asistencia y Rendimiento</h3>
+        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Hoy: <b id="fechaTexto"></b> | (P)=Presente, (F)=Falto</p>
+        <div id="listaAlumnos"></div>
+        
+        <div id="seccionBotones" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="exportarJSON()" style="background:var(--azul); color:white;">📤 Enviar a Dirección</button>
+            <button onclick="generarPDF()" style="background:var(--rojo); color:white;">📄 Descargar Reporte PDF</button>
+        </div>
     </div>
 </div>
-<script>
-    let d = JSON.parse(localStorage.getItem('ebn_docente_v4')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
-    let hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaHoy').innerText = hoy;
 
-    function guardarConfig() {
-        d.profe = document.getElementById('profe').value;
-        d.aula = document.getElementById('aula').value.toUpperCase();
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d));
-        alert("Configuración guardada");
+<script>
+    let db = JSON.parse(localStorage.getItem('ebn_v7')) || { profe: "", aula: "", alumnos: [], asistencias: {} };
+    let hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaTexto').innerText = hoy;
+
+    function calcularEdad(fecha) {
+        let naci = new Date(fecha);
+        let diff = Date.now() - naci.getTime();
+        return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
     }
 
     function registrar() {
-        const n = document.getElementById('nomAlu').value.trim();
-        const g = document.getElementById('genAlu').value;
-        if(!n || !d.aula) return alert("Faltan datos");
-        d.alumnos.push({ id: Date.now(), nombre: n, genero: g, seccion: d.aula, docente: d.profe });
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d));
-        document.getElementById('nomAlu').value = ""; dibujar();
+        const nom = prompt("Nombre y Apellido del Alumno:");
+        const gen = prompt("Género (V/H):").toUpperCase();
+        const nac = prompt("Fecha Nacimiento (AAAA-MM-DD):");
+        if(nom && gen && nac) {
+            db.alumnos.push({ id: Date.now(), nombre: nom, genero: gen, nacimiento: nac });
+            guardar(); dibujar();
+        }
     }
 
     function marcar(id) {
-        if(!d.asistencias[hoy]) d.asistencias[hoy] = {};
-        d.asistencias[hoy][id] = !d.asistencias[hoy][id];
-        localStorage.setItem('ebn_docente_v4', JSON.stringify(d)); dibujar();
+        if(!db.asistencias[hoy]) db.asistencias[hoy] = {};
+        db.asistencias[hoy][id] = !db.asistencias[hoy][id];
+        guardar(); dibujar();
     }
 
     function dibujar() {
-        const lista = document.getElementById('listaAsistencia'); lista.innerHTML = "";
-        const diasDelMes = Object.keys(d.asistencias).length || 1;
+        document.getElementById('infoDocente').innerHTML = `<b>Docente:</b> ${db.profe} | <b>Aula:</b> ${db.aula}`;
+        const lista = document.getElementById('listaAlumnos');
+        const bodyEdades = document.getElementById('bodyEdades');
+        lista.innerHTML = "";
+        
+        let v = 0, h = 0, asistieronHoy = 0;
+        let edades = {};
+        let totalDiasMes = Object.keys(db.asistencias).length || 1;
 
-        d.alumnos.forEach(a => {
-            const asisHoy = d.asistencias[hoy] && d.asistencias[hoy][a.id];
-            
-            // Calcular asistencias totales del alumno en el mes
-            let totalAsisMes = 0;
-            Object.values(d.asistencias).forEach(dia => {
-                if(dia[a.id]) totalAsisMes++;
-            });
+        db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            if(a.genero === 'V') v++; else h++;
+            let edad = calcularEdad(a.nacimiento);
+            if(!edades[edad]) edades[edad] = {v:0, h:0};
+            if(a.genero === 'V') edades[edad].v++; else edades[edad].h++;
 
-            lista.innerHTML += `<div class="student-card">
-                <div style="flex-grow:1">
-                    <b>${a.nombre}</b><br>
-                    <span class="resumen-mensual">Mes: ${totalAsisMes} asistencias de ${diasDelMes} días</span>
-                </div>
-                <button onclick="marcar(${a.id})" class="btn-asis" style="background:${asisHoy?'#27ae60':'#ccc'}">${asisHoy?'P':'F'}</button>
-            </div>`;
+            // Calcular % Individual Mensual
+            let asistenciasAlumno = 0;
+            Object.values(db.asistencias).forEach(dia => { if(dia[a.id]) asistenciasAlumno++; });
+            let porcIndiv = ((asistenciasAlumno / totalDiasMes) * 100).toFixed(0);
+
+            const estaPresente = db.asistencias[hoy] && db.asistencias[hoy][a.id];
+            if(estaPresente) asistieronHoy++;
+
+            lista.innerHTML += `
+                <div class="student-row">
+                    <div style="flex-grow:1">
+                        <b>${a.nombre}</b> <small>(${a.genero})</small><br>
+                        <span class="porcentaje ${porcIndiv < 75 ? 'alerta-baja' : ''}">Asist. Mensual: ${porcIndiv}%</span>
+                    </div>
+                    <button onclick="marcar(${a.id})" class="btn-check" style="background:${estaPresente? '#27ae60':'#ccc'}">${estaPresente?'P':'F'}</button>
+                </div>`;
+        });
+
+        document.getElementById('vTotal').innerText = v;
+        document.getElementById('hTotal').innerText = h;
+        document.getElementById('tTotal').innerText = v + h;
+        document.getElementById('pTotal').innerText = db.alumnos.length ? ((asistieronHoy / db.alumnos.length) * 100).toFixed(0) : 0;
+
+        bodyEdades.innerHTML = "";
+        Object.keys(edades).sort((a,b) => a-b).forEach(e => {
+            bodyEdades.innerHTML += `<tr><td>${e} años</td><td>${edades[e].v}</td><td>${edades[e].h}</td><td>${edades[e].v + edades[e].h}</td></tr>`;
         });
     }
 
-    function exportar() {
-        const b = new Blob([JSON.stringify(d)], {type: "application/json"});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-        a.download = `Asistencia_${d.aula}_${hoy}.json`; a.click();
+    function guardar() { localStorage.setItem('ebn_v7', JSON.stringify(db)); }
+
+    function generarPDF() {
+        document.getElementById('seccionBotones').style.display = 'none';
+        const opt = { 
+            margin: 10, 
+            filename: `Reporte_${db.aula}_${hoy}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+        html2pdf().set(opt).from(document.body).save().then(() => {
+            document.getElementById('seccionBotones').style.display = 'grid';
+        });
     }
 
-    document.getElementById('profe').value = d.profe;
-    document.getElementById('aula').value = d.aula;
+    function exportarJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const a = document.createElement('a'); a.href = dataStr;
+        a.download = `DATA_${db.aula}_${hoy}.json`; a.click();
+    }
+
+    if(!db.profe) {
+        db.profe = prompt("Nombre del Docente:");
+        db.aula = prompt("Grado y Sección:");
+        guardar();
+    }
     dibujar();
 </script>
 </body>
