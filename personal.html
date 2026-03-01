@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Personal - EBNLP</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            messagingSenderId: "368890880546",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.marcar = async (id, e) => {
+            const h = new Date().toISOString().split('T')[0];
+            await setDoc(doc(db, "asistencia_personal", h), { [id]: e }, { merge: true });
+        };
+        window.escuchar = (cb) => {
+            const h = new Date().toISOString().split('T')[0];
+            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data()));
+        };
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; background: #f4f7f6;">
+    <div style="background: #1a2a6c; color: white; padding: 15px;">
+        <h2>Personal EBNLP</h2>
+        <a href="index.html" style="color: white;">⬅ Volver al Menú</a>
+    </div>
+    <div id="lista" style="padding: 20px; max-width: 400px; margin: auto;"></div>
+    <script>
+        const staff = [{id:1, n:"YANITZA GÓMEZ"}, {id:2, n:"MARÍA ACUÑA"}, {id:3, n:"KARELYS REYES"}];
+        function render(d = {}) {
+            const c = document.getElementById('lista'); c.innerHTML = "";
+            staff.forEach(s => {
+                const as = d[s.id] === 1;
+                c.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:white; border-radius:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <span>${s.n}</span>
+                    <button onclick="marcar(${s.id}, ${as?0:1})" style="background:${as?'#27ae60':'#ccc'}; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">${as?'REGISTRADO':'MARCAR'}</button>
+                </div>`;
+            });
+        }
+        window.escuchar(render);
+    </script>
+</body>
+</html>
