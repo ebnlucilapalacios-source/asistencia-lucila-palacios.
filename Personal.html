@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Personal - EBNLP</title>
+    <title>Asistencia Grupos - EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -14,36 +15,90 @@
             messagingSenderId: "368890880546",
             appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        window.marcar = async (id, e) => {
-            const h = new Date().toISOString().split('T')[0];
-            await setDoc(doc(db, "asistencia_personal", h), { [id]: e }, { merge: true });
+
+        window.marcar = async (id, nombre, grupo) => {
+            const hoy = new Date();
+            const fechaDoc = hoy.toISOString().split('T')[0];
+            const hora = hoy.getHours();
+            
+            // Lógica de horario nocturno o especial
+            let turno = (hora >= 18 || hora < 6) ? "Nocturno (6pm-6am)" : "Especial Diurno (Feriado/Vacaciones)";
+
+            await setDoc(doc(db, "asistencia_personal", fechaDoc), { 
+                [id]: { nombre, grupo, hora: hoy.toLocaleTimeString(), turno } 
+            }, { merge: true });
+            alert(`Asistencia registrada: ${nombre} (${grupo})`);
         };
+
         window.escuchar = (cb) => {
             const h = new Date().toISOString().split('T')[0];
-            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data()));
+            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data() || {}));
         };
     </script>
 </head>
-<body style="font-family: sans-serif; text-align: center; background: #f4f7f6;">
-    <div style="background: #1a2a6c; color: white; padding: 15px;">
-        <h2>Personal EBNLP</h2>
-        <a href="index.html" style="color: white;">⬅ Volver al Menú</a>
+<body style="font-family: 'Segoe UI', sans-serif; text-align: center; background: #eceff1; margin: 0;">
+
+    <div style="background: #1a2a6c; color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+        <h2 style="margin:0;">Control de Vigilancia EBNLP</h2>
+        <div id="info-turno" style="margin-top: 10px; font-weight: bold; background: #f39c12; display: inline-block; padding: 5px 15px; border-radius: 20px;">
+            Cargando turno...
+        </div>
     </div>
-    <div id="lista" style="padding: 20px; max-width: 400px; margin: auto;"></div>
+
+    <div id="lista" style="padding: 20px; max-width: 500px; margin: auto;"></div>
+
     <script>
-        const staff = [{id:1, n:"YANITZA GÓMEZ"}, {id:2, n:"MARÍA ACUÑA"}, {id:3, n:"KARELYS REYES"}];
-        function render(d = {}) {
-            const c = document.getElementById('lista'); c.innerHTML = "";
-            staff.forEach(s => {
-                const as = d[s.id] === 1;
-                c.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:white; border-radius:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <span>${s.n}</span>
-                    <button onclick="marcar(${s.id}, ${as?0:1})" style="background:${as?'#27ae60':'#ccc'}; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">${as?'REGISTRADO':'MARCAR'}</button>
-                </div>`;
+        // 1. Configuración de Grupos
+        const staff = [
+            {id: 101, n: "VIGILANTE B1", grupo: "B"},
+            {id: 102, n: "VIGILANTE B2", grupo: "B"},
+            {id: 201, n: "VIGILANTE A1", grupo: "A"},
+            {id: 202, n: "VIGILANTE A2", grupo: "A"}
+        ];
+
+        // 2. Lógica para determinar el grupo del día
+        // Usamos una fecha de referencia (Ejemplo: 1 de Marzo 2026 es Grupo B)
+        function obtenerGrupoDelDia() {
+            const hoy = new Date();
+            const inicio = new Date("2026-03-01"); // Fecha base: Hoy es Grupo B
+            const diferenciaDias = Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24));
+            
+            // Si la diferencia es par (0, 2, 4...), es Grupo B. Si es impar, es Grupo A.
+            return (diferenciaDias % 2 === 0) ? "B" : "A";
+        }
+
+        const grupoActivo = obtenerGrupoDelDia();
+        document.getElementById('info-turno').innerText = `HOY LE TOCA AL: GRUPO ${grupoActivo}`;
+
+        function render(dataFirebase) {
+            const contenedor = document.getElementById('lista'); 
+            contenedor.innerHTML = "";
+
+            staff.forEach(p => {
+                const registro = dataFirebase[p.id];
+                const yaMarco = !!registro;
+                const esSuTurno = p.grupo === grupoActivo;
+
+                contenedor.innerHTML += `
+                    <div style="display:flex; flex-direction:column; margin-bottom:15px; padding:15px; background:white; border-radius:8px; border-left: 8px solid ${esSuTurno ? '#27ae60' : '#bdc3c7'}; opacity: ${esSuTurno ? '1' : '0.6'}">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="text-align:left;">
+                                <strong style="display:block;">${p.n}</strong>
+                                <small>Grupo: ${p.grupo}</small>
+                            </div>
+                            <button onclick="marcar(${p.id}, '${p.n}', '${p.grupo}')" 
+                                    ${yaMarco || !esSuTurno ? 'disabled' : ''}
+                                    style="background:${yaMarco ? '#27ae60' : (esSuTurno ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">
+                                ${yaMarco ? 'REGISTRADO' : (esSuTurno ? 'MARCAR' : 'NO TOCA')}
+                            </button>
+                        </div>
+                    </div>`;
             });
         }
+
         window.escuchar(render);
     </script>
 </body>
