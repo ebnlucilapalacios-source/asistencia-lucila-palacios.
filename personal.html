@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Sistema Cloud 2026</title>
+    <title>EBNLP - Sistema Cloud Pro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
+        
+        /* Encabezado con Logo */
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); position: relative; }
+        .logo-container { width: 50px; height: 50px; background: white; border-radius: 50%; padding: 5px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--naranja); overflow: hidden; }
+        .logo-img { width: 40px; height: auto; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
         .stat-card h4 { margin: 0; font-size: 10px; color: #666; }
@@ -22,7 +27,7 @@
         .btn-gestion { background: #5d6d7e; font-size: 11px; margin-bottom: 10px; }
         .hidden { display: none; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
-        th { background: var(--azul); color: white; padding: 10px; }
+        th { background: var(--azul); color: white; padding: 10px; text-align: center; }
         td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
         .fila-vaca { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
     </style>
@@ -30,21 +35,24 @@
 <body>
 
 <header>
-    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">SISTEMA DE NÓMINA Y ASISTENCIA EN LA NUBE</p>
+    <div class="logo-container">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" alt="Logo Escuela" class="logo-img">
+    </div>
+    <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:0; font-size:11px;">SISTEMA TÉCNICO ADMINISTRATIVO CLOUD</p>
 </header>
 
 <div class="stats-grid">
-    <div class="stat-card"><h4>Asistencia Real</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Asistencia</h4><p id="stPor">0%</p></div>
     <div class="stat-card"><h4>Nómina Total</h4><p id="stTotal">0</p></div>
     <div class="stat-card"><h4>Presentes</h4><p id="stPre">0</p></div>
-    <div class="stat-card"><h4>Vacaciones</h4><p id="stVaca" style="color:#1565c0">0</p></div>
+    <div class="stat-card"><h4>En Vacaciones</h4><p id="stVaca" style="color:#1565c0">0</p></div>
 </div>
 
 <div class="card">
     <button class="btn btn-gestion" onclick="document.getElementById('panelG').classList.toggle('hidden')">⚙️ PANEL DE INGRESOS Y EGRESOS (NÓMINA)</button>
     <div id="panelG" class="hidden">
-        <h4 style="margin:0">➕ Registrar Ingreso (Nuevo Trabajador)</h4>
+        <h4 style="margin:0">➕ Registrar Ingreso (Trabajador Nuevo)</h4>
         <input type="text" id="newN" placeholder="Nombre Completo">
         <select id="newC">
             <option value="Docente">Docente</option>
@@ -60,20 +68,20 @@
         </select>
         <button class="btn" style="background:var(--verde)" onclick="dbGestion('ADD')">Guardar en la Nube</button>
         <hr style="margin:20px 0">
-        <h4 style="margin:0">➖ Registrar Egreso (Retirar Personal)</h4>
+        <h4 style="margin:0">📤 Registrar Egreso (Retirar Personal)</h4>
         <select id="delN"><option value="">-- Seleccionar para eliminar --</option></select>
         <button class="btn" style="background:var(--rojo)" onclick="dbGestion('DEL')">Eliminar Definitivamente</button>
     </div>
 </div>
 
 <div class="card">
-    <label><b>Personal Institucional:</b></label>
+    <label><b>Seleccionar Personal:</b></label>
     <select id="nomIn" onchange="autoData()"><option value="">-- Cargando lista... --</option></select>
     <div style="display:flex; gap:10px">
-        <input type="text" id="carIn" placeholder="Cargo" readonly>
+        <input type="text" id="carIn" placeholder="Cargo detectado" readonly>
         <input type="text" id="turIn" placeholder="Turno" readonly>
     </div>
-    <label><b>Estatus Administrativo:</b></label>
+    <label><b>Estatus / Novedad Administrativa:</b></label>
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
         <option value="RETRASO">RETRASO 🕒</option>
@@ -84,20 +92,24 @@
         <option value="FALTA">INASISTENCIA ❌</option>
     </select>
     <div style="display:flex; gap:10px">
-        <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
-        <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">SALIDA</button>
+        <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">⬇️ ENTRADA</button>
+        <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">⬆️ SALIDA</button>
     </div>
 </div>
 
 <div class="card" style="overflow-x:auto">
-    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 EXPORTAR REPORTE A EXCEL</button>
+    <div style="display:flex; justify-content:space-between; align-items:center">
+        <h3>📊 Reporte del Día</h3>
+        <button class="btn" style="background:var(--azul); width:auto; padding:8px 20px" onclick="descargarExcel()">📥 EXCEL</button>
+    </div>
     <table id="tablaRep">
-        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>ESTATUS</th></tr></thead>
+        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>TURNO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
 
 <script>
+    // Tu Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -138,11 +150,11 @@
         } else {
             const val = document.getElementById('delN').value;
             const p = nominaCloud.find(x => x.n === val);
-            if(p && confirm("¿Eliminar a " + p.n + " de la nómina?")) {
+            if(p && confirm("¿Eliminar definitivamente a " + p.n + " de la nómina?")) {
                 await db.collection("nomina_institucional").doc(p.id).delete();
             }
         }
-        alert("Nube actualizada correctamente.");
+        alert("Sincronización con la nube exitosa.");
     }
 
     function autoData() {
@@ -154,42 +166,44 @@
         const n = document.getElementById('nomIn').value, est = document.getElementById('estIn').value;
         const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
         if(!n) return;
-        const ref = db.collection("asistencia_cloud_2026").where("f", "==", hoy).where("n", "==", n);
+        const ref = db.collection("asistencia_ebnlp_cloud").where("f", "==", hoy).where("n", "==", n);
         const q = await ref.get();
-        const data = { n, c: document.getElementById('carIn').value, f: hoy, e: est };
+        const data = { n, c: document.getElementById('carIn').value, t: document.getElementById('turIn').value, f: hoy, e: est };
         if(q.empty) {
             data.in = (tipo === 'IN') ? hora : '--'; data.out = (tipo === 'OUT') ? hora : '--';
-            await db.collection("asistencia_cloud_2026").add(data);
+            await db.collection("asistencia_ebnlp_cloud").add(data);
         } else {
             const upd = (tipo === 'IN') ? { in: hora, e: est } : { out: hora, e: est };
-            await db.collection("asistencia_cloud_2026").doc(q.docs[0].id).update(upd);
+            await db.collection("asistencia_ebnlp_cloud").doc(q.docs[0].id).update(upd);
         }
         actualizarEstadisticas();
     }
 
     async function actualizarEstadisticas() {
-        const snap = await db.collection("asistencia_cloud_2026").where("f", "==", hoy).get();
+        const snap = await db.collection("asistencia_ebnlp_cloud").where("f", "==", hoy).get();
         let html = "", pres = 0, vaca = 0;
         snap.forEach(doc => {
             const d = doc.data();
             if(d.e === "ASISTENCIA" || d.e === "RETRASO") pres++;
             if(d.e === "VACACIONES") vaca++;
-            html += `<tr class="${d.e==='VACACIONES'?'fila-vaca':''}"><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.e}</td></tr>`;
+            html += `<tr class="${d.e==='VACACIONES'?'fila-vaca':''}">
+                <td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.t}</td><td>${d.e}</td>
+            </tr>`;
         });
         document.getElementById('cuerpo').innerHTML = html;
         document.getElementById('stPre').innerText = pres;
         document.getElementById('stVaca').innerText = vaca;
-        const totalEfectivo = nominaCloud.length - vaca;
-        document.getElementById('stPor').innerText = totalEfectivo > 0 ? ((pres/totalEfectivo)*100).toFixed(1) + "%" : "0%";
+        const totalAsistencia = nominaCloud.length - vaca;
+        document.getElementById('stPor').innerText = totalAsistencia > 0 ? ((pres / totalAsistencia) * 100).toFixed(1) + "%" : "0%";
     }
 
     function descargarExcel() {
         const wb = XLSX.utils.table_to_book(document.getElementById('tablaRep'));
-        XLSX.writeFile(wb, `EBNLP_Reporte_${hoy}.xlsx`);
+        XLSX.writeFile(wb, `EBNLP_Reporte_Cloud_${hoy}.xlsx`);
     }
-    
-    // Iniciar estadísticas al cargar
+
     setTimeout(actualizarEstadisticas, 1000);
 </script>
 </body>
 </html>
+
