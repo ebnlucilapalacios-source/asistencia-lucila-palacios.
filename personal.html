@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Asistencia Grupos - EBNLP</title>
+    <title>Personal y Vigilancia - EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+        
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -15,22 +15,27 @@
             messagingSenderId: "368890880546",
             appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.marcar = async (id, nombre, grupo) => {
-            const hoy = new Date();
-            const fechaDoc = hoy.toISOString().split('T')[0];
-            const hora = hoy.getHours();
+        window.marcar = async (id, nombre, rol, grupo) => {
+            const h = new Date().toISOString().split('T')[0];
+            const horaActual = new Date().getHours();
             
-            // Lógica de horario nocturno o especial
-            let turno = (hora >= 18 || hora < 6) ? "Nocturno (6pm-6am)" : "Especial Diurno (Feriado/Vacaciones)";
+            // Lógica de turnos para vigilantes
+            let turnoDesc = "Administrativo";
+            if (rol === 'vigilante') {
+                turnoDesc = (horaActual >= 18 || horaActual < 6) ? "Nocturno (6pm-6am)" : "Especial Diurno (6am-6pm)";
+            }
 
-            await setDoc(doc(db, "asistencia_personal", fechaDoc), { 
-                [id]: { nombre, grupo, hora: hoy.toLocaleTimeString(), turno } 
+            await setDoc(doc(db, "asistencia_personal", h), { 
+                [id]: { 
+                    asistio: 1, 
+                    nombre: nombre, 
+                    turno: turnoDesc,
+                    hora: new Date().toLocaleTimeString() 
+                } 
             }, { merge: true });
-            alert(`Asistencia registrada: ${nombre} (${grupo})`);
         };
 
         window.escuchar = (cb) => {
@@ -39,66 +44,62 @@
         };
     </script>
 </head>
-<body style="font-family: 'Segoe UI', sans-serif; text-align: center; background: #eceff1; margin: 0;">
-
-    <div style="background: #1a2a6c; color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
-        <h2 style="margin:0;">Control de Vigilancia EBNLP</h2>
-        <div id="info-turno" style="margin-top: 10px; font-weight: bold; background: #f39c12; display: inline-block; padding: 5px 15px; border-radius: 20px;">
-            Cargando turno...
-        </div>
+<body style="font-family: sans-serif; text-align: center; background: #f4f7f6; margin: 0;">
+    <div style="background: #1a2a6c; color: white; padding: 15px;">
+        <h2>Panel Control EBNLP</h2>
+        <div id="info-grupo" style="background:#f39c12; color:#1a2a6c; display:inline-block; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:0.9em; margin-bottom:10px;"></div>
+        <br>
+        <a href="index.html" style="color: white; font-size: 0.8em;">⬅ Volver al Menú</a>
     </div>
 
-    <div id="lista" style="padding: 20px; max-width: 500px; margin: auto;"></div>
+    <div id="lista" style="padding: 20px; max-width: 450px; margin: auto;"></div>
 
     <script>
-        // 1. Configuración de Grupos
+        // Todo tu personal integrado
         const staff = [
-            {id: 101, n: "VIGILANTE B1", grupo: "B"},
-            {id: 102, n: "VIGILANTE B2", grupo: "B"},
-            {id: 201, n: "VIGILANTE A1", grupo: "A"},
-            {id: 202, n: "VIGILANTE A2", grupo: "A"}
+            {id:1, n:"YANITZA GÓMEZ", rol:"admin"},
+            {id:2, n:"MARÍA ACUÑA", rol:"admin"},
+            {id:3, n:"KARELYS REYES", rol:"admin"},
+            // Vigilantes (IDs únicos para no chocar con el personal anterior)
+            {id:101, n:"VIGILANTE 1 (B)", rol:"vigilante", grupo:"B"},
+            {id:102, n:"VIGILANTE 2 (B)", rol:"vigilante", grupo:"B"},
+            {id:201, n:"VIGILANTE 3 (A)", rol:"vigilante", grupo:"A"},
+            {id:202, n:"VIGILANTE 4 (A)", rol:"vigilante", grupo:"A"}
         ];
 
-        // 2. Lógica para determinar el grupo del día
-        // Usamos una fecha de referencia (Ejemplo: 1 de Marzo 2026 es Grupo B)
-        function obtenerGrupoDelDia() {
+        function obtenerGrupoHoy() {
             const hoy = new Date();
-            const inicio = new Date("2026-03-01"); // Fecha base: Hoy es Grupo B
-            const diferenciaDias = Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24));
-            
-            // Si la diferencia es par (0, 2, 4...), es Grupo B. Si es impar, es Grupo A.
-            return (diferenciaDias % 2 === 0) ? "B" : "A";
+            const ref = new Date("2026-02-28"); // El 28-Feb fue A, hoy 01-Mar es B
+            const diff = Math.floor((hoy - ref) / (1000 * 60 * 60 * 24));
+            return (diff % 2 === 0) ? "A" : "B";
         }
 
-        const grupoActivo = obtenerGrupoDelDia();
-        document.getElementById('info-turno').innerText = `HOY LE TOCA AL: GRUPO ${grupoActivo}`;
+        const grupoActivo = obtenerGrupoHoy();
+        document.getElementById('info-grupo').innerText = "HOY TRABAJA EL GRUPO: " + grupoActivo;
 
-        function render(dataFirebase) {
-            const contenedor = document.getElementById('lista'); 
-            contenedor.innerHTML = "";
+        function render(d = {}) {
+            const c = document.getElementById('lista'); c.innerHTML = "";
+            staff.forEach(s => {
+                const registro = d[s.id];
+                const yaMarco = registro && (registro === 1 || registro.asistio === 1);
+                
+                // Las administradoras siempre pueden marcar. Los vigilantes solo si es su grupo.
+                const puedeMarcar = s.rol === 'admin' || s.grupo === grupoActivo;
 
-            staff.forEach(p => {
-                const registro = dataFirebase[p.id];
-                const yaMarco = !!registro;
-                const esSuTurno = p.grupo === grupoActivo;
-
-                contenedor.innerHTML += `
-                    <div style="display:flex; flex-direction:column; margin-bottom:15px; padding:15px; background:white; border-radius:8px; border-left: 8px solid ${esSuTurno ? '#27ae60' : '#bdc3c7'}; opacity: ${esSuTurno ? '1' : '0.6'}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="text-align:left;">
-                                <strong style="display:block;">${p.n}</strong>
-                                <small>Grupo: ${p.grupo}</small>
-                            </div>
-                            <button onclick="marcar(${p.id}, '${p.n}', '${p.grupo}')" 
-                                    ${yaMarco || !esSuTurno ? 'disabled' : ''}
-                                    style="background:${yaMarco ? '#27ae60' : (esSuTurno ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">
-                                ${yaMarco ? 'REGISTRADO' : (esSuTurno ? 'MARCAR' : 'NO TOCA')}
-                            </button>
-                        </div>
-                    </div>`;
+                c.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px; background:white; border-radius:8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid ${s.rol === 'admin' ? '#3498db' : '#f39c12'}; opacity: ${puedeMarcar ? '1' : '0.5'}">
+                    <div style="text-align:left;">
+                        <span style="font-weight:bold; display:block;">${s.n}</span>
+                        <small style="color:#7f8c8d;">${s.rol === 'admin' ? 'Administrativo' : 'Vigilante - G'+s.grupo}</small>
+                    </div>
+                    <button onclick="marcar(${s.id}, '${s.n}', '${s.rol}', '${s.grupo}')" 
+                        ${yaMarco || !puedeMarcar ? 'disabled' : ''} 
+                        style="background:${yaMarco ? '#27ae60' : (puedeMarcar ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">
+                        ${yaMarco ? 'REGISTRADO' : (puedeMarcar ? 'MARCAR' : 'NO TOCA')}
+                    </button>
+                </div>`;
             });
         }
-
         window.escuchar(render);
     </script>
 </body>
