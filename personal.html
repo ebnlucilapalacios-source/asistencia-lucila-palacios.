@@ -3,172 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Control de Personal</title>
-    
+    <title>EBNLP - Control Maestro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
     <style>
-        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --celeste: #e3f2fd; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 50px; }
+        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; }
+        body { font-family: sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 4px solid var(--naranja); }
+        .logo-img { width: 50px; background: white; border-radius: 50%; padding: 5px; }
+        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .stat-card { background: white; padding: 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-card p { margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--azul); }
+        .card { background: white; margin: 10px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
-        header { 
-            background: linear-gradient(180deg, var(--azul), #1a2a6c); 
-            color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); 
-        }
-        .logo-box { width: 70px; height: 70px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--naranja); overflow: hidden; }
-        .logo-img { width: 55px; height: auto; }
-
-        /* Panel de Estadísticas */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--azul); }
-        .stat-card h4 { margin: 0; font-size: 10px; color: #666; text-transform: uppercase; }
-        .stat-card p { margin: 5px 0 0; font-size: 22px; font-weight: bold; color: var(--azul); }
-
-        .card { background: white; margin: 0 15px 20px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h3 { margin-top: 0; color: var(--azul); font-size: 16px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        /* Estilo mejorado para el Selector */
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: white; display: block; }
         
-        label { display: block; font-size: 12px; font-weight: bold; margin: 10px 0 5px; color: var(--azul); }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-bottom: 10px; }
-        
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
-        .btn-ingreso { background: var(--verde); }
-        .btn-egreso { background: var(--naranja); }
-        .btn:active { transform: scale(0.95); }
-
-        .table-container { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th { background: var(--azul); color: white; padding: 10px; text-align: center; }
-        td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        .vigilante-row { background-color: var(--celeste); font-weight: bold; }
-        .time-badge { background: #eee; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { border-bottom: 1px solid #ddd; padding: 8px; text-align: center; }
+        .vigilante { background-color: #e3f2fd; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo-box"><img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img"></div>
-    <h1 style="margin:0; font-size:18px;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin:5px 0 0; font-size:11px;">CONTROL DE ASISTENCIA EN LA NUBE</p>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img">
+    <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:2px 0 0; font-size:10px;">CONTROL DE PERSONAL (73 TRABAJADORES)</p>
 </header>
 
-<div class="stats-grid">
+<div class="stats">
     <div class="stat-card"><h4>Asistencia</h4><p id="stAsis">0%</p></div>
-    <div class="stat-card"><h4>Retardos</h4><p id="stRet">0</p></div>
     <div class="stat-card"><h4>Presentes</h4><p id="stPres">0</p></div>
-    <div class="stat-card"><h4>Plantilla</h4><p>73</p></div>
 </div>
 
 <div class="card">
-    <h3>📝 Registro de Jornada</h3>
-    <label>Buscar Trabajador (Escriba para filtrar):</label>
-    <input list="listaPersonal" id="nomIn" placeholder="Escriba nombre aquí..." oninput="detectarDatos()">
-    
-    <datalist id="listaPersonal">
-        <option value="YANITZA MALAVE">
-        <option value="MARIA MUÑOZ">
-        <option value="KARELIS YANEZ">
-        <option value="DAYANA JIMENEZ">
-        <option value="LORRAINE BRITO">
-        <option value="ROSA NACARATTI">
-        <option value="RUSMARY LAREZ">
-        <option value="NEVIS GUERRA">
-        <option value="GENESIS MORILLO">
-        <option value="YUNEQUI VALDEZ">
-        <option value="YULIMAR AGUANES">
-        <option value="LUISA JIMENEZ">
-        <option value="YOMAIRA CACERES">
-        <option value="ANA DAVID">
-        <option value="ELIDAY SALAZAR">
-        <option value="ROSELBA TERAN">
-        <option value="YORVIS BOLIVAR">
-        <option value="GAUDY RODRIGUEZ">
-        <option value="YUBIRY MARTINEZ">
-        <option value="MAGLORIS FERNANDEZ">
-        <option value="JOLETH GUZMAN">
-        <option value="JUNIOR SANVICENTE">
-        <option value="ANGEL FIGUERA">
-        <option value="DALIA LUCES">
-        <option value="FRANCELIS MONTAÑO">
-        <option value="GLENIS SALAZAR">
-        <option value="MARGORIS RODRIGUEZ">
-        <option value="LUISA SOSA">
-        <option value="MILVIDA TORRES">
-        <option value="EDITH LOPEZ">
-        <option value="YANITZA ALEXANDER">
-        <option value="ANDREINA FLORES">
-        <option value="ONEXIS ROCCA">
-        <option value="NELIDA CASTELLANOS">
-        <option value="MAYERLIN CHACON">
-        <option value="JUSTINA FERNANDEZ">
-        <option value="LEOSMARY LOROÑO">
-        <option value="JOSE SHIJAN BRITO">
-        <option value="GLADYS SALCEDO">
-        <option value="MIRLNIS CARVAJAL">
-        <option value="YURAIMA BASTARDO">
-        <option value="LIANNA CARVAJAL">
-        <option value="MARIA MARCHAN">
-        <option value="NORELIS VARGAS">
-        <option value="GILDA VILLARROEL">
-        <option value="ANA FIGUERA">
-        <option value="RUTH CAMPOS">
-        <option value="LUISANA QUINTANA">
-        <option value="MARELBYS SERRANO">
-        <option value="KAREN YANEZ">
-        <option value="DAYANA GARCIA">
-        <option value="MARTHA VALLENILLA">
-        <option value="EDGAR MARTINEZ">
-        <option value="CARLOS CASTILLO">
-        <option value="LUIS FIGUEROA">
-        <option value="JUNNIOR MORGADO">
-        <option value="JONATHAN CEDEÑO">
-        <option value="NAILETH VARGAS">
-        <option value="YOELIS SOLORZANO">
-        <option value="YELITZA MEDINA">
-        <option value="DANIELYS CAMPOS">
-        <option value="EVELYN CARMONA">
-        <option value="JEANMAIKOL DIAZ">
-        <option value="RAIZA VALLENILLA">
-        <option value="IRMA JARAMILLO">
-        <option value="DOVELIS CONDE">
-        <option value="GENESIS CAMERO">
-        <option value="MARCIA GUZMAN">
-        <option value="YUREIMA PIMENTEL">
-        <option value="ROSA RIVERO">
-        <option value="CESAR SUAREZ">
-        <option value="DAHER CARDIER">
-        <option value="DARWIN AGUILERA">
-        <option value="MOISES ROMERO">
-        <option value="OSMIL SANABRIA">
-        <option value="PEDRO GONZALEZ">
-    </datalist>
+    <label><b>Seleccione al Trabajador:</b></label>
+    <select id="nomIn" onchange="detectarCargo()">
+        <option value="">-- Toca aquí para elegir --</option>
+        <optgroup label="DIRECTIVOS / DOCENTES">
+            <option value="YANITZA MALAVE">YANITZA MALAVE</option>
+            <option value="MARIA MUÑOZ">MARIA MUÑOZ</option>
+            <option value="KARELIS YANEZ">KARELIS YANEZ</option>
+            <option value="ANA DAVID">ANA DAVID</option>
+            <option value="ANGEL FIGUERA">ANGEL FIGUERA</option>
+            <option value="ANDREINA FLORES">ANDREINA FLORES</option>
+            <option value="DAYANA JIMENEZ">DAYANA JIMENEZ</option>
+            <option value="LORRAINE BRITO">LORRAINE BRITO</option>
+            <option value="ROSA NACARATTI">ROSA NACARATTI</option>
+            <option value="RUSMARY LAREZ">RUSMARY LAREZ</option>
+            <option value="NEVIS GUERRA">NEVIS GUERRA</option>
+            <option value="GENESIS MORILLO">GENESIS MORILLO</option>
+            <option value="YUNEQUI VALDEZ">YUNEQUI VALDEZ</option>
+            <option value="YULIMAR AGUANES">YULIMAR AGUANES</option>
+            <option value="LUISA JIMENEZ">LUISA JIMENEZ</option>
+            <option value="YOMAIRA CACERES">YOMAIRA CACERES</option>
+            <option value="ELIDAY SALAZAR">ELIDAY SALAZAR</option>
+            <option value="ROSELBA TERAN">ROSELBA TERAN</option>
+            <option value="YORVIS BOLIVAR">YORVIS BOLIVAR</option>
+            <option value="GAUDY RODRIGUEZ">GAUDY RODRIGUEZ</option>
+            <option value="YUBIRY MARTINEZ">YUBIRY MARTINEZ</option>
+            <option value="MAGLORIS FERNANDEZ">MAGLORIS FERNANDEZ</option>
+            <option value="JOLETH GUZMAN">JOLETH GUZMAN</option>
+            <option value="JUNIOR SANVICENTE">JUNIOR SANVICENTE</option>
+            <option value="DALIA LUCES">DALIA LUCES</option>
+            <option value="FRANCELIS MONTAÑO">FRANCELIS MONTAÑO</option>
+            <option value="GLENIS SALAZAR">GLENIS SALAZAR</option>
+            <option value="MARGORIS RODRIGUEZ">MARGORIS RODRIGUEZ</option>
+            <option value="LUISA SOSA">LUISA SOSA</option>
+            <option value="MILVIDA TORRES">MILVIDA TORRES</option>
+            <option value="EDITH LOPEZ">EDITH LOPEZ</option>
+            <option value="YANITZA ALEXANDER">YANITZA ALEXANDER</option>
+            <option value="ONEXIS ROCCA">ONEXIS ROCCA</option>
+            <option value="NELIDA CASTELLANOS">NELIDA CASTELLANOS</option>
+            <option value="MAYERLIN CHACON">MAYERLIN CHACON</option>
+            <option value="JUSTINA FERNANDEZ">JUSTINA FERNANDEZ</option>
+            <option value="LEOSMARY LOROÑO">LEOSMARY LOROÑO</option>
+            <option value="JOSE SHIJAN BRITO">JOSE SHIJAN BRITO</option>
+            <option value="GLADYS SALCEDO">GLADYS SALCEDO</option>
+        </optgroup>
+        <optgroup label="ADMINISTRATIVOS">
+            <option value="MIRLNIS CARVAJAL">MIRLNIS CARVAJAL</option>
+            <option value="YURAIMA BASTARDO">YURAIMA BASTARDO</option>
+            <option value="LIANNA CARVAJAL">LIANNA CARVAJAL</option>
+            <option value="MARIA MARCHAN">MARIA MARCHAN</option>
+        </optgroup>
+        <optgroup label="OBREROS / APOYO">
+            <option value="NORELIS VARGAS">NORELIS VARGAS</option>
+            <option value="GILDA VILLARROEL">GILDA VILLARROEL</option>
+            <option value="ANA FIGUERA">ANA FIGUERA</option>
+            <option value="RUTH CAMPOS">RUTH CAMPOS</option>
+            <option value="LUISANA QUINTANA">LUISANA QUINTANA</option>
+            <option value="MARELBYS SERRANO">MARELBYS SERRANO</option>
+            <option value="KAREN YANEZ">KAREN YANEZ</option>
+            <option value="DAYANA GARCIA">DAYANA GARCIA</option>
+            <option value="MARTHA VALLENILLA">MARTHA VALLENILLA</option>
+            <option value="EDGAR MARTINEZ">EDGAR MARTINEZ</option>
+            <option value="CARLOS CASTILLO">CARLOS CASTILLO</option>
+            <option value="LUIS FIGUEROA">LUIS FIGUEROA</option>
+            <option value="JUNNIOR MORGADO">JUNNIOR MORGADO</option>
+            <option value="JONATHAN CEDEÑO">JONATHAN CEDEÑO</option>
+            <option value="NAILETH VARGAS">NAILETH VARGAS</option>
+            <option value="YOELIS SOLORZANO">YOELIS SOLORZANO</option>
+            <option value="YELITZA MEDINA">YELITZA MEDINA</option>
+            <option value="DANIELYS CAMPOS">DANIELYS CAMPOS</option>
+            <option value="EVELYN CARMONA">EVELYN CARMONA</option>
+            <option value="JEANMAIKOL DIAZ">JEANMAIKOL DIAZ</option>
+        </optgroup>
+        <optgroup label="COCINERAS">
+            <option value="RAIZA VALLENILLA">RAIZA VALLENILLA</option>
+            <option value="IRMA JARAMILLO">IRMA JARAMILLO</option>
+            <option value="DOVELIS CONDE">DOVELIS CONDE</option>
+            <option value="GENESIS CAMERO">GENESIS CAMERO</option>
+            <option value="MARCIA GUZMAN">MARCIA GUZMAN</option>
+            <option value="YUREIMA PIMENTEL">YUREIMA PIMENTEL</option>
+            <option value="ROSA RIVERO">ROSA RIVERO</option>
+        </optgroup>
+        <optgroup label="VIGILANTES">
+            <option value="CESAR SUAREZ">CESAR SUAREZ</option>
+            <option value="DAHER CARDIER">DAHER CARDIER</option>
+            <option value="DARWIN AGUILERA">DARWIN AGUILERA</option>
+            <option value="MOISES ROMERO">MOISES ROMERO</option>
+            <option value="OSMIL SANABRIA">OSMIL SANABRIA</option>
+            <option value="PEDRO GONZALEZ">PEDRO GONZALEZ</option>
+        </optgroup>
+    </select>
 
-    <div style="display: flex; gap:10px">
-        <div style="flex:1"><label>Cargo:</label><input type="text" id="carIn"></div>
-        <div style="flex:1"><label>Horario:</label><input type="text" id="horIn"></div>
+    <div style="display:flex; gap:10px">
+        <input type="text" id="carIn" placeholder="Cargo">
+        <input type="text" id="horIn" placeholder="Horario">
     </div>
 
     <div class="btn-group">
-        <button class="btn btn-ingreso" onclick="registrar('INGRESO')">⬇️ ENTRADA</button>
-        <button class="btn btn-egreso" onclick="registrar('EGRESO')">⬆️ SALIDA</button>
+        <button class="btn" style="background:var(--verde)" onclick="registrar('INGRESO')">⬇️ ENTRADA</button>
+        <button class="btn" style="background:var(--naranja)" onclick="registrar('EGRESO')">⬆️ SALIDA</button>
     </div>
 </div>
 
-<div class="card">
-    <h3>📊 Control del Día: <span id="fechaTexto"></span></h3>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr><th>NOMBRE</th><th>CARGO</th><th>ENTRADA</th><th>SALIDA</th></tr>
-            </thead>
-            <tbody id="tablaCuerpo"></tbody>
-        </table>
-    </div>
+<div class="card" style="overflow-x:auto">
+    <h3>📊 Control Diario</h3>
+    <table id="tabla">
+        <thead><tr><th>NOMBRE</th><th>CARGO</th><th>ENTRADA</th><th>SALIDA</th></tr></thead>
+        <tbody id="cuerpo"></tbody>
+    </table>
 </div>
 
 <script>
-    // Configuración Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -178,76 +161,60 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
-    document.getElementById('fechaTexto').innerText = new Date().toLocaleDateString();
 
-    function detectarDatos() {
-        const n = document.getElementById('nomIn').value.toUpperCase();
+    function detectarCargo() {
+        const n = document.getElementById('nomIn').value;
         const c = document.getElementById('carIn'), h = document.getElementById('horIn');
         
-        if(n.includes("SUAREZ") || n.includes("CARDIER") || n.includes("ROMERO") || n.includes("AGUILERA")) {
+        if(!n) { c.value=""; h.value=""; return; }
+
+        if(["CESAR SUAREZ", "DAHER CARDIER", "DARWIN AGUILERA", "MOISES ROMERO", "OSMIL SANABRIA", "PEDRO GONZALEZ"].includes(n)) {
             c.value="Vigilante"; h.value="Rotativo";
-        } else if(n.includes("VARGAS") || n.includes("FIGUERA") || n.includes("VALLENILLA") || n.includes("CARVAJAL")) {
-            c.value="Personal Apoyo"; h.value="06:45 - 12:45";
+        } else if(["NORELIS VARGAS", "GILDA VILLARROEL", "ANA FIGUERA", "RUTH CAMPOS", "LUISANA QUINTANA", "MARELBYS SERRANO", "KAREN YANEZ", "DAYANA GARCIA", "MARTHA VALLENILLA", "EDGAR MARTINEZ", "CARLOS CASTILLO", "LUIS FIGUEROA", "JUNNIOR MORGADO", "JONATHAN CEDEÑO", "NAILETH VARGAS", "YOELIS SOLORZANO", "YELITZA MEDINA", "DANIELYS CAMPOS", "EVELYN CARMONA", "JEANMAIKOL DIAZ"].includes(n)) {
+            c.value="Obrero"; h.value="06:45-12:45";
+        } else if(["RAIZA VALLENILLA", "IRMA JARAMILLO", "DOVELIS CONDE", "GENESIS CAMERO", "MARCIA GUZMAN", "YUREIMA PIMENTEL", "ROSA RIVERO"].includes(n)) {
+            c.value="Cocinera"; h.value="07:00-14:00";
+        } else if(["MIRLNIS CARVAJAL", "YURAIMA BASTARDO", "LIANNA CARVAJAL", "MARIA MARCHAN"].includes(n)) {
+            c.value="Administrativo"; h.value="06:45-12:45";
         } else {
-            c.value="Docente"; h.value="07:00 - 12:00";
+            c.value="Docente"; h.value="07:00-12:00";
         }
     }
 
     async function registrar(tipo) {
-        const nombre = document.getElementById('nomIn').value;
-        const cargo = document.getElementById('carIn').value;
+        const n = document.getElementById('nomIn').value, c = document.getElementById('carIn').value;
         const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        if(!n) return alert("Por favor, seleccione un nombre de la lista.");
 
-        if(!nombre) return alert("Por favor seleccione un nombre");
+        const ref = db.collection("asistencia_personal").where("fecha", "==", hoy).where("nombre", "==", n);
+        const q = await ref.get();
 
-        const ref = db.collection("asistencia_personal").where("fecha", "==", hoy).where("nombre", "==", nombre);
-        const query = await ref.get();
-
-        if (query.empty) {
-            await db.collection("asistencia_personal").add({
-                nombre, cargo, fecha: hoy,
-                ingreso: tipo === 'INGRESO' ? hora : '--',
-                egreso: tipo === 'EGRESO' ? hora : '--',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        if (q.empty) {
+            await db.collection("asistencia_personal").add({ nombre: n, cargo: c, fecha: hoy, ingreso: tipo==='INGRESO'?hora:'--', egreso: tipo==='EGRESO'?hora:'--' });
         } else {
-            const docId = query.docs[0].id;
-            const update = tipo === 'INGRESO' ? { ingreso: hora } : { egreso: hora };
-            await db.collection("asistencia_personal").doc(docId).update(update);
+            await db.collection("asistencia_personal").doc(q.docs[0].id).update(tipo==='INGRESO'?{ingreso:hora}:{egreso:hora});
         }
         
-        // Limpieza rápida
+        // Limpiar para el siguiente
         document.getElementById('nomIn').value = "";
         document.getElementById('carIn').value = "";
         document.getElementById('horIn').value = "";
-        
-        cargarTabla();
+        cargar();
+        alert("✅ Registro guardado con éxito.");
     }
 
-    async function cargarTabla() {
-        const snapshot = await db.collection("asistencia_personal").where("fecha", "==", hoy).get();
-        let html = "", presentes = 0, retardos = 0;
-
-        snapshot.forEach(doc => {
-            const d = doc.data(); presentes++;
-            if(d.ingreso.includes("AM") && d.ingreso > "07:15") retardos++;
-
-            const esVig = d.cargo.includes("Vigilante") ? 'class="vigilante-row"' : '';
-            html += `<tr ${esVig}>
-                <td><b>${d.nombre}</b></td>
-                <td>${d.cargo}</td>
-                <td><span class="time-badge">${d.ingreso || '--'}</span></td>
-                <td><span class="time-badge">${d.egreso || '--'}</span></td>
-            </tr>`;
+    async function cargar() {
+        const snap = await db.collection("asistencia_personal").where("fecha", "==", hoy).get();
+        let h = "", p = 0;
+        snap.forEach(doc => {
+            const d = doc.data(); p++;
+            h += `<tr ${d.cargo==="Vigilante"?'class="vigilante"':''}><td>${d.nombre}</td><td>${d.cargo}</td><td>${d.ingreso}</td><td>${d.egreso}</td></tr>`;
         });
-
-        document.getElementById('tablaCuerpo').innerHTML = html;
-        document.getElementById('stPres').innerText = presentes;
-        document.getElementById('stRet').innerText = retardos;
-        document.getElementById('stAsis').innerText = ((presentes / 73) * 100).toFixed(1) + "%";
+        document.getElementById('cuerpo').innerHTML = h;
+        document.getElementById('stPres').innerText = p;
+        document.getElementById('stAsis').innerText = ((p/73)*100).toFixed(1) + "%";
     }
-
-    cargarTabla();
+    cargar();
 </script>
 </body>
 </html>
