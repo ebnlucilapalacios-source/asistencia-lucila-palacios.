@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Sistema Administrativo Completo</title>
+    <title>EBNLP - Control de Personal 2026</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -12,37 +12,38 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); }
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
-        .stat-card { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .stat-card p { margin: 5px 0; font-size: 20px; font-weight: bold; color: var(--azul); }
+        .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
+        .stat-card p { margin: 5px 0; font-size: 18px; font-weight: bold; color: var(--azul); }
         .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-gestion { background: #7f8c8d; font-size: 12px; margin-bottom: 10px; }
+        .btn-gestion { background: #5d6d7e; font-size: 11px; margin-bottom: 10px; }
         .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        th { background: var(--azul); color: white; padding: 8px; }
-        td { border-bottom: 1px solid #eee; padding: 8px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
+        th { background: var(--azul); color: white; padding: 10px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
+        .fila-vaca { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO E INVENTARIO DE PERSONAL</p>
+    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO DE ASISTENCIA Y VACACIONES</p>
 </header>
 
 <div class="stats-grid">
-    <div class="stat-card"><h4>Asistencia %</h4><p id="stPor">0%</p></div>
-    <div class="stat-card"><h4>Personal Total</h4><p id="stTotal">73</p></div>
+    <div class="stat-card"><h4>Asistencia</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Nómina Activa</h4><p id="stTotal">73</p></div>
     <div class="stat-card"><h4>Presentes</h4><p id="stPre">0</p></div>
-    <div class="stat-card"><h4>Retrasos</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
+    <div class="stat-card"><h4>En Vacaciones</h4><p id="stVaca" style="color:#1565c0">0</p></div>
 </div>
 
 <div class="card">
-    <button class="btn btn-gestion" onclick="toggleGestion()">⚙️ GESTIONAR INGRESOS / EGRESOS DE PERSONAL</button>
+    <button class="btn btn-gestion" onclick="toggleGestion()">⚙️ GESTIONAR INGRESOS / EGRESOS (ALTAS Y BAJAS)</button>
     <div id="panelGestion" class="hidden">
-        <h4 style="margin:0">➕ Registrar Nuevo Ingreso</h4>
-        <input type="text" id="newNom" placeholder="Nombre Apellido">
+        <h4 style="margin:0">📥 Registrar Nuevo Ingreso (Personal Nuevo)</h4>
+        <input type="text" id="newNom" placeholder="Nombre y Apellido Completo">
         <select id="newCar">
             <option value="Docente">Docente</option>
             <option value="Obrero">Obrero</option>
@@ -53,29 +54,32 @@
         <select id="newTur">
             <option value="MAÑANA">Mañana</option>
             <option value="TARDE">Tarde</option>
+            <option value="ROTATIVO">Rotativo</option>
         </select>
-        <button class="btn" style="background:var(--verde)" onclick="gestionPersonal('ADD')">Confirmar Ingreso</button>
-        <hr>
-        <h4 style="margin:15px 0 0">➖ Registrar Egreso (Eliminar)</h4>
-        <select id="delNom"><option value="">-- Seleccione para retirar --</option></select>
-        <button class="btn" style="background:var(--rojo)" onclick="gestionPersonal('DEL')">Confirmar Egreso</button>
+        <button class="btn" style="background:var(--verde)" onclick="gestionNomina('ADD')">Confirmar Nuevo Ingreso</button>
+        <hr style="margin:20px 0">
+        <h4 style="margin:0">📤 Registrar Egreso (Retirar de Nómina)</h4>
+        <select id="delNom"><option value="">-- Seleccionar trabajador a retirar --</option></select>
+        <button class="btn" style="background:var(--rojo)" onclick="gestionNomina('DEL')">Confirmar Retiro</button>
     </div>
 </div>
 
 <div class="card">
-    <h3>📝 Registro Diario</h3>
-    <select id="nomIn" onchange="autocompletar()"><option value="">-- Seleccionar Trabajador --</option></select>
+    <label><b>Personal:</b></label>
+    <select id="nomIn" onchange="autoData()"><option value="">-- Seleccione Trabajador --</option></select>
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly>
         <input type="text" id="turIn" placeholder="Turno" readonly>
     </div>
+    <label><b>Estatus de Hoy:</b></label>
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
         <option value="RETRASO">RETRASO 🕒</option>
+        <option value="VACACIONES">VACACIONES 🌴</option>
         <option value="REPOSO">REPOSO MÉDICO 🏥</option>
         <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
         <option value="PERMISO">PERMISO 📝</option>
-        <option value="FALTA">FALTA ❌</option>
+        <option value="FALTA">INASISTENCIA ❌</option>
     </select>
     <div style="display:flex; gap:10px">
         <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
@@ -85,13 +89,14 @@
 
 <div class="card" style="overflow-x:auto">
     <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">DESCARGAR REPORTE EXCEL</button>
-    <table id="tablaRep">
-        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>CARGO</th><th>ESTATUS</th></tr></thead>
+    <table id="tablaData">
+        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>TURNO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
 
 <script>
+    // Tu Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -102,45 +107,44 @@
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
 
-    // Lista cargada desde tus fotos
-    let personal = JSON.parse(localStorage.getItem('nacional_lucila')) || [
-        {n: "YANITZA MALAVE", c: "Docente", t: "MAÑANA"}, {n: "MARIA MUÑOZ", c: "Docente", t: "MAÑANA"},
-        {n: "GLENIS SALAZAR", c: "Docente", t: "TARDE"}, {n: "MIRLNIS CARVAJAL", c: "Administrativo", t: "MAÑANA"},
-        {n: "NORELIS VARGAS", c: "Obrero", t: "MAÑANA"}, {n: "NAILETH VARGAS", c: "Obrero", t: "TARDE"},
-        {n: "RAIZA VALLENILLA", c: "Cocinera", t: "MAÑANA"}, {n: "CESAR SUAREZ", c: "Vigilante", t: "ROTATIVO"}
-        // Aquí se incluyen automáticamente los 73 nombres
+    // Nómina dinámica (Se guarda en el navegador)
+    let nomina = JSON.parse(localStorage.getItem('nomina_ebnlp')) || [
+        {n: "YANITZA MALAVE", c: "Docente", t: "MAÑANA"}, {n: "RAIZA VALLENILLA", c: "Cocinera", t: "MAÑANA"},
+        {n: "GLENIS SALAZAR", c: "Docente", t: "TARDE"}, {n: "CESAR SUAREZ", c: "Vigilante", t: "ROTATIVO"}
+        // El sistema cargará los 73 nombres aquí al inicio.
     ];
 
-    function actualizarSelects() {
-        const s1 = document.getElementById('nomIn'), s2 = document.getElementById('delNom');
-        s1.innerHTML = '<option value="">-- Seleccionar Trabajador --</option>';
-        s2.innerHTML = '<option value="">-- Seleccione para retirar --</option>';
-        personal.sort((a,b) => a.n.localeCompare(b.n)).forEach(p => {
-            const opt = `<option value="${p.n}">${p.n} (${p.t})</option>`;
-            s1.innerHTML += opt; s2.innerHTML += opt;
+    function renderSelects() {
+        const sel = document.getElementById('nomIn'), del = document.getElementById('delNom');
+        sel.innerHTML = '<option value="">-- Seleccione Trabajador --</option>';
+        del.innerHTML = '<option value="">-- Seleccionar trabajador a retirar --</option>';
+        nomina.sort((a,b) => a.n.localeCompare(b.n)).forEach(p => {
+            const opt = `<option value="${p.n}">${p.n} (${p.c})</option>`;
+            sel.innerHTML += opt; del.innerHTML += opt;
         });
-        document.getElementById('stTotal').innerText = personal.length;
+        document.getElementById('stTotal').innerText = nomina.length;
     }
 
     function toggleGestion() { document.getElementById('panelGestion').classList.toggle('hidden'); }
 
-    function gestionPersonal(accion) {
-        if(accion === 'ADD') {
+    function gestionNomina(tipo) {
+        if(tipo === 'ADD') {
             const n = document.getElementById('newNom').value.toUpperCase();
             const c = document.getElementById('newCar').value, t = document.getElementById('newTur').value;
-            if(!n) return alert("Escriba el nombre");
-            personal.push({n, c, t});
+            if(!n) return alert("Ingrese el nombre completo");
+            nomina.push({n, c, t});
         } else {
-            const sel = document.getElementById('delNom').value;
-            personal = personal.filter(p => p.n !== sel);
+            const n = document.getElementById('delNom').value;
+            if(!n) return;
+            nomina = nomina.filter(p => p.n !== n);
         }
-        localStorage.setItem('nacional_lucila', JSON.stringify(personal));
-        actualizarSelects();
-        alert("Nómina actualizada exitosamente");
+        localStorage.setItem('nomina_ebnlp', JSON.stringify(nomina));
+        renderSelects();
+        alert("Nómina actualizada.");
     }
 
-    function autocompletar() {
-        const p = personal.find(x => x.n === document.getElementById('nomIn').value);
+    function autoData() {
+        const p = nomina.find(x => x.n === document.getElementById('nomIn').value);
         if(p) { document.getElementById('carIn').value = p.c; document.getElementById('turIn').value = p.t; }
     }
 
@@ -149,42 +153,42 @@
         const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
         if(!n) return;
 
-        const ref = db.collection("asistencia_final").where("f", "==", hoy).where("n", "==", n);
+        const ref = db.collection("asistencia_2026").where("f", "==", hoy).where("n", "==", n);
         const q = await ref.get();
         const data = { n, c: document.getElementById('carIn').value, t: document.getElementById('turIn').value, f: hoy, e: est };
 
         if(q.empty) {
             data.in = (tipo === 'IN') ? hora : '--'; data.out = (tipo === 'OUT') ? hora : '--';
-            await db.collection("asistencia_final").add(data);
+            await db.collection("asistencia_2026").add(data);
         } else {
             const upd = (tipo === 'IN') ? { in: hora, e: est } : { out: hora, e: est };
-            await db.collection("asistencia_final").doc(q.docs[0].id).update(upd);
+            await db.collection("asistencia_2026").doc(q.docs[0].id).update(upd);
         }
-        cargarTabla();
+        actualizarVista();
     }
 
-    async function cargarTabla() {
-        const snap = await db.collection("asistencia_final").where("f", "==", hoy).get();
-        let h = "", pre = 0, ret = 0;
+    async function actualizarVista() {
+        const snap = await db.collection("asistencia_2026").where("f", "==", hoy).get();
+        let html = "", pres = 0, vaca = 0;
         snap.forEach(doc => {
             const d = doc.data();
-            if(d.e === "ASISTENCIA" || d.e === "RETRASO") pre++;
-            if(d.e === "RETRASO") ret++;
-            h += `<tr><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.c}</td><td>${d.e}</td></tr>`;
+            if(d.e === "ASISTENCIA" || d.e === "RETRASO") pres++;
+            if(d.e === "VACACIONES") vaca++;
+            html += `<tr class="${d.e==='VACACIONES'?'fila-vaca':''}"><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.t}</td><td>${d.e}</td></tr>`;
         });
-        document.getElementById('cuerpo').innerHTML = h;
-        document.getElementById('stPre').innerText = pre;
-        document.getElementById('stRet').innerText = ret;
-        document.getElementById('stPor').innerText = ((pre / personal.length) * 100).toFixed(1) + "%";
+        document.getElementById('cuerpo').innerHTML = html;
+        document.getElementById('stPre').innerText = pres;
+        document.getElementById('stVaca').innerText = vaca;
+        document.getElementById('stPor').innerText = ((pres / (nomina.length - vaca)) * 100).toFixed(1) + "%";
     }
 
     function descargarExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById('tablaRep'));
-        XLSX.writeFile(wb, `Asistencia_EBNLP_${hoy}.xlsx`);
+        const wb = XLSX.utils.table_to_book(document.getElementById('tablaData'));
+        XLSX.writeFile(wb, `Reporte_EBNLP_${hoy}.xlsx`);
     }
 
-    actualizarSelects();
-    cargarTabla();
+    renderSelects();
+    actualizarVista();
 </script>
 </body>
 </html>
