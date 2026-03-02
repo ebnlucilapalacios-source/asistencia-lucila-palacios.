@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Sistema Integral Profesional 2026</title>
+    <title>EBNLP - Sistema Profesional 2026</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,23 +11,13 @@
         :root { --azul: #0c234a; --naranja: #f39c12; --rojo: #d32f2f; --verde: #2e7d32; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
         
-        /* 1. LOGO Y HEADER */
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
-        .logo-box { width: 90px; height: 90px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--naranja); overflow: hidden; }
-        .logo-box img { width: 85%; height: auto; }
+        .logo-box { width: 100px; height: 100px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--naranja); overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .logo-box img { width: 90%; height: auto; }
 
-        /* 2. ESTADÍSTICAS Y DISGREGACIÓN */
         .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
         .card-stat { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .disgregacion { background: #fff; margin: 10px; padding: 15px; border-radius: 12px; border-left: 6px solid var(--naranja); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .cargo-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
-
-        /* 3. VIGILANCIA RESALTADA */
-        .vigi-container { background: white; margin: 10px; padding: 15px; border-radius: 12px; border: 1px solid #ddd; }
-        .vigi-hoy { background: #fff3e0; border: 2px solid var(--naranja); color: #d35400; font-weight: bold; padding: 10px; border-radius: 8px; margin-bottom: 5px; }
-        .vigi-espera { opacity: 0.5; font-size: 12px; padding: 5px 10px; }
-
-        /* 4. FORMULARIO Y TABLA */
+        
         .card { background: white; margin: 10px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         label { font-size: 11px; font-weight: bold; color: var(--azul); display: block; margin-top: 10px; text-transform: uppercase; }
         select, input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
@@ -35,9 +25,8 @@
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         .btn-verde { background: var(--verde); }
         .btn-azul { background: var(--azul); }
-        .btn-rojo { background: var(--rojo); }
 
-        /* 5. VISUALIZACIÓN DE RETRASOS */
+        /* VISUALIZACIÓN DE RETRASOS */
         .fila-retraso { background-color: #ffdada !important; color: #b71c1c; font-weight: bold; }
         .badge-retraso { background: var(--rojo); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
 
@@ -51,31 +40,20 @@
 
 <header>
     <div class="logo-box">
-        <img src="https://i.ibb.co/XSbL8w4/logo-oficial-ebnlp.png" alt="Logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png'">
+        <img src="https://i.ibb.co/XSbL8w4/logo-oficial-ebnlp.png" alt="EBN Lucila Palacios" onerror="this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png'">
     </div>
     <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO DE ASISTENCIA 2026</p>
+    <p style="margin:0; font-size:11px;">San Félix - Reporte Estadístico de Asistencia</p>
 </header>
 
 <div class="grid-stats">
-    <div class="card-stat"><h4>Asistencia %</h4><p id="stPor" style="font-size:22px; color:var(--azul);">0%</p></div>
-    <div class="card-stat"><h4>Retardos</h4><p id="stRet" style="font-size:22px; color:var(--rojo);">0</p></div>
-</div>
-
-<div class="disgregacion">
-    <strong>📊 RESUMEN POR CARGOS:</strong>
-    <div id="listaCargos" style="margin-top:10px;"></div>
-</div>
-
-<div class="vigi-container">
-    <div style="font-weight:bold; color:var(--azul); margin-bottom:10px; text-align:center; font-size:12px;">🛡️ ROL DE VIGILANCIA INTERDIARIO</div>
-    <div id="vigiA"><b>GRUPO A:</b> Osmil, Daher, Pedro, Moises</div>
-    <div id="vigiB"><b>GRUPO B:</b> Cesar, Juan, Guillermo, Darwin, Joseyver</div>
+    <div class="card-stat"><h4>Asistencia %</h4><p id="stPor">0%</p></div>
+    <div class="card-stat"><h4>Retardos Hoy</h4><p id="stRet" style="color:var(--rojo);">0</p></div>
 </div>
 
 <div class="card">
     <label>Trabajador:</label>
-    <select id="nomIn" onchange="actualizarCampos()"><option value="">-- Seleccionar --</option></select>
+    <select id="nomIn" onchange="autoCompletar()"><option value="">-- Seleccionar --</option></select>
     
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly style="background:#f9f9f9">
@@ -97,35 +75,14 @@
     <button class="btn btn-verde" onclick="registrar()">GUARDAR ASISTENCIA</button>
 </div>
 
-<div class="card">
-    <button class="btn btn-azul" style="font-size:11px;" onclick="document.getElementById('pGestion').classList.toggle('hidden')">⚙️ PANEL DE INGRESOS Y EGRESOS</button>
-    <div id="pGestion" class="hidden" style="margin-top:15px; border-top:1px solid #eee; padding-top:15px;">
-        <label>Nuevo Ingreso:</label>
-        <input type="text" id="newN" placeholder="Nombre Completo">
-        <select id="newC">
-            <option value="Docente">Docente</option>
-            <option value="Obrero">Obrero</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Cocinera">Cocinera</option>
-            <option value="Vigilante">Vigilante</option>
-        </select>
-        <select id="newT">
-            <option value="MAÑANA">Mañana</option>
-            <option value="TARDE">Tarde</option>
-        </select>
-        <button class="btn btn-azul" onclick="dbAccion('ADD')">Añadir a Nómina</button>
-        <hr>
-        <label>Egreso (Eliminar):</label>
-        <select id="delN"></select>
-        <button class="btn btn-rojo" onclick="dbAccion('DEL')">Eliminar de Nómina</button>
-    </div>
-</div>
-
 <div class="card" style="overflow-x:auto">
     <button class="btn btn-azul" onclick="descargarExcel()">📥 EXPORTAR REPORTE EXCEL</button>
     <table id="tablaExcel">
-        <thead><tr><th>NOMBRE</th><th>HORA</th><th>ESTATUS</th><th>CARGO</th></tr></thead>
-        <tbody id="cuerpoTabla"></tbody>
+        <thead>
+            <tr><th>NOMBRE</th><th>HORA</th><th>ESTATUS</th><th>CARGO</th></tr>
+        </thead>
+        <tbody id="cuerpoTabla">
+            </tbody>
     </table>
 </div>
 
@@ -140,52 +97,37 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
-    let nominaCloud = [];
 
-    // REGLAS DE RETRASO ESTRICTAS
+    // LÓGICA DE RETRASO SEGÚN PARÁMETROS
     function evaluarRetraso(cargo, turno, horaM) {
         const [h, m] = horaM.split(':').map(Number);
         const min = h * 60 + m; 
         if (turno === "MAÑANA") {
-            if ((cargo === "Docente" || cargo === "Cocinera") && min > 420) return "RETRASO"; // 7:00
-            if ((cargo === "Obrero" || cargo === "Administrativo") && min > 405) return "RETRASO"; // 6:45
+            if ((cargo === "Docente" || cargo === "Cocinera") && min > 420) return "RETRASO"; // 7:00 AM
+            if ((cargo === "Obrero" || cargo === "Administrativo") && min > 405) return "RETRASO"; // 6:45 AM
         } else {
-            if (cargo === "Docente" && min > 720) return "RETRASO"; // 12:00
-            if (cargo === "Obrero" && min > 690) return "RETRASO"; // 11:30
+            if (cargo === "Docente" && min > 720) return "RETRASO"; // 12:00 PM
+            if (cargo === "Obrero" && min > 690) return "RETRASO"; // 11:30 AM
         }
         return "ASISTENCIA";
     }
 
-    // CARGA DE NÓMINA
+    let nominaLocal = [];
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
-        nominaCloud = [];
-        const sel = document.getElementById('nomIn'), del = document.getElementById('delN');
+        nominaLocal = [];
+        const sel = document.getElementById('nomIn');
         sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-        del.innerHTML = '<option value="">-- Seleccionar --</option>';
         snap.forEach(doc => {
-            const d = doc.data(); d.id = doc.id;
-            nominaCloud.push(d);
-            const opt = `<option value="${d.n}">${d.n}</option>`;
-            sel.innerHTML += opt; del.innerHTML += opt;
+            nominaLocal.push(doc.data());
+            sel.innerHTML += `<option value="${doc.data().n}">${doc.data().n}</option>`;
         });
-        actualizarVista();
     });
 
-    function actualizarCampos() {
-        const p = nominaCloud.find(x => x.n === document.getElementById('nomIn').value);
-        if(p) { document.getElementById('carIn').value = p.c; document.getElementById('turIn').value = p.t; }
-    }
-
-    async function dbAccion(tipo) {
-        if(tipo === 'ADD') {
-            const n = document.getElementById('newN').value.toUpperCase();
-            if(!n) return alert("Ingrese nombre");
-            await db.collection("nomina_institucional").add({n, c: document.getElementById('newC').value, t: document.getElementById('newT').value});
-            document.getElementById('newN').value = "";
-        } else {
-            const val = document.getElementById('delN').value;
-            const p = nominaCloud.find(x => x.n === val);
-            if(p && confirm("¿Confirmar Egreso?")) await db.collection("nomina_institucional").doc(p.id).delete();
+    function autoCompletar() {
+        const p = nominaLocal.find(x => x.n === document.getElementById('nomIn').value);
+        if(p) { 
+            document.getElementById('carIn').value = p.c; 
+            document.getElementById('turIn').value = p.t; 
         }
     }
 
@@ -194,24 +136,25 @@
         const c = document.getElementById('carIn').value, t = document.getElementById('turIn').value;
         let e = document.getElementById('estIn').value;
 
-        if(!n || !h) return alert("DEBE INGRESAR LA HORA MANUAL");
+        if(!n || !h) return alert("⚠️ Ingrese el NOMBRE y la HORA MANUAL");
         if(e === "ASISTENCIA") e = evaluarRetraso(c, t, h);
 
         await db.collection("asistencia_ebnlp_final").add({ n, c, t, f: hoy, e, h, ts: Date.now() });
-        alert("REGISTRADO: " + e);
+        alert("✅ Registro exitoso");
     }
 
-    async function actualizarVista() {
-        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", hoy).orderBy("ts", "desc").get();
-        const res = { Docente:0, Obrero:0, Administrativo:0, Cocinera:0, Vigilante:0 };
-        let totalP = 0, totalR = 0;
+    // ESCUCHA EN TIEMPO REAL PARA LLENAR LA TABLA
+    db.collection("asistencia_ebnlp_final").where("f", "==", hoy).orderBy("ts", "desc").onSnapshot(snap => {
+        const cuerpo = document.getElementById('cuerpoTabla');
+        let totalR = 0;
+        cuerpo.innerHTML = "";
         
-        document.getElementById('cuerpoTabla').innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
             const esR = d.e === "RETRASO";
-            if(d.e === "ASISTENCIA" || esR) { totalP++; if(esR) totalR++; res[d.c]++; }
-            document.getElementById('cuerpoTabla').innerHTML += `
+            if(esR) totalR++;
+
+            cuerpo.innerHTML += `
                 <tr class="${esR ? 'fila-retraso' : ''}">
                     <td>${d.n}</td>
                     <td>${d.h}</td>
@@ -219,30 +162,13 @@
                     <td>${d.c}</td>
                 </tr>`;
         });
-
-        // DISGREGACIÓN VISUAL
-        let disgHTML = "";
-        ["Docente", "Obrero", "Administrativo", "Cocinera", "Vigilante"].forEach(cargo => {
-            const tot = nominaCloud.filter(p => p.c === cargo).length;
-            disgHTML += `<div class="cargo-row"><span>${cargo}s:</span> <b>${res[cargo]}/${tot}</b></div>`;
-        });
-        document.getElementById('listaCargos').innerHTML = disgHTML;
-
-        // VIGILANCIA INTERDIARIA
-        const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
-        const tVigi = (diff % 2 === 0) ? "A" : "B";
-        document.getElementById('vigiA').className = (tVigi === "A") ? "vigi-hoy" : "vigi-espera";
-        document.getElementById('vigiB').className = (tVigi === "B") ? "vigi-hoy" : "vigi-espera";
-
         document.getElementById('stRet').innerText = totalR;
-        document.getElementById('stPor').innerText = nominaCloud.length > 0 ? ((totalP/nominaCloud.length)*100).toFixed(1) + "%" : "0%";
-    }
+        document.getElementById('stPor').innerText = nominaLocal.length > 0 ? Math.round((snap.size / nominaLocal.length) * 100) + "%" : "0%";
+    });
 
     function descargarExcel() {
-        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaExcel')), `Asistencia_EBNLP_${hoy}.xlsx`);
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaExcel')), `Reporte_EBNLP_${hoy}.xlsx`);
     }
-    
-    setTimeout(actualizarVista, 1000);
 </script>
 </body>
 </html>
