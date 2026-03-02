@@ -3,105 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Control Maestro</title>
-    
+    <title>EBNLP - Consola Maestra</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { 
-            --azul-dark: #0c234a; --azul-vivo: #1a2a6c; 
-            --verde: #27ae60; --naranja: #f39c12; --gris: #f4f7f6; 
-        }
-
+        :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 80px; }
+        header { background: linear-gradient(to bottom, var(--azul-d), var(--azul-v)); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
+        .logo { height: 60px; margin-bottom: 10px; }
         
-        /* Encabezado */
-        header { background: linear-gradient(to bottom, var(--azul-dark), var(--azul-vivo)); color: white; text-align: center; padding: 25px 10px; border-bottom: 5px solid var(--naranja); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .logo { height: 75px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-
-        /* Navegación Inferior Móvil */
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; height: 65px; }
-        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 10px; font-weight: bold; text-decoration: none; transition: 0.3s; }
-        .nav-btn.active { color: var(--azul-vivo); background: #f0f4ff; border-top: 4px solid var(--azul-vivo); }
-        .nav-btn span { font-size: 22px; margin-bottom: 2px; }
+        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; color: #666; font-size: 10px; font-weight: bold; text-decoration: none; }
+        .nav-btn.active { color: var(--azul-v); background: #f0f4ff; border-top: 4px solid var(--azul-v); }
+        .nav-btn span { font-size: 20px; }
 
-        /* Contenedores de Sección */
-        .section { display: none; padding: 15px; animation: fadeIn 0.4s ease; }
+        .section { display: none; padding: 15px; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Tarjetas Estilo Capture */
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 8px solid var(--azul-vivo); }
-        .card h3 { margin-top: 0; font-size: 16px; color: var(--azul-dark); display: flex; align-items: center; gap: 8px; }
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-left: 8px solid var(--azul-v); }
         
-        /* Tablas */
+        /* Tabla Detallada */
         .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: left; }
-        th { background: #f8f9fa; color: var(--azul-dark); font-weight: bold; text-transform: uppercase; font-size: 10px; }
-
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; color: var(--azul-d); text-transform: uppercase; font-size: 9px; }
+        
+        .badge { padding: 4px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; }
         .bg-asis { background: #e6ffed; color: #27ae60; }
         .bg-falta { background: #fff1f0; color: #e74c3c; }
-        
-        .counter { font-size: 28px; font-weight: bold; color: var(--azul-vivo); text-align: center; padding: 10px; }
+        .bg-permiso { background: #fff7e6; color: #d48806; }
     </style>
 </head>
 <body>
 
 <header>
     <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
-    <h2 style="margin:0; letter-spacing: 1px;">LUCILA PALACIOS</h2>
-    <p style="margin:5px 0 0; font-size:11px; opacity:0.8; font-weight: 300;">CONSOLA DE DIRECCIÓN</p>
+    <h2 style="margin:0;">DIRECCIÓN EBNLP</h2>
 </header>
 
-<div id="secInicio" class="section active">
-    <div class="card" style="border-left-color: var(--naranja);">
-        <h3>🏠 Estado de la Institución</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="text-align:center; border-right: 1px solid #eee;">
-                <small>Personal Hoy</small>
-                <div id="countPers" class="counter">0</div>
-            </div>
-            <div style="text-align:center;">
-                <small>Matrícula Alumnos</small>
-                <div id="countAlum" class="counter">0</div>
-            </div>
+<div id="secPersonal" class="section active">
+    <div class="card">
+        <h3>👥 Datos Completos del Personal</h3>
+        <input type="date" id="filtroFec" onchange="cargarDataPersonalCompleta()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:10px;">
+    </div>
+    
+    <div class="card">
+        <div class="table-container">
+            <table id="tablaCompleta">
+                <thead>
+                    <tr>
+                        <th>Trabajador</th>
+                        <th>Cargo</th>
+                        <th>Estado</th>
+                        <th>Registrado el</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla">
+                    </tbody>
+            </table>
         </div>
-    </div>
-    <div class="card">
-        <h3>📢 Últimas Actualizaciones</h3>
-        <div id="recientes" style="font-size: 11px; color: #666;">Esperando datos de la nube...</div>
-    </div>
-</div>
-
-<div id="secPersonal" class="section">
-    <div class="card">
-        <h3>👥 Asistencia del Personal (Secretaría)</h3>
-        <input type="date" id="filtroFec" onchange="cargarDataPersonal()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
-    </div>
-    <div class="card">
-        <div class="table-container" id="tablaPersonal">Cargando...</div>
     </div>
 </div>
 
 <div id="secAlumnos" class="section">
     <div class="card" style="border-left-color: var(--verde);">
-        <h3>🎓 Registro de Estudiantes (Maestras)</h3>
-        <div class="table-container" id="tablaAlumnos">Cargando...</div>
+        <h3>🎓 Registro de Alumnos</h3>
+        <div id="tablaAlumnos">Cargando...</div>
     </div>
 </div>
 
 <nav>
-    <a href="#" class="nav-btn active" onclick="tab('secInicio', this)"><span>🏠</span>INICIO</a>
-    <a href="#" class="nav-btn" onclick="tab('secPersonal', this)"><span>👥</span>PERSONAL</a>
+    <a href="#" class="nav-btn active" onclick="tab('secPersonal', this)"><span>👥</span>PERSONAL</a>
     <a href="#" class="nav-btn" onclick="tab('secAlumnos', this)"><span>🎓</span>ALUMNOS</a>
     <a href="estadistica.html" class="nav-btn"><span>📊</span>REPORTES</a>
 </nav>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -111,7 +88,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Navegación de Pestañas
     function tab(id, el) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -119,26 +95,38 @@
         el.classList.add('active');
     }
 
-    // --- ESCUCHA EN TIEMPO REAL: PERSONAL ---
-    function cargarDataPersonal() {
+    // FUNCIÓN PARA VER TODO LO DE PERSONAL.HTML
+    function cargarDataPersonalCompleta() {
         const fec = document.getElementById('filtroFec').value;
         db.collection("asistencia_personal").where("fec", "==", fec).onSnapshot(snap => {
-            document.getElementById('countPers').innerText = snap.size;
-            let html = `<table><tr><th>NOMBRE</th><th>ESTATUS</th></tr>`;
+            let html = "";
             snap.forEach(doc => {
                 const r = doc.data();
-                const cls = r.est === 'Asistencia' ? 'bg-asis' : 'bg-falta';
-                html += `<tr><td><b>${r.nombre}</b></td><td><span class="badge ${cls}">${r.est}</span></td></tr>`;
+                
+                // Color del badge según estatus
+                let cls = 'bg-asis';
+                if(r.est.includes("Inasistencia") || r.est.includes("Falta")) cls = 'bg-falta';
+                if(r.est.includes("Permiso")) cls = 'bg-permiso';
+
+                // Formatear fecha de registro (si existe)
+                let hora = r.actualizado ? new Date(r.actualizado.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '---';
+
+                html += `
+                <tr>
+                    <td><b>${r.nombre}</b></td>
+                    <td><small>${r.cargo || 'No asignado'}</small></td>
+                    <td><span class="badge ${cls}">${r.est}</span></td>
+                    <td>${hora}</td>
+                </tr>`;
             });
-            document.getElementById('tablaPersonal').innerHTML = html + "</table>";
+            document.getElementById('cuerpoTabla').innerHTML = html || "<tr><td colspan='4'>Sin registros para esta fecha</td></tr>";
         });
     }
 
-    // --- ESCUCHA EN TIEMPO REAL: ALUMNOS ---
+    // Lógica Alumnos
     function cargarDataAlumnos() {
         db.collection("alumnos").onSnapshot(snap => {
-            document.getElementById('countAlum').innerText = snap.size;
-            let html = `<table><tr><th>ALUMNO</th><th>SECCIÓN</th></tr>`;
+            let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
             snap.forEach(doc => {
                 const a = doc.data();
                 html += `<tr><td>${a.nombre}</td><td>${a.seccion || 'S/N'}</td></tr>`;
@@ -147,9 +135,8 @@
         });
     }
 
-    // Inicialización
     document.getElementById('filtroFec').valueAsDate = new Date();
-    cargarDataPersonal();
+    cargarDataPersonalCompleta();
     cargarDataAlumnos();
 </script>
 </body>
