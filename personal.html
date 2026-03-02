@@ -3,77 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asistencia - EBNLP</title>
+    <title>Personal - E.B.N. Lucila Palacios</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 30px; }
-        header { background: linear-gradient(180deg, var(--azul), #1a2a6c); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
-        .logo-box { width: 90px; height: 90px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--naranja); }
-        .logo-img { width: 75px; height: auto; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 50px; }
         
-        .form-card { background: white; margin: 20px 15px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        /* ENCABEZADO CON LOGO FUNCIONAL */
+        header { 
+            background: linear-gradient(180deg, var(--azul) 0%, #1a2a6c 100%); 
+            color: white; text-align: center; padding: 25px; border-bottom: 5px solid var(--naranja); 
+        }
+        .logo-box { 
+            width: 100px; height: 100px; background: white; border-radius: 50%; 
+            margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; 
+            border: 3px solid var(--naranja); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .logo-img { width: 85px; height: auto; display: block; }
+
+        /* TARJETAS DE ESTADÍSTICA */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-bottom: 4px solid var(--azul); }
+        .stat-card h4 { margin: 0; font-size: 10px; color: #666; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 22px; font-weight: bold; color: var(--azul); }
+
+        /* FORMULARIO */
+        .card { background: white; margin: 0 15px 20px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--azul); }
         select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; margin-bottom: 15px; box-sizing: border-box; }
         
-        .horario-tag { background: #e8f4fd; color: #004085; padding: 10px; border-radius: 8px; text-align: center; font-size: 13px; margin-bottom: 15px; border: 1px solid #b8daff; }
-        .retardo-alerta { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; display: none; margin-bottom: 15px; }
+        .horario-info { background: #fff9e6; border: 1px solid #ffe58f; padding: 12px; border-radius: 8px; text-align: center; font-size: 13px; margin-bottom: 15px; font-weight: bold; color: #856404; }
+        .alerta-retardo { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; display: none; margin-bottom: 15px; }
 
-        .btn-save { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; background: var(--verde); color: white; cursor: pointer; font-size: 16px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 10px; color: white; transition: 0.3s; }
+        .btn-save { background: var(--verde); }
+        .btn-pdf { background: var(--rojo); }
+        .btn-report { background: var(--azul); }
     </style>
 </head>
 <body>
 
 <header>
     <div class="logo-box">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img" alt="Logo">
     </div>
-    <h1 style="font-size: 18px; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="font-size: 11px; margin: 5px 0 0;">REGISTRO DE ASISTENCIA Y RETARDOS</p>
+    <h1 style="margin: 0; font-size: 20px;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin: 5px 0 0; font-size: 12px; opacity: 0.9;">Sistema de Control de Personal</p>
 </header>
 
-<div class="form-card">
-    <label>Fecha de la Jornada:</label>
+<div class="stats-grid">
+    <div class="stat-card"><h4>Asistencia Día</h4><p id="statDia">0%</p></div>
+    <div class="stat-card"><h4>Retardos Hoy</h4><p id="statRet">0</p></div>
+</div>
+
+<div class="card">
+    <h3 style="margin-top: 0; font-size: 16px;">📋 Registro de Jornada</h3>
+    
+    <label>Fecha:</label>
     <input type="date" id="fechaReg">
 
     <label>Trabajador:</label>
-    <select id="selectPersona" onchange="verificarHorario()">
-        <option value="">Seleccione al personal...</option>
-        <option value="Docente" data-hora="07:00">Docente (Mañana: 7am - 12pm)</option>
-        <option value="Obrero" data-hora="07:00">Obrero (7am - 1pm)</option>
-        <option value="Administrativo" data-hora="07:00">Administrativo (7am - 1pm)</option>
-        <option value="Cocinera" data-hora="07:00">Cocinera (7am - 2pm)</option>
-        <option value="Vigilante" data-hora="18:00">Vigilante (Noche: 6pm - 6am)</option>
+    <select id="selPers" onchange="configurarHorario()">
+        <option value="">Seleccione...</option>
+        <option value="Docente" data-h="07:00" data-s="12:00">Docente (7am - 12pm)</option>
+        <option value="Obrero" data-h="07:00" data-s="13:00">Obrero (7am - 1pm)</option>
+        <option value="Administrativo" data-h="07:00" data-s="13:00">Administrativo (7am - 1pm)</option>
+        <option value="Cocinera" data-h="07:00" data-s="14:00">Cocinera (7am - 2pm)</option>
+        <option value="Vigilante" data-h="18:00" data-s="06:00">Vigilante (6pm - 6am)</option>
     </select>
 
-    <div id="tagHorario" class="horario-tag">Seleccione cargo para ver horario reglamentario</div>
-    
-    <div id="alertaRetardo" class="retardo-alerta">⚠️ ATENCIÓN: Se registrará como RETARDO</div>
+    <div id="msgHorario" class="horario-info">Seleccione cargo para ver horario reglamentario</div>
+    <div id="alertaRetardo" class="alerta-retardo">⚠️ SE REGISTRARÁ COMO RETARDO</div>
 
-    <div style="display: flex; gap: 10px;">
-        <div style="flex:1">
-            <label>Hora Entrada:</label>
-            <input type="time" id="hEntrada" onchange="verificarHorario()">
-        </div>
-        <div style="flex:1">
-            <label>Hora Salida:</label>
-            <input type="time" id="hSalida">
+    <label>Estatus:</label>
+    <select id="estatus" onchange="verificarEstatus()">
+        <option value="Asistencia">Asistencia ✅</option>
+        <option value="Inasistencia Injustificada">Inasistencia Injustificada ❌</option>
+        <option value="Permiso Personal">Permiso Personal 📝</option>
+        <option value="Reposo Médico">Reposo Médico 🏥</option>
+        <option value="Vacaciones">Vacaciones 🏖️</option>
+    </select>
+
+    <div id="seccionTiempos">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1">
+                <label>Hora Entrada:</label>
+                <input type="time" id="hEntrada" onchange="chequearRetardo()">
+            </div>
+            <div style="flex:1">
+                <label>Hora Salida:</label>
+                <input type="time" id="hSalida">
+            </div>
         </div>
     </div>
 
-    <label>Estatus General:</label>
-    <select id="estatusAsis">
-        <option value="Asistencia">Asistencia ✅</option>
-        <option value="Inasistencia">Inasistencia ❌</option>
-        <option value="Permiso">Permiso 📝</option>
-    </select>
-
-    <button class="btn-save" onclick="procesarGuardado()">💾 GUARDAR REGISTRO</button>
+    <button class="btn btn-save" onclick="guardar()">💾 GUARDAR REGISTRO</button>
+    <button class="btn btn-pdf">📄 DESCARGAR PDF DIARIO</button>
+    <button class="btn btn-report">📊 REPORTE MENSUAL</button>
 </div>
 
 <script>
+    // Tu Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -85,48 +118,57 @@
 
     document.getElementById('fechaReg').valueAsDate = new Date();
 
-    function verificarHorario() {
-        const sel = document.getElementById('selectPersona');
-        const horaEntradaReal = document.getElementById('hEntrada').value;
-        const alerta = document.getElementById('alertaRetardo');
-        const tag = document.getElementById('tagHorario');
+    function configurarHorario() {
+        const sel = document.getElementById('selPers');
+        const msg = document.getElementById('msgHorario');
+        if(!sel.value) return;
         
-        if (!sel.value) return;
+        const entrada = sel.options[sel.selectedIndex].getAttribute('data-h');
+        const salida = sel.options[sel.selectedIndex].getAttribute('data-s');
+        msg.innerText = `Horario Reglamentario: ${entrada} - ${salida}`;
+        chequearRetardo();
+    }
 
-        const horaLimite = sel.options[sel.selectedIndex].getAttribute('data-hora');
-        tag.innerText = "Entrada Reglamentaria: " + horaLimite;
+    function chequearRetardo() {
+        const sel = document.getElementById('selPers');
+        const hEnt = document.getElementById('hEntrada').value;
+        const alerta = document.getElementById('alertaRetardo');
+        if(!sel.value || !hEnt) return;
 
-        if (horaEntradaReal && horaEntradaReal > horaLimite) {
-            alerta.style.display = "block";
+        const limite = sel.options[sel.selectedIndex].getAttribute('data-h');
+        // Lógica simple para vigilantes (noche) o diurnos
+        if(hEnt > limite) alerta.style.display = "block";
+        else alerta.style.display = "none";
+    }
+
+    function verificarEstatus() {
+        const est = document.getElementById('estatus').value;
+        const panel = document.getElementById('seccionTiempos');
+        // Si no vino, no se marcan horas
+        if(est !== "Asistencia") {
+            panel.style.opacity = "0.3";
+            panel.style.pointerEvents = "none";
         } else {
-            alerta.style.display = "none";
+            panel.style.opacity = "1";
+            panel.style.pointerEvents = "auto";
         }
     }
 
-    async function procesarGuardado() {
-        const cargo = document.getElementById('selectPersona').value;
+    async function guardar() {
+        const cargo = document.getElementById('selPers').value;
+        const est = document.getElementById('estatus').value;
         const hE = document.getElementById('hEntrada').value;
-        const hS = document.getElementById('hSalida').value;
         const fec = document.getElementById('fechaReg').value;
-        const est = document.getElementById('estatusAsis').value;
-        
-        const horaLimite = document.getElementById('selectPersona').options[document.getElementById('selectPersona').selectedIndex].getAttribute('data-hora');
-        let esRetardo = hE > horaLimite;
 
-        if(!cargo || !hE || !hS) return alert("Por favor, complete las horas de entrada y salida.");
+        if(!cargo) return alert("Seleccione el cargo");
 
         try {
             await db.collection("asistencia_personal").add({
-                cargo: cargo,
-                fecha: fec,
-                entrada: hE,
-                salida: hS,
-                estatus: est,
-                retardo: esRetardo,
+                cargo, estatus: est, entrada: hE || "N/A", fecha: fec,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert(esRetardo ? "✅ Guardado con éxito (Se registró el RETARDO)" : "✅ Guardado con éxito a tiempo");
-        } catch(e) { alert("Error al conectar con la base de datos."); }
+            alert("✅ Registro exitoso");
+        } catch(e) { alert("Error al guardar"); }
     }
 </script>
 </body>
