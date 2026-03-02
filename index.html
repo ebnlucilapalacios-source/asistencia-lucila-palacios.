@@ -3,129 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas Alumnos - EBNLP</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <title>EBNLP - Panel de Control Total</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-            projectId: "control-de-asistencia-d585e",
-            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-            appId: "1:368890880546:web:a97ab4372dea536217207b"
-        };
-        const app = initializeApp(firebaseConfig);
-        const dbCloud = getFirestore(app);
-
-        // Función para guardar datos en la nube
-        window.saveData = async (data) => { 
-            await setDoc(doc(dbCloud, "alumnos_db", "general"), data); 
-        };
-        
-        // Escucha en tiempo real de la base de datos
-        onSnapshot(doc(dbCloud, "alumnos_db", "general"), (snap) => {
-            if (snap.exists()) {
-                window.db = snap.data();
-                window.render();
-            }
-        });
-    </script>
     <style>
-        :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --oro: #f1c40f; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
-        header { background: linear-gradient(135deg, var(--azul), var(--celeste)); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--naranja); }
-        .logo { width: 80px; height: 80px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 10px; border: 2px solid white; }
-        .container { max-width: 800px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 5px solid var(--azul); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
-        .student-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        @media print { .no-print { display: none !important; } }
+        :root { --azul: #1a2a6c; --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 60px; }
+        
+        /* Menú de Navegación Móvil */
+        nav { background: var(--azul); display: flex; justify-content: space-around; position: fixed; bottom: 0; width: 100%; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); }
+        .nav-btn { color: white; padding: 15px; font-weight: bold; cursor: pointer; flex: 1; text-align: center; font-size: 14px; }
+        .nav-btn.active { background: var(--naranja); }
+
+        header { text-align: center; padding: 10px; background: white; border-bottom: 3px solid var(--naranja); }
+        .logo { height: 50px; }
+        
+        .section { display: none; padding: 15px; }
+        .section.active { display: block; }
+
+        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: var(--azul); color: white; }
+        
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; }
+        .btn-save { background: var(--verde); color: white; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo">
-    <h1 style="margin:0; font-size: 1.4rem;">ESTADÍSTICAS EBNLP</h1>
-    <a href="principal.html" class="no-print" style="color: #f39c12; text-decoration: none; font-weight: bold;">← VOLVER AL MENÚ</a>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
+    <h3 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h3>
 </header>
 
-<div class="container">
-    <div class="card no-print">
-        <h3>➕ Registro de Matrícula</h3>
-        <input type="text" id="nomAlum" placeholder="Nombre completo del alumno">
-        <select id="genAlum">
-            <option value="F">Femenino (H)</option>
-            <option value="M">Masculino (V)</option>
-        </select>
-        <button onclick="agregar()" class="btn-main">GUARDAR EN LA NUBE</button>
-    </div>
-
+<div id="secPersonal" class="section active">
     <div class="card">
-        <h3>📅 Pase de Lista</h3>
-        <input type="date" id="fechaList" onchange="window.render()">
-        <div id="listaContainer" style="margin-top:15px;"></div>
+        <h3>👥 Asistencia del Personal</h3>
+        <input type="date" id="fecPers" onchange="cargarPersonal()">
+        <select id="selPers"></select>
+        <select id="estPers">
+            <option value="Asistencia">Asistencia ✅</option>
+            <option value="Falta">Falta ❌</option>
+            <option value="Permiso">Permiso 📝</option>
+        </select>
+        <button class="btn-save" onclick="guardarPersonal()">GUARDAR PERSONAL</button>
     </div>
+    <div id="tablaPersArea" class="card"></div>
 </div>
 
+<div id="secEstudiantes" class="section">
+    <div class="card">
+        <h3>🎓 Estadísticas de Alumnos</h3>
+        <p>Aquí verás el Cuadro de Honor y la Matrícula.</p>
+        <div id="statsAlumnos">Cargando datos de la nube...</div>
+    </div>
+    <div id="tablaAlumnosArea" class="card"></div>
+</div>
+
+<nav>
+    <div class="nav-btn active" onclick="ver('secPersonal', this)">PERSONAL</div>
+    <div class="nav-btn" onclick="ver('secEstudiantes', this)">ALUMNOS</div>
+</nav>
+
 <script>
-    // Inicialización de base de datos local
-    window.db = { alumnos: [], asistencias: {} };
-
-    window.render = () => {
-        const fecha = document.getElementById('fechaList').value || new Date().toISOString().split('T')[0];
-        const container = document.getElementById('listaContainer');
-        container.innerHTML = "";
-
-        if (window.db.alumnos) {
-            // Ordenar alfabéticamente
-            window.db.alumnos.sort((a,b) => a.n.localeCompare(b.n)).forEach(a => {
-                const est = window.db.asistencias[fecha]?.[a.id] || 0;
-                let color = "#ccc", txt = "F"; // F = Falta (por defecto)
-                
-                if(est === 1) { color = "var(--exito)"; txt = "P"; } // P = Presente
-                if(est === 2) { color = "var(--oro)"; txt = "J"; }   // J = Justificado
-
-                container.innerHTML += `
-                    <div class="student-item">
-                        <span>${a.n}</span>
-                        <button onclick="marcar(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:5px; padding:5px; font-weight:bold;">${txt}</button>
-                    </div>`;
-            });
-        }
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    window.agregar = () => {
-        const n = document.getElementById('nomAlum').value.toUpperCase();
-        if(!n) return alert("Escribe un nombre");
+    const nominaRaw = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante;Daher Cardier,Vigilante;Pedro González,Vigilante;Moisés Romero,Vigilante;Cesar Suárez,Vigilante;Juan Vargas,Vigilante;Guillermo Albornoz,Vigilante;Darwin Aguilera,Vigilante;Joseyver López,Vigilante`;
+    
+    let nomina = nominaRaw.split(';').map(p => ({nombre: p.split(',')[0], cargo: p.split(',')[1]}));
+
+    function ver(id, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // Lógica Personal
+    async function guardarPersonal() {
+        const nombre = document.getElementById('selPers').value;
+        const fec = document.getElementById('fecPers').value;
+        const est = document.getElementById('estPers').value;
+        const p = nomina.find(n => n.nombre === nombre);
         
-        if(!window.db.alumnos) window.db.alumnos = [];
-        
-        window.db.alumnos.push({ 
-            id: Date.now(), 
-            n: n, 
-            g: document.getElementById('genAlum').value 
+        await db.collection("asistencia_personal").doc(`${nombre}_${fec}`).set({
+            nombre, cargo: p.cargo, fec, est
         });
-        
-        window.saveData(window.db);
-        document.getElementById('nomAlum').value = "";
-    };
+        alert("Guardado en la nube");
+    }
 
-    window.marcar = (id) => {
-        const f = document.getElementById('fechaList').value;
-        if(!window.db.asistencias[f]) window.db.asistencias[f] = {};
-        
-        // Ciclo de estados: 0 (Falta) -> 1 (Presente) -> 2 (Justificado)
-        let actual = window.db.asistencias[f][id] || 0;
-        window.db.asistencias[f][id] = (actual + 1) % 3;
-        
-        window.saveData(window.db);
-    };
+    function cargarPersonal() {
+        const fec = document.getElementById('fecPers').value;
+        db.collection("asistencia_personal").where("fec", "==", fec).onSnapshot(snap => {
+            let html = `<table><tr><th>Nombre</th><th>Estatus</th></tr>`;
+            snap.forEach(doc => {
+                const r = doc.data();
+                html += `<tr><td>${r.nombre}</td><td>${r.est}</td></tr>`;
+            });
+            document.getElementById('tablaPersArea').innerHTML = html + `</table>`;
+        });
+    }
 
-    // Establecer fecha de hoy por defecto
-    document.getElementById('fechaList').value = new Date().toISOString().split('T')[0];
+    // Lógica Alumnos
+    function cargarAlumnos() {
+        db.collection("alumnos_db").doc("registro_master").onSnapshot(doc => {
+            if(doc.exists()){
+                const d = doc.data();
+                document.getElementById('statsAlumnos').innerHTML = `<b>Matrícula Total:</b> ${d.alumnos.length} estudiantes.`;
+                let html = `<table><tr><th>Nombre</th><th>Género</th></tr>`;
+                d.alumnos.forEach(a => html += `<tr><td>${a.nombre}</td><td>${a.genero}</td></tr>`);
+                document.getElementById('tablaAlumnosArea').innerHTML = html + `</table>`;
+            }
+        });
+    }
+
+    // Inicio
+    document.getElementById('fecPers').valueAsDate = new Date();
+    nomina.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(p => {
+        document.getElementById('selPers').innerHTML += `<option value="${p.nombre}">${p.nombre}</option>`;
+    });
+    cargarPersonal();
+    cargarAlumnos();
 </script>
 </body>
 </html>
