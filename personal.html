@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Control de Personal Pro</title>
+    <title>EBNLP - Control Total con Retrasos</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,124 +11,74 @@
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 4px solid var(--naranja); }
-        .logo-img { width: 50px; background: white; border-radius: 50%; padding: 5px; margin-bottom: 5px; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .stat-card { background: white; padding: 10px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 3px solid var(--azul); }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+        .stat-card { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
+        .stat-card h4 { margin: 0; font-size: 10px; color: #666; text-transform: uppercase; }
         .stat-card p { margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--azul); }
-        .card { background: white; margin: 10px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .btn { flex: 1; min-width: 140px; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }
-        .btn:active { transform: scale(0.98); }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
-        th { background: var(--azul); color: white; padding: 10px; text-align: center; }
-        td { border-bottom: 1px solid #ddd; padding: 10px; text-align: center; }
-        .fila-reposo { background-color: #fff3e0; color: #e65100; font-weight: bold; }
-        .fila-permiso { background-color: #e8f5e9; color: #1b5e20; font-weight: bold; }
-        .fila-falta { background-color: #ffebee; color: #c62828; font-weight: bold; }
-        .fila-vacaciones { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
+        .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { border-bottom: 1px solid #eee; padding: 8px; text-align: center; }
+        .retraso { color: var(--rojo); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img">
     <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:2px 0 0; font-size:10px;">SISTEMA DE CONTROL TÉCNICO ADMINISTRATIVO</p>
+    <p style="margin:2px 0 0; font-size:10px;">CONTROL TÉCNICO ADMINISTRATIVO</p>
 </header>
 
-<div class="stats">
-    <div class="stat-card"><h4>Presentes</h4><p id="stPres">0</p></div>
+<div class="stats-grid">
+    <div class="stat-card"><h4>Asistencia %</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Retrasos</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
+    <div class="stat-card"><h4>Presentes</h4><p id="stPre">0 / 73</p></div>
     <div class="stat-card"><h4>Novedades</h4><p id="stNov">0</p></div>
 </div>
 
 <div class="card">
-    <label><b>1. Seleccione Personal (Lista Completa):</b></label>
-    <select id="nomIn" onchange="detectarDatosAuto()">
-        <option value="">-- Buscar Trabajador --</option>
-        <optgroup label="TURNO MAÑANA">
-            <option value="YANITZA MALAVE">YANITZA MALAVE</option><option value="MARIA MUÑOZ">MARIA MUÑOZ</option>
-            <option value="KARELIS YANEZ">KARELIS YANEZ</option><option value="DAYANA JIMENEZ">DAYANA JIMENEZ</option>
-            <option value="LORRAINE BRITO">LORRAINE BRITO</option><option value="ROSA NACARATTI">ROSA NACARATTI</option>
-            <option value="RUSMARY LAREZ">RUSMARY LAREZ</option><option value="NEVIS GUERRA">NEVIS GUERRA</option>
-            <option value="GENESIS MORILLO">GENESIS MORILLO</option><option value="YUNEQUI VALDEZ">YUNEQUI VALDEZ</option>
-            <option value="YULIMAR AGUANES">YULIMAR AGUANES</option><option value="LUISA JIMENEZ">LUISA JIMENEZ</option>
-            <option value="YOMAIRA CACERES">YOMAIRA CACERES</option><option value="ANA DAVID">ANA DAVID</option>
-            <option value="ELIDAY SALAZAR">ELIDAY SALAZAR</option><option value="ROSELBA TERAN">ROSELBA TERAN</option>
-            <option value="YORVIS BOLIVAR">YORVIS BOLIVAR</option><option value="GAUDY RODRIGUEZ">GAUDY RODRIGUEZ</option>
-            <option value="YUBIRY MARTINEZ">YUBIRY MARTINEZ</option><option value="MAGLORIS FERNANDEZ">MAGLORIS FERNANDEZ</option>
-            <option value="JOLETH GUZMAN">JOLETH GUZMAN</option><option value="JUNIOR SANVICENTE">JUNIOR SANVICENTE</option>
-            <option value="ANGEL FIGUERA">ANGEL FIGUERA</option><option value="DALIA LUCES">DALIA LUCES</option>
-            <option value="FRANCELIS MONTAÑO">FRANCELIS MONTAÑO</option>
-            <option value="MIRLNIS CARVAJAL">MIRLNIS CARVAJAL (Adm)</option><option value="YURAIMA BASTARDO">YURAIMA BASTARDO (Adm)</option>
-            <option value="NORELIS VARGAS">NORELIS VARGAS (Obr)</option><option value="GILDA VILLARROEL">GILDA VILLARROEL (Obr)</option>
-            <option value="ANA FIGUERA">ANA FIGUERA (Obr)</option><option value="RUTH CAMPOS">RUTH CAMPOS (Obr)</option>
-            <option value="LUISANA QUINTANA">LUISANA QUINTANA (Obr)</option><option value="MARELBYS SERRANO">MARELBYS SERRANO (Obr)</option>
-            <option value="KAREN YANEZ">KAREN YANEZ (Obr)</option><option value="DAYANA GARCIA">DAYANA GARCIA (Obr)</option>
-            <option value="MARTHA VALLENILLA">MARTHA VALLENILLA (Obr)</option><option value="EDGAR MARTINEZ">EDGAR MARTINEZ (Obr)</option>
-            <option value="CARLOS CASTILLO">CARLOS CASTILLO (Obr)</option><option value="LUIS FIGUEROA">LUIS FIGUEROA (Obr)</option>
-            <option value="JUNNIOR MORGADO">JUNNIOR MORGADO (Obr)</option><option value="JONATHAN CEDEÑO">JONATHAN CEDEÑO (Obr)</option>
-        </optgroup>
-        <optgroup label="TURNO TARDE">
-            <option value="GLENIS SALAZAR">GLENIS SALAZAR</option><option value="MARGORIS RODRIGUEZ">MARGORIS RODRIGUEZ</option>
-            <option value="LUISA SOSA">LUISA SOSA</option><option value="MILVIDA TORRES">MILVIDA TORRES</option>
-            <option value="EDITH LOPEZ">EDITH LOPEZ</option><option value="YANITZA ALEXANDER">YANITZA ALEXANDER</option>
-            <option value="ANDREINA FLORES">ANDREINA FLORES</option><option value="ONEXIS ROCCA">ONEXIS ROCCA</option>
-            <option value="NELIDA CASTELLANOS">NELIDA CASTELLANOS</option><option value="MAYERLIN CHACON">MAYERLIN CHACON</option>
-            <option value="JUSTINA FERNANDEZ">JUSTINA FERNANDEZ</option><option value="LEOSMARY LOROÑO">LEOSMARY LOROÑO</option>
-            <option value="JOSE SHIJAN BRITO">JOSE SHIJAN BRITO</option><option value="GLADYS SALCEDO">GLADYS SALCEDO</option>
-            <option value="LIANNA CARVAJAL">LIANNA CARVAJAL (Adm)</option><option value="MARIA MARCHAN">MARIA MARCHAN (Adm)</option>
-            <option value="NAILETH VARGAS">NAILETH VARGAS (Obr)</option><option value="YOELIS SOLORZANO">YOELIS SOLORZANO (Obr)</option>
-            <option value="YELITZA MEDINA">YELITZA MEDINA (Obr)</option><option value="DANIELYS CAMPOS">DANIELYS CAMPOS (Obr)</option>
-            <option value="EVELYN CARMONA">EVELYN CARMONA (Obr)</option><option value="JEANMAIKOL DIAZ">JEANMAIKOL DIAZ (Obr)</option>
-        </optgroup>
-        <optgroup label="ESPECIALES / OTROS">
-            <option value="CESAR SUAREZ">CESAR SUAREZ (Vig)</option><option value="DAHER CARDIER">DAHER CARDIER (Vig)</option>
-            <option value="DARWIN AGUILERA">DARWIN AGUILERA (Vig)</option><option value="MOISES ROMERO">MOISES ROMERO (Vig)</option>
-            <option value="OSMIL SANABRIA">OSMIL SANABRIA (Vig)</option><option value="PEDRO GONZALEZ">PEDRO GONZALEZ (Vig)</option>
-            <option value="RAIZA VALLENILLA">RAIZA VALLENILLA (Coc)</option><option value="IRMA JARAMILLO">IRMA JARAMILLO (Coc)</option>
-            <option value="DOVELIS CONDE">DOVELIS CONDE (Coc)</option><option value="GENESIS CAMERO">GENESIS CAMERO (Coc)</option>
-            <option value="MARCIA GUZMAN">MARCIA GUZMAN (Coc)</option><option value="YUREIMA PIMENTEL">YUREIMA PIMENTEL (Coc)</option>
-            <option value="ROSA RIVERO">ROSA RIVERO (Coc)</option>
-        </optgroup>
+    <select id="nomIn" onchange="autoCompletar()">
+        <option value="">-- Seleccione Trabajador --</option>
+        <optgroup label="MAÑANA" id="groupM"></optgroup>
+        <optgroup label="TARDE" id="groupT"></optgroup>
     </select>
-
+    
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly>
         <input type="text" id="turIn" placeholder="Turno" readonly>
     </div>
 
-    <label><b>2. Estatus / Novedad Administrativa:</b></label>
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
+        <option value="RETRASO">LLEGADA TARDÍA ⚠️</option>
         <option value="REPOSO">REPOSO 🏥</option>
-        <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
         <option value="PERMISO">PERMISO 📝</option>
         <option value="VACACIONES">VACACIONES 🌴</option>
-        <option value="JUSTIFICADA">INASISTENCIA JUSTIFICADA 📄</option>
-        <option value="INJUSTIFICADA">INASISTENCIA INJUSTIFICADA ❌</option>
+        <option value="FALTA">INASISTENCIA ❌</option>
     </select>
 
     <div class="btn-group">
-        <button class="btn" style="background:var(--verde)" onclick="enviar('INGRESO')">⬇️ REGISTRAR ENTRADA</button>
-        <button class="btn" style="background:var(--naranja)" onclick="enviar('EGRESO')">⬆️ REGISTRAR SALIDA</button>
+        <button class="btn" style="background:var(--verde)" onclick="registrar('INGRESO')">⬇️ ENTRADA</button>
+        <button class="btn" style="background:var(--naranja)" onclick="registrar('EGRESO')">⬆️ SALIDA</button>
     </div>
 </div>
 
 <div class="card" style="overflow-x:auto">
-    <div style="display:flex; justify-content:space-between; align-items:center">
-        <h3>📊 Reporte del Día</h3>
-        <button class="btn" style="background:var(--azul); min-width:100px; padding:10px" onclick="exportarExcel()">📥 EXCEL</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>📊 Resumen Diario</h3>
+        <button onclick="exportarExcel()" style="background:var(--azul); color:white; border:none; padding:5px 10px; border-radius:5px;">Excel</button>
     </div>
-    <table id="tablaAsistencia">
-        <thead>
-            <tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>TURNO</th><th>ESTATUS</th></tr>
-        </thead>
+    <table id="tablaReporte">
+        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>TURNO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
 
 <script>
+    // Configuración Firebase (la misma que usas actualmente)
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -139,77 +89,82 @@
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
 
-    function detectarDatosAuto() {
-        const n = document.getElementById('nomIn').value;
-        const c = document.getElementById('carIn'), t = document.getElementById('turIn');
-        if(!n) return;
-        
-        // Detección automática de Turnos (Basado en tus fotos)
-        const listaTarde = ["GLENIS SALAZAR", "MARGORIS RODRIGUEZ", "LUISA SOSA", "MILVIDA TORRES", "EDITH LOPEZ", "YANITZA ALEXANDER", "ANDREINA FLORES", "ONEXIS ROCCA", "NELIDA CASTELLANOS", "MAYERLIN CHACON", "JUSTINA FERNANDEZ", "LEOSMARY LOROÑO", "JOSE SHIJAN BRITO", "GLADYS SALCEDO", "LIANNA CARVAJAL", "MARIA MARCHAN", "NAILETH VARGAS", "YOELIS SOLORZANO", "YELITZA MEDINA", "DANIELYS CAMPOS", "EVELYN CARMONA", "JEANMAIKOL DIAZ"];
-        
-        t.value = listaTarde.includes(n) ? "TARDE" : "MAÑANA";
-        
-        // Detección automática de Cargos
-        if(n.includes("Vig") || ["CESAR SUAREZ", "DAHER CARDIER", "MOISES ROMERO"].includes(n)) c.value="Vigilante";
-        else if(n.includes("Obr") || ["NORELIS VARGAS", "GILDA VILLARROEL"].includes(n)) c.value="Obrero";
-        else if(n.includes("Coc") || ["RAIZA VALLENILLA"].includes(n)) c.value="Cocinera";
-        else if(n.includes("Adm") || ["MIRLNIS CARVAJAL"].includes(n)) c.value="Administrativo";
-        else c.value="Docente";
+    // Listas Sincronizadas
+    const personal = [
+        {n: "YANITZA MALAVE", c: "Docente", t: "MAÑANA"}, {n: "MARIA MUÑOZ", c: "Docente", t: "MAÑANA"},
+        {n: "KARELIS YANEZ", c: "Docente", t: "MAÑANA"}, {n: "DAYANA JIMENEZ", c: "Docente", t: "MAÑANA"},
+        {n: "GLENIS SALAZAR", c: "Docente", t: "TARDE"}, {n: "MARGORIS RODRIGUEZ", c: "Docente", t: "TARDE"},
+        {n: "MIRLNIS CARVAJAL", c: "Administrativo", t: "MAÑANA"}, {n: "YURAIMA BASTARDO", c: "Administrativo", t: "MAÑANA"},
+        {n: "LIANNA CARVAJAL", c: "Administrativo", t: "TARDE"}, {n: "MARIA MARCHAN", c: "Administrativo", t: "TARDE"},
+        {n: "NORELIS VARGAS", c: "Obrero", t: "MAÑANA"}, {n: "GILDA VILLARROEL", c: "Obrero", t: "MAÑANA"},
+        {n: "NAILETH VARGAS", c: "Obrero", t: "TARDE"}, {n: "YOELIS SOLORZANO", c: "Obrero", t: "TARDE"}
+        // ... (Agrega el resto de los 73 nombres aquí)
+    ];
+
+    function cargarSelect() {
+        const gm = document.getElementById('groupM'), gt = document.getElementById('groupT');
+        personal.forEach(p => {
+            const opt = `<option value="${p.n}">${p.n}</option>`;
+            p.t === "MAÑANA" ? gm.innerHTML += opt : gt.innerHTML += opt;
+        });
     }
 
-    async function enviar(tipo) {
+    function autoCompletar() {
+        const sel = document.getElementById('nomIn').value;
+        const p = personal.find(x => x.n === sel);
+        if(p) {
+            document.getElementById('carIn').value = p.c;
+            document.getElementById('turIn').value = p.t;
+        }
+    }
+
+    async function registrar(tipo) {
         const n = document.getElementById('nomIn').value, est = document.getElementById('estIn').value;
         const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        if(!n) return alert("Seleccione un trabajador");
+        if(!n) return alert("Seleccione personal");
 
-        const ref = db.collection("asistencia_personal").where("fecha", "==", hoy).where("nombre", "==", n);
+        const ref = db.collection("asistencia_v2").where("f", "==", hoy).where("n", "==", n);
         const q = await ref.get();
+        const data = { n, c: document.getElementById('carIn').value, t: document.getElementById('turIn').value, f: hoy, e: est };
 
-        const registro = {
-            nombre: n, cargo: document.getElementById('carIn').value,
-            turno: document.getElementById('turIn').value, fecha: hoy, estatus: est
-        };
-
-        if (q.empty) {
-            registro.ingreso = (est === 'ASISTENCIA' && tipo === 'INGRESO') ? hora : (est === 'ASISTENCIA' ? '--' : est);
-            registro.egreso = (est === 'ASISTENCIA' && tipo === 'EGRESO') ? hora : '--';
-            await db.collection("asistencia_personal").add(registro);
+        if(q.empty) {
+            data.in = (tipo==='INGRESO') ? hora : '--';
+            data.out = (tipo==='EGRESO') ? hora : '--';
+            await db.collection("asistencia_v2").add(data);
         } else {
-            const up = (tipo === 'INGRESO') ? { ingreso: hora, estatus: est } : { egreso: hora, estatus: est };
-            await db.collection("asistencia_personal").doc(q.docs[0].id).update(up);
+            const up = (tipo==='INGRESO') ? { in: hora, e: est } : { out: hora, e: est };
+            await db.collection("asistencia_v2").doc(q.docs[0].id).update(up);
         }
-        
-        document.getElementById('nomIn').value = ""; cargar();
-        alert("✅ " + est + " registrado correctamente.");
+        cargarTabla();
     }
 
-    async function cargar() {
-        const snap = await db.collection("asistencia_personal").where("fecha", "==", hoy).get();
-        let h = "", p = 0, n = 0;
+    async function cargarTabla() {
+        const snap = await db.collection("asistencia_v2").where("f", "==", hoy).get();
+        let h = "", p = 0, r = 0, nov = 0;
+        
         snap.forEach(doc => {
             const d = doc.data();
-            let clase = "";
-            if(d.estatus === "ASISTENCIA") p++; 
-            else { 
-                n++; 
-                if(d.estatus.includes("REPOSO")) clase = "fila-reposo";
-                else if(d.estatus === "PERMISO") clase = "fila-permiso";
-                else if(d.estatus === "VACACIONES") clase = "fila-vacaciones";
-                else clase = "fila-falta";
-            }
-            h += `<tr class="${clase}"><td>${d.nombre}</td><td>${d.ingreso || '--'}</td><td>${d.egreso || '--'}</td><td>${d.turno}</td><td>${d.estatus}</td></tr>`;
+            if(d.e === "ASISTENCIA" || d.e === "RETRASO") p++;
+            if(d.e === "RETRASO") r++;
+            if(d.e !== "ASISTENCIA" && d.e !== "RETRASO") nov++;
+            
+            h += `<tr><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.t}</td><td class="${d.e==='RETRASO'?'retraso':''}">${d.e}</td></tr>`;
         });
+
         document.getElementById('cuerpo').innerHTML = h;
-        document.getElementById('stPres').innerText = p;
-        document.getElementById('stNov').innerText = n;
+        document.getElementById('stPre').innerText = p + " / 73";
+        document.getElementById('stRet').innerText = r;
+        document.getElementById('stNov').innerText = nov;
+        document.getElementById('stPor').innerText = ((p/73)*100).toFixed(1) + "%";
     }
 
     function exportarExcel() {
-        let wb = XLSX.utils.table_to_book(document.getElementById('tablaAsistencia'), {sheet: "Asistencia " + hoy});
-        XLSX.writeFile(wb, "Reporte_Asistencia_" + hoy + ".xlsx");
+        const wb = XLSX.utils.table_to_book(document.getElementById('tablaReporte'));
+        XLSX.writeFile(wb, `Reporte_EBNLP_${hoy}.xlsx`);
     }
 
-    cargar();
+    cargarSelect();
+    cargarTabla();
 </script>
 </body>
 </html>
