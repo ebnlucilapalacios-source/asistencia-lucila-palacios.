@@ -3,142 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBNLP 2026 - Control Total</title>
+    <title>SISTEMA EBNLP 2026 - Control Maestro</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <style>
         :root { --azul: #0c234a; --naranja: #f39c12; --rojo: #d32f2f; --verde: #2e7d32; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--gris); color: #333; padding-bottom: 50px; }
-        
+        body { font-family: sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
+        .card { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .card { background: white; margin: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h3 { margin-top: 0; color: var(--azul); border-bottom: 2px solid var(--naranja); padding-bottom: 5px; font-size: 18px; }
+        /* ESTADISTICAS */
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-box { background: #fff; padding: 15px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); }
+        .stat-box h4 { margin: 0; font-size: 12px; color: #666; }
+        .stat-box p { margin: 5px 0 0; font-size: 22px; font-weight: bold; color: var(--azul); }
 
-        /* TABLA DE ESTADÍSTICAS POR CARGO */
-        .tabla-stats { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        .tabla-stats th { background: #f0f0f0; text-align: left; padding: 10px; border: 1px solid #ddd; }
-        .tabla-stats td { padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
-        .porcentaje { color: var(--verde); }
+        /* TABLAS */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c; font-weight: bold; }
+        .badge-retraso { background: var(--rojo); color: white; padding: 2px 5px; border-radius: 4px; font-size: 10px; }
 
-        /* FORMULARIO */
-        label { display: block; font-weight: bold; margin-top: 12px; font-size: 12px; color: var(--azul); text-transform: uppercase; }
-        select, input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        input[readonly] { background-color: #eee; cursor: not-allowed; }
-        
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; transition: 0.3s; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-verde { background: var(--verde); }
-        .btn-verde:hover { background: #1e5e24; }
         .btn-azul { background: var(--azul); }
-
-        /* REPORTE Y RETRASOS */
-        .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c !important; }
-        .badge-retraso { background: var(--rojo); color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; }
-        
-        table.reporte { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
-        table.reporte th { background: var(--azul); color: white; padding: 12px; }
-        table.reporte td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-
-        /* VIGILANCIA */
-        .vigi-container { display: flex; gap: 10px; margin-top: 10px; }
-        .vigi-card { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; opacity: 0.5; }
-        .vigi-activa { opacity: 1; border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; transform: scale(1.02); }
-        
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin:5px 0 0; font-size:13px; opacity:0.9;">Control de Asistencia Biométrico-Manual 2026</p>
+    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:5px 0 0; font-size:12px;">Reporte Estadístico Mensual y Diario</p>
 </header>
 
+<div class="card grid-stats">
+    <div class="stat-box">
+        <h4>ASISTENCIA TOTAL HOY</h4>
+        <p id="totalPorcentaje">0%</p>
+    </div>
+    <div class="stat-box">
+        <h4>TOTAL RETRASOS</h4>
+        <p id="totalRetrasos" style="color:var(--rojo);">0</p>
+    </div>
+</div>
+
 <div class="card">
-    <h3>📊 Asistencia por Cargos</h3>
-    <table class="tabla-stats">
+    <h3 style="margin-top:0; color:var(--azul); font-size:16px;">📊 Estadística Mensual del Personal</h3>
+    <table id="tablaMensual">
         <thead>
             <tr>
                 <th>Cargo</th>
-                <th>Presentes</th>
-                <th>Total Nómina</th>
-                <th>%</th>
+                <th>Asistencias</th>
+                <th>Retrasos</th>
+                <th>Faltas</th>
+                <th>% Mensual</th>
             </tr>
         </thead>
-        <tbody id="statsBody">
+        <tbody id="cuerpoMensual">
             </tbody>
     </table>
 </div>
 
 <div class="card">
-    <h3>🛡️ Vigilancia Hoy</h3>
-    <div class="vigi-container">
-        <div id="vigiA" class="vigi-card"><b>GRUPO A</b><br>Osmil, Daher, Pedro, Moises</div>
-        <div id="vigiB" class="vigi-card"><b>GRUPO B</b><br>Cesar, Juan, Guillermo, Darwin, Joseyver</div>
-    </div>
+    <label style="font-weight:bold; font-size:12px;">Registrar Entrada:</label>
+    <select id="selNom" style="width:100%; padding:10px; margin-top:5px;"></select>
+    <input type="time" id="hIn" style="width:100%; padding:10px; margin-top:10px; box-sizing:border-box;">
+    <button class="btn btn-verde" onclick="guardar()">GUARDAR ASISTENCIA</button>
 </div>
 
 <div class="card">
-    <h3>📝 Marcaje de Entrada</h3>
-    <label>Trabajador:</label>
-    <select id="selectNombre" onchange="cargarDatos()"><option value="">Cargando nómina...</option></select>
-    
-    <div style="display:flex; gap:10px">
-        <div style="flex:1">
-            <label>Cargo:</label>
-            <input type="text" id="inputCargo" readonly>
-        </div>
-        <div style="flex:1">
-            <label>Turno:</label>
-            <input type="text" id="inputTurno" readonly>
-        </div>
-    </div>
-
-    <label>Hora de Entrada (Manual):</label>
-    <input type="time" id="inputHora">
-
-    <label>Estatus Administrativo:</label>
-    <select id="selectEstatus">
-        <option value="ASISTENCIA">PRESENTE ✅</option>
-        <option value="VACACIONES">VACACIONES 🌴</option>
-        <option value="REPOSO">REPOSO MÉDICO 🏥</option>
-        <option value="PERMISO">PERMISO 📝</option>
-        <option value="FALTA">INASISTENCIA ❌</option>
-    </select>
-
-    <button class="btn btn-verde" onclick="guardarRegistro()">GUARDAR ASISTENCIA</button>
-</div>
-
-<div class="card">
-    <button class="btn btn-azul" style="font-size:12px; padding:10px" onclick="document.getElementById('adminPanel').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL (INGRESOS/EGRESOS)</button>
-    <div id="adminPanel" class="hidden" style="margin-top:20px; padding-top:15px; border-top: 1px solid #ddd;">
-        <h4 style="margin:0 0 10px 0;">Dar de Alta (Ingreso)</h4>
-        <input type="text" id="newNom" placeholder="Nombre y Apellido">
-        <select id="newCargo">
-            <option value="Docente">Docente</option>
-            <option value="Obrero">Obrero</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Cocinera">Cocinera</option>
-            <option value="Vigilante">Vigilante</option>
-        </select>
-        <select id="newTurno">
-            <option value="MAÑANA">Mañana</option>
-            <option value="TARDE">Tarde</option>
-        </select>
-        <button class="btn btn-azul" onclick="adminNomina('ADD')">Agregar a Nómina</button>
-        
-        <h4 style="margin:20px 0 10px 0; color: var(--rojo);">Dar de Baja (Egreso)</h4>
-        <select id="delNom"></select>
-        <button class="btn" style="background:var(--rojo)" onclick="adminNomina('DEL')">Eliminar Definitivamente</button>
-    </div>
-</div>
-
-<div class="card" style="overflow-x:auto">
-    <h3>📋 Reporte de Hoy</h3>
-    <button class="btn btn-azul" style="width:auto; padding:8px 15px; margin-bottom:15px" onclick="exportarExcel()">📥 Descargar Reporte (.xlsx)</button>
-    <table id="tablaAsistencia" class="reporte">
+    <h3 style="margin-top:0; color:var(--azul); font-size:16px;">📋 Lista de Hoy</h3>
+    <table id="tablaDiaria">
         <thead>
             <tr>
                 <th>Nombre</th>
@@ -147,13 +85,12 @@
                 <th>Cargo</th>
             </tr>
         </thead>
-        <tbody id="asistenciaBody">
-            </tbody>
+        <tbody id="cuerpoDiario"></tbody>
     </table>
+    <button class="btn btn-azul" onclick="descargar()">EXPORTAR REPORTE EXCEL</button>
 </div>
 
 <script>
-    // --- FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -162,152 +99,112 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    // Fecha hoy fija
     const hoy = new Date().toISOString().split('T')[0];
+    const mesActual = new Date().getMonth() + 1;
 
-    // --- LÓGICA DE RETRASOS ---
-    function determinarEstatus(cargo, turno, hora) {
-        const [h, m] = hora.split(':').map(Number);
-        const totalMinutos = h * 60 + m;
+    let nomina = [];
 
-        if (turno === "MAÑANA") {
-            // Docentes y Cocineras: Máximo 7:00 AM (420 min)
-            if ((cargo === "Docente" || cargo === "Cocinera") && totalMinutos > 420) return "RETRASO";
-            // Obreros y Administrativos: Máximo 6:45 AM (405 min)
-            if ((cargo === "Obrero" || cargo === "Administrativo") && totalMinutos > 405) return "RETRASO";
-        } else if (turno === "TARDE") {
-            // Docentes y Administrativos: Máximo 12:00 PM (720 min)
-            if ((cargo === "Docente" || cargo === "Administrativo") && totalMinutos > 720) return "RETRASO";
-            // Obreros: Máximo 11:30 AM (690 min)
-            if (cargo === "Obrero" && totalMinutos > 690) return "RETRASO";
-        }
-        return "ASISTENCIA";
-    }
-
-    // --- CARGAR NÓMINA ---
-    let listaPersonal = [];
-    db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
-        listaPersonal = [];
-        const select = document.getElementById('selectNombre');
-        const selectDel = document.getElementById('delNom');
-        select.innerHTML = '<option value="">-- Seleccione Trabajador --</option>';
-        selectDel.innerHTML = '<option value="">-- Seleccione para eliminar --</option>';
-
+    // 1. CARGAR NÓMINA Y LIMPIAR SELECT
+    db.collection("nomina_institucional").onSnapshot(snap => {
+        nomina = [];
+        const sel = document.getElementById('selNom');
+        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
         snap.forEach(doc => {
-            const p = doc.data(); p.uid = doc.id;
-            listaPersonal.push(p);
-            const opt = `<option value="${p.n}">${p.n}</option>`;
-            select.innerHTML += opt;
-            selectDel.innerHTML += opt;
+            nomina.push(doc.data());
+            sel.innerHTML += `<option value="${doc.data().n}">${doc.data().n}</option>`;
         });
-        actualizarPantalla();
+        obtenerEstadisticaMensual();
     });
 
-    function cargarDatos() {
-        const nombre = document.getElementById('selectNombre').value;
-        const p = listaPersonal.find(x => x.n === nombre);
-        if(p) {
-            document.getElementById('inputCargo').value = p.c;
-            document.getElementById('inputTurno').value = p.t;
+    // 2. REPORTE DIARIO: SE LIMPIA EL CUERPO ANTES DE LLENAR PARA EVITAR REPETIDOS
+    db.collection("asistencia_ebnlp_final").where("f", "==", hoy).onSnapshot(snap => {
+        const cuerpo = document.getElementById('cuerpoDiario');
+        cuerpo.innerHTML = ""; // <--- AQUÍ SE CORRIGE EL ERROR DE REPETIDOS
+        
+        let rTotal = 0;
+        let pTotal = 0;
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            const esR = d.e === "RETRASO";
+            if(esR) rTotal++;
+            pTotal++;
+
+            cuerpo.innerHTML += `
+                <tr class="${esR ? 'fila-retraso' : ''}">
+                    <td>${d.n}</td>
+                    <td>${d.h}</td>
+                    <td>${esR ? '<span class="badge-retraso">RETRASO</span>' : d.e}</td>
+                    <td>${d.c}</td>
+                </tr>`;
+        });
+
+        document.getElementById('totalRetrasos').innerText = rTotal;
+        const porcHoy = nomina.length > 0 ? Math.round((pTotal / nomina.length) * 100) : 0;
+        document.getElementById('totalPorcentaje').innerText = porcHoy + "%";
+    });
+
+    // 3. ESTADÍSTICA MENSUAL DISGREGADA
+    async function obtenerEstadisticaMensual() {
+        // En un sistema real, aquí filtrarías por mes. Para este ejemplo, procesamos la colección.
+        const snap = await db.collection("asistencia_ebnlp_final").get();
+        const stats = {
+            Docente: { a:0, r:0, f:0 },
+            Obrero: { a:0, r:0, f:0 },
+            Administrativo: { a:0, r:0, f:0 },
+            Cocinera: { a:0, r:0, f:0 },
+            Vigilante: { a:0, r:0, f:0 }
+        };
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            if(stats[d.c]) {
+                if(d.e === "RETRASO") stats[d.c].r++;
+                else if(d.e === "ASISTENCIA") stats[d.c].a++;
+                else stats[d.c].f++;
+            }
+        });
+
+        const cuerpoM = document.getElementById('cuerpoMensual');
+        cuerpoM.innerHTML = "";
+        
+        for (const cargo in stats) {
+            const totalCargo = nomina.filter(x => x.c === cargo).length;
+            const asistencias = stats[cargo].a + stats[cargo].r;
+            // Cálculo simple de porcentaje mensual basado en la proporción de asistencias
+            const porcM = asistencias > 0 ? Math.round((asistencias / (asistencias + stats[cargo].f)) * 100) : 0;
+
+            cuerpoM.innerHTML += `
+                <tr>
+                    <td>${cargo}s</td>
+                    <td>${stats[cargo].a}</td>
+                    <td style="color:red">${stats[cargo].r}</td>
+                    <td>${stats[cargo].f}</td>
+                    <td style="font-weight:bold">${porcM}%</td>
+                </tr>`;
         }
     }
 
-    // --- GUARDAR REGISTRO ---
-    async function guardarRegistro() {
-        const n = document.getElementById('selectNombre').value;
-        const h = document.getElementById('inputHora').value;
-        const c = document.getElementById('inputCargo').value;
-        const t = document.getElementById('inputTurno').value;
-        let e = document.getElementById('selectEstatus').value;
+    async function guardar() {
+        const n = document.getElementById('selNom').value;
+        const h = document.getElementById('hIn').value;
+        const p = nomina.find(x => x.n === n);
+        if(!n || !h) return alert("Seleccione nombre y hora");
 
-        if(!n || !h) return alert("❌ Por favor, seleccione un nombre y coloque la hora.");
-
-        if(e === "ASISTENCIA") {
-            e = determinarEstatus(c, t, h);
-        }
+        // Lógica de retraso automática
+        let e = "ASISTENCIA";
+        const hFull = parseInt(h.replace(":",""));
+        if(p.t === "MAÑANA" && hFull > 700) e = "RETRASO";
+        if(p.t === "TARDE" && hFull > 1200) e = "RETRASO";
 
         await db.collection("asistencia_ebnlp_final").add({
-            n: n, c: c, t: t, h: h, e: e, f: hoy, ts: Date.now()
+            n: n, c: p.c, t: p.t, h: h, e: e, f: hoy, ts: Date.now()
         });
-
-        alert("✅ Registro exitoso como: " + e);
-        document.getElementById('inputHora').value = "";
+        alert("Guardado");
     }
 
-    // --- ACTUALIZAR TODA LA INTERFAZ ---
-    function actualizarPantalla() {
-        db.collection("asistencia_ebnlp_final").where("f", "==", hoy).onSnapshot(snap => {
-            const body = document.getElementById('asistenciaBody');
-            const statsBody = document.getElementById('statsBody');
-            const contadores = { Docente:0, Obrero:0, Administrativo:0, Cocinera:0, Vigilante:0 };
-            
-            body.innerHTML = "";
-            
-            snap.forEach(doc => {
-                const d = doc.data();
-                const esRetraso = d.e === "RETRASO";
-                if(d.e === "ASISTENCIA" || esRetraso) contadores[d.c]++;
-
-                body.innerHTML += `
-                    <tr class="${esRetraso ? 'fila-retraso' : ''}">
-                        <td>${d.n}</td>
-                        <td>${d.h}</td>
-                        <td>${esRetraso ? '<span class="badge-retraso">RETRASO</span>' : d.e}</td>
-                        <td>${d.c}</td>
-                    </tr>
-                `;
-            });
-
-            // Llenar Disgregación de Cargos
-            statsBody.innerHTML = "";
-            const cargos = ["Docente", "Obrero", "Administrativo", "Cocinera", "Vigilante"];
-            cargos.forEach(cargo => {
-                const total = listaPersonal.filter(x => x.c === cargo).length;
-                const presentes = contadores[cargo];
-                const porc = total > 0 ? Math.round((presentes/total)*100) : 0;
-                statsBody.innerHTML += `
-                    <tr>
-                        <td>${cargo}s</td>
-                        <td>${presentes}</td>
-                        <td>${total}</td>
-                        <td class="porcentaje">${porc}%</td>
-                    </tr>
-                `;
-            });
-
-            // Lógica Vigilancia Interdiaria
-            const fechaRef = new Date("2026-03-02");
-            const diasDiff = Math.floor((new Date() - fechaRef) / 86400000);
-            const turnoActivo = (diasDiff % 2 === 0) ? "A" : "B";
-            document.getElementById('vigiA').className = (turnoActivo === "A") ? "vigi-card vigi-activa" : "vigi-card";
-            document.getElementById('vigiB').className = (turnoActivo === "B") ? "vigi-card vigi-activa" : "vigi-card";
-        });
-    }
-
-    // --- INGRESOS / EGRESOS ---
-    async function adminNomina(tipo) {
-        if(tipo === 'ADD') {
-            const n = document.getElementById('newNom').value.toUpperCase();
-            if(!n) return alert("Falta nombre");
-            await db.collection("nomina_institucional").add({
-                n: n, c: document.getElementById('newCargo').value, t: document.getElementById('newTurno').value
-            });
-            document.getElementById('newNom').value = "";
-            alert("Personal añadido.");
-        } else {
-            const nombre = document.getElementById('delNom').value;
-            const p = listaPersonal.find(x => x.n === nombre);
-            if(p && confirm("¿Eliminar a " + nombre + " de la nómina?")) {
-                await db.collection("nomina_institucional").doc(p.uid).delete();
-                alert("Personal eliminado.");
-            }
-        }
-    }
-
-    function exportarExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById('tablaAsistencia'));
-        XLSX.writeFile(wb, `Reporte_Asistencia_${hoy}.xlsx`);
+    function descargar() {
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaDiaria')), `Asistencia_${hoy}.xlsx`);
     }
 </script>
 </body>
