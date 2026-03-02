@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBNLP 2026 - CONTROL TOTAL</title>
+    <title>SISTEMA EBNLP 2026 - CONTROL ADMINISTRATIVO</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,6 +22,7 @@
         th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
         .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c; font-weight: bold; }
+        .alerta-limite { color: var(--rojo); font-weight: bold; font-size: 10px; display: block; margin-top: 5px; }
 
         label { display: block; font-weight: bold; margin-top: 8px; font-size: 11px; color: #444; }
         select, input { width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
@@ -29,48 +30,56 @@
         .btn-verde { background: var(--verde); }
         .btn-azul { background: var(--azul); }
         .btn-rojo { background: var(--rojo); }
-        .btn-naranja { background: var(--naranja); }
         .hidden { display: none; }
 
-        .vigi-container { display: flex; gap: 10px; margin-top: 5px; }
-        .vigi-card { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #fafafa; }
-        .vigi-activa { border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; box-shadow: 0 0 8px rgba(243, 156, 18, 0.4); }
+        .vigi-card { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #fafafa; margin-bottom: 5px; }
+        .vigi-activa { border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <h2>E.B.N. "LUCILA PALACIOS"</h2>
-    <p>Control de Asistencia y Vigilancia Rotativa</p>
+    <p>Gestión de Nómina, Permisos e Inasistencias 2026</p>
 </header>
 
 <div class="card stats-grid">
     <div class="stat-box"><h4>% ASISTENCIA</h4><p id="pTot">0%</p></div>
-    <div class="stat-box"><h4>RETRASOS</h4><p id="rTot" style="color:var(--rojo);">0</p></div>
+    <div class="stat-box"><h4>RETRASOS HOY</h4><p id="rTot" style="color:var(--rojo);">0</p></div>
 </div>
 
 <div class="card">
-    <h3>🛡️ Grupos de Vigilancia (Rotación 12h)</h3>
-    <div class="vigi-container">
-        <div id="vA" class="vigi-card"><b>GRUPO A</b><div id="listA">...</div></div>
-        <div id="vB" class="vigi-card"><b>GRUPO B</b><div id="listB">...</div></div>
-    </div>
+    <h3>🛡️ Vigilancia Interdiaria</h3>
+    <div id="vA" class="vigi-card">GRUPO A: <span id="listA">...</span></div>
+    <div id="vB" class="vigi-card">GRUPO B: <span id="listB">...</span></div>
 </div>
 
 <div class="card">
-    <h3>📝 Registrar Marcaje</h3>
+    <h3>📝 Registrar Asistencia o Novedad</h3>
     <label>Trabajador:</label>
-    <select id="sPersonal"></select>
-    <label>Hora de Entrada:</label>
+    <select id="sPersonal" onchange="verificarLimites(this.value)"></select>
+    <div id="msgLimites"></div>
+
+    <label>Estatus / Novedad:</label>
+    <select id="sEstatus">
+        <option value="ASISTENCIA">PRESENTE ✅</option>
+        <option value="REPOSO">REPOSO MÉDICO 🏥</option>
+        <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
+        <option value="VACACIONES">VACACIONES 🌴</option>
+        <option value="PERMISO PERSONAL">PERMISO PERSONAL (Máx 3) 📝</option>
+        <option value="INASISTENCIA">INASISTENCIA (Máx 3) ❌</option>
+    </select>
+
+    <label>Hora (Si es Presente):</label>
     <input type="time" id="hEntrada">
+    
     <button class="btn btn-verde" onclick="guardar()">GUARDAR REGISTRO</button>
 </div>
 
 <div class="card">
     <button class="btn btn-azul" onclick="document.getElementById('admin').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL Y TURNOS</button>
     <div id="admin" class="hidden" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
-        
-        <h4>+ Alta de Nuevo Personal</h4>
+        <h4>+ Nuevo Ingreso</h4>
         <input type="text" id="nN" placeholder="Nombre Completo">
         <select id="nC">
             <option value="Docente">Docente</option>
@@ -79,35 +88,29 @@
             <option value="Cocinera">Cocinera</option>
             <option value="Vigilante">Vigilante</option>
         </select>
-        
-        <label>Asignar Turno Específico:</label>
         <select id="nT">
-            <option value="MAÑANA">MAÑANA (Escolar)</option>
-            <option value="TARDE">TARDE (Escolar)</option>
-            <option value="VIGILANCIA DÍA">VIGILANCIA DÍA (6am - 6pm)</option>
-            <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE (6pm - 6am)</option>
+            <option value="MAÑANA">MAÑANA</option>
+            <option value="TARDE">TARDE</option>
+            <option value="VIGILANCIA DÍA">VIGILANCIA DÍA (6am-6pm)</option>
+            <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE (6pm-6am)</option>
         </select>
-        <button class="btn btn-verde" onclick="ingreso()">REGISTRAR EN NÓMINA</button>
+        <button class="btn btn-verde" onclick="ingreso()">GUARDAR EN NÓMINA</button>
 
         <hr>
         <h4 style="color:var(--naranja);">🔄 Mover Vigilante de Grupo</h4>
         <select id="sVigi"></select>
-        <label>Asignar a:</label>
         <select id="sGrupo"><option value="A">GRUPO A</option><option value="B">GRUPO B</option></select>
-        <button class="btn btn-naranja" onclick="moverVigi()">CAMBIAR DE GRUPO</button>
+        <button class="btn btn-azul" onclick="moverVigi()">ACTUALIZAR GRUPO</button>
 
         <hr>
-        <h4 style="color:var(--rojo);">X Acciones de Limpieza</h4>
-        <select id="sE"></select>
-        <button class="btn btn-rojo" onclick="baja()">ELIMINAR DE NÓMINA</button>
-        <button class="btn btn-rojo" style="margin-top:20px; opacity:0.6;" onclick="limpiar()">BORRAR DATOS DE PRUEBA</button>
+        <button class="btn btn-rojo" onclick="limpiar()">BORRAR TODO (MODO PRUEBA)</button>
     </div>
 </div>
 
 <div class="card">
-    <h3>📋 Reporte de Hoy</h3>
+    <h3>📋 Reporte Detallado - Hoy</h3>
     <table id="tableR">
-        <thead><tr><th>Nombre</th><th>Hora</th><th>Estatus</th><th>Cargo</th><th>Turno</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Hora</th><th>Estatus</th><th>Cargo</th></tr></thead>
         <tbody id="bodyR"></tbody>
     </table>
     <button class="btn btn-azul" onclick="descargar()">EXPORTAR EXCEL</button>
@@ -125,59 +128,81 @@
     const hoy = new Date().toISOString().split('T')[0];
     let nomina = [];
 
+    // CARGA DE DATOS
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nomina = [];
-        const sP = document.getElementById('sPersonal'), sE = document.getElementById('sE'), sV = document.getElementById('sVigi');
+        const sP = document.getElementById('sPersonal'), sV = document.getElementById('sVigi');
         const lA = document.getElementById('listA'), lB = document.getElementById('listB');
-        sP.innerHTML = sE.innerHTML = sV.innerHTML = '<option value="">-- Seleccionar --</option>';
+        sP.innerHTML = sV.innerHTML = '<option value="">-- Seleccionar --</option>';
         let vA = [], vB = [];
-
         snap.forEach(doc => {
-            const d = doc.data(); d.id = doc.id;
-            nomina.push(d);
+            const d = doc.data(); d.id = doc.id; nomina.push(d);
             sP.innerHTML += `<option value="${d.n}">${d.n}</option>`;
-            sE.innerHTML += `<option value="${d.n}">${d.n}</option>`;
             if(d.c === "Vigilante") {
                 sV.innerHTML += `<option value="${d.n}">${d.n}</option>`;
-                if(d.g === "B") vB.push(d.n); else vA.push(d.n);
+                (d.g === "B") ? vB.push(d.n) : vA.push(d.n);
             }
         });
-        lA.innerText = vA.join(", ") || "Vacío";
-        lB.innerText = vB.join(", ") || "Vacío";
+        lA.innerText = vA.join(", "); lB.innerText = vB.join(", ");
         actualizar();
     });
 
-    async function moverVigi() {
-        const n = document.getElementById('sVigi').value, g = document.getElementById('sGrupo').value;
-        const p = nomina.find(x => x.n === n);
-        if(!n) return;
-        await db.collection("nomina_institucional").doc(p.id).update({ g: g });
-        alert("Cambiado al Grupo " + g);
-    }
+    // VERIFICAR LÍMITES DE 30 DÍAS
+    async function verificarLimites(nombre) {
+        if(!nombre) return;
+        const msg = document.getElementById('msgLimites');
+        const hace30dias = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        
+        const snap = await db.collection("asistencia_ebnlp_final")
+            .where("n", "==", nombre)
+            .where("ts", ">=", hace30dias)
+            .get();
 
-    async function ingreso() {
-        const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, t = document.getElementById('nT').value;
-        if(!n) return;
-        // Al ingresar personal, guardamos el nombre, cargo, turno y grupo A por defecto
-        await db.collection("nomina_institucional").add({ n, c, t, g: "A" });
-        document.getElementById('nN').value = "";
-        alert("✅ " + n + " registrado en turno " + t);
+        let inasistencias = 0, permisos = 0;
+        snap.forEach(doc => {
+            if(doc.data().e === "INASISTENCIA") inasistencias++;
+            if(doc.data().e === "PERMISO PERSONAL") permisos++;
+        });
+
+        let html = `<p style="font-size:11px; margin:5px 0;">Últimos 30 días: <b>${inasistencias} Inasistencias</b> | <b>${permisos} Permisos</b></p>`;
+        if(inasistencias >= 3) html += `<span class="alerta-limite">⚠️ ALERTA: Ya alcanzó el límite de 3 inasistencias.</span>`;
+        if(permisos >= 3) html += `<span class="alerta-limite">⚠️ ALERTA: Ya alcanzó el límite de 3 permisos personales.</span>`;
+        msg.innerHTML = html;
     }
 
     async function guardar() {
         const n = document.getElementById('sPersonal').value, h = document.getElementById('hEntrada').value;
+        let e = document.getElementById('sEstatus').value;
         const p = nomina.find(x => x.n === n);
-        if(!n || !h) return;
-        let e = "ASISTENCIA", hN = parseInt(h.replace(":",""));
-        
-        // Lógica de Retrasos Automática según el turno guardado
-        if(p.t === "MAÑANA" && hN > 715) e = "RETRASO";
-        else if(p.t === "TARDE" && hN > 1215) e = "RETRASO";
-        else if(p.t === "VIGILANCIA DÍA" && hN > 615) e = "RETRASO";
-        else if(p.t === "VIGILANCIA NOCHE" && hN > 1815) e = "RETRASO";
+        if(!n) return alert("Seleccione trabajador");
 
-        await db.collection("asistencia_ebnlp_final").add({ n, c:p.c, t:p.t, h, e, f:hoy, ts:Date.now() });
-        alert("Marcado como: " + e);
+        // Lógica de retraso (solo si el estatus es ASISTENCIA)
+        if(e === "ASISTENCIA" && h) {
+            const hN = parseInt(h.replace(":",""));
+            if(p.t === "MAÑANA" && hN > 715) e = "RETRASO";
+            else if(p.t === "TARDE" && hN > 1215) e = "RETRASO";
+            else if(p.t === "VIGILANCIA DÍA" && hN > 615) e = "RETRASO";
+            else if(p.t === "VIGILANCIA NOCHE" && hN > 1815) e = "RETRASO";
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({ n, c:p.c, t:p.t, h:h||"--", e, f:hoy, ts:Date.now() });
+        alert("Guardado como: " + e);
+        verificarLimites(n);
+    }
+
+    // GESTIÓN NÓMINA
+    async function ingreso() {
+        const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, t = document.getElementById('nT').value;
+        if(!n) return;
+        await db.collection("nomina_institucional").add({ n, c, t, g: "A" });
+        document.getElementById('nN').value = "";
+    }
+
+    async function moverVigi() {
+        const n = document.getElementById('sVigi').value, g = document.getElementById('sGrupo').value;
+        const p = nomina.find(x => x.n === n);
+        await db.collection("nomina_institucional").doc(p.id).update({ g: g });
+        alert("Vigilante movido al Grupo " + g);
     }
 
     function actualizar() {
@@ -187,7 +212,7 @@
             snap.forEach(doc => {
                 const d = doc.data(); const esR = d.e === "RETRASO";
                 if(esR) r++; p++;
-                body.innerHTML += `<tr class="${esR?'fila-retraso':''}"><td>${d.n}</td><td>${d.h}</td><td>${d.e}</td><td>${d.c}</td><td>${d.t}</td></tr>`;
+                body.innerHTML += `<tr class="${esR?'fila-retraso':''}"><td>${d.n}</td><td>${d.h}</td><td>${d.e}</td><td>${d.c}</td></tr>`;
             });
             document.getElementById('rTot').innerText = r;
             document.getElementById('pTot').innerText = nomina.length > 0 ? Math.round((p/nomina.length)*100)+"%" : "0%";
@@ -199,20 +224,14 @@
         });
     }
 
-    async function baja() {
-        const n = document.getElementById('sE').value;
-        const p = nomina.find(x => x.n === n);
-        if(p && confirm("¿Eliminar?")) await db.collection("nomina_institucional").doc(p.id).delete();
-    }
-
     async function limpiar() {
-        if(!confirm("¿Borrar historial de asistencia?")) return;
+        if(!confirm("¿Limpiar historial?")) return;
         const s = await db.collection("asistencia_ebnlp_final").get();
         const b = db.batch(); s.forEach(d => b.delete(d.ref)); await b.commit();
-        alert("Limpio");
+        alert("Base de datos limpia");
     }
 
-    function descargar() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tableR')), `Reporte_EBNLP_${hoy}.xlsx`); }
+    function descargar() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tableR')), `EBNLP_Reporte_${hoy}.xlsx`); }
 </script>
 </body>
 </html>
