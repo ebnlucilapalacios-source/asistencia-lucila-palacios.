@@ -37,78 +37,92 @@
         label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--azul); }
         select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; margin-bottom: 15px; box-sizing: border-box; }
         
-        .horario-info { background: #fff9e6; border: 1px solid #ffe58f; padding: 12px; border-radius: 8px; text-align: center; font-size: 13px; margin-bottom: 15px; font-weight: bold; color: #856404; }
-        .alerta-retardo { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; display: none; margin-bottom: 15px; }
-
         .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 10px; color: white; transition: 0.3s; }
         .btn-save { background: var(--verde); }
         .btn-pdf { background: var(--rojo); }
         .btn-report { background: var(--azul); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+        th { background: var(--azul); color: white; padding: 10px; }
+        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .vigilante-row { background-color: #e3f2fd; }
     </style>
 </head>
 <body>
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5H98MFLK"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <header>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5H98MFLK" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+<header>
     <div class="logo-box">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?v=2" class="logo-img" alt="Logo">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img" alt="Logo">
     </div>
     <h1 style="margin: 0; font-size: 20px;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin: 5px 0 0; font-size: 12px; opacity: 0.9;">Sistema de Control de Personal</p>
+    <p style="margin: 5px 0 0; font-size: 12px; opacity: 0.9;">Sistema Integral de Control de Asistencia</p>
 </header>
 
 <div class="stats-grid">
-    <div class="stat-card"><h4>Asistencia Día</h4><p id="statDia">0%</p></div>
-    <div class="stat-card"><h4>Retardos Hoy</h4><p id="statRet">0</p></div>
+    <div class="stat-card"><h4>% Asistencia Día</h4><p>0%</p></div>
+    <div class="stat-card"><h4>Retardos Hoy</h4><p>0</p></div>
 </div>
 
 <div class="card">
-    <h3 style="margin-top: 0; font-size: 16px;">📋 Registro de Jornada</h3>
+    <h3>📋 Registro de Jornada</h3>
     
-    <label>Fecha:</label>
+    <label>Fecha Seleccionada:</label>
     <input type="date" id="fechaReg">
 
-    <label>Trabajador:</label>
-    <select id="selPers" onchange="configurarHorario()">
+    <label>Persona:</label>
+    <select id="selPersona">
         <option value="">Seleccione...</option>
-        <option value="Docente" data-h="07:00" data-s="12:00">Docente (7am - 12pm)</option>
-        <option value="Obrero" data-h="07:00" data-s="13:00">Obrero (7am - 1pm)</option>
-        <option value="Administrativo" data-h="07:00" data-s="13:00">Administrativo (7am - 1pm)</option>
-        <option value="Cocinera" data-h="07:00" data-s="14:00">Cocinera (7am - 2pm)</option>
-        <option value="Vigilante" data-h="18:00" data-s="06:00">Vigilante (6pm - 6am)</option>
+        <optgroup label="Docentes">
+            <option value="Ana David">Ana David</option>
+            <option value="Andreina Flores">Andreina Flores</option>
+            <option value="Angel Figuera">Angel Figuera</option>
+            <option value="Dalia Luces">Dalia Luces</option>
+            <option value="Dayana Jiménez">Dayana Jiménez</option>
+        </optgroup>
+        <optgroup label="Obreros">
+            <option value="Ana Figuera">Ana Figuera</option>
+            <option value="Carlos Castillo">Carlos Castillo</option>
+            <option value="Danielys Campos">Danielys Campos</option>
+            <option value="Dayana García">Dayana García</option>
+        </optgroup>
+        <optgroup label="Vigilantes">
+            <option value="Cesar Suárez">Cesar Suárez (Vigilante-B)</option>
+            <option value="Daher Cardier">Daher Cardier (Vigilante-A)</option>
+            <option value="Darwin Aguilera">Darwin Aguilera (Vigilante-B)</option>
+        </optgroup>
     </select>
-
-    <div id="msgHorario" class="horario-info">Seleccione cargo para ver horario reglamentario</div>
-    <div id="alertaRetardo" class="alerta-retardo">⚠️ SE REGISTRARÁ COMO RETARDO</div>
 
     <label>Estatus:</label>
-    <select id="estatus" onchange="verificarEstatus()">
+    <select id="estatus">
         <option value="Asistencia">Asistencia ✅</option>
-        <option value="Inasistencia Injustificada">Inasistencia Injustificada ❌</option>
-        <option value="Permiso Personal">Permiso Personal 📝</option>
-        <option value="Reposo Médico">Reposo Médico 🏥</option>
-        <option value="Vacaciones">Vacaciones 🏖️</option>
+        <option value="Inasistencia">Inasistencia ❌</option>
+        <option value="Permiso">Permiso 📝</option>
     </select>
-
-    <div id="seccionTiempos">
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1">
-                <label>Hora Entrada:</label>
-                <input type="time" id="hEntrada" onchange="chequearRetardo()">
-            </div>
-            <div style="flex:1">
-                <label>Hora Salida:</label>
-                <input type="time" id="hSalida">
-            </div>
-        </div>
-    </div>
 
     <button class="btn btn-save" onclick="guardar()">💾 GUARDAR REGISTRO</button>
     <button class="btn btn-pdf">📄 DESCARGAR PDF DIARIO</button>
-    <button class="btn btn-report">📊 REPORTE MENSUAL</button>
+    
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>NOMBRE DEL TRABAJADOR</th>
+                    <th>CARGO</th>
+                    <th>H. OFICIAL</th>
+                    <th>ESTATUS</th>
+                </tr>
+            </thead>
+            <tbody id="tablaCuerpo">
+                <tr><td>Ana David</td><td>Docente</td><td>07:00-12:00</td><td>PENDIENTE</td></tr>
+                <tr class="vigilante-row"><td>Cesar Suárez</td><td>Vigilante-B</td><td>18:00-06:00</td><td>PENDIENTE</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
+    // Configuración Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -120,54 +134,19 @@
 
     document.getElementById('fechaReg').valueAsDate = new Date();
 
-    function configurarHorario() {
-        const sel = document.getElementById('selPers');
-        const msg = document.getElementById('msgHorario');
-        if(!sel.value) return;
-        
-        const entrada = sel.options[sel.selectedIndex].getAttribute('data-h');
-        const salida = sel.options[sel.selectedIndex].getAttribute('data-s');
-        msg.innerText = `Horario Reglamentario: ${entrada} - ${salida}`;
-        chequearRetardo();
-    }
-
-    function chequearRetardo() {
-        const sel = document.getElementById('selPers');
-        const hEnt = document.getElementById('hEntrada').value;
-        const alerta = document.getElementById('alertaRetardo');
-        if(!sel.value || !hEnt) return;
-
-        const limite = sel.options[sel.selectedIndex].getAttribute('data-h');
-        if(hEnt > limite) alerta.style.display = "block";
-        else alerta.style.display = "none";
-    }
-
-    function verificarEstatus() {
-        const est = document.getElementById('estatus').value;
-        const panel = document.getElementById('seccionTiempos');
-        if(est !== "Asistencia") {
-            panel.style.opacity = "0.3";
-            panel.style.pointerEvents = "none";
-        } else {
-            panel.style.opacity = "1";
-            panel.style.pointerEvents = "auto";
-        }
-    }
-
     async function guardar() {
-        const cargo = document.getElementById('selPers').value;
+        const nombre = document.getElementById('selPersona').value;
         const est = document.getElementById('estatus').value;
-        const hE = document.getElementById('hEntrada').value;
-        const fec = document.getElementById('fechaReg').value;
+        const fecha = document.getElementById('fechaReg').value;
 
-        if(!cargo) return alert("Seleccione el cargo");
+        if(!nombre) return alert("Seleccione un trabajador");
 
         try {
             await db.collection("asistencia_personal").add({
-                cargo, estatus: est, entrada: hE || "N/A", fecha: fec,
+                nombre, estatus: est, fecha,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("✅ Registro exitoso");
+            alert("✅ Registro guardado exitosamente");
         } catch(e) { alert("Error al guardar"); }
     }
 </script>
