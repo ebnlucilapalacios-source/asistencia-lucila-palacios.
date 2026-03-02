@@ -1,111 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5H98MFLK');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EBNLP - Dirección</title>
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      // Reemplaza 'G-XXXXXXXXXX' con tu ID de medición real
-      gtag('config', 'G-XXXXXXXXXX');
-    </script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
         :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; --blanco: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 80px; }
-        
-        header { 
-            background: linear-gradient(180deg, var(--azul-d), var(--azul-v)); 
-            color: white; 
-            text-align: center; 
-            padding: 25px 10px; 
-            border-bottom: 5px solid var(--naranja); 
-        }
-        
-        .logo-box {
-            width: 100px; height: 100px; background-color: white; border-radius: 50%;
-            margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;
-            border: 3px solid var(--naranja); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
+        header { background: linear-gradient(180deg, var(--azul-d), var(--azul-v)); color: white; text-align: center; padding: 25px 10px; border-bottom: 5px solid var(--naranja); }
+        .logo-box { width: 100px; height: 100px; background-color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--naranja); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .logo-img { width: 85px; height: auto; display: block; }
         .container { padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 8px solid var(--azul-v); }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
         th { background: #f8f9fa; color: var(--azul-d); font-size: 10px; text-transform: uppercase; }
-
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; z-index: 1000; }
         .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 11px; text-decoration: none; font-weight: bold; }
         .nav-btn.active { color: var(--azul-v); background: #f0f4ff; border-top: 4px solid var(--azul-v); }
     </style>
 </head>
 <body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5H98MFLK"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <header>
+        <div class="logo-box">
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?v=2" alt="Logo EBNLP" class="logo-img">
+        </div>
+        <h1 style="margin:0; font-size: 18px;">E.B.N. "LUCILA PALACIOS"</h1>
+        <p style="margin:5px 0 0; font-size: 10px; opacity:0.8;">CONSOLA DE DIRECCIÓN</p>
+    </header>
 
-<header>
-    <div class="logo-box">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?v=2" 
-             alt="Logo EBNLP" 
-             class="logo-img">
+    <div class="container">
+        <div class="card">
+            <h3 style="margin-top:0;">👥 Personal</h3>
+            <div id="tablaPersonal">Cargando datos...</div>
+        </div>
+        <div class="card" style="border-left-color: #27ae60;">
+            <h3 style="margin-top:0;">🎓 Alumnos</h3>
+            <div id="tablaAlumnos">Cargando matrícula...</div>
+        </div>
     </div>
-    <h1 style="margin:0; font-size: 18px;">E.B.N. "LUCILA PALACIOS"</h1>
-    <p style="margin:5px 0 0; font-size: 10px; opacity:0.8;">CONSOLA DE DIRECCIÓN</p>
-</header>
 
-<div class="container">
-    <div class="card">
-        <h3 style="margin-top:0;">👥 Personal (Desde Firebase)</h3>
-        <div id="tablaPersonal">Cargando datos...</div>
-    </div>
+    <nav>
+        <a href="index.html" class="nav-btn active"><span>🏠</span>INICIO</a>
+        <a href="personal.html" class="nav-btn"><span>👥</span>PERSONAL</a>
+        <a href="estadisticas.html" class="nav-btn"><span>📊</span>REPORTES</a>
+    </nav>
 
-    <div class="card" style="border-left-color: #27ae60;">
-        <h3 style="margin-top:0;">🎓 Alumnos (Desde Firebase)</h3>
-        <div id="tablaAlumnos">Cargando matrícula...</div>
-    </div>
-</div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-<nav>
-    <a href="index.html" class="nav-btn"><span>🏠</span>INICIO</a>
-    <a href="personal.html" class="nav-btn"><span>👥</span>PERSONAL</a>
-    <a href="estadistica.html" class="nav-btn"><span>📊</span>REPORTES</a>
-</nav>
-
-<script>
-    // Tu configuración de Firebase se mantiene intacta
-    const firebaseConfig = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-        projectId: "control-de-asistencia-d585e",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // Cargar datos de Personal
-    db.collection("asistencia_personal").onSnapshot(snap => {
-        let html = "<table><tr><th>Nombre</th><th>Estado</th></tr>";
-        snap.forEach(doc => {
-            const d = doc.data();
-            html += `<tr><td><b>${d.nombre}</b></td><td>${d.est}</td></tr>`;
+        db.collection("asistencia_personal").onSnapshot(snap => {
+            let html = "<table><tr><th>Nombre</th><th>Estado</th></tr>";
+            snap.forEach(doc => {
+                const d = doc.data();
+                html += `<tr><td><b>${d.nombre}</b></td><td>${d.est}</td></tr>`;
+            });
+            document.getElementById('tablaPersonal').innerHTML = html + "</table>";
         });
-        document.getElementById('tablaPersonal').innerHTML = html + "</table>";
-    });
 
-    // Cargar datos de Alumnos
-    db.collection("alumnos").onSnapshot(snap => {
-        let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
-        snap.forEach(doc => {
-            const a = doc.data();
-            html += `<tr><td>${a.nombre}</td><td>${a.seccion || '---'}</td></tr>`;
+        db.collection("alumnos").onSnapshot(snap => {
+            let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
+            snap.forEach(doc => {
+                const a = doc.data();
+                html += `<tr><td>${a.nombre}</td><td>${a.seccion || '---'}</td></tr>`;
+            });
+            document.getElementById('tablaAlumnos').innerHTML = html + "</table>";
         });
-        document.getElementById('tablaAlumnos').innerHTML = html + "</table>";
-    });
-</script>
+    </script>
 </body>
 </html>
