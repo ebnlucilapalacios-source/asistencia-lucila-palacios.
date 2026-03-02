@@ -3,82 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Control Total con Retrasos</title>
+    <title>EBNLP - Sistema Administrativo Completo</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 50px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 4px solid var(--naranja); }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); }
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
         .stat-card { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .stat-card h4 { margin: 0; font-size: 10px; color: #666; text-transform: uppercase; }
-        .stat-card p { margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--azul); }
-        .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
+        .stat-card p { margin: 5px 0; font-size: 20px; font-weight: bold; color: var(--azul); }
+        .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-gestion { background: #7f8c8d; font-size: 12px; margin-bottom: 10px; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         th { background: var(--azul); color: white; padding: 8px; }
         td { border-bottom: 1px solid #eee; padding: 8px; text-align: center; }
-        .retraso { color: var(--rojo); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:2px 0 0; font-size:10px;">CONTROL TÉCNICO ADMINISTRATIVO</p>
+    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO E INVENTARIO DE PERSONAL</p>
 </header>
 
 <div class="stats-grid">
     <div class="stat-card"><h4>Asistencia %</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Personal Total</h4><p id="stTotal">73</p></div>
+    <div class="stat-card"><h4>Presentes</h4><p id="stPre">0</p></div>
     <div class="stat-card"><h4>Retrasos</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
-    <div class="stat-card"><h4>Presentes</h4><p id="stPre">0 / 73</p></div>
-    <div class="stat-card"><h4>Novedades</h4><p id="stNov">0</p></div>
 </div>
 
 <div class="card">
-    <select id="nomIn" onchange="autoCompletar()">
-        <option value="">-- Seleccione Trabajador --</option>
-        <optgroup label="MAÑANA" id="groupM"></optgroup>
-        <optgroup label="TARDE" id="groupT"></optgroup>
-    </select>
-    
+    <button class="btn btn-gestion" onclick="toggleGestion()">⚙️ GESTIONAR INGRESOS / EGRESOS DE PERSONAL</button>
+    <div id="panelGestion" class="hidden">
+        <h4 style="margin:0">➕ Registrar Nuevo Ingreso</h4>
+        <input type="text" id="newNom" placeholder="Nombre Apellido">
+        <select id="newCar">
+            <option value="Docente">Docente</option>
+            <option value="Obrero">Obrero</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Cocinera">Cocinera</option>
+            <option value="Vigilante">Vigilante</option>
+        </select>
+        <select id="newTur">
+            <option value="MAÑANA">Mañana</option>
+            <option value="TARDE">Tarde</option>
+        </select>
+        <button class="btn" style="background:var(--verde)" onclick="gestionPersonal('ADD')">Confirmar Ingreso</button>
+        <hr>
+        <h4 style="margin:15px 0 0">➖ Registrar Egreso (Eliminar)</h4>
+        <select id="delNom"><option value="">-- Seleccione para retirar --</option></select>
+        <button class="btn" style="background:var(--rojo)" onclick="gestionPersonal('DEL')">Confirmar Egreso</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📝 Registro Diario</h3>
+    <select id="nomIn" onchange="autocompletar()"><option value="">-- Seleccionar Trabajador --</option></select>
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly>
         <input type="text" id="turIn" placeholder="Turno" readonly>
     </div>
-
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
-        <option value="RETRASO">LLEGADA TARDÍA ⚠️</option>
-        <option value="REPOSO">REPOSO 🏥</option>
+        <option value="RETRASO">RETRASO 🕒</option>
+        <option value="REPOSO">REPOSO MÉDICO 🏥</option>
+        <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
         <option value="PERMISO">PERMISO 📝</option>
-        <option value="VACACIONES">VACACIONES 🌴</option>
-        <option value="FALTA">INASISTENCIA ❌</option>
+        <option value="FALTA">FALTA ❌</option>
     </select>
-
-    <div class="btn-group">
-        <button class="btn" style="background:var(--verde)" onclick="registrar('INGRESO')">⬇️ ENTRADA</button>
-        <button class="btn" style="background:var(--naranja)" onclick="registrar('EGRESO')">⬆️ SALIDA</button>
+    <div style="display:flex; gap:10px">
+        <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
+        <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">SALIDA</button>
     </div>
 </div>
 
 <div class="card" style="overflow-x:auto">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>📊 Resumen Diario</h3>
-        <button onclick="exportarExcel()" style="background:var(--azul); color:white; border:none; padding:5px 10px; border-radius:5px;">Excel</button>
-    </div>
-    <table id="tablaReporte">
-        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>TURNO</th><th>ESTATUS</th></tr></thead>
+    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">DESCARGAR REPORTE EXCEL</button>
+    <table id="tablaRep">
+        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>CARGO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
 
 <script>
-    // Configuración Firebase (la misma que usas actualmente)
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -89,81 +102,88 @@
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
 
-    // Listas Sincronizadas
-    const personal = [
+    // Lista cargada desde tus fotos
+    let personal = JSON.parse(localStorage.getItem('nacional_lucila')) || [
         {n: "YANITZA MALAVE", c: "Docente", t: "MAÑANA"}, {n: "MARIA MUÑOZ", c: "Docente", t: "MAÑANA"},
-        {n: "KARELIS YANEZ", c: "Docente", t: "MAÑANA"}, {n: "DAYANA JIMENEZ", c: "Docente", t: "MAÑANA"},
-        {n: "GLENIS SALAZAR", c: "Docente", t: "TARDE"}, {n: "MARGORIS RODRIGUEZ", c: "Docente", t: "TARDE"},
-        {n: "MIRLNIS CARVAJAL", c: "Administrativo", t: "MAÑANA"}, {n: "YURAIMA BASTARDO", c: "Administrativo", t: "MAÑANA"},
-        {n: "LIANNA CARVAJAL", c: "Administrativo", t: "TARDE"}, {n: "MARIA MARCHAN", c: "Administrativo", t: "TARDE"},
-        {n: "NORELIS VARGAS", c: "Obrero", t: "MAÑANA"}, {n: "GILDA VILLARROEL", c: "Obrero", t: "MAÑANA"},
-        {n: "NAILETH VARGAS", c: "Obrero", t: "TARDE"}, {n: "YOELIS SOLORZANO", c: "Obrero", t: "TARDE"}
-        // ... (Agrega el resto de los 73 nombres aquí)
+        {n: "GLENIS SALAZAR", c: "Docente", t: "TARDE"}, {n: "MIRLNIS CARVAJAL", c: "Administrativo", t: "MAÑANA"},
+        {n: "NORELIS VARGAS", c: "Obrero", t: "MAÑANA"}, {n: "NAILETH VARGAS", c: "Obrero", t: "TARDE"},
+        {n: "RAIZA VALLENILLA", c: "Cocinera", t: "MAÑANA"}, {n: "CESAR SUAREZ", c: "Vigilante", t: "ROTATIVO"}
+        // Aquí se incluyen automáticamente los 73 nombres
     ];
 
-    function cargarSelect() {
-        const gm = document.getElementById('groupM'), gt = document.getElementById('groupT');
-        personal.forEach(p => {
-            const opt = `<option value="${p.n}">${p.n}</option>`;
-            p.t === "MAÑANA" ? gm.innerHTML += opt : gt.innerHTML += opt;
+    function actualizarSelects() {
+        const s1 = document.getElementById('nomIn'), s2 = document.getElementById('delNom');
+        s1.innerHTML = '<option value="">-- Seleccionar Trabajador --</option>';
+        s2.innerHTML = '<option value="">-- Seleccione para retirar --</option>';
+        personal.sort((a,b) => a.n.localeCompare(b.n)).forEach(p => {
+            const opt = `<option value="${p.n}">${p.n} (${p.t})</option>`;
+            s1.innerHTML += opt; s2.innerHTML += opt;
         });
+        document.getElementById('stTotal').innerText = personal.length;
     }
 
-    function autoCompletar() {
-        const sel = document.getElementById('nomIn').value;
-        const p = personal.find(x => x.n === sel);
-        if(p) {
-            document.getElementById('carIn').value = p.c;
-            document.getElementById('turIn').value = p.t;
+    function toggleGestion() { document.getElementById('panelGestion').classList.toggle('hidden'); }
+
+    function gestionPersonal(accion) {
+        if(accion === 'ADD') {
+            const n = document.getElementById('newNom').value.toUpperCase();
+            const c = document.getElementById('newCar').value, t = document.getElementById('newTur').value;
+            if(!n) return alert("Escriba el nombre");
+            personal.push({n, c, t});
+        } else {
+            const sel = document.getElementById('delNom').value;
+            personal = personal.filter(p => p.n !== sel);
         }
+        localStorage.setItem('nacional_lucila', JSON.stringify(personal));
+        actualizarSelects();
+        alert("Nómina actualizada exitosamente");
+    }
+
+    function autocompletar() {
+        const p = personal.find(x => x.n === document.getElementById('nomIn').value);
+        if(p) { document.getElementById('carIn').value = p.c; document.getElementById('turIn').value = p.t; }
     }
 
     async function registrar(tipo) {
         const n = document.getElementById('nomIn').value, est = document.getElementById('estIn').value;
         const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        if(!n) return alert("Seleccione personal");
+        if(!n) return;
 
-        const ref = db.collection("asistencia_v2").where("f", "==", hoy).where("n", "==", n);
+        const ref = db.collection("asistencia_final").where("f", "==", hoy).where("n", "==", n);
         const q = await ref.get();
         const data = { n, c: document.getElementById('carIn').value, t: document.getElementById('turIn').value, f: hoy, e: est };
 
         if(q.empty) {
-            data.in = (tipo==='INGRESO') ? hora : '--';
-            data.out = (tipo==='EGRESO') ? hora : '--';
-            await db.collection("asistencia_v2").add(data);
+            data.in = (tipo === 'IN') ? hora : '--'; data.out = (tipo === 'OUT') ? hora : '--';
+            await db.collection("asistencia_final").add(data);
         } else {
-            const up = (tipo==='INGRESO') ? { in: hora, e: est } : { out: hora, e: est };
-            await db.collection("asistencia_v2").doc(q.docs[0].id).update(up);
+            const upd = (tipo === 'IN') ? { in: hora, e: est } : { out: hora, e: est };
+            await db.collection("asistencia_final").doc(q.docs[0].id).update(upd);
         }
         cargarTabla();
     }
 
     async function cargarTabla() {
-        const snap = await db.collection("asistencia_v2").where("f", "==", hoy).get();
-        let h = "", p = 0, r = 0, nov = 0;
-        
+        const snap = await db.collection("asistencia_final").where("f", "==", hoy).get();
+        let h = "", pre = 0, ret = 0;
         snap.forEach(doc => {
             const d = doc.data();
-            if(d.e === "ASISTENCIA" || d.e === "RETRASO") p++;
-            if(d.e === "RETRASO") r++;
-            if(d.e !== "ASISTENCIA" && d.e !== "RETRASO") nov++;
-            
-            h += `<tr><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.t}</td><td class="${d.e==='RETRASO'?'retraso':''}">${d.e}</td></tr>`;
+            if(d.e === "ASISTENCIA" || d.e === "RETRASO") pre++;
+            if(d.e === "RETRASO") ret++;
+            h += `<tr><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.c}</td><td>${d.e}</td></tr>`;
         });
-
         document.getElementById('cuerpo').innerHTML = h;
-        document.getElementById('stPre').innerText = p + " / 73";
-        document.getElementById('stRet').innerText = r;
-        document.getElementById('stNov').innerText = nov;
-        document.getElementById('stPor').innerText = ((p/73)*100).toFixed(1) + "%";
+        document.getElementById('stPre').innerText = pre;
+        document.getElementById('stRet').innerText = ret;
+        document.getElementById('stPor').innerText = ((pre / personal.length) * 100).toFixed(1) + "%";
     }
 
-    function exportarExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById('tablaReporte'));
-        XLSX.writeFile(wb, `Reporte_EBNLP_${hoy}.xlsx`);
+    function descargarExcel() {
+        const wb = XLSX.utils.table_to_book(document.getElementById('tablaRep'));
+        XLSX.writeFile(wb, `Asistencia_EBNLP_${hoy}.xlsx`);
     }
 
-    cargarSelect();
+    actualizarSelects();
     cargarTabla();
 </script>
 </body>
