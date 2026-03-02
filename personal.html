@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal EBNLP - Control</title>
+    <title>Personal EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -13,99 +13,65 @@
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
             projectId: "control-de-asistencia-d585e",
             storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-            messagingSenderId: "368890880546",
             appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         window.marcar = async (id, nombre, rol, grupo) => {
-            const fechaDoc = new Date().toISOString().split('T')[0];
-            const horaActual = new Date().getHours();
-            
-            let t = "Administrativo";
-            if (rol === 'vigilante') {
-                t = (horaActual >= 18 || horaActual < 6) ? "Nocturno (6pm-6am)" : "Especial Diurno (6am-6pm)";
-            }
+            const hoy = new Date().toISOString().split('T')[0];
+            const hora = new Date().getHours();
+            let t = (rol === 'vigilante') ? (hora >= 18 || hora < 6 ? "Nocturno" : "Especial Diurno") : "Administrativo";
 
-            await setDoc(doc(db, "asistencia_personal", fechaDoc), { 
-                [id]: { 
-                    asistio: 1, 
-                    n: nombre, 
-                    turno: t,
-                    h: new Date().toLocaleTimeString() 
-                } 
+            await setDoc(doc(db, "asistencia_personal", hoy), { 
+                [id]: { asistio: 1, n: nombre, turno: t, h: new Date().toLocaleTimeString() } 
             }, { merge: true });
         };
 
         window.escuchar = (cb) => {
-            const fechaDoc = new Date().toISOString().split('T')[0];
-            onSnapshot(doc(db, "asistencia_personal", fechaDoc), (d) => cb(d.data() || {}));
+            const hoy = new Date().toISOString().split('T')[0];
+            onSnapshot(doc(db, "asistencia_personal", hoy), (d) => cb(d.data() || {}));
         };
     </script>
 </head>
-<body style="font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0;">
-
-    <div style="background: #1a2a6c; color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
-        <h2 style="margin: 0;">Asistencia Personal</h2>
-        <div id="etiqueta-turno" style="background:#f39c12; color:#1a2a6c; display:inline-block; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:12px; margin-top:10px;"></div>
+<body style="font-family: sans-serif; text-align: center; background: #f4f7f6; margin: 0;">
+    <div style="background: #1a2a6c; color: white; padding: 20px;">
+        <h2 style="margin:0;">Asistencia Personal</h2>
+        <div id="info-g" style="background:#f39c12; color:#1a2a6c; display:inline-block; padding:5px 10px; border-radius:15px; font-weight:bold; margin-top:10px;"></div>
         <br><br>
-        <button onclick="window.location.href='./index.html?v=' + Date.now()" style="background: white; color: #1a2a6c; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-            ⬅ VOLVER AL MENÚ
-        </button>
+        <a href="index.html" style="color: white; font-weight: bold; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 5px;">⬅ MENU PRINCIPAL</a>
     </div>
 
     <div id="lista" style="padding: 20px; max-width: 450px; margin: auto;"></div>
 
     <script>
-        // LISTA INTEGRADA: PERSONAL ORIGINAL + VIGILANTES
         const staff = [
             {id:1, n:"YANITZA GÓMEZ", rol:"admin"},
             {id:2, n:"MARÍA ACUÑA", rol:"admin"},
             {id:3, n:"KARELYS REYES", rol:"admin"},
-            // Vigilantes Grupo B (TRABAJAN HOY 1 DE MARZO)
             {id:101, n:"VIGILANTE B1", rol:"vigilante", grupo:"B"},
             {id:102, n:"VIGILANTE B2", rol:"vigilante", grupo:"B"},
-            // Vigilantes Grupo A (NO TRABAJAN HOY)
             {id:201, n:"VIGILANTE A1", rol:"vigilante", grupo:"A"},
             {id:202, n:"VIGILANTE A2", rol:"vigilante", grupo:"A"}
         ];
 
-        function calcularGrupo() {
-            const hoy = new Date();
-            // Referencia fija: 28-Feb fue A, 01-Mar es B
-            const referencia = new Date("2026-02-28");
-            const diasDiff = Math.floor((hoy - referencia) / (1000 * 60 * 60 * 24));
-            return (diasDiff % 2 === 0) ? "A" : "B";
-        }
+        const hoy = new Date();
+        const ref = new Date("2026-02-28");
+        const gHoy = (Math.floor((hoy - ref) / 86400000) % 2 === 0) ? "A" : "B";
+        document.getElementById('info-g').innerText = "HOY: GRUPO " + gHoy;
 
-        const grupoActivo = calcularGrupo();
-        document.getElementById('etiqueta-turno').innerText = "HOY CORRESPONDE: GRUPO " + grupoActivo;
-
-        function render(datos = {}) {
-            const contenedor = document.getElementById('lista'); 
-            contenedor.innerHTML = "";
-            
-            staff.forEach(persona => {
-                const registro = datos[persona.id];
-                const yaMarcado = registro && (registro === 1 || registro.asistio === 1);
-                const esSuTurno = persona.rol === 'admin' || persona.grupo === grupoActivo;
-
-                contenedor.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:15px; background:white; border-radius:10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 6px solid ${persona.rol === 'admin' ? '#3498db' : '#f39c12'}; opacity: ${esSuTurno ? '1' : '0.4'}">
-                    <div style="text-align:left;">
-                        <strong style="font-size:14px; color:#2c3e50;">${persona.n}</strong><br>
-                        <small style="color:#7f8c8d;">${persona.rol === 'admin' ? 'PERSONAL' : 'VIGILANCIA G-'+persona.grupo}</small>
-                    </div>
-                    <button onclick="marcar(${persona.id}, '${persona.n}', '${persona.rol}', '${persona.grupo}')" 
-                        ${yaMarcado || !esSuTurno ? 'disabled' : ''} 
-                        style="background:${yaMarcado ? '#27ae60' : (esSuTurno ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px 14px; border-radius:6px; cursor:${esSuTurno ? 'pointer' : 'default'}; font-weight:bold; font-size:12px;">
-                        ${yaMarcado ? 'LISTO' : (esSuTurno ? 'MARCAR' : 'OFF')}
-                    </button>
+        window.escuchar((d) => {
+            const c = document.getElementById('lista'); c.innerHTML = "";
+            staff.forEach(s => {
+                const ya = d[s.id]?.asistio === 1;
+                const ok = s.rol === 'admin' || s.grupo === gHoy;
+                c.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px; background:white; border-radius:8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid ${s.rol === 'admin' ? '#3498db' : '#f39c12'}; opacity: ${ok ? '1' : '0.5'}">
+                    <div style="text-align:left;"><strong>${s.n}</strong><br><small>${s.rol.toUpperCase()}</small></div>
+                    <button onclick="marcar(${s.id}, '${s.n}', '${s.rol}', '${s.grupo}')" ${ya || !ok ? 'disabled' : ''} style="background:${ya ? '#27ae60' : (ok ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px;">${ya ? 'LISTO' : 'MARCAR'}</button>
                 </div>`;
             });
-        }
-        window.escuchar(render);
+        });
     </script>
 </body>
 </html>
