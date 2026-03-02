@@ -3,83 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Personal - EBNLP</title>
-    
+    <title>Control de Asistencia - EBNLP</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; }
+        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 30px; }
+        header { background: linear-gradient(180deg, var(--azul), #1a2a6c); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
+        .logo-box { width: 90px; height: 90px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--naranja); }
+        .logo-img { width: 75px; height: auto; }
         
-        header { 
-            background: linear-gradient(180deg, var(--azul-d), var(--azul-v)); 
-            color: white; width: 100%; text-align: center; padding: 30px 0; 
-            border-bottom: 5px solid var(--naranja); 
-        }
+        .form-card { background: white; margin: 20px 15px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--azul); }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; margin-bottom: 15px; box-sizing: border-box; }
+        
+        .horario-tag { background: #e8f4fd; color: #004085; padding: 10px; border-radius: 8px; text-align: center; font-size: 13px; margin-bottom: 15px; border: 1px solid #b8daff; }
+        .retardo-alerta { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; display: none; margin-bottom: 15px; }
 
-        /* LOGO CON FORZADO DE CARGA */
-        .logo-box {
-            width: 110px; height: 110px; background: white; border-radius: 50%;
-            margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;
-            border: 3px solid var(--naranja); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .logo-img { width: 90px; height: auto; display: block; }
-
-        .card { 
-            background: white; width: 95%; max-width: 500px; padding: 25px; 
-            margin: -30px 10px 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-        }
-
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--azul-d); }
-        select, input { 
-            width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; 
-            border-radius: 8px; font-size: 16px; box-sizing: border-box;
-        }
-
-        .btn-guardar { 
-            background: var(--azul-v); color: white; border: none; padding: 18px; 
-            width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; 
-            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        .btn-guardar:active { transform: scale(0.98); }
-
-        .back-link { margin: 20px 0; text-decoration: none; color: var(--azul-v); font-weight: bold; font-size: 14px; }
+        .btn-save { width: 100%; padding: 16px; border: none; border-radius: 8px; font-weight: bold; background: var(--verde); color: white; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <header>
     <div class="logo-box">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?t=123" 
-             class="logo-img" alt="Escudo EBNLP">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img">
     </div>
-    <h2 style="margin:0;">SECRETARÍA E.B.N.L.P.</h2>
-    <p style="margin:5px 0 0; opacity:0.8;">Carga de Asistencia Diaria</p>
+    <h1 style="font-size: 18px; margin: 0;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="font-size: 11px; margin: 5px 0 0;">REGISTRO DE ASISTENCIA Y RETARDOS</p>
 </header>
 
-<div class="card">
-    <label>📅 Fecha de Registro:</label>
-    <input type="date" id="fecPers">
+<div class="form-card">
+    <label>Fecha de la Jornada:</label>
+    <input type="date" id="fechaReg">
 
-    <label>👤 Seleccione Trabajador:</label>
-    <select id="selPers">
-        <option value="">Cargando nómina...</option>
+    <label>Trabajador:</label>
+    <select id="selectPersona" onchange="verificarHorario()">
+        <option value="">Seleccione al personal...</option>
+        <option value="Docente" data-hora="07:00">Docente (Mañana: 7am - 12pm)</option>
+        <option value="Obrero" data-hora="07:00">Obrero (7am - 1pm)</option>
+        <option value="Administrativo" data-hora="07:00">Administrativo (7am - 1pm)</option>
+        <option value="Cocinera" data-hora="07:00">Cocinera (7am - 2pm)</option>
+        <option value="Vigilante" data-hora="18:00">Vigilante (Noche: 6pm - 6am)</option>
     </select>
 
-    <label>✅ Estatus de Asistencia:</label>
-    <select id="estPers">
+    <div id="tagHorario" class="horario-tag">Seleccione cargo para ver horario reglamentario</div>
+    
+    <div id="alertaRetardo" class="retardo-alerta">⚠️ ATENCIÓN: Se registrará como RETARDO</div>
+
+    <div style="display: flex; gap: 10px;">
+        <div style="flex:1">
+            <label>Hora Entrada:</label>
+            <input type="time" id="hEntrada" onchange="verificarHorario()">
+        </div>
+        <div style="flex:1">
+            <label>Hora Salida:</label>
+            <input type="time" id="hSalida">
+        </div>
+    </div>
+
+    <label>Estatus General:</label>
+    <select id="estatusAsis">
         <option value="Asistencia">Asistencia ✅</option>
         <option value="Inasistencia">Inasistencia ❌</option>
         <option value="Permiso">Permiso 📝</option>
-        <option value="Reposo">Reposo Médico 🏥</option>
     </select>
 
-    <button class="btn-guardar" onclick="guardarAsistencia()">GUARDAR REGISTRO</button>
+    <button class="btn-save" onclick="procesarGuardado()">💾 GUARDAR REGISTRO</button>
 </div>
-
-<a href="index.html" class="back-link">⬅ Volver al Panel de Dirección</a>
 
 <script>
     const firebaseConfig = {
@@ -91,41 +83,50 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // NÓMINA COMPLETA
-    const nominaRaw = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante;Daher Cardier,Vigilante;Pedro González,Vigilante;Moisés Romero,Vigilante;Cesar Suárez,Vigilante;Juan Vargas,Vigilante;Guillermo Albornoz,Vigilante;Darwin Aguilera,Vigilante;Joseyver López,Vigilante`;
-    
-    const nomina = nominaRaw.split(';').map(i => {
-        const d = i.split(',');
-        return { n: d[0], c: d[1] };
-    }).sort((a,b) => a.n.localeCompare(b.n));
+    document.getElementById('fechaReg').valueAsDate = new Date();
 
-    // Llenar el selector
-    const sel = document.getElementById('selPers');
-    sel.innerHTML = '<option value="">-- Seleccione --</option>';
-    nomina.forEach(p => {
-        sel.innerHTML += `<option value="${p.n}" data-cargo="${p.c}">${p.n} (${p.c})</option>`;
-    });
+    function verificarHorario() {
+        const sel = document.getElementById('selectPersona');
+        const horaEntradaReal = document.getElementById('hEntrada').value;
+        const alerta = document.getElementById('alertaRetardo');
+        const tag = document.getElementById('tagHorario');
+        
+        if (!sel.value) return;
 
-    document.getElementById('fecPers').valueAsDate = new Date();
+        const horaLimite = sel.options[sel.selectedIndex].getAttribute('data-hora');
+        tag.innerText = "Entrada Reglamentaria: " + horaLimite;
 
-    async function guardarAsistencia() {
-        const selIdx = sel.selectedIndex;
-        const nombre = sel.value;
-        const cargo = sel.options[selIdx].getAttribute('data-cargo');
-        const fec = document.getElementById('fecPers').value;
-        const est = document.getElementById('estPers').value;
+        if (horaEntradaReal && horaEntradaReal > horaLimite) {
+            alerta.style.display = "block";
+        } else {
+            alerta.style.display = "none";
+        }
+    }
 
-        if(!nombre) return alert("Seleccione un trabajador");
+    async function procesarGuardado() {
+        const cargo = document.getElementById('selectPersona').value;
+        const hE = document.getElementById('hEntrada').value;
+        const hS = document.getElementById('hSalida').value;
+        const fec = document.getElementById('fechaReg').value;
+        const est = document.getElementById('estatusAsis').value;
+        
+        const horaLimite = document.getElementById('selectPersona').options[document.getElementById('selectPersona').selectedIndex].getAttribute('data-hora');
+        let esRetardo = hE > horaLimite;
+
+        if(!cargo || !hE || !hS) return alert("Por favor, complete las horas de entrada y salida.");
 
         try {
-            await db.collection("asistencia_personal").doc(`${nombre}_${fec}`).set({
-                nombre, cargo, fec, est,
-                actualizado: firebase.firestore.FieldValue.serverTimestamp()
+            await db.collection("asistencia_personal").add({
+                cargo: cargo,
+                fecha: fec,
+                entrada: hE,
+                salida: hS,
+                estatus: est,
+                retardo: esRetardo,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("✅ Registro exitoso. Datos enviados a Dirección.");
-        } catch (e) {
-            alert("Error: " + e);
-        }
+            alert(esRetardo ? "✅ Guardado con éxito (Se registró el RETARDO)" : "✅ Guardado con éxito a tiempo");
+        } catch(e) { alert("Error al conectar con la base de datos."); }
     }
 </script>
 </body>
