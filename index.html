@@ -3,72 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dirección - EBNLP</title>
+    <title>EBNLP - Dirección</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --azul: #0c234a; --naranja: #f39c12; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 80px; }
+        :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; --blanco: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 80px; }
         
-        /* Encabezado con Logo Corregido */
+        /* HEADER MEJORADO PARA EL LOGO */
         header { 
-            background: linear-gradient(to bottom, #0c234a, #1a2a6c); 
+            background: linear-gradient(180deg, var(--azul-d), var(--azul-v)); 
             color: white; 
             text-align: center; 
             padding: 25px 10px; 
             border-bottom: 5px solid var(--naranja); 
         }
-        .logo-circulo {
-            background: white;
+        
+        /* Contenedor forzado para que el logo aparezca */
+        .logo-box {
             width: 100px;
             height: 100px;
-            margin: 0 auto 10px;
+            background-color: white;
             border-radius: 50%;
+            margin: 0 auto 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 3px solid var(--naranja);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .logo-img { 
-            width: 85px; 
+
+        .logo-img {
+            width: 85px; /* Ajuste manual del tamaño del escudo */
             height: auto;
+            display: block;
         }
 
-        /* Estilos de Tarjetas y Tablas */
         .container { padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 8px solid var(--azul); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 8px solid var(--azul-v); }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background: #f8f9fa; color: var(--azul); font-size: 10px; text-transform: uppercase; }
+        th { background: #f8f9fa; color: var(--azul-d); font-size: 10px; text-transform: uppercase; }
 
-        /* Navegación */
+        /* NAV */
         nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; z-index: 1000; }
         .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 11px; text-decoration: none; font-weight: bold; }
-        .nav-btn.active { color: #1a2a6c; background: #f0f4ff; border-top: 4px solid #1a2a6c; }
+        .nav-btn.active { color: var(--azul-v); background: #f0f4ff; border-top: 4px solid var(--azul-v); }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo-circulo">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
-             class="logo-img" alt="Escudo EBNLP">
+    <div class="logo-box">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?v=2" 
+             alt="Logo EBNLP" 
+             class="logo-img">
     </div>
-    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:5px 0 0; font-size:11px; opacity:0.8;">Panel Maestro de Dirección</p>
+    <h1 style="margin:0; font-size: 18px;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin:5px 0 0; font-size: 10px; opacity:0.8;">CONSOLA DE DIRECCIÓN</p>
 </header>
 
 <div class="container">
-    <div class="card" id="vistaPersonal">
-        <h3>👥 Asistencia del Personal</h3>
+    <div class="card">
+        <h3 style="margin-top:0;">👥 Personal (Desde personal.html)</h3>
         <div id="tablaPersonal">Cargando datos...</div>
     </div>
 
     <div class="card" style="border-left-color: #27ae60;">
-        <h3>🎓 Registro de Estudiantes</h3>
+        <h3 style="margin-top:0;">🎓 Alumnos (Desde estadistica.html)</h3>
         <div id="tablaAlumnos">Cargando matrícula...</div>
     </div>
 </div>
@@ -91,10 +97,10 @@
 
     // Cargar datos de Personal
     db.collection("asistencia_personal").onSnapshot(snap => {
-        let html = "<table><tr><th>Trabajador</th><th>Cargo</th><th>Estatus</th></tr>";
+        let html = "<table><tr><th>Nombre</th><th>Estado</th></tr>";
         snap.forEach(doc => {
             const d = doc.data();
-            html += `<tr><td><b>${d.nombre}</b></td><td>${d.cargo || '---'}</td><td>${d.est}</td></tr>`;
+            html += `<tr><td><b>${d.nombre}</b></td><td>${d.est}</td></tr>`;
         });
         document.getElementById('tablaPersonal').innerHTML = html + "</table>";
     });
@@ -104,7 +110,7 @@
         let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
         snap.forEach(doc => {
             const a = doc.data();
-            html += `<tr><td>${a.nombre}</td><td>${a.seccion || 'S/N'}</td></tr>`;
+            html += `<tr><td>${a.nombre}</td><td>${a.seccion || '---'}</td></tr>`;
         });
         document.getElementById('tablaAlumnos').innerHTML = html + "</table>";
     });
