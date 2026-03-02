@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Gestión Administrativa Pro</title>
+    <title>EBNLP - Control de Personal</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -11,67 +11,69 @@
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
         
-        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
-        .logo-img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid white; margin-bottom: 5px; background: white; }
+        /* Encabezado Mejorado */
+        header { background: var(--azul); color: white; text-align: center; padding: 20px 10px; border-bottom: 5px solid var(--naranja); }
+        .logo-circulo { 
+            width: 80px; height: 80px; background: white; border-radius: 50%; 
+            margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;
+            border: 3px solid var(--naranja); box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .logo-circulo img { width: 90%; height: auto; object-fit: contain; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
-        .stat-card { background: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .stat-card p { margin: 5px 0; font-size: 18px; font-weight: bold; color: var(--azul); }
+        .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
+        .stat-card h4 { margin: 0; font-size: 11px; color: #666; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0; font-size: 22px; font-weight: bold; color: var(--azul); }
 
-        /* Estilos para Disgregación por Cargo */
-        .disgregacion { background: #fff; margin: 10px; padding: 12px; border-radius: 10px; font-size: 12px; border-left: 5px solid var(--naranja); }
-        .cargo-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #eee; }
+        .disgregacion { background: #fff; margin: 10px; padding: 15px; border-radius: 12px; border-left: 6px solid var(--naranja); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .cargo-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .cargo-item b { color: var(--azul); }
 
         .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        label { font-size: 11px; font-weight: bold; color: var(--azul); display: block; margin-top: 8px; }
+        label { font-size: 11px; font-weight: bold; color: var(--azul); display: block; margin-top: 10px; text-transform: uppercase; }
+        select, input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
         
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-gestion { background: #5d6d7e; font-size: 11px; margin-bottom: 10px; }
-        .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .fila-retraso { background-color: #fff0f0 !important; color: var(--rojo); font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         th { background: var(--azul); color: white; padding: 10px; }
         td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
-        .vigi-text { color: var(--naranja); font-weight: bold; font-size: 12px; margin-bottom: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://i.ibb.co/m5YhXqK/logo-escuela.png" alt="Logo EBNLP" class="logo-img" onerror="this.src='https://via.placeholder.com/60?text=EBNLP'">
-    <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO DE PERSONAL 2026</p>
+    <div class="logo-circulo">
+        <img src="https://i.ibb.co/m5YhXqK/logo-escuela.png" alt="Logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png'">
+    </div>
+    <h2 style="margin:0; letter-spacing: 1px;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:0; font-size:12px; opacity: 0.8;">CONTROL ESTRICTO DE ASISTENCIA</p>
 </header>
 
 <div class="stats-grid">
     <div class="stat-card"><h4>Asistencia General</h4><p id="stPor">0%</p></div>
-    <div class="stat-card"><h4>Presentes Hoy</h4><p id="stPre">0</p></div>
+    <div class="stat-card"><h4>Retardos Hoy</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
 </div>
 
-<div class="disgregacion" id="listaCargos">
-    <strong>📊 ASISTENCIA POR CARGO:</strong>
-    <div class="cargo-item"><span>Docentes:</span> <span id="res-Docente">0/0 (0%)</span></div>
-    <div class="cargo-item"><span>Obreros:</span> <span id="res-Obrero">0/0 (0%)</span></div>
-    <div class="cargo-item"><span>Administrativos:</span> <span id="res-Administrativo">0/0 (0%)</span></div>
-    <div class="cargo-item"><span>Cocineras:</span> <span id="res-Cocinera">0/0 (0%)</span></div>
-    <div class="cargo-item"><span>Vigilantes:</span> <span id="res-Vigilante">0/0 (0%)</span></div>
+<div class="disgregacion">
+    <strong style="color:var(--azul); display:block; margin-bottom:10px;">📊 DETALLE POR CARGO (Presentes/Total):</strong>
+    <div id="cont-cargos">
+        </div>
 </div>
 
 <div class="card">
-    <div id="infoVigi" class="vigi-text">...</div>
-    
-    <label>Personal:</label>
-    <select id="nomIn" onchange="autoData()"><option value="">-- Seleccione --</option></select>
+    <label>Seleccionar Personal:</label>
+    <select id="nomIn" onchange="autoData()"><option value="">-- Buscando Personal... --</option></select>
     
     <div style="display:flex; gap:10px">
-        <input type="text" id="carIn" placeholder="Cargo" readonly>
-        <input type="text" id="turIn" placeholder="Turno" readonly>
+        <input type="text" id="carIn" placeholder="Cargo" readonly style="background:#f9f9f9">
+        <input type="text" id="turIn" placeholder="Turno" readonly style="background:#f9f9f9">
     </div>
 
-    <label>Estatus Administrativo:</label>
+    <label>Estatus:</label>
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
-        <option value="RETRASO">RETRASO 🕒</option>
         <option value="VACACIONES">VACACIONES 🌴</option>
         <option value="REPOSO">REPOSO MÉDICO 🏥</option>
         <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
@@ -79,44 +81,19 @@
         <option value="FALTA">INASISTENCIA ❌</option>
     </select>
 
-    <label>Hora de Llegada/Salida (Manual):</label>
+    <label>Hora de Marcaje (Manual):</label>
     <input type="time" id="horaManual">
 
-    <div style="display:flex; gap:10px; margin-top:10px">
+    <div style="display:flex; gap:10px">
         <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
         <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">SALIDA</button>
     </div>
 </div>
 
-<div class="card">
-    <button class="btn btn-gestion" onclick="document.getElementById('pNom').classList.toggle('hidden')">⚙️ GESTIONAR INGRESOS / EGRESOS</button>
-    <div id="pNom" class="hidden">
-        <h4>Añadir Personal Nuevo</h4>
-        <input type="text" id="newN" placeholder="Nombre Completo">
-        <select id="newC">
-            <option value="Docente">Docente</option>
-            <option value="Obrero">Obrero</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Cocinera">Cocinera</option>
-            <option value="Vigilante">Vigilante</option>
-        </select>
-        <select id="newT">
-            <option value="MAÑANA">Mañana</option>
-            <option value="TARDE">Tarde</option>
-            <option value="ROTATIVO">Rotativo</option>
-        </select>
-        <button class="btn" style="background:var(--azul)" onclick="dbGestion('ADD')">Guardar en Nube</button>
-        <hr>
-        <h4>Retirar de Nómina</h4>
-        <select id="delN"></select>
-        <button class="btn" style="background:var(--rojo)" onclick="dbGestion('DEL')">Eliminar</button>
-    </div>
-</div>
-
 <div class="card" style="overflow-x:auto">
-    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 DESCARGAR REPORTE EXCEL</button>
+    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 DESCARGAR REPORTE DÍA</button>
     <table id="tablaRep">
-        <thead><tr><th>NOMBRE</th><th>HORA</th><th>CARGO</th><th>ESTATUS</th></tr></thead>
+        <thead><tr><th>TRABAJADOR</th><th>HORA</th><th>CARGO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
@@ -133,39 +110,32 @@
     const hoy = new Date().toLocaleDateString('en-CA');
     let nominaCloud = [];
 
-    // Colocar hora actual al cargar
-    function initHora() {
-        const ahora = new Date();
-        document.getElementById('horaManual').value = String(ahora.getHours()).padStart(2, '0') + ":" + String(ahora.getMinutes()).padStart(2, '0');
+    // --- REGLA DE CERO TOLERANCIA ---
+    function evaluarRetraso(cargo, turno, horaM) {
+        const [h, m] = horaM.split(':').map(Number);
+        const t = h * 60 + m; 
+        if (turno === "MAÑANA") {
+            if (cargo === "Docente" && t > 420) return "RETRASO"; // 7:00
+            if ((cargo === "Obrero" || cargo === "Administrativo") && t > 405) return "RETRASO"; // 6:45
+            if (cargo === "Cocinera" && t > 420) return "RETRASO"; // 7:00
+        } else if (turno === "TARDE") {
+            if (cargo === "Docente" && t > 720) return "RETRASO"; // 12:00
+            if (cargo === "Obrero" && t > 690) return "RETRASO"; // 11:30
+            if (cargo === "Administrativo" && t > 720) return "RETRASO"; // 12:00
+        }
+        return "ASISTENCIA";
     }
 
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nominaCloud = [];
-        const sel = document.getElementById('nomIn'), del = document.getElementById('delN');
-        sel.innerHTML = '<option value="">-- Seleccione --</option>';
-        del.innerHTML = '<option value="">-- Seleccionar para eliminar --</option>';
+        const sel = document.getElementById('nomIn');
+        sel.innerHTML = '<option value="">-- Seleccione Trabajador --</option>';
         snap.forEach(doc => {
-            const p = doc.data(); p.id = doc.id;
-            nominaCloud.push(p);
-            const opt = `<option value="${p.n}">${p.n}</option>`;
-            sel.innerHTML += opt; del.innerHTML += opt;
+            nominaCloud.push(doc.data());
+            sel.innerHTML += `<option value="${doc.data().n}">${doc.data().n}</option>`;
         });
         actualizarEstadisticas();
     });
-
-    async function dbGestion(tipo) {
-        if(tipo === 'ADD') {
-            const n = document.getElementById('newN').value.toUpperCase();
-            const c = document.getElementById('newC').value, t = document.getElementById('newT').value;
-            if(!n) return alert("Nombre Requerido");
-            await db.collection("nomina_institucional").add({n, c, t});
-            document.getElementById('newN').value = "";
-        } else {
-            const val = document.getElementById('delN').value;
-            const p = nominaCloud.find(x => x.n === val);
-            if(p && confirm("¿Eliminar a " + p.n + "?")) await db.collection("nomina_institucional").doc(p.id).delete();
-        }
-    }
 
     function autoData() {
         const p = nominaCloud.find(x => x.n === document.getElementById('nomIn').value);
@@ -174,58 +144,59 @@
 
     async function registrar(tipo) {
         const n = document.getElementById('nomIn').value, hM = document.getElementById('horaManual').value;
-        const est = document.getElementById('estIn').value, cargo = document.getElementById('carIn').value;
-        if(!n || !hM) return alert("Complete los datos");
-        
-        const [h, m] = hM.split(':');
-        const hF = `${(h%12)||12}:${m} ${h>=12?'PM':'AM'}`;
+        const cargo = document.getElementById('carIn').value, turno = document.getElementById('turIn').value;
+        let est = document.getElementById('estIn').value;
 
-        await db.collection("asistencia_ebnlp_2026").add({
-            n, c: cargo, f: hoy, e: est, h: hF, tipo: tipo
+        if(!n || !hM) return alert("Error: Seleccione personal y hora.");
+
+        if (tipo === 'IN' && est === "ASISTENCIA") {
+            est = evaluarRetraso(cargo, turno, hM);
+        }
+
+        const hF = `${(hM.split(':')[0]%12)||12}:${hM.split(':')[1]} ${hM.split(':')[0]>=12?'PM':'AM'}`;
+
+        await db.collection("asistencia_ebnlp_final").add({
+            n, c: cargo, t: turno, f: hoy, e: est, h: hF, tipo: tipo, ts: Date.now()
         });
         actualizarEstadisticas();
     }
 
     async function actualizarEstadisticas() {
-        const snap = await db.collection("asistencia_ebnlp_2026").where("f", "==", hoy).get();
-        const asistencias = {};
-        let totalPre = 0;
+        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", hoy).orderBy("ts", "desc").get();
+        const res = { Docente:0, Obrero:0, Administrativo:0, Cocinera:0, Vigilante:0 };
+        let totalP = 0, totalR = 0;
         
-        // Limpiar tabla y contadores
         document.getElementById('cuerpo').innerHTML = "";
-        const cargos = ["Docente", "Obrero", "Administrativo", "Cocinera", "Vigilante"];
-        cargos.forEach(c => asistencias[c] = 0);
-
         snap.forEach(doc => {
             const d = doc.data();
-            if(d.e === "ASISTENCIA" || d.e === "RETRASO") {
-                totalPre++;
-                if(asistencias[d.c] !== undefined) asistencias[d.c]++;
+            const esR = d.e === "RETRASO";
+            if(d.e === "ASISTENCIA" || esR) {
+                totalP++; if(esR) totalR++;
+                res[d.c]++;
             }
-            document.getElementById('cuerpo').innerHTML += `<tr><td>${d.n}</td><td>${d.h}</td><td>${d.c}</td><td>${d.e}</td></tr>`;
+            document.getElementById('cuerpo').innerHTML += `<tr class="${esR ? 'fila-retraso' : ''}"><td>${d.n}</td><td>${d.h}</td><td>${d.c}</td><td>${d.e}</td></tr>`;
         });
 
-        // Actualizar Disgregación
-        cargos.forEach(c => {
-            const totalCargo = nominaCloud.filter(p => p.c === c).length;
-            const pres = asistencias[c];
-            const por = totalCargo > 0 ? ((pres/totalCargo)*100).toFixed(0) : 0;
-            document.getElementById(`res-${c}`).innerText = `${pres}/${totalCargo} (${por}%)`;
+        // Disgregación Dinámica
+        let disgHTML = "";
+        ["Docente", "Obrero", "Administrativo", "Cocinera", "Vigilante"].forEach(c => {
+            const totC = nominaCloud.filter(p => p.c === c).length;
+            disgHTML += `<div class="cargo-item"><span>${c}s</span> <b>${res[c]}/${totC}</b></div>`;
         });
+        document.getElementById('cont-cargos').innerHTML = disgHTML;
 
-        document.getElementById('stPre').innerText = totalPre;
-        document.getElementById('stPor').innerText = nominaCloud.length > 0 ? ((totalPre/nominaCloud.length)*100).toFixed(1) + "%" : "0%";
-        
-        // Vigilancia
-        const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
-        document.getElementById('infoVigi').innerText = "📅 HOY TOCA: " + (diff%2===0 ? "GRUPO A (Osmil, Daher, Pedro, Moises)" : "GRUPO B (Cesar, Juan, Guillermo, Darwin, Joseyver)");
+        document.getElementById('stPre').innerText = totalP;
+        document.getElementById('stRet').innerText = totalR;
+        document.getElementById('stPor').innerText = nominaCloud.length > 0 ? ((totalP/nominaCloud.length)*100).toFixed(1) + "%" : "0%";
     }
 
     function descargarExcel() {
-        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaRep')), `EBNLP_${hoy}.xlsx`);
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaRep')), `EBNLP_Control_${hoy}.xlsx`);
     }
 
-    initHora();
+    // Hora actual por defecto
+    const ahora = new Date();
+    document.getElementById('horaManual').value = String(ahora.getHours()).padStart(2, '0') + ":" + String(ahora.getMinutes()).padStart(2, '0');
     setTimeout(actualizarEstadisticas, 1000);
 </script>
 </body>
