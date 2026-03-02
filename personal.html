@@ -3,78 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Sistema Integral 2026</title>
+    <title>EBNLP - Sistema Integral de Asistencia</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 40px; }
         
+        /* 1. PARÁMETRO LOGO (Corregido: Círculo blanco para que no se vea azul) */
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
-        .logo-box { width: 80px; height: 80px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--naranja); overflow: hidden; }
+        .logo-box { width: 85px; height: 85px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--naranja); overflow: hidden; }
         .logo-box img { width: 85%; height: auto; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
-        .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .stat-card p { margin: 5px 0; font-size: 20px; font-weight: bold; color: var(--azul); }
-
-        .vigi-panel { background: white; margin: 10px; padding: 15px; border-radius: 12px; border: 1px solid #ddd; }
-        .grupo-v { padding: 8px; border-radius: 8px; margin: 5px 0; font-size: 13px; border: 1px solid transparent; }
-        .v-activo { background: #fff3e0; border-color: var(--naranja); color: #d35400; font-weight: bold; box-shadow: 0 2px 5px rgba(243, 156, 18, 0.2); }
-        .v-espera { opacity: 0.5; background: #f9f9f9; color: #999; }
-
+        /* 2. PARÁMETRO DISGREGACIÓN POR CARGOS */
+        .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
         .disgregacion { background: #fff; margin: 10px; padding: 15px; border-radius: 12px; border-left: 6px solid var(--naranja); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .cargo-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+        .cargo-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        /* 3. PARÁMETRO VIGILANCIA RESALTADA */
+        .vigi-panel { background: white; margin: 10px; padding: 15px; border-radius: 12px; border: 1px solid #ddd; }
+        .vigi-hoy { background: #fff3e0; border: 2px solid var(--naranja); color: #d35400; font-weight: bold; padding: 10px; border-radius: 8px; margin-bottom: 5px; }
+        .vigi-espera { opacity: 0.5; font-size: 12px; padding: 5px 10px; }
+
+        .card { background: white; margin: 10px; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         label { font-size: 11px; font-weight: bold; color: var(--azul); display: block; margin-top: 10px; text-transform: uppercase; }
         select, input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-gestion { background: #5d6d7e; font-size: 11px; }
-        .hidden { display: none; }
+        .btn-green { background: var(--verde); }
+        .btn-red { background: var(--rojo); }
+        .btn-blue { background: var(--azul); }
         
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        .retraso-celda { color: var(--rojo); font-weight: bold; background-color: #fff5f5; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 15px; }
         th { background: var(--azul); color: white; padding: 10px; }
         td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
-        .retraso-celda { color: var(--rojo); font-weight: bold; background-color: #fff5f5; }
     </style>
 </head>
 <body>
 
 <header>
     <div class="logo-box">
-        <img src="https://i.ibb.co/m5YhXqK/logo-escuela.png" alt="Logo EBNLP" onerror="this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png'">
+        <img src="https://i.ibb.co/XSbL8w4/logo-oficial-ebnlp.png" alt="Logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/167/167707.png'">
     </div>
     <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO DE PERSONAL 2026</p>
+    <p style="margin:0; font-size:11px;">CONTROL TÉCNICO DE ASISTENCIA 2026</p>
 </header>
 
-<div class="stats-grid">
-    <div class="stat-card"><h4>Asistencia General</h4><p id="stPor">0%</p></div>
+<div class="stats-container">
+    <div class="stat-card"><h4>Porcentaje General</h4><p id="stPor">0%</p></div>
     <div class="stat-card"><h4>Retardos Hoy</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
 </div>
 
 <div class="disgregacion">
-    <strong style="color:var(--azul);">📊 ASISTENCIA POR CARGO (Presentes/Total):</strong>
-    <div id="cont-cargos" style="margin-top:10px;"></div>
+    <strong>📊 ASISTENCIA POR CARGO:</strong>
+    <div id="listaCargos" style="margin-top:8px;"></div>
 </div>
 
 <div class="vigi-panel">
     <div style="font-weight:bold; color:var(--azul); margin-bottom:10px; text-align:center;">🛡️ ROL DE VIGILANCIA</div>
-    <div id="vA" class="grupo-v">⭐ GRUPO A: Osmil, Daher, Pedro, Moises</div>
-    <div id="vB" class="grupo-v">⭐ GRUPO B: Cesar, Juan, Guillermo, Darwin, Joseyver</div>
+    <div id="vigiA"><b>GRUPO A:</b> Osmil, Daher, Pedro, Moises</div>
+    <div id="vigiB"><b>GRUPO B:</b> Cesar, Juan, Guillermo, Darwin, Joseyver</div>
 </div>
 
 <div class="card">
-    <label>Personal (De guardia hoy resaltados con *):</label>
-    <select id="nomIn" onchange="autoData()"><option value="">-- Seleccione --</option></select>
+    <label>Trabajador:</label>
+    <select id="nomIn" onchange="autoCargarDatos()"><option value="">-- Seleccionar --</option></select>
     
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly style="background:#f9f9f9">
         <input type="text" id="turIn" placeholder="Turno" readonly style="background:#f9f9f9">
     </div>
+
+    <label>Hora de Registro (Manual):</label>
+    <input type="time" id="horaManual">
 
     <label>Estatus Administrativo:</label>
     <select id="estIn">
@@ -85,20 +90,14 @@
         <option value="FALTA">INASISTENCIA ❌</option>
     </select>
 
-    <label>Parámetro de Hora (Manual):</label>
-    <input type="time" id="horaManual">
-
-    <div style="display:flex; gap:10px">
-        <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">REGISTRAR ENTRADA</button>
-        <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">REGISTRAR SALIDA</button>
-    </div>
+    <button class="btn btn-green" onclick="registrar()">REGISTRAR ENTRADA / SALIDA</button>
 </div>
 
 <div class="card">
-    <button class="btn btn-gestion" onclick="document.getElementById('pGestion').classList.toggle('hidden')">⚙️ GESTIÓN DE INGRESOS Y EGRESOS</button>
+    <button class="btn btn-blue" onclick="document.getElementById('pGestion').classList.toggle('hidden')" style="font-size:11px;">⚙️ GESTIÓN DE NÓMINA (INGRESOS/EGRESOS)</button>
     <div id="pGestion" class="hidden">
-        <h4>Añadir a Nómina</h4>
-        <input type="text" id="newN" placeholder="Nombre Completo">
+        <h4>Añadir Personal (Ingreso)</h4>
+        <input type="text" id="newN" placeholder="Nombre y Apellido">
         <select id="newC">
             <option value="Docente">Docente</option>
             <option value="Obrero">Obrero</option>
@@ -109,25 +108,25 @@
         <select id="newT">
             <option value="MAÑANA">Mañana</option>
             <option value="TARDE">Tarde</option>
-            <option value="ROTATIVO">Rotativo</option>
         </select>
-        <button class="btn" style="background:var(--azul)" onclick="dbGestion('ADD')">Guardar en Base de Datos</button>
+        <button class="btn btn-blue" onclick="dbGestion('ADD')">Guardar en Nómina</button>
         <hr>
-        <h4>Eliminar de Nómina</h4>
+        <h4>Dar de Baja (Egreso)</h4>
         <select id="delN"></select>
-        <button class="btn" style="background:var(--rojo)" onclick="dbGestion('DEL')">Dar de Baja (Egreso)</button>
+        <button class="btn btn-red" onclick="dbGestion('DEL')">Eliminar Permanentemente</button>
     </div>
 </div>
 
 <div class="card" style="overflow-x:auto">
-    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 DESCARGAR REPORTE EXCEL</button>
-    <table id="tablaRep">
+    <button class="btn btn-blue" onclick="descargarExcel()">📥 EXPORTAR EXCEL</button>
+    <table id="tablaExcel">
         <thead><tr><th>NOMBRE</th><th>HORA</th><th>ESTATUS</th><th>CARGO</th></tr></thead>
-        <tbody id="cuerpo"></tbody>
+        <tbody id="cuerpoTabla"></tbody>
     </table>
 </div>
 
 <script>
+    // FIREBASE CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -139,47 +138,35 @@
     const hoy = new Date().toLocaleDateString('en-CA');
     let nominaCloud = [];
 
-    const vigiA = ["OSMIL", "DAHER", "PEDRO", "MOISES"];
-    const vigiB = ["CESAR", "JUAN", "GUILLERMO", "DARWIN", "JOSEYVER"];
-
-    function getTurno() {
-        const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
-        return (diff % 2 === 0) ? "A" : "B";
-    }
-
-    // REGLA ESTRICTA DE RETARDOS
-    function esRetraso(cargo, turno, horaM) {
+    // 6. PARÁMETROS DE RETRASO (Cero Tolerancia)
+    function detectarRetraso(cargo, turno, horaM) {
         const [h, m] = horaM.split(':').map(Number);
-        const t = h * 60 + m; 
+        const min = h * 60 + m; 
         if (turno === "MAÑANA") {
-            if (cargo === "Docente" && t > 420) return "RETRASO";
-            if ((cargo === "Obrero" || cargo === "Administrativo") && t > 405) return "RETRASO";
-            if (cargo === "Cocinera" && t > 420) return "RETRASO";
+            if (cargo === "Docente" && min > 420) return "RETRASO"; // 7:00 AM
+            if ((cargo === "Obrero" || cargo === "Administrativo") && min > 405) return "RETRASO"; // 6:45 AM
+            if (cargo === "Cocinera" && min > 420) return "RETRASO"; // 7:00 AM
         } else if (turno === "TARDE") {
-            if (cargo === "Docente" && t > 720) return "RETRASO";
-            if (cargo === "Obrero" && t > 690) return "RETRASO";
-            if (cargo === "Administrativo" && t > 720) return "RETRASO";
+            if (cargo === "Docente" && min > 720) return "RETRASO"; // 12:00 PM
+            if (cargo === "Obrero" && min > 690) return "RETRASO"; // 11:30 AM
+            if (cargo === "Administrativo" && min > 720) return "RETRASO"; // 12:00 PM
         }
         return "ASISTENCIA";
     }
 
+    // GESTIÓN DE NÓMINA
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nominaCloud = [];
         const sel = document.getElementById('nomIn'), del = document.getElementById('delN');
-        const turnoHoy = getTurno();
-        const activos = (turnoHoy === "A") ? vigiA : vigiB;
-        
-        sel.innerHTML = '<option value="">-- Seleccione --</option>';
-        del.innerHTML = '<option value="">-- Seleccionar --</option>';
-        
+        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
+        del.innerHTML = '<option value="">-- Seleccionar para eliminar --</option>';
         snap.forEach(doc => {
             const p = doc.data(); p.id = doc.id;
             nominaCloud.push(p);
-            const esVigiDeTurno = activos.some(n => p.n.toUpperCase().includes(n)) ? "* " : "";
-            const opt = `<option value="${p.n}">${esVigiDeTurno}${p.n}</option>`;
+            const opt = `<option value="${p.n}">${p.n}</option>`;
             sel.innerHTML += opt; del.innerHTML += opt;
         });
-        actualizarUI();
+        actualizarPantalla();
     });
 
     async function dbGestion(tipo) {
@@ -191,71 +178,67 @@
         } else {
             const val = document.getElementById('delN').value;
             const p = nominaCloud.find(x => x.n === val);
-            if(p && confirm("¿Confirmar Egreso de " + p.n + "?")) await db.collection("nomina_institucional").doc(p.id).delete();
+            if(p && confirm("¿Eliminar a " + p.n + " de la nómina?")) await db.collection("nomina_institucional").doc(p.id).delete();
         }
     }
 
-    function autoData() {
+    function autoCargarDatos() {
         const p = nominaCloud.find(x => x.n === document.getElementById('nomIn').value);
         if(p) { document.getElementById('carIn').value = p.c; document.getElementById('turIn').value = p.t; }
     }
 
-    async function registrar(tipo) {
-        const n = document.getElementById('nomIn').value, hM = document.getElementById('horaManual').value;
+    async function registrar() {
+        const n = document.getElementById('nomIn').value, h = document.getElementById('horaManual').value;
         const cargo = document.getElementById('carIn').value, turno = document.getElementById('turIn').value;
         let est = document.getElementById('estIn').value;
 
-        if(!n || !hM) return alert("Faltan parámetros");
-        if (tipo === 'IN' && est === "ASISTENCIA") est = esRetraso(cargo, turno, hM);
+        if(!n || !h) return alert("Debe ingresar la HORA MANUAL");
 
-        const hF = `${(hM.split(':')[0]%12)||12}:${hM.split(':')[1]} ${hM.split(':')[0]>=12?'PM':'AM'}`;
+        if(est === "ASISTENCIA") est = detectarRetraso(cargo, turno, h);
 
         await db.collection("asistencia_ebnlp_final").add({
-            n, c: cargo, t: turno, f: hoy, e: est, h: hF, tipo, ts: Date.now()
+            n, c: cargo, t: turno, f: hoy, e: est, h: h, ts: Date.now()
         });
-        actualizarUI();
+        alert("Registro guardado como: " + est);
     }
 
-    async function actualizarUI() {
+    async function actualizarPantalla() {
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", hoy).orderBy("ts", "desc").get();
         const res = { Docente:0, Obrero:0, Administrativo:0, Cocinera:0, Vigilante:0 };
         let totalP = 0, totalR = 0;
         
-        document.getElementById('cuerpo').innerHTML = "";
+        document.getElementById('cuerpoTabla').innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
             const esR = d.e === "RETRASO";
             if(d.e === "ASISTENCIA" || esR) { totalP++; if(esR) totalR++; res[d.c]++; }
-            document.getElementById('cuerpo').innerHTML += `<tr class="${esR ? 'retraso-celda' : ''}"><td>${d.n}</td><td>${d.h}</td><td>${d.e}</td><td>${d.c}</td></tr>`;
+            document.getElementById('cuerpoTabla').innerHTML += `<tr class="${esR ? 'retraso-celda' : ''}"><td>${d.n}</td><td>${d.h}</td><td>${d.e}</td><td>${d.c}</td></tr>`;
         });
 
-        // Disgregación Dinámica por Parámetro de Cargo
+        // 7. DISGREGACIÓN VISUAL
         let disgHTML = "";
         ["Docente", "Obrero", "Administrativo", "Cocinera", "Vigilante"].forEach(c => {
             const totC = nominaCloud.filter(p => p.c === c).length;
-            const presC = res[c];
-            const porC = totC > 0 ? ((presC/totC)*100).toFixed(0) : 0;
-            disgHTML += `<div class="cargo-row"><span>${c}s:</span> <b>${presC}/${totC} (${porC}%)</b></div>`;
+            disgHTML += `<div class="cargo-row"><span>${c}s:</span> <b>${res[c]}/${totC}</b></div>`;
         });
-        document.getElementById('cont-cargos').innerHTML = disgHTML;
+        document.getElementById('listaCargos').innerHTML = disgHTML;
 
-        // Visualización de Vigilancia
-        const turno = getTurno();
-        document.getElementById('vA').className = (turno === "A") ? "grupo-v v-activo" : "grupo-v v-espera";
-        document.getElementById('vB').className = (turno === "B") ? "grupo-v v-activo" : "grupo-v v-espera";
+        // 8. LÓGICA VIGILANCIA (Calendario Interdiario)
+        const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
+        const turnoVigi = (diff % 2 === 0) ? "A" : "B";
+        document.getElementById('vigiA').className = (turnoVigi === "A") ? "vigi-hoy" : "vigi-espera";
+        document.getElementById('vigiB').className = (turnoVigi === "B") ? "vigi-hoy" : "vigi-espera";
 
-        document.getElementById('stPre').innerText = totalP;
         document.getElementById('stRet').innerText = totalR;
         document.getElementById('stPor').innerText = nominaCloud.length > 0 ? ((totalP/nominaCloud.length)*100).toFixed(1) + "%" : "0%";
     }
 
     function descargarExcel() {
-        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaRep')), `REPORTE_EBNLP_${hoy}.xlsx`);
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaExcel')), `Asistencia_EBNLP_${hoy}.xlsx`);
     }
-
-    const ahora = new Date();
-    document.getElementById('horaManual').value = String(ahora.getHours()).padStart(2, '0') + ":" + String(ahora.getMinutes()).padStart(2, '0');
-    setTimeout(actualizarUI, 1000);
+    
+    // Iniciar datos
+    setTimeout(actualizarPantalla, 1000);
 </script>
 </body>
 </html>
