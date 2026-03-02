@@ -3,41 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP Control Total</title>
+    <title>EBNLP - Control de Personal</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 4px solid var(--naranja); }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .stat-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border-top: 3px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .stat-card p { margin: 5px 0 0; font-size: 18px; font-weight: bold; color: var(--azul); }
-        .card { background: white; margin: 10px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        th { background: var(--azul); color: white; padding: 8px; }
-        td { border-bottom: 1px solid #ddd; padding: 8px; text-align: center; }
-        .vigilante { background-color: #e3f2fd; }
+        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --celeste: #e3f2fd; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; padding-bottom: 50px; }
+        
+        header { 
+            background: linear-gradient(180deg, var(--azul), #1a2a6c); 
+            color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); 
+        }
+        .logo-box { width: 70px; height: 70px; background: white; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--naranja); overflow: hidden; }
+        .logo-img { width: 55px; height: auto; }
+
+        /* Panel de Estadísticas */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .stat-card { background: white; padding: 12px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid var(--azul); }
+        .stat-card h4 { margin: 0; font-size: 10px; color: #666; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 22px; font-weight: bold; color: var(--azul); }
+
+        .card { background: white; margin: 0 15px 20px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; color: var(--azul); font-size: 16px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        label { display: block; font-size: 12px; font-weight: bold; margin: 10px 0 5px; color: var(--azul); }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-bottom: 10px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
+        .btn-ingreso { background: var(--verde); }
+        .btn-egreso { background: var(--naranja); }
+        .btn:active { transform: scale(0.95); }
+
+        .table-container { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { background: var(--azul); color: white; padding: 10px; text-align: center; }
+        td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        .vigilante-row { background-color: var(--celeste); font-weight: bold; }
+        .time-badge { background: #eee; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2 style="margin:0; font-size:16px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:2px 0 0; font-size:10px;">REGISTRO OFICIAL DE PERSONAL</p>
+    <div class="logo-box"><img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-img"></div>
+    <h1 style="margin:0; font-size:18px;">E.B.N. "LUCILA PALACIOS"</h1>
+    <p style="margin:5px 0 0; font-size:11px;">CONTROL DE ASISTENCIA EN LA NUBE</p>
 </header>
 
-<div class="stats">
+<div class="stats-grid">
     <div class="stat-card"><h4>Asistencia</h4><p id="stAsis">0%</p></div>
+    <div class="stat-card"><h4>Retardos</h4><p id="stRet">0</p></div>
     <div class="stat-card"><h4>Presentes</h4><p id="stPres">0</p></div>
+    <div class="stat-card"><h4>Plantilla</h4><p>73</p></div>
 </div>
 
 <div class="card">
-    <label>Escriba Nombre:</label>
-    <input list="listaPersonal" id="nomIn" placeholder="Buscar..." oninput="detectarCargo()">
+    <h3>📝 Registro de Jornada</h3>
+    <label>Buscar Trabajador (Escriba para filtrar):</label>
+    <input list="listaPersonal" id="nomIn" placeholder="Escriba nombre aquí..." oninput="detectarDatos()">
     
     <datalist id="listaPersonal">
         <option value="YANITZA MALAVE">
@@ -118,27 +144,31 @@
         <option value="PEDRO GONZALEZ">
     </datalist>
 
-    <div style="display:flex; gap:10px">
-        <input type="text" id="carIn" placeholder="Cargo">
-        <input type="text" id="horIn" placeholder="Horario">
+    <div style="display: flex; gap:10px">
+        <div style="flex:1"><label>Cargo:</label><input type="text" id="carIn"></div>
+        <div style="flex:1"><label>Horario:</label><input type="text" id="horIn"></div>
     </div>
 
     <div class="btn-group">
-        <button class="btn" style="background:var(--verde)" onclick="registrar('INGRESO')">ENTRADA</button>
-        <button class="btn" style="background:var(--naranja)" onclick="registrar('EGRESO')">SALIDA</button>
+        <button class="btn btn-ingreso" onclick="registrar('INGRESO')">⬇️ ENTRADA</button>
+        <button class="btn btn-egreso" onclick="registrar('EGRESO')">⬆️ SALIDA</button>
     </div>
 </div>
 
-<div class="card" style="overflow-x:auto">
-    <h3>📊 Control Diario</h3>
-    <table id="tabla">
-        <thead><tr><th>NOMBRE</th><th>CARGO</th><th>ENTRADA</th><th>SALIDA</th></tr></thead>
-        <tbody id="cuerpo"></tbody>
-    </table>
+<div class="card">
+    <h3>📊 Control del Día: <span id="fechaTexto"></span></h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>NOMBRE</th><th>CARGO</th><th>ENTRADA</th><th>SALIDA</th></tr>
+            </thead>
+            <tbody id="tablaCuerpo"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
+    // Configuración Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -148,17 +178,76 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const hoy = new Date().toLocaleDateString('en-CA');
+    document.getElementById('fechaTexto').innerText = new Date().toLocaleDateString();
 
-    function detectarCargo() {
+    function detectarDatos() {
         const n = document.getElementById('nomIn').value.toUpperCase();
         const c = document.getElementById('carIn'), h = document.getElementById('horIn');
         
-        // Parámetros basados en tus nóminas
-        if(n.includes("SUAREZ") || n.includes("CARDIER") || n.includes("ROMERO")) { c.value="Vigilante"; h.value="Rotativo"; }
-        else if(n.includes("VARGAS") || n.includes("FIGUERA") || n.includes("CAMPOS")) { c.value="Obrero"; h.value="06:45-12:45"; }
-        else if(n.includes("VALLENILLA") || n.includes("JARAMILLO")) { c.value="Cocinera"; h.value="07:00-14:00"; }
-        else if(n.includes("CARVAJAL") || n.includes("BASTARDO")) { c.value="Administrativo"; h.value="06:45-12:45"; }
-        else { c.value="Docente"; h.value="07:00-12:00"; }
+        if(n.includes("SUAREZ") || n.includes("CARDIER") || n.includes("ROMERO") || n.includes("AGUILERA")) {
+            c.value="Vigilante"; h.value="Rotativo";
+        } else if(n.includes("VARGAS") || n.includes("FIGUERA") || n.includes("VALLENILLA") || n.includes("CARVAJAL")) {
+            c.value="Personal Apoyo"; h.value="06:45 - 12:45";
+        } else {
+            c.value="Docente"; h.value="07:00 - 12:00";
+        }
     }
 
-    async function registrar
+    async function registrar(tipo) {
+        const nombre = document.getElementById('nomIn').value;
+        const cargo = document.getElementById('carIn').value;
+        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        if(!nombre) return alert("Por favor seleccione un nombre");
+
+        const ref = db.collection("asistencia_personal").where("fecha", "==", hoy).where("nombre", "==", nombre);
+        const query = await ref.get();
+
+        if (query.empty) {
+            await db.collection("asistencia_personal").add({
+                nombre, cargo, fecha: hoy,
+                ingreso: tipo === 'INGRESO' ? hora : '--',
+                egreso: tipo === 'EGRESO' ? hora : '--',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            const docId = query.docs[0].id;
+            const update = tipo === 'INGRESO' ? { ingreso: hora } : { egreso: hora };
+            await db.collection("asistencia_personal").doc(docId).update(update);
+        }
+        
+        // Limpieza rápida
+        document.getElementById('nomIn').value = "";
+        document.getElementById('carIn').value = "";
+        document.getElementById('horIn').value = "";
+        
+        cargarTabla();
+    }
+
+    async function cargarTabla() {
+        const snapshot = await db.collection("asistencia_personal").where("fecha", "==", hoy).get();
+        let html = "", presentes = 0, retardos = 0;
+
+        snapshot.forEach(doc => {
+            const d = doc.data(); presentes++;
+            if(d.ingreso.includes("AM") && d.ingreso > "07:15") retardos++;
+
+            const esVig = d.cargo.includes("Vigilante") ? 'class="vigilante-row"' : '';
+            html += `<tr ${esVig}>
+                <td><b>${d.nombre}</b></td>
+                <td>${d.cargo}</td>
+                <td><span class="time-badge">${d.ingreso || '--'}</span></td>
+                <td><span class="time-badge">${d.egreso || '--'}</span></td>
+            </tr>`;
+        });
+
+        document.getElementById('tablaCuerpo').innerHTML = html;
+        document.getElementById('stPres').innerText = presentes;
+        document.getElementById('stRet').innerText = retardos;
+        document.getElementById('stAsis').innerText = ((presentes / 73) * 100).toFixed(1) + "%";
+    }
+
+    cargarTabla();
+</script>
+</body>
+</html>
