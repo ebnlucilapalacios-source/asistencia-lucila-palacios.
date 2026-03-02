@@ -3,252 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP v14.0 - Control de Asistencia Total</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>Registro de Personal - EBNLP</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        :root { --azul: #1a2a6c; --naranja: #f39c12; --rojo: #e74c3c; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; font-size: 12px; }
-        .container { max-width: 1280px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; }
         
-        header { text-align: center; border-bottom: 5px solid var(--naranja); margin-bottom: 20px; padding-bottom: 15px; }
-        .logo { height: 100px; width: auto; display: block; margin: 0 auto 10px; }
-        
-        .stats-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-box { background: #fff; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .stat-box h2 { margin: 5px 0; color: var(--azul); font-size: 1.6rem; }
-        .stat-box p { margin: 0; font-size: 0.7rem; color: #666; font-weight: bold; text-transform: uppercase; }
+        header { 
+            background: linear-gradient(180deg, var(--azul-d), var(--azul-v)); 
+            color: white; width: 100%; text-align: center; padding: 30px 0; 
+            border-bottom: 5px solid var(--naranja); 
+        }
 
-        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
-        .card { background: white; border: 1px solid #eee; padding: 18px; border-radius: 10px; margin-bottom: 15px; }
-        
-        label { font-weight: bold; color: var(--azul); display: block; margin-top: 10px; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; box-sizing: border-box; }
-        button { background: var(--azul); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #000; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background: var(--azul); color: white; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .fila-retardo { background-color: #fff2f2 !important; color: #d9534f; font-weight: bold; }
-        .fila-asistio { background-color: #f0fff4 !important; }
-        .nocturno { background-color: #e8f4fd !important; }
+        /* LOGO CON FORZADO DE CARGA */
+        .logo-box {
+            width: 110px; height: 110px; background: white; border-radius: 50%;
+            margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;
+            border: 3px solid var(--naranja); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .logo-img { width: 90px; height: auto; display: block; }
 
-        .firmas-area { display: none; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 60px; text-align: center; }
-        .linea-firma { border-top: 2px solid #000; margin-top: 40px; padding-top: 8px; font-size: 11px; font-weight: bold; }
+        .card { 
+            background: white; width: 95%; max-width: 500px; padding: 25px; 
+            margin: -30px 10px 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
 
-        @media print { .no-print { display: none !important; } .firmas-area { display: grid !important; } }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--azul-d); }
+        select, input { 
+            width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; 
+            border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        }
+
+        .btn-guardar { 
+            background: var(--azul-v); color: white; border: none; padding: 18px; 
+            width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; 
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-guardar:active { transform: scale(0.98); }
+
+        .back-link { margin: 20px 0; text-decoration: none; color: var(--azul-v); font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="container" id="reporteArea">
-    <header>
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" alt="Logo EBNLP" class="logo" crossorigin="anonymous">
-        <h1 style="margin:0; color:var(--azul);">E.B.N. "LUCILA PALACIOS"</h1>
-        <p style="margin:0; font-weight:bold; color: #333;">SISTEMA INTEGRAL DE CONTROL DE ASISTENCIA Y VIGILANCIA</p>
-    </header>
-
-    <div class="stats-banner">
-        <div class="stat-box"><p>% Asistencia Día</p><h2 id="percDia">0%</h2></div>
-        <div class="stat-box" style="border-color: var(--naranja);"><p>Retardos Hoy</p><h2 id="retHoy">0</h2></div>
-        <div class="stat-box" style="border-color: var(--verde);"><p>% Asistencia Mes</p><h2 id="percMes">0%</h2></div>
-        <div class="stat-box" style="border-color: var(--rojo);"><p>Total Retardos Mes</p><h2 id="retMes">0 min</h2></div>
+<header>
+    <div class="logo-box">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png?t=123" 
+             class="logo-img" alt="Escudo EBNLP">
     </div>
+    <h2 style="margin:0;">SECRETARÍA E.B.N.L.P.</h2>
+    <p style="margin:5px 0 0; opacity:0.8;">Carga de Asistencia Diaria</p>
+</header>
 
-    <div class="grid">
-        <div class="side no-print">
-            <div class="card">
-                <h3 style="margin-top:0; color:var(--azul);">📋 Registro de Jornada</h3>
-                <label>Fecha Seleccionada:</label>
-                <input type="date" id="fecReg" onchange="procesar()">
-                
-                <label>Persona:</label>
-                <select id="selPers" onchange="actualizarHorarioSugerido()"></select>
-                
-                <label>Estatus:</label>
-                <select id="selEst" onchange="toggleReloj()">
-                    <option value="Asistencia">Asistencia ✅</option>
-                    <option value="Inasistencia Injustificada">Falta Injustificada ❌</option>
-                    <option value="Permiso Personal">Permiso Personal 📝</option>
-                    <option value="Reposo">Reposo 🏥</option>
-                    <option value="Vacaciones">Vacaciones 🌴</option>
-                </select>
+<div class="card">
+    <label>📅 Fecha de Registro:</label>
+    <input type="date" id="fecPers">
 
-                <div id="panelHoras">
-                    <div style="background:#fff3cd; padding:10px; border-radius:8px; margin:10px 0; font-size:11px; text-align:center;">
-                        <strong>Horario Reglamentario:</strong><br><span id="txtHorarioOfi">--</span>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <div style="flex:1;"><label>Hora Entrada:</label><input type="time" id="hEntrada"></div>
-                        <div style="flex:1;"><label>Hora Salida:</label><input type="time" id="hSalida"></div>
-                    </div>
-                </div>
+    <label>👤 Seleccione Trabajador:</label>
+    <select id="selPers">
+        <option value="">Cargando nómina...</option>
+    </select>
 
-                <button onclick="registrar()" style="background:var(--verde); margin-top:20px; height: 50px; font-size: 15px;">💾 GUARDAR REGISTRO</button>
-                <button onclick="generarReportePDF()" style="background:var(--rojo); margin-top:10px;">📄 DESCARGAR PDF DEL DÍA</button>
-            </div>
-        </div>
+    <label>✅ Estatus de Asistencia:</label>
+    <select id="estPers">
+        <option value="Asistencia">Asistencia ✅</option>
+        <option value="Inasistencia">Inasistencia ❌</option>
+        <option value="Permiso">Permiso 📝</option>
+        <option value="Reposo">Reposo Médico 🏥</option>
+    </select>
 
-        <div class="card">
-            <h3 style="text-align:center; margin-top:0;">Control Diario: <span id="fechaTit"></span></h3>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre del Trabajador</th>
-                            <th>Cargo</th>
-                            <th>H. Oficial</th>
-                            <th>H. Entrada Real</th>
-                            <th>Estatus</th>
-                            <th>Retardo</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaCuerpo"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="firmas-area" id="firmasPDF">
-        <div><div class="linea-firma">SECRETARÍA (ELABORA)</div></div>
-        <div><div class="linea-firma">SUBDIRECCIÓN (REVISA)</div></div>
-        <div><div class="linea-firma">DIRECCIÓN (SELLO)</div></div>
-    </div>
+    <button class="btn-guardar" onclick="guardarAsistencia()">GUARDAR REGISTRO</button>
 </div>
 
+<a href="index.html" class="back-link">⬅ Volver al Panel de Dirección</a>
+
 <script>
-    // Configuración Base de Horarios
-    const horariosFijos = {
-        "Docente": { e: "07:00", s: "12:00" },
-        "Obrero": { e: "06:45", s: "12:45" },
-        "Administrativo": { e: "06:45", s: "12:45" },
-        "Cocinera": { e: "07:00", s: "14:00" },
-        "Directivo": { e: "07:00", s: "15:00" }
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    const inicial = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Yuraima Bastardo,Administrativo;Mirlnis Carvajal,Administrativo;Lianna Carvajal,Administrativo;María Marchan,Administrativo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante-A;Daher Cardier,Vigilante-A;Pedro González,Vigilante-A;Moisés Romero,Vigilante-A;Cesar Suárez,Vigilante-B;Juan Vargas,Vigilante-B;Guillermo Albornoz,Vigilante-B;Darwin Aguilera,Vigilante-B;Joseyver López,Vigilante-B`;
+    // NÓMINA COMPLETA
+    const nominaRaw = `Yanitza Malave,Directivo;María Muñoz,Directivo;Karelys Yanez,Directivo;Dayana Jiménez,Docente;Lorraine Brito,Docente;Rosa Nacaratto,Docente;Neviss Guerra,Docente;Rusmary Larez,Docente;Génesis Morillo,Docente;Yunequi Valdez,Docente;Junior San Vicente,Docente;Yulimar Aguanes,Docente;Luisa Jimenez,Docente;Yomaira Cáceres,Docente;Ana David,Docente;Eliday Salazar,Docente;Roselba Terán,Docente;Yorvis Bolivar,Docente;Yubiry Martinez,Docente;Dalia Luces,Docente;Joleth Guzmán,Docente;Angel Figuera,Docente;Francelis Montaño,Docente;Gaudy Rodríguez,Docente;Magloris Fernández,Docente;Glenis Salazar,Docente;Margoris Rodríguez,Docente;Luisa Sosa,Docente;Milvida Torres,Docente;Gladys Salcedo,Docente;Yanitza Alexander,Docente;Andreina Flores,Docente;Nelida Castellanos,Docente;Onexis Rocca,Docente;Justina Fernández,Docente;Leosmary Loroño,Docente;José Shijan Brito,Docente;Mayerlin Chacon,Docente;Norelis Pérez,Obrero;Gilda Villarroel,Obrero;Ana Figuera,Obrero;Marleny Serrano,Obrero;Ruth Campos,Obrero;Dayana García,Obrero;Luisana Quintana,Obrero;Carlos Castillo,Obrero;Edgar Martinez,Obrero;Jonathan Cedeño,Obrero;Luis Figueroa,Obrero;Junior Morgado,Obrero;Naileth Vargas,Obrero;Yoelis Solorzano,Obrero;Yelitza Medina,Obrero;Evelyn Carmona,Obrero;Danielys Campos,Obrero;Jeanmaikol Díaz,Obrero;Karen Yanez,Obrero;Raiza Vallenilla,Cocinera;Genesis Camero,Cocinera;Irma Jaramillo,Cocinera;Dovelis Conde,Cocinera;Yureima Pimentel,Cocinera;Rosa Rivero,Cocinera;Marcia Guzmán,Cocinera;Osmil Sanabria,Vigilante;Daher Cardier,Vigilante;Pedro González,Vigilante;Moisés Romero,Vigilante;Cesar Suárez,Vigilante;Juan Vargas,Vigilante;Guillermo Albornoz,Vigilante;Darwin Aguilera,Vigilante;Joseyver López,Vigilante`;
+    
+    const nomina = nominaRaw.split(';').map(i => {
+        const d = i.split(',');
+        return { n: d[0], c: d[1] };
+    }).sort((a,b) => a.n.localeCompare(b.n));
 
-    let nomina = JSON.parse(localStorage.getItem('ebnlp_nom_v14')) || inicial.split(';').map(p => ({nombre: p.split(',')[0], cargo: p.split(',')[1]}));
-    let db = JSON.parse(localStorage.getItem('ebnlp_db_v14')) || { registros: [] };
+    // Llenar el selector
+    const sel = document.getElementById('selPers');
+    sel.innerHTML = '<option value="">-- Seleccione --</option>';
+    nomina.forEach(p => {
+        sel.innerHTML += `<option value="${p.n}" data-cargo="${p.c}">${p.n} (${p.c})</option>`;
+    });
 
-    function calcularHorarioOficial(p, fechaStr) {
-        const fecha = new Date(fechaStr + "T00:00:00");
-        const esFinSemana = (fecha.getDay() === 0 || fecha.getDay() === 6);
-        
-        if (p.cargo.includes("Vigilante")) {
-            const diasRef = Math.floor((fecha - new Date("2024-01-01T00:00:00")) / 86400000);
-            const gAct = (diasRef % 2 === 0) ? "Vigilante-B" : "Vigilante-A";
-            
-            // Fines de semana o vacaciones: Siempre 6pm - 6am
-            if (esFinSemana) return { e: "18:00", s: "06:00", t: "Nocturno F.S." };
-            
-            // Días normales: El grupo activo va de día, el resto de noche
-            if (p.cargo === gAct) return { e: "06:00", s: "18:00", t: "Diurno" };
-            return { e: "18:00", s: "06:00", t: "Nocturno" };
-        }
-        return { ...horariosFijos[p.cargo], t: "Estándar" };
-    }
+    document.getElementById('fecPers').valueAsDate = new Date();
 
-    function actualizarHorarioSugerido() {
-        const p = nomina[document.getElementById('selPers').value];
-        const h = calcularHorarioOficial(p, document.getElementById('fecReg').value);
-        document.getElementById('txtHorarioOfi').innerText = `${h.e} - ${h.s} (${h.t})`;
-        document.getElementById('hEntrada').value = h.e;
-        document.getElementById('hSalida').value = h.s;
-    }
+    async function guardarAsistencia() {
+        const selIdx = sel.selectedIndex;
+        const nombre = sel.value;
+        const cargo = sel.options[selIdx].getAttribute('data-cargo');
+        const fec = document.getElementById('fecPers').value;
+        const est = document.getElementById('estPers').value;
 
-    function toggleReloj() {
-        document.getElementById('panelHoras').style.display = (document.getElementById('selEst').value === "Asistencia") ? "block" : "none";
-    }
+        if(!nombre) return alert("Seleccione un trabajador");
 
-    function registrar() {
-        const id = document.getElementById('selPers').value;
-        const est = document.getElementById('selEst').value;
-        const hEnt = document.getElementById('hEntrada').value;
-        const hSal = document.getElementById('hSalida').value;
-        const fec = document.getElementById('fecReg').value;
-        const p = nomina[id];
-        
-        const hOfi = calcularHorarioOficial(p, fec);
-        let minT = 0;
-        
-        if(est === "Asistencia") {
-            const tOfi = (hOfi.e.split(':').map(Number)[0] * 60) + hOfi.e.split(':').map(Number)[1];
-            const tReal = (hEnt.split(':').map(Number)[0] * 60) + hEnt.split(':').map(Number)[1];
-            minT = tReal > tOfi ? tReal - tOfi : 0;
-        }
-
-        db.registros = db.registros.filter(r => !(r.nombre === p.nombre && r.fec === fec)); 
-        db.registros.push({ nombre: p.nombre, cargo: p.cargo, est, fec, hEnt, hSal, minT });
-        localStorage.setItem('ebnlp_db_v14', JSON.stringify(db));
-        procesar();
-    }
-
-    function procesar() {
-        const fec = document.getElementById('fecReg').value;
-        document.getElementById('fechaTit').innerText = fec;
-        const hoy = new Date(fec + "T00:00:00");
-        const tbody = document.getElementById('tablaCuerpo');
-        const sel = document.getElementById('selPers');
-        
-        tbody.innerHTML = ""; sel.innerHTML = "";
-        let asisH = 0, espH = 0, retH = 0, retM = 0, asisMes = 0, espMes = 0;
-
-        nomina.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach((p, i) => {
-            sel.innerHTML += `<option value="${i}">${p.nombre}</option>`;
-            const hOfi = calcularHorarioOficial(p, fec);
-            const reg = db.registros.find(r => r.nombre === p.nombre && r.fec === fec);
-            
-            let toca = true;
-            if(!p.cargo.includes("Vigilante") && (hoy.getDay() === 0 || hoy.getDay() === 6)) toca = false;
-            
-            if(toca) espH++;
-            if(reg && reg.est === "Asistencia") {
-                asisH++;
-                if(reg.minT > 0) retH++;
-            }
-
-            // Sumatoria Mensual
-            db.registros.forEach(r => {
-                let fr = new Date(r.fec + "T00:00:00");
-                if(r.nombre === p.nombre && fr.getMonth() === hoy.getMonth() && fr.getFullYear() === hoy.getFullYear()) {
-                    if(r.est === "Asistencia") { asisMes++; retM += r.minT; }
-                }
+        try {
+            await db.collection("asistencia_personal").doc(`${nombre}_${fec}`).set({
+                nombre, cargo, fec, est,
+                actualizado: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            let clase = (reg && reg.minT > 0) ? "fila-retardo" : (reg && reg.est === "Asistencia" ? "fila-asistio" : "");
-            if(hOfi.t.includes("Nocturno")) clase += " nocturno";
-
-            tbody.innerHTML += `<tr class="${clase}">
-                <td style="text-align:left;">${p.nombre}</td>
-                <td>${p.cargo}</td>
-                <td>${hOfi.e} - ${hOfi.s}</td>
-                <td>${reg && reg.est === "Asistencia" ? reg.hEnt : "---"}</td>
-                <td>${reg ? reg.est : (toca ? "PENDIENTE" : "LIBRE")}</td>
-                <td>${reg && reg.minT > 0 ? reg.minT + ' min' : '0'}</td>
-            </tr>`;
-        });
-
-        document.getElementById('percDia').innerText = espH > 0 ? ((asisH/espH)*100).toFixed(0) + "%" : "0%";
-        document.getElementById('retHoy').innerText = retH;
-        document.getElementById('retMes').innerText = retM + " min";
-        document.getElementById('percMes').innerText = "CALCULADO";
+            alert("✅ Registro exitoso. Datos enviados a Dirección.");
+        } catch (e) {
+            alert("Error: " + e);
+        }
     }
-
-    function generarReportePDF() {
-        document.getElementById('firmasPDF').style.display = 'grid';
-        html2pdf().set({ 
-            margin: 10, 
-            filename: `EBNLP_${document.getElementById('fecReg').value}.pdf`, 
-            html2canvas: { scale: 3, useCORS: true }, 
-            jsPDF: { unit: 'mm', format: 'letter', orientation: 'landscape' } 
-        }).from(document.getElementById('reporteArea')).save().then(()=>document.getElementById('firmasPDF').style.display = 'none');
-    }
-
-    document.getElementById('fecReg').valueAsDate = new Date();
-    procesar();
-    actualizarHorarioSugerido();
 </script>
 </body>
 </html>
