@@ -2,76 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal EBNLP</title>
+    <title>Personal - EBNLP</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
             projectId: "control-de-asistencia-d585e",
             storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            messagingSenderId: "368890880546",
             appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        window.marcar = async (id, nombre, rol, grupo) => {
-            const hoy = new Date().toISOString().split('T')[0];
-            const hora = new Date().getHours();
-            let t = (rol === 'vigilante') ? (hora >= 18 || hora < 6 ? "Nocturno" : "Especial Diurno") : "Administrativo";
-
-            await setDoc(doc(db, "asistencia_personal", hoy), { 
-                [id]: { asistio: 1, n: nombre, turno: t, h: new Date().toLocaleTimeString() } 
-            }, { merge: true });
+        window.marcar = async (id, e) => {
+            const h = new Date().toISOString().split('T')[0];
+            await setDoc(doc(db, "asistencia_personal", h), { [id]: e }, { merge: true });
         };
-
         window.escuchar = (cb) => {
-            const hoy = new Date().toISOString().split('T')[0];
-            onSnapshot(doc(db, "asistencia_personal", hoy), (d) => cb(d.data() || {}));
+            const h = new Date().toISOString().split('T')[0];
+            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data()));
         };
     </script>
 </head>
-<body style="font-family: sans-serif; text-align: center; background: #f4f7f6; margin: 0;">
-    <div style="background: #1a2a6c; color: white; padding: 20px;">
-        <h2 style="margin:0;">Asistencia Personal</h2>
-        <div id="info-g" style="background:#f39c12; color:#1a2a6c; display:inline-block; padding:5px 10px; border-radius:15px; font-weight:bold; margin-top:10px;"></div>
-        <br><br>
-        <a href="index.html" style="color: white; font-weight: bold; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 5px;">⬅ MENU PRINCIPAL</a>
+<body style="font-family: sans-serif; text-align: center; background: #f4f7f6;">
+    <div style="background: #1a2a6c; color: white; padding: 15px;">
+        <h2>Personal EBNLP</h2>
+        <a href="index.html" style="color: white;">⬅ Volver al Menú</a>
     </div>
-
-    <div id="lista" style="padding: 20px; max-width: 450px; margin: auto;"></div>
-
+    <div id="lista" style="padding: 20px; max-width: 400px; margin: auto;"></div>
     <script>
-        const staff = [
-            {id:1, n:"YANITZA GÓMEZ", rol:"admin"},
-            {id:2, n:"MARÍA ACUÑA", rol:"admin"},
-            {id:3, n:"KARELYS REYES", rol:"admin"},
-            {id:101, n:"VIGILANTE B1", rol:"vigilante", grupo:"B"},
-            {id:102, n:"VIGILANTE B2", rol:"vigilante", grupo:"B"},
-            {id:201, n:"VIGILANTE A1", rol:"vigilante", grupo:"A"},
-            {id:202, n:"VIGILANTE A2", rol:"vigilante", grupo:"A"}
-        ];
-
-        const hoy = new Date();
-        const ref = new Date("2026-02-28");
-        const gHoy = (Math.floor((hoy - ref) / 86400000) % 2 === 0) ? "A" : "B";
-        document.getElementById('info-g').innerText = "HOY: GRUPO " + gHoy;
-
-        window.escuchar((d) => {
+        const staff = [{id:1, n:"YANITZA GÓMEZ"}, {id:2, n:"MARÍA ACUÑA"}, {id:3, n:"KARELYS REYES"}];
+        function render(d = {}) {
             const c = document.getElementById('lista'); c.innerHTML = "";
             staff.forEach(s => {
-                const ya = d[s.id]?.asistio === 1;
-                const ok = s.rol === 'admin' || s.grupo === gHoy;
-                c.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:15px; background:white; border-radius:8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid ${s.rol === 'admin' ? '#3498db' : '#f39c12'}; opacity: ${ok ? '1' : '0.5'}">
-                    <div style="text-align:left;"><strong>${s.n}</strong><br><small>${s.rol.toUpperCase()}</small></div>
-                    <button onclick="marcar(${s.id}, '${s.n}', '${s.rol}', '${s.grupo}')" ${ya || !ok ? 'disabled' : ''} style="background:${ya ? '#27ae60' : (ok ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px;">${ya ? 'LISTO' : 'MARCAR'}</button>
+                const as = d[s.id] === 1;
+                c.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; padding:10px; background:white; border-radius:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <span>${s.n}</span>
+                    <button onclick="marcar(${s.id}, ${as?0:1})" style="background:${as?'#27ae60':'#ccc'}; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">${as?'REGISTRADO':'MARCAR'}</button>
                 </div>`;
             });
-        });
+        }
+        window.escuchar(render);
     </script>
 </body>
 </html>
