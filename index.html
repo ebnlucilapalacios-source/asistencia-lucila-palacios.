@@ -3,172 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consola de Dirección - EBNLP</title>
+    <title>Dirección - EBNLP</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { 
-            --azul-institucional: #0c234a; 
-            --azul-brillante: #1a2a6c; 
-            --naranja: #f39c12; 
-            --verde-exito: #27ae60; 
-            --blanco: #ffffff;
-            --gris-fondo: #f4f7f6;
-        }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--gris-fondo); padding-bottom: 80px; }
+        :root { --azul: #0c234a; --naranja: #f39c12; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 80px; }
         
-        /* Encabezado Principal (Basado en Capture 430914) */
+        /* Encabezado con Logo Corregido */
         header { 
-            background: linear-gradient(180deg, var(--azul-institucional) 0%, var(--azul-brillante) 100%); 
-            color: var(--blanco); 
+            background: linear-gradient(to bottom, #0c234a, #1a2a6c); 
+            color: white; 
             text-align: center; 
-            padding: 30px 15px; 
-            border-bottom: 6px solid var(--naranja);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            padding: 25px 10px; 
+            border-bottom: 5px solid var(--naranja); 
         }
-        .logo-escudo { 
-            width: 100px; 
-            height: 100px; 
-            background: white; 
-            border-radius: 50%; 
-            padding: 5px; 
+        .logo-circulo {
+            background: white;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: 3px solid var(--naranja);
-            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-        header h1 { margin: 0; font-size: 22px; letter-spacing: 1px; }
-        header p { margin: 5px 0 0; font-size: 12px; opacity: 0.8; }
+        .logo-img { 
+            width: 85px; 
+            height: auto;
+        }
 
-        /* Contenedores de Tarjetas */
+        /* Estilos de Tarjetas y Tablas */
         .container { padding: 15px; }
-        .card { 
-            background: var(--blanco); 
-            border-radius: 15px; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-            border-left: 8px solid var(--azul-institucional);
-        }
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 8px solid var(--azul); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; color: var(--azul); font-size: 10px; text-transform: uppercase; }
 
-        /* Sección Cuadro de Honor (Capture 430914) */
-        .cuadro-honor { border-left-color: var(--naranja); background: linear-gradient(to right, #ffffff, #fff9e6); }
-        .titulo-honor { color: var(--naranja); display: flex; align-items: center; gap: 10px; font-weight: bold; }
-
-        /* Reporte Estadístico (Capture 430916/17) */
-        .stat-box { 
-            background: var(--azul-institucional); 
-            color: white; 
-            width: 120px; 
-            height: 120px; 
-            border-radius: 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 32px; 
-            font-weight: bold; 
-            margin: 20px auto;
-            border: 4px solid var(--naranja);
-        }
-
-        /* Tablas */
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th { background-color: #f8f9fa; color: var(--azul-institucional); padding: 12px; text-align: center; border: 1px solid #dee2e6; text-transform: uppercase; font-size: 11px; }
-        td { padding: 12px; text-align: center; border: 1px solid #dee2e6; }
-        .total-row { font-weight: bold; background-color: #eee; }
-
-        /* Botón de Impresión */
-        .btn-print { 
-            background-color: var(--azul-institucional); 
-            color: white; 
-            border: none; 
-            padding: 15px; 
-            border-radius: 10px; 
-            width: 100%; 
-            font-weight: bold; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        /* Navegación Inferior */
-        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; height: 70px; }
-        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 10px; font-weight: bold; text-decoration: none; }
-        .nav-btn.active { color: var(--azul-brillante); background: #f0f4ff; border-top: 4px solid var(--azul-brillante); }
-        
-        @media print { nav, .btn-print, .no-print { display: none; } body { background: white; } .card { box-shadow: none; border: 1px solid #ccc; } }
+        /* Navegación */
+        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; z-index: 1000; }
+        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 11px; text-decoration: none; font-weight: bold; }
+        .nav-btn.active { color: #1a2a6c; background: #f0f4ff; border-top: 4px solid #1a2a6c; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo-escudo" alt="Logo">
-    <h1>E.B.N. "LUCILA PALACIOS"</h1>
-    <p>San Félix - Reporte Estadístico de Asistencia</p>
+    <div class="logo-circulo">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
+             class="logo-img" alt="Escudo EBNLP">
+    </div>
+    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:5px 0 0; font-size:11px; opacity:0.8;">Panel Maestro de Dirección</p>
 </header>
 
 <div class="container">
-    
-    <div id="sectionPersonal" class="content-section">
-        <div class="card">
-            <h3>👥 Asistencia del Personal</h3>
-            <div id="listaPersonal">Cargando datos de secretaría...</div>
-        </div>
+    <div class="card" id="vistaPersonal">
+        <h3>👥 Asistencia del Personal</h3>
+        <div id="tablaPersonal">Cargando datos...</div>
     </div>
 
-    <div id="sectionReportes" class="content-section" style="display:none;">
-        
-        <div class="card cuadro-honor">
-            <div class="titulo-honor">🏆 Cuadro de Honor</div>
-            <p id="honorText" style="text-align:center; font-style:italic; margin-top:10px;">Calculando mejor asistencia...</p>
-        </div>
-
-        <div class="card">
-            <h3 style="text-align:center; color: var(--azul-institucional);">REPORTE ESTADÍSTICO MENSUAL</h3>
-            <div class="stat-box" id="porcentajeGlobal">0%</div>
-            
-            <div class="table-responsive">
-                <p style="font-weight:bold; font-size:14px;"><span style="font-size:18px;">📊</span> Distribución por Edades y Género</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Edad</th>
-                            <th>H</th>
-                            <th>V</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaEstadistica">
-                        <tr class="total-row">
-                            <td>TOTAL</td>
-                            <td id="totalH">0</td>
-                            <td id="totalV">0</td>
-                            <td id="grandTotal">0</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <button class="btn-print" onclick="window.print()">
-                <span>🖨️</span> Imprimir para Dirección
-            </button>
-        </div>
+    <div class="card" style="border-left-color: #27ae60;">
+        <h3>🎓 Registro de Estudiantes</h3>
+        <div id="tablaAlumnos">Cargando matrícula...</div>
     </div>
 </div>
 
 <nav>
-    <a href="#" class="nav-btn active" onclick="showSec('sectionPersonal', this)"><span>👥</span>PERSONAL</a>
-    <a href="#" class="nav-btn" onclick="showSec('sectionReportes', this)"><span>📊</span>REPORTES</a>
-    <a href="personal.html" class="nav-btn"><span>⚙️</span>SECRETARÍA</a>
+    <a href="index.html" class="nav-btn active"><span>🏠</span>INICIO</a>
+    <a href="personal.html" class="nav-btn"><span>👥</span>PERSONAL</a>
+    <a href="estadistica.html" class="nav-btn"><span>📊</span>REPORTES</a>
 </nav>
 
 <script>
-    // Tu configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -178,47 +89,25 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function showSec(id, btn) {
-        document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-        btn.classList.add('active');
-    }
-
-    // Escuchar datos de Personal (Secretaría)
-    function cargarPersonal() {
-        db.collection("asistencia_personal").onSnapshot(snap => {
-            let html = "<table><thead><tr><th>Nombre</th><th>Estado</th></tr></thead><tbody>";
-            snap.forEach(doc => {
-                const d = doc.data();
-                html += `<tr><td>${d.nombre}</td><td>${d.est}</td></tr>`;
-            });
-            document.getElementById('listaPersonal').innerHTML = html + "</tbody></table>";
+    // Cargar datos de Personal
+    db.collection("asistencia_personal").onSnapshot(snap => {
+        let html = "<table><tr><th>Trabajador</th><th>Cargo</th><th>Estatus</th></tr>";
+        snap.forEach(doc => {
+            const d = doc.data();
+            html += `<tr><td><b>${d.nombre}</b></td><td>${d.cargo || '---'}</td><td>${d.est}</td></tr>`;
         });
-    }
+        document.getElementById('tablaPersonal').innerHTML = html + "</table>";
+    });
 
-    // Escuchar datos de Alumnos (Maestras / estadistica.html)
-    function cargarEstadisticas() {
-        db.collection("alumnos").onSnapshot(snap => {
-            let h = 0, v = 0;
-            snap.forEach(doc => {
-                const d = doc.data();
-                if(d.genero === "Hembra") h++; else v++;
-            });
-            
-            document.getElementById('totalH').innerText = h;
-            document.getElementById('totalV').innerText = v;
-            document.getElementById('grandTotal').innerText = h + v;
-            
-            // Simulación de porcentaje de asistencia
-            let porc = (h + v > 0) ? Math.floor(Math.random() * 20) + 80 : 0; 
-            document.getElementById('porcentajeGlobal').innerText = porc + "%";
+    // Cargar datos de Alumnos
+    db.collection("alumnos").onSnapshot(snap => {
+        let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
+        snap.forEach(doc => {
+            const a = doc.data();
+            html += `<tr><td>${a.nombre}</td><td>${a.seccion || 'S/N'}</td></tr>`;
         });
-    }
-
-    // Ejecutar al cargar
-    cargarPersonal();
-    cargarEstadisticas();
+        document.getElementById('tablaAlumnos').innerHTML = html + "</table>";
+    });
 </script>
 </body>
 </html>
