@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA INTEGRAL EBNLP 2026 - REPORTES</title>
+    <title>SISTEMA EBNLP 2026 - CONTROL TOTAL</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -24,36 +24,39 @@
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-        .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c; font-weight: bold; }
 
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; display: block; text-align: center; text-decoration: none; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; display: block; text-align: center; }
         .btn-verde { background: var(--verde); }
         .btn-azul { background: var(--azul); }
         .btn-rojo { background: var(--rojo); }
-        .btn-pdf { background: #E74C3C; } /* Color para PDF */
+        .btn-pdf { background: #E74C3C; }
         .hidden { display: none; }
-
+        
         .vigi-flex { display: flex; gap: 8px; margin-top: 5px; }
         .vigi-card { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #fafafa; }
         .vigi-activa { border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; }
+        
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <header>
     <h2 style="margin:0; font-size:18px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:2px 0 0; font-size:11px; opacity:0.9;">Control de Asistencia - Reportes Mensuales</p>
+    <p style="margin:2px 0 0; font-size:11px; opacity:0.9;">Control de Personal e Historial Mensual</p>
 </header>
 
 <div class="card stats-grid">
-    <div class="stat-box"><h4>% ASISTENCIA DIARIA</h4><p id="pTotal">0%</p></div>
-    <div class="stat-box"><h4>RETRASOS HOY</h4><p id="rTotal" style="color:var(--rojo);">0</p></div>
+    <div class="stat-box"><h4>ASISTENCIA HOY</h4><p id="pTotal">0%</p></div>
+    <div class="stat-box"><h4>RETRASOS</h4><p id="rTotal" style="color:var(--rojo);">0</p></div>
 </div>
 
 <div class="card">
-    <h3>📝 Registrar Asistencia o Permiso</h3>
+    <h3>📝 Registrar Marcaje</h3>
+    <label>Trabajador:</label>
     <select id="sPersona"></select>
-    <select id="sEstatus" style="margin-top:10px;">
+    <label>Estatus:</label>
+    <select id="sEstatus">
         <option value="ASISTENCIA">PRESENTE ✅</option>
         <option value="INASISTENCIA">INASISTENCIA ❌</option>
         <option value="PERMISO PERSONAL">PERMISO PERSONAL 📝</option>
@@ -61,37 +64,53 @@
         <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
         <option value="VACACIONES">VACACIONES 🌴</option>
     </select>
-    <input type="time" id="hEntrada" style="margin-top:10px;">
+    <label>Hora:</label>
+    <input type="time" id="hEntrada">
     <button class="btn btn-verde" onclick="guardar()">GUARDAR REGISTRO</button>
 </div>
 
 <div class="card">
-    <h3>📋 Reporte del Día</h3>
+    <h3>📊 Reportes y Exportación</h3>
+    <button class="btn btn-pdf" onclick="generarPDF('hoy')">DESCARGAR PDF DIARIO</button>
+    <button class="btn btn-pdf" style="background: #943126;" onclick="generarPDF('mes')">DESCARGAR PDF MENSUAL</button>
+    <button class="btn btn-azul" onclick="descargarExcel()">EXPORTAR EXCEL DIARIO</button>
+</div>
+
+<div class="card">
+    <h3>📋 Listado de Hoy</h3>
     <table id="tablaHoy">
         <thead><tr><th>Nombre</th><th>Estatus</th><th>Hora</th><th>Cargo</th></tr></thead>
         <tbody id="bHoy"></tbody>
     </table>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="btn btn-pdf" onclick="descargarPDF('hoy')">PDF DIARIO</button>
-        <button class="btn btn-azul" onclick="descargarExcel()">EXCEL DIARIO</button>
-    </div>
 </div>
 
 <div class="card">
-    <h3>📅 Reportes Mensuales (Marzo 2026)</h3>
-    <p style="font-size: 12px; color: #666;">Descarga el resumen consolidado de inasistencias y permisos del mes.</p>
-    <button class="btn btn-pdf" onclick="descargarPDF('mes')">DESCARGAR PDF MENSUAL (CONSOLIDADO)</button>
-    <button class="btn btn-azul" onclick="window.print()">IMPRIMIR VISTA ACTUAL</button>
-</div>
-
-<div class="card">
-    <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ PANEL DE GESTIÓN DE NÓMINA</button>
-    <div id="pAdmin" class="hidden">
-        <h4>+ Nuevo Ingreso</h4>
+    <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE NÓMINA (ALTAS/BAJAS)</button>
+    <div id="pAdmin" class="hidden" style="margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">
+        
+        <h4 style="color:var(--verde);">+ Ingreso de Personal</h4>
         <input type="text" id="nN" placeholder="Nombre Completo">
-        <select id="nC"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="Vigilante">Vigilante</option></select>
-        <select id="nT"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option><option value="VIGILANCIA DÍA">VIGILANCIA DÍA</option><option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE</option></select>
-        <button class="btn btn-verde" onclick="crear()">AÑADIR</button>
+        <select id="nC">
+            <option value="Docente">Docente</option>
+            <option value="Obrero">Obrero</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Cocinera">Cocinera</option>
+            <option value="Vigilante">Vigilante</option>
+        </select>
+        <select id="nT">
+            <option value="MAÑANA">MAÑANA</option>
+            <option value="TARDE">TARDE</option>
+            <option value="VIGILANCIA DÍA">VIGILANCIA DÍA</option>
+            <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE</option>
+        </select>
+        <button class="btn btn-verde" onclick="crear()">DAR DE ALTA</button>
+
+        <hr>
+        
+        <h4 style="color:var(--rojo);">X Egreso (Baja de Personal)</h4>
+        <p style="font-size:10px; color:#666;">Seleccione al trabajador que desea retirar de la nómina.</p>
+        <select id="sBaja"></select>
+        <button class="btn btn-rojo" onclick="eliminar()">ELIMINAR TRABAJADOR</button>
     </div>
 </div>
 
@@ -105,16 +124,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const hoy = new Date().toISOString().split('T')[0];
-    const mesActual = hoy.substring(0, 7); // "2026-03"
+    const mesActual = hoy.substring(0, 7);
     let nomina = [];
 
+    // CARGAR NÓMINA
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nomina = [];
-        const sP = document.getElementById('sPersona');
-        sP.innerHTML = '<option value="">-- Seleccionar Persona --</option>';
+        const sP = document.getElementById('sPersona'), sB = document.getElementById('sBaja');
+        sP.innerHTML = sB.innerHTML = '<option value="">-- Seleccionar --</option>';
         snap.forEach(doc => {
             const d = doc.data(); d.id = doc.id; nomina.push(d);
-            sP.innerHTML += `<option value="${d.n}">${d.n}</option>`;
+            const opt = `<option value="${d.n}">${d.n}</option>`;
+            sP.innerHTML += opt; sB.innerHTML += opt;
         });
         actualizarUI();
     });
@@ -124,7 +145,7 @@
         const p = nomina.find(x => x.n === n);
         if(!n) return;
         await db.collection("asistencia_ebnlp_final").add({ n, c:p.c, t:p.t, h:h||"--", e, f:hoy, ts:Date.now(), mes:mesActual });
-        alert("Guardado");
+        alert("✅ Registro Guardado");
     }
 
     function actualizarUI() {
@@ -135,44 +156,61 @@
                 const d = doc.data();
                 if(d.e==="RETRASO") r++;
                 if(d.e==="ASISTENCIA" || d.e==="RETRASO") p++;
-                bHoy.innerHTML += `<tr class="${d.e==='RETRASO'?'fila-retraso':''}"><td>${d.n}</td><td>${d.e}</td><td>${d.h}</td><td>${d.c}</td></tr>`;
+                bHoy.innerHTML += `<tr><td>${d.n}</td><td>${d.e}</td><td>${d.h}</td><td>${d.c}</td></tr>`;
             });
             document.getElementById('rTotal').innerText = r;
             document.getElementById('pTotal').innerText = nomina.length > 0 ? Math.round((p/nomina.length)*100)+"%" : "0%";
         });
     }
 
-    async function descargarPDF(tipo) {
+    // PDF PROFESIONAL
+    async function generarPDF(tipo) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        doc.setFontSize(16); doc.text("E.B.N. LUCILA PALACIOS", 105, 15, { align: "center" });
+        doc.setFontSize(10); doc.text(tipo==='hoy' ? `REPORTE DIARIO: ${hoy}` : `REPORTE MENSUAL: ${mesActual}`, 105, 22, { align: "center" });
+
+        const data = [];
+        const query = (tipo==='hoy') ? db.collection("asistencia_ebnlp_final").where("f","==",hoy) : db.collection("asistencia_ebnlp_final").where("mes","==",mesActual);
         
-        doc.setFontSize(16);
-        doc.text("E.B.N. LUCILA PALACIOS", 105, 15, { align: "center" });
-        doc.setFontSize(12);
-        
-        if (tipo === 'hoy') {
-            doc.text(`Reporte de Asistencia Diaria: ${hoy}`, 105, 22, { align: "center" });
-            const data = [];
-            const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", hoy).get();
-            snap.forEach(d => data.push([d.data().n, d.data().e, d.data().h, d.data().c]));
-            doc.autoTable({ head: [['Nombre', 'Estatus', 'Hora', 'Cargo']], body: data, startY: 30 });
-            doc.save(`Reporte_Diario_${hoy}.pdf`);
-        } else {
-            doc.text(`Reporte Consolidado Mensual: ${mesActual}`, 105, 22, { align: "center" });
-            const data = [];
-            const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mesActual).get();
-            snap.forEach(d => data.push([d.data().n, d.data().f, d.data().e, d.data().c]));
-            doc.autoTable({ head: [['Nombre', 'Fecha', 'Estatus', 'Cargo']], body: data, startY: 30 });
-            doc.save(`Reporte_Mensual_${mesActual}.pdf`);
-        }
+        const snap = await query.get();
+        snap.forEach(d => {
+            const v = d.data();
+            data.push([v.n, v.f, v.e, v.h, v.c]);
+        });
+
+        doc.autoTable({
+            head: [['Nombre', 'Fecha', 'Estatus', 'Hora', 'Cargo']],
+            body: data,
+            startY: 30,
+            theme: 'grid'
+        });
+
+        // Línea de firma
+        const finalY = doc.lastAutoTable.finalY + 30;
+        doc.line(20, finalY, 80, finalY);
+        doc.text("Firma del Director(a)", 50, finalY + 5, { align: "center" });
+        doc.line(130, finalY, 190, finalY);
+        doc.text("Sello Institucional", 160, finalY + 5, { align: "center" });
+
+        doc.save(`EBNLP_${tipo}_${hoy}.pdf`);
     }
 
     function descargarExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaHoy')), `EBNLP_${hoy}.xlsx`); }
-    
+
     async function crear() {
         const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, t = document.getElementById('nT').value;
         if(n) await db.collection("nomina_institucional").add({ n, c, t, g: "A" });
-        document.getElementById('nN').value = "";
+        document.getElementById('nN').value = ""; alert("Registrado");
+    }
+
+    async function eliminar() {
+        const n = document.getElementById('sBaja').value;
+        const p = nomina.find(x => x.n === n);
+        if(p && confirm(`¿Seguro que desea retirar a ${n} de la nómina?`)) {
+            await db.collection("nomina_institucional").doc(p.id).delete();
+            alert("Eliminado");
+        }
     }
 </script>
 </body>
