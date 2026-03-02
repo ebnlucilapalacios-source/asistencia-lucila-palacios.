@@ -3,59 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Consola Maestra</title>
+    <title>EBNLP - Consola Maestra de Dirección</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --azul-d: #0c234a; --azul-v: #1a2a6c; --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 80px; }
-        header { background: linear-gradient(to bottom, var(--azul-d), var(--azul-v)); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
-        .logo { height: 60px; margin-bottom: 10px; }
-        
-        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; height: 65px; }
-        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; color: #666; font-size: 10px; font-weight: bold; text-decoration: none; }
-        .nav-btn.active { color: var(--azul-v); background: #f0f4ff; border-top: 4px solid var(--azul-v); }
-        .nav-btn span { font-size: 20px; }
+        :root { 
+            --azul-d: #0c234a; --azul-v: #1a2a6c; 
+            --naranja: #f39c12; --verde: #27ae60; --gris: #f4f7f6; 
+        }
 
-        .section { display: none; padding: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 80px; }
+        
+        /* HEADER CORREGIDO PARA EL LOGO */
+        header { 
+            background: linear-gradient(to bottom, var(--azul-d), var(--azul-v)); 
+            color: white; 
+            text-align: center; 
+            padding: 25px 15px; 
+            border-bottom: 5px solid var(--naranja); 
+        }
+        .logo-container {
+            background: white;
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--naranja);
+            overflow: hidden;
+        }
+        .logo { 
+            width: 80px; 
+            height: auto;
+            display: block;
+        }
+
+        /* NAVEGACIÓN */
+        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; height: 70px; }
+        .nav-btn { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666; font-size: 10px; font-weight: bold; text-decoration: none; }
+        .nav-btn.active { color: var(--azul-v); background: #f0f4ff; border-top: 4px solid var(--azul-v); }
+        .nav-btn span { font-size: 24px; margin-bottom: 2px; }
+
+        /* SECCIONES */
+        .section { display: none; padding: 15px; animation: fadeIn 0.4s; }
         .section.active { display: block; }
-        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-left: 8px solid var(--azul-v); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 8px solid var(--azul-v); }
         
-        /* Tabla Detallada */
-        .table-container { overflow-x: auto; }
+        /* TABLA DE PERSONAL COMPLETA */
+        .table-container { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background: #f8f9fa; color: var(--azul-d); text-transform: uppercase; font-size: 9px; }
+        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: left; }
+        th { background: #f8f9fa; color: var(--azul-d); text-transform: uppercase; font-size: 9px; letter-spacing: 1px; }
         
-        .badge { padding: 4px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; }
-        .bg-asis { background: #e6ffed; color: #27ae60; }
-        .bg-falta { background: #fff1f0; color: #e74c3c; }
-        .bg-permiso { background: #fff7e6; color: #d48806; }
+        .badge { padding: 5px 8px; border-radius: 6px; font-weight: bold; font-size: 9px; display: inline-block; }
+        .bg-asis { background: #e6ffed; color: #27ae60; border: 1px solid #b7eb8f; }
+        .bg-falta { background: #fff1f0; color: #e74c3c; border: 1px solid #ffa39e; }
+        .bg-permiso { background: #fff7e6; color: #d48806; border: 1px solid #ffe58f; }
+
+        input[type="date"] { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #ddd; font-size: 14px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" class="logo">
-    <h2 style="margin:0;">DIRECCIÓN EBNLP</h2>
+    <div class="logo-container">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios/main/IMG_20260225_005025_993.png" 
+             alt="Logo EBNLP" class="logo" onerror="this.src='https://via.placeholder.com/80?text=EBNLP'">
+    </div>
+    <h2 style="margin:0; font-size: 18px;">DIRECCIÓN E.B.N.L.P.</h2>
+    <p style="margin:5px 0 0; font-size:10px; opacity:0.9;">CONTROL INTEGRAL DE PERSONAL Y ALUMNOS</p>
 </header>
 
 <div id="secPersonal" class="section active">
     <div class="card">
-        <h3>👥 Datos Completos del Personal</h3>
-        <input type="date" id="filtroFec" onchange="cargarDataPersonalCompleta()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:10px;">
+        <h3 style="margin-top:0; color: var(--azul-d);">📅 Reporte de Personal</h3>
+        <input type="date" id="filtroFec" onchange="cargarDataPersonalCompleta()">
     </div>
     
     <div class="card">
         <div class="table-container">
-            <table id="tablaCompleta">
+            <table>
                 <thead>
                     <tr>
-                        <th>Trabajador</th>
-                        <th>Cargo</th>
-                        <th>Estado</th>
-                        <th>Registrado el</th>
+                        <th>TRABAJADOR / CARGO</th>
+                        <th>ESTADO</th>
+                        <th>REGISTRO</th>
                     </tr>
                 </thead>
                 <tbody id="cuerpoTabla">
@@ -67,8 +105,8 @@
 
 <div id="secAlumnos" class="section">
     <div class="card" style="border-left-color: var(--verde);">
-        <h3>🎓 Registro de Alumnos</h3>
-        <div id="tablaAlumnos">Cargando...</div>
+        <h3 style="margin-top:0; color: var(--verde);">🎓 Matrícula de Estudiantes</h3>
+        <div id="tablaAlumnos">Cargando alumnos registrados...</div>
     </div>
 </div>
 
@@ -79,6 +117,7 @@
 </nav>
 
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -95,7 +134,7 @@
         el.classList.add('active');
     }
 
-    // FUNCIÓN PARA VER TODO LO DE PERSONAL.HTML
+    // CARGAR TODO LO QUE REGISTRA LA SECRETARIA
     function cargarDataPersonalCompleta() {
         const fec = document.getElementById('filtroFec').value;
         db.collection("asistencia_personal").where("fec", "==", fec).onSnapshot(snap => {
@@ -103,38 +142,46 @@
             snap.forEach(doc => {
                 const r = doc.data();
                 
-                // Color del badge según estatus
+                // Determinar color del Estatus
                 let cls = 'bg-asis';
-                if(r.est.includes("Inasistencia") || r.est.includes("Falta")) cls = 'bg-falta';
-                if(r.est.includes("Permiso")) cls = 'bg-permiso';
+                if(r.est.toLowerCase().includes("inasistencia") || r.est.toLowerCase().includes("falta")) cls = 'bg-falta';
+                if(r.est.toLowerCase().includes("permiso") || r.est.toLowerCase().includes("reposo")) cls = 'bg-permiso';
 
-                // Formatear fecha de registro (si existe)
-                let hora = r.actualizado ? new Date(r.actualizado.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '---';
+                // Obtener hora si existe el campo actualizado o fecha_registro
+                let timestamp = r.actualizado || r.fecha_registro;
+                let hora = "---";
+                if(timestamp) {
+                    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                    hora = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
 
                 html += `
                 <tr>
-                    <td><b>${r.nombre}</b></td>
-                    <td><small>${r.cargo || 'No asignado'}</small></td>
+                    <td>
+                        <div style="font-weight:bold; color:#333; font-size:12px;">${r.nombre}</div>
+                        <div style="color:#777; font-size:10px;">${r.cargo || 'Personal'}</div>
+                    </td>
                     <td><span class="badge ${cls}">${r.est}</span></td>
-                    <td>${hora}</td>
+                    <td style="color:#999; font-size:10px; text-align:center;">${hora}</td>
                 </tr>`;
             });
-            document.getElementById('cuerpoTabla').innerHTML = html || "<tr><td colspan='4'>Sin registros para esta fecha</td></tr>";
+            document.getElementById('cuerpoTabla').innerHTML = html || "<tr><td colspan='3' style='text-align:center; padding:20px;'>No hay registros para este día</td></tr>";
         });
     }
 
-    // Lógica Alumnos
+    // CARGAR ALUMNOS DE LAS MAESTRAS
     function cargarDataAlumnos() {
         db.collection("alumnos").onSnapshot(snap => {
-            let html = "<table><tr><th>Alumno</th><th>Sección</th></tr>";
+            let html = "<table><thead><tr><th>NOMBRE DEL ALUMNO</th><th>SECCIÓN</th></tr></thead><tbody>";
             snap.forEach(doc => {
                 const a = doc.data();
-                html += `<tr><td>${a.nombre}</td><td>${a.seccion || 'S/N'}</td></tr>`;
+                html += `<tr><td style="font-weight:bold;">${a.nombre}</td><td>${a.seccion || 'N/A'}</td></tr>`;
             });
-            document.getElementById('tablaAlumnos').innerHTML = html + "</table>";
+            document.getElementById('tablaAlumnos').innerHTML = html + "</tbody></table>";
         });
     }
 
+    // Iniciar con fecha de hoy
     document.getElementById('filtroFec').valueAsDate = new Date();
     cargarDataPersonalCompleta();
     cargarDataAlumnos();
