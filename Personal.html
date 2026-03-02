@@ -2,104 +2,194 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Asistencia Grupos - EBNLP</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-            projectId: "control-de-asistencia-d585e",
-            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-            messagingSenderId: "368890880546",
-            appId: "1:368890880546:web:a97ab4372dea536217207b"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.marcar = async (id, nombre, grupo) => {
-            const hoy = new Date();
-            const fechaDoc = hoy.toISOString().split('T')[0];
-            const hora = hoy.getHours();
-            
-            // Lógica de horario nocturno o especial
-            let turno = (hora >= 18 || hora < 6) ? "Nocturno (6pm-6am)" : "Especial Diurno (Feriado/Vacaciones)";
-
-            await setDoc(doc(db, "asistencia_personal", fechaDoc), { 
-                [id]: { nombre, grupo, hora: hoy.toLocaleTimeString(), turno } 
-            }, { merge: true });
-            alert(`Asistencia registrada: ${nombre} (${grupo})`);
-        };
-
-        window.escuchar = (cb) => {
-            const h = new Date().toISOString().split('T')[0];
-            onSnapshot(doc(db, "asistencia_personal", h), (d) => cb(d.data() || {}));
-        };
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBNLP - Sistema Cloud 2026</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --azul: #0c234a; --naranja: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 30px; }
+        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+        .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
+        .stat-card h4 { margin: 0; font-size: 10px; color: #666; }
+        .stat-card p { margin: 5px 0; font-size: 18px; font-weight: bold; color: var(--azul); }
+        .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.3s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-gestion { background: #5d6d7e; font-size: 11px; margin-bottom: 10px; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
+        th { background: var(--azul); color: white; padding: 10px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
+        .fila-vaca { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
+    </style>
 </head>
-<body style="font-family: 'Segoe UI', sans-serif; text-align: center; background: #eceff1; margin: 0;">
+<body>
 
-    <div style="background: #1a2a6c; color: white; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
-        <h2 style="margin:0;">Control de Vigilancia EBNLP</h2>
-        <div id="info-turno" style="margin-top: 10px; font-weight: bold; background: #f39c12; display: inline-block; padding: 5px 15px; border-radius: 20px;">
-            Cargando turno...
-        </div>
+<header>
+    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <p style="margin:0; font-size:11px;">SISTEMA DE NÓMINA Y ASISTENCIA EN LA NUBE</p>
+</header>
+
+<div class="stats-grid">
+    <div class="stat-card"><h4>Asistencia Real</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Nómina Total</h4><p id="stTotal">0</p></div>
+    <div class="stat-card"><h4>Presentes</h4><p id="stPre">0</p></div>
+    <div class="stat-card"><h4>Vacaciones</h4><p id="stVaca" style="color:#1565c0">0</p></div>
+</div>
+
+<div class="card">
+    <button class="btn btn-gestion" onclick="document.getElementById('panelG').classList.toggle('hidden')">⚙️ PANEL DE INGRESOS Y EGRESOS (NÓMINA)</button>
+    <div id="panelG" class="hidden">
+        <h4 style="margin:0">➕ Registrar Ingreso (Nuevo Trabajador)</h4>
+        <input type="text" id="newN" placeholder="Nombre Completo">
+        <select id="newC">
+            <option value="Docente">Docente</option>
+            <option value="Obrero">Obrero</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="Cocinera">Cocinera</option>
+            <option value="Vigilante">Vigilante</option>
+        </select>
+        <select id="newT">
+            <option value="MAÑANA">Mañana</option>
+            <option value="TARDE">Tarde</option>
+            <option value="ROTATIVO">Rotativo</option>
+        </select>
+        <button class="btn" style="background:var(--verde)" onclick="dbGestion('ADD')">Guardar en la Nube</button>
+        <hr style="margin:20px 0">
+        <h4 style="margin:0">➖ Registrar Egreso (Retirar Personal)</h4>
+        <select id="delN"><option value="">-- Seleccionar para eliminar --</option></select>
+        <button class="btn" style="background:var(--rojo)" onclick="dbGestion('DEL')">Eliminar Definitivamente</button>
     </div>
+</div>
 
-    <div id="lista" style="padding: 20px; max-width: 500px; margin: auto;"></div>
+<div class="card">
+    <label><b>Personal Institucional:</b></label>
+    <select id="nomIn" onchange="autoData()"><option value="">-- Cargando lista... --</option></select>
+    <div style="display:flex; gap:10px">
+        <input type="text" id="carIn" placeholder="Cargo" readonly>
+        <input type="text" id="turIn" placeholder="Turno" readonly>
+    </div>
+    <label><b>Estatus Administrativo:</b></label>
+    <select id="estIn">
+        <option value="ASISTENCIA">PRESENTE ✅</option>
+        <option value="RETRASO">RETRASO 🕒</option>
+        <option value="VACACIONES">VACACIONES 🌴</option>
+        <option value="REPOSO">REPOSO MÉDICO 🏥</option>
+        <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
+        <option value="PERMISO">PERMISO 📝</option>
+        <option value="FALTA">INASISTENCIA ❌</option>
+    </select>
+    <div style="display:flex; gap:10px">
+        <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
+        <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">SALIDA</button>
+    </div>
+</div>
 
-    <script>
-        // 1. Configuración de Grupos
-        const staff = [
-            {id: 101, n: "VIGILANTE B1", grupo: "B"},
-            {id: 102, n: "VIGILANTE B2", grupo: "B"},
-            {id: 201, n: "VIGILANTE A1", grupo: "A"},
-            {id: 202, n: "VIGILANTE A2", grupo: "A"}
-        ];
+<div class="card" style="overflow-x:auto">
+    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 EXPORTAR REPORTE A EXCEL</button>
+    <table id="tablaRep">
+        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>ESTATUS</th></tr></thead>
+        <tbody id="cuerpo"></tbody>
+    </table>
+</div>
 
-        // 2. Lógica para determinar el grupo del día
-        // Usamos una fecha de referencia (Ejemplo: 1 de Marzo 2026 es Grupo B)
-        function obtenerGrupoDelDia() {
-            const hoy = new Date();
-            const inicio = new Date("2026-03-01"); // Fecha base: Hoy es Grupo B
-            const diferenciaDias = Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24));
-            
-            // Si la diferencia es par (0, 2, 4...), es Grupo B. Si es impar, es Grupo A.
-            return (diferenciaDias % 2 === 0) ? "B" : "A";
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const hoy = new Date().toLocaleDateString('en-CA');
+    let nominaCloud = [];
+
+    // 1. ESCUCHAR LA NÓMINA DESDE FIREBASE (TIEMPO REAL)
+    db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
+        nominaCloud = [];
+        const sel = document.getElementById('nomIn'), del = document.getElementById('delN');
+        sel.innerHTML = '<option value="">-- Seleccione Trabajador --</option>';
+        del.innerHTML = '<option value="">-- Seleccionar para eliminar --</option>';
+        
+        snap.forEach(doc => {
+            const p = doc.data();
+            p.id = doc.id;
+            nominaCloud.push(p);
+            const opt = `<option value="${p.n}">${p.n} (${p.c})</option>`;
+            sel.innerHTML += opt; del.innerHTML += opt;
+        });
+        document.getElementById('stTotal').innerText = nominaCloud.length;
+        actualizarEstadisticas();
+    });
+
+    // 2. GESTIÓN DE INGRESOS Y EGRESOS EN LA NUBE
+    async function dbGestion(tipo) {
+        if(tipo === 'ADD') {
+            const n = document.getElementById('newN').value.toUpperCase();
+            const c = document.getElementById('newC').value, t = document.getElementById('newT').value;
+            if(!n) return alert("Nombre obligatorio");
+            await db.collection("nomina_institucional").add({n, c, t});
+            document.getElementById('newN').value = "";
+        } else {
+            const val = document.getElementById('delN').value;
+            const p = nominaCloud.find(x => x.n === val);
+            if(p && confirm("¿Eliminar a " + p.n + " de la nómina?")) {
+                await db.collection("nomina_institucional").doc(p.id).delete();
+            }
         }
+        alert("Nube actualizada correctamente.");
+    }
 
-        const grupoActivo = obtenerGrupoDelDia();
-        document.getElementById('info-turno').innerText = `HOY LE TOCA AL: GRUPO ${grupoActivo}`;
+    function autoData() {
+        const p = nominaCloud.find(x => x.n === document.getElementById('nomIn').value);
+        if(p) { document.getElementById('carIn').value = p.c; document.getElementById('turIn').value = p.t; }
+    }
 
-        function render(dataFirebase) {
-            const contenedor = document.getElementById('lista'); 
-            contenedor.innerHTML = "";
-
-            staff.forEach(p => {
-                const registro = dataFirebase[p.id];
-                const yaMarco = !!registro;
-                const esSuTurno = p.grupo === grupoActivo;
-
-                contenedor.innerHTML += `
-                    <div style="display:flex; flex-direction:column; margin-bottom:15px; padding:15px; background:white; border-radius:8px; border-left: 8px solid ${esSuTurno ? '#27ae60' : '#bdc3c7'}; opacity: ${esSuTurno ? '1' : '0.6'}">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="text-align:left;">
-                                <strong style="display:block;">${p.n}</strong>
-                                <small>Grupo: ${p.grupo}</small>
-                            </div>
-                            <button onclick="marcar(${p.id}, '${p.n}', '${p.grupo}')" 
-                                    ${yaMarco || !esSuTurno ? 'disabled' : ''}
-                                    style="background:${yaMarco ? '#27ae60' : (esSuTurno ? '#1a2a6c' : '#ccc')}; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">
-                                ${yaMarco ? 'REGISTRADO' : (esSuTurno ? 'MARCAR' : 'NO TOCA')}
-                            </button>
-                        </div>
-                    </div>`;
-            });
+    async function registrar(tipo) {
+        const n = document.getElementById('nomIn').value, est = document.getElementById('estIn').value;
+        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        if(!n) return;
+        const ref = db.collection("asistencia_cloud_2026").where("f", "==", hoy).where("n", "==", n);
+        const q = await ref.get();
+        const data = { n, c: document.getElementById('carIn').value, f: hoy, e: est };
+        if(q.empty) {
+            data.in = (tipo === 'IN') ? hora : '--'; data.out = (tipo === 'OUT') ? hora : '--';
+            await db.collection("asistencia_cloud_2026").add(data);
+        } else {
+            const upd = (tipo === 'IN') ? { in: hora, e: est } : { out: hora, e: est };
+            await db.collection("asistencia_cloud_2026").doc(q.docs[0].id).update(upd);
         }
+        actualizarEstadisticas();
+    }
 
-        window.escuchar(render);
-    </script>
+    async function actualizarEstadisticas() {
+        const snap = await db.collection("asistencia_cloud_2026").where("f", "==", hoy).get();
+        let html = "", pres = 0, vaca = 0;
+        snap.forEach(doc => {
+            const d = doc.data();
+            if(d.e === "ASISTENCIA" || d.e === "RETRASO") pres++;
+            if(d.e === "VACACIONES") vaca++;
+            html += `<tr class="${d.e==='VACACIONES'?'fila-vaca':''}"><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.e}</td></tr>`;
+        });
+        document.getElementById('cuerpo').innerHTML = html;
+        document.getElementById('stPre').innerText = pres;
+        document.getElementById('stVaca').innerText = vaca;
+        const totalEfectivo = nominaCloud.length - vaca;
+        document.getElementById('stPor').innerText = totalEfectivo > 0 ? ((pres/totalEfectivo)*100).toFixed(1) + "%" : "0%";
+    }
+
+    function descargarExcel() {
+        const wb = XLSX.utils.table_to_book(document.getElementById('tablaRep'));
+        XLSX.writeFile(wb, `EBNLP_Reporte_${hoy}.xlsx`);
+    }
+    
+    // Iniciar estadísticas al cargar
+    setTimeout(actualizarEstadisticas, 1000);
+</script>
 </body>
 </html>
