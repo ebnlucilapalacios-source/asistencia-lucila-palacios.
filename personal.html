@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBNLP 2026 - CONTROL INTEGRAL</title>
+    <title>SISTEMA EBNLP 2026 - CONTROL TOTAL</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -14,18 +14,15 @@
         .card { background: white; margin: 12px; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h3 { margin-top: 0; color: var(--azul); border-bottom: 2px solid var(--naranja); padding-bottom: 5px; font-size: 15px; }
         
-        /* ESTADISTICAS */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-box { background: white; padding: 10px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); }
         .stat-box p { font-size: 24px; font-weight: bold; margin: 5px 0; color: var(--azul); }
 
-        /* TABLAS */
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
         .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c; font-weight: bold; }
 
-        /* FORMULARIOS */
         label { display: block; font-weight: bold; margin-top: 8px; font-size: 11px; color: #444; }
         select, input { width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; }
@@ -35,7 +32,6 @@
         .btn-naranja { background: var(--naranja); }
         .hidden { display: none; }
 
-        /* VIGILANCIA */
         .vigi-container { display: flex; gap: 10px; margin-top: 5px; }
         .vigi-card { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #fafafa; }
         .vigi-activa { border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; box-shadow: 0 0 8px rgba(243, 156, 18, 0.4); }
@@ -45,7 +41,7 @@
 
 <header>
     <h2>E.B.N. "LUCILA PALACIOS"</h2>
-    <p>Sistema de Control Escolar y Vigilancia Rotativa 2026</p>
+    <p>Control de Asistencia y Vigilancia Rotativa</p>
 </header>
 
 <div class="card stats-grid">
@@ -54,15 +50,15 @@
 </div>
 
 <div class="card">
-    <h3>🛡️ Vigilancia (Rotación 6am-6pm / 6pm-6am)</h3>
+    <h3>🛡️ Grupos de Vigilancia (Rotación 12h)</h3>
     <div class="vigi-container">
-        <div id="vA" class="vigi-card"><b>GRUPO A</b><div id="listA">Cargando...</div></div>
-        <div id="vB" class="vigi-card"><b>GRUPO B</b><div id="listB">Cargando...</div></div>
+        <div id="vA" class="vigi-card"><b>GRUPO A</b><div id="listA">...</div></div>
+        <div id="vB" class="vigi-card"><b>GRUPO B</b><div id="listB">...</div></div>
     </div>
 </div>
 
 <div class="card">
-    <h3>📝 Registro de Marcaje</h3>
+    <h3>📝 Registrar Marcaje</h3>
     <label>Trabajador:</label>
     <select id="sPersonal"></select>
     <label>Hora de Entrada:</label>
@@ -71,10 +67,10 @@
 </div>
 
 <div class="card">
-    <button class="btn btn-azul" onclick="document.getElementById('admin').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL Y GRUPOS</button>
+    <button class="btn btn-azul" onclick="document.getElementById('admin').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL Y TURNOS</button>
     <div id="admin" class="hidden" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
         
-        <h4>+ Nuevo Ingreso de Personal</h4>
+        <h4>+ Alta de Nuevo Personal</h4>
         <input type="text" id="nN" placeholder="Nombre Completo">
         <select id="nC">
             <option value="Docente">Docente</option>
@@ -83,13 +79,15 @@
             <option value="Cocinera">Cocinera</option>
             <option value="Vigilante">Vigilante</option>
         </select>
+        
+        <label>Asignar Turno Específico:</label>
         <select id="nT">
-            <option value="MAÑANA">MAÑANA (7:00 AM)</option>
-            <option value="TARDE">TARDE (12:00 PM)</option>
-            <option value="VIGILANCIA DÍA">VIGILANCIA DÍA (6:00 AM)</option>
-            <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE (6:00 PM)</option>
+            <option value="MAÑANA">MAÑANA (Escolar)</option>
+            <option value="TARDE">TARDE (Escolar)</option>
+            <option value="VIGILANCIA DÍA">VIGILANCIA DÍA (6am - 6pm)</option>
+            <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE (6pm - 6am)</option>
         </select>
-        <button class="btn btn-verde" onclick="ingreso()">DAR DE ALTA</button>
+        <button class="btn btn-verde" onclick="ingreso()">REGISTRAR EN NÓMINA</button>
 
         <hr>
         <h4 style="color:var(--naranja);">🔄 Mover Vigilante de Grupo</h4>
@@ -99,10 +97,10 @@
         <button class="btn btn-naranja" onclick="moverVigi()">CAMBIAR DE GRUPO</button>
 
         <hr>
-        <h4 style="color:var(--rojo);">X Borrar Personal</h4>
+        <h4 style="color:var(--rojo);">X Acciones de Limpieza</h4>
         <select id="sE"></select>
         <button class="btn btn-rojo" onclick="baja()">ELIMINAR DE NÓMINA</button>
-        <button class="btn btn-rojo" style="margin-top:20px; opacity:0.6;" onclick="limpiar()">LIMPIAR PRUEBAS</button>
+        <button class="btn btn-rojo" style="margin-top:20px; opacity:0.6;" onclick="limpiar()">BORRAR DATOS DE PRUEBA</button>
     </div>
 </div>
 
@@ -127,7 +125,6 @@
     const hoy = new Date().toISOString().split('T')[0];
     let nomina = [];
 
-    // CARGAR DATOS
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nomina = [];
         const sP = document.getElementById('sPersonal'), sE = document.getElementById('sE'), sV = document.getElementById('sVigi');
@@ -161,9 +158,10 @@
     async function ingreso() {
         const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, t = document.getElementById('nT').value;
         if(!n) return;
+        // Al ingresar personal, guardamos el nombre, cargo, turno y grupo A por defecto
         await db.collection("nomina_institucional").add({ n, c, t, g: "A" });
         document.getElementById('nN').value = "";
-        alert("Ingresado");
+        alert("✅ " + n + " registrado en turno " + t);
     }
 
     async function guardar() {
@@ -172,14 +170,14 @@
         if(!n || !h) return;
         let e = "ASISTENCIA", hN = parseInt(h.replace(":",""));
         
-        // Lógica de Retrasos por Turno
-        if(p.t === "MAÑANA" && hN > 700) e = "RETRASO";
-        else if(p.t === "TARDE" && hN > 1200) e = "RETRASO";
-        else if(p.t === "VIGILANCIA DÍA" && hN > 600) e = "RETRASO";
-        else if(p.t === "VIGILANCIA NOCHE" && hN > 1800) e = "RETRASO";
+        // Lógica de Retrasos Automática según el turno guardado
+        if(p.t === "MAÑANA" && hN > 715) e = "RETRASO";
+        else if(p.t === "TARDE" && hN > 1215) e = "RETRASO";
+        else if(p.t === "VIGILANCIA DÍA" && hN > 615) e = "RETRASO";
+        else if(p.t === "VIGILANCIA NOCHE" && hN > 1815) e = "RETRASO";
 
         await db.collection("asistencia_ebnlp_final").add({ n, c:p.c, t:p.t, h, e, f:hoy, ts:Date.now() });
-        alert("Marcado: " + e);
+        alert("Marcado como: " + e);
     }
 
     function actualizar() {
@@ -194,7 +192,6 @@
             document.getElementById('rTot').innerText = r;
             document.getElementById('pTot').innerText = nomina.length > 0 ? Math.round((p/nomina.length)*100)+"%" : "0%";
             
-            // Resaltado de Vigilancia Interdiaria
             const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
             const t = (diff % 2 === 0) ? "A" : "B";
             document.getElementById('vA').className = (t === "A") ? "vigi-card vigi-activa" : "vigi-card";
@@ -209,12 +206,13 @@
     }
 
     async function limpiar() {
+        if(!confirm("¿Borrar historial de asistencia?")) return;
         const s = await db.collection("asistencia_ebnlp_final").get();
         const b = db.batch(); s.forEach(d => b.delete(d.ref)); await b.commit();
         alert("Limpio");
     }
 
-    function descargar() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tableR')), `EBNLP_${hoy}.xlsx`); }
+    function descargar() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tableR')), `Reporte_EBNLP_${hoy}.xlsx`); }
 </script>
 </body>
 </html>
