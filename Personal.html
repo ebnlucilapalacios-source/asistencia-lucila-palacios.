@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBNLP - Sistema Cloud 2026</title>
+    <title>EBNLP - Control Manual y Cloud</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,67 +13,45 @@
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
         .stat-card { background: white; padding: 12px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-top: 4px solid var(--azul); }
-        .stat-card h4 { margin: 0; font-size: 10px; color: #666; }
         .stat-card p { margin: 5px 0; font-size: 18px; font-weight: bold; color: var(--azul); }
         .card { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         select, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.3s; }
-        .btn:active { transform: scale(0.98); }
-        .btn-gestion { background: #5d6d7e; font-size: 11px; margin-bottom: 10px; }
+        label { font-size: 12px; font-weight: bold; color: var(--azul); display: block; margin-top: 10px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .hidden { display: none; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; background: white; }
         th { background: var(--azul); color: white; padding: 10px; }
         td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; }
-        .fila-vaca { background-color: #e3f2fd; color: #1565c0; font-weight: bold; }
+        .alerta-retraso { color: var(--rojo); font-weight: bold; }
+        .vigi-box { background: #fff3e0; padding: 10px; border-radius: 8px; border: 1px solid var(--naranja); text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
 <header>
     <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:0; font-size:11px;">SISTEMA DE NÓMINA Y ASISTENCIA EN LA NUBE</p>
+    <p style="margin:0; font-size:11px;">CONTROL MANUAL DE ASISTENCIA Y VIGILANCIA</p>
 </header>
 
 <div class="stats-grid">
-    <div class="stat-card"><h4>Asistencia Real</h4><p id="stPor">0%</p></div>
-    <div class="stat-card"><h4>Nómina Total</h4><p id="stTotal">0</p></div>
+    <div class="stat-card"><h4>Asistencia</h4><p id="stPor">0%</p></div>
+    <div class="stat-card"><h4>Retrasos</h4><p id="stRet" style="color:var(--rojo)">0</p></div>
     <div class="stat-card"><h4>Presentes</h4><p id="stPre">0</p></div>
-    <div class="stat-card"><h4>Vacaciones</h4><p id="stVaca" style="color:#1565c0">0</p></div>
+    <div class="stat-card"><h4>Total Personal</h4><p id="stTotal">0</p></div>
 </div>
 
 <div class="card">
-    <button class="btn btn-gestion" onclick="document.getElementById('panelG').classList.toggle('hidden')">⚙️ PANEL DE INGRESOS Y EGRESOS (NÓMINA)</button>
-    <div id="panelG" class="hidden">
-        <h4 style="margin:0">➕ Registrar Ingreso (Nuevo Trabajador)</h4>
-        <input type="text" id="newN" placeholder="Nombre Completo">
-        <select id="newC">
-            <option value="Docente">Docente</option>
-            <option value="Obrero">Obrero</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="Cocinera">Cocinera</option>
-            <option value="Vigilante">Vigilante</option>
-        </select>
-        <select id="newT">
-            <option value="MAÑANA">Mañana</option>
-            <option value="TARDE">Tarde</option>
-            <option value="ROTATIVO">Rotativo</option>
-        </select>
-        <button class="btn" style="background:var(--verde)" onclick="dbGestion('ADD')">Guardar en la Nube</button>
-        <hr style="margin:20px 0">
-        <h4 style="margin:0">➖ Registrar Egreso (Retirar Personal)</h4>
-        <select id="delN"><option value="">-- Seleccionar para eliminar --</option></select>
-        <button class="btn" style="background:var(--rojo)" onclick="dbGestion('DEL')">Eliminar Definitivamente</button>
-    </div>
-</div>
+    <div id="infoVigi" class="vigi-box">Cargando turnos de vigilancia...</div>
 
-<div class="card">
-    <label><b>Personal Institucional:</b></label>
-    <select id="nomIn" onchange="autoData()"><option value="">-- Cargando lista... --</option></select>
+    <label>Trabajador:</label>
+    <select id="nomIn" onchange="autoData()"><option value="">-- Seleccione --</option></select>
+    
     <div style="display:flex; gap:10px">
         <input type="text" id="carIn" placeholder="Cargo" readonly>
         <input type="text" id="turIn" placeholder="Turno" readonly>
     </div>
-    <label><b>Estatus Administrativo:</b></label>
+
+    <label>Estatus:</label>
     <select id="estIn">
         <option value="ASISTENCIA">PRESENTE ✅</option>
         <option value="RETRASO">RETRASO 🕒</option>
@@ -83,16 +61,20 @@
         <option value="PERMISO">PERMISO 📝</option>
         <option value="FALTA">INASISTENCIA ❌</option>
     </select>
-    <div style="display:flex; gap:10px">
+
+    <label>Hora de Registro (Manual):</label>
+    <input type="time" id="horaManual">
+
+    <div style="display:flex; gap:10px; margin-top:15px;">
         <button class="btn" style="background:var(--verde)" onclick="registrar('IN')">ENTRADA</button>
         <button class="btn" style="background:var(--naranja)" onclick="registrar('OUT')">SALIDA</button>
     </div>
 </div>
 
 <div class="card" style="overflow-x:auto">
-    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 EXPORTAR REPORTE A EXCEL</button>
+    <button class="btn" style="background:var(--azul)" onclick="descargarExcel()">📥 DESCARGAR REPORTE EXCEL</button>
     <table id="tablaRep">
-        <thead><tr><th>NOMBRE</th><th>IN</th><th>OUT</th><th>ESTATUS</th></tr></thead>
+        <thead><tr><th>NOMBRE</th><th>HORA</th><th>CARGO</th><th>ESTATUS</th></tr></thead>
         <tbody id="cuerpo"></tbody>
     </table>
 </div>
@@ -109,41 +91,48 @@
     const hoy = new Date().toLocaleDateString('en-CA');
     let nominaCloud = [];
 
-    // 1. ESCUCHAR LA NÓMINA DESDE FIREBASE (TIEMPO REAL)
+    // Colocar la hora actual por defecto en el campo manual
+    function setHoraActual() {
+        const ahora = new Date();
+        const hora = String(ahora.getHours()).padStart(2, '0');
+        const min = String(ahora.getMinutes()).padStart(2, '0');
+        document.getElementById('horaManual').value = `${hora}:${min}`;
+    }
+
+    function mostrarTurnoVigilancia() {
+        const fechaInicio = new Date("2026-03-02");
+        const diff = Math.floor((new Date() - fechaInicio) / (1000 * 60 * 60 * 24));
+        const grupo = (diff % 2 === 0) ? "GRUPO A (Osmil, Daher, Pedro, Moises)" : "GRUPO B (Cesar, Juan, Guillermo, Darwin, Joseyver)";
+        document.getElementById('infoVigi').innerHTML = `📅 VIGILANCIA HOY:<br><span style="color:var(--azul)">${grupo}</span>`;
+    }
+
+    function verificarRetrasoManual(cargo, turno, horaM) {
+        const [h, m] = horaM.split(':').map(Number);
+        const tiempo = h * 60 + m;
+
+        if(turno === "MAÑANA") {
+            if(cargo === "Docente" && tiempo > (7 * 60 + 15)) return true;
+            if((cargo === "Obrero" || cargo === "Administrativo") && tiempo > (6 * 60 + 45)) return true;
+            if(cargo === "Cocinera" && tiempo > (7 * 60 + 0)) return true;
+        }
+        if(turno === "TARDE") {
+            if(cargo === "Docente" && tiempo > (12 * 60 + 15)) return true;
+            if(cargo === "Obrero" && tiempo > (11 * 60 + 45)) return true;
+            if(cargo === "Administrativo" && tiempo > (12 * 60 + 15)) return true;
+        }
+        return false;
+    }
+
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nominaCloud = [];
-        const sel = document.getElementById('nomIn'), del = document.getElementById('delN');
-        sel.innerHTML = '<option value="">-- Seleccione Trabajador --</option>';
-        del.innerHTML = '<option value="">-- Seleccionar para eliminar --</option>';
-        
+        const sel = document.getElementById('nomIn');
+        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
         snap.forEach(doc => {
-            const p = doc.data();
-            p.id = doc.id;
-            nominaCloud.push(p);
-            const opt = `<option value="${p.n}">${p.n} (${p.c})</option>`;
-            sel.innerHTML += opt; del.innerHTML += opt;
+            nominaCloud.push(doc.data());
+            sel.innerHTML += `<option value="${doc.data().n}">${doc.data().n}</option>`;
         });
         document.getElementById('stTotal').innerText = nominaCloud.length;
-        actualizarEstadisticas();
     });
-
-    // 2. GESTIÓN DE INGRESOS Y EGRESOS EN LA NUBE
-    async function dbGestion(tipo) {
-        if(tipo === 'ADD') {
-            const n = document.getElementById('newN').value.toUpperCase();
-            const c = document.getElementById('newC').value, t = document.getElementById('newT').value;
-            if(!n) return alert("Nombre obligatorio");
-            await db.collection("nomina_institucional").add({n, c, t});
-            document.getElementById('newN').value = "";
-        } else {
-            const val = document.getElementById('delN').value;
-            const p = nominaCloud.find(x => x.n === val);
-            if(p && confirm("¿Eliminar a " + p.n + " de la nómina?")) {
-                await db.collection("nomina_institucional").doc(p.id).delete();
-            }
-        }
-        alert("Nube actualizada correctamente.");
-    }
 
     function autoData() {
         const p = nominaCloud.find(x => x.n === document.getElementById('nomIn').value);
@@ -151,45 +140,56 @@
     }
 
     async function registrar(tipo) {
-        const n = document.getElementById('nomIn').value, est = document.getElementById('estIn').value;
-        const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-        if(!n) return;
-        const ref = db.collection("asistencia_cloud_2026").where("f", "==", hoy).where("n", "==", n);
-        const q = await ref.get();
-        const data = { n, c: document.getElementById('carIn').value, f: hoy, e: est };
-        if(q.empty) {
-            data.in = (tipo === 'IN') ? hora : '--'; data.out = (tipo === 'OUT') ? hora : '--';
-            await db.collection("asistencia_cloud_2026").add(data);
-        } else {
-            const upd = (tipo === 'IN') ? { in: hora, e: est } : { out: hora, e: est };
-            await db.collection("asistencia_cloud_2026").doc(q.docs[0].id).update(upd);
+        const n = document.getElementById('nomIn').value;
+        const horaM = document.getElementById('horaManual').value;
+        let est = document.getElementById('estIn').value;
+        const cargo = document.getElementById('carIn').value;
+        const turno = document.getElementById('turIn').value;
+
+        if(!n || !horaM) return alert("Seleccione personal y hora");
+
+        // Convertir hora 24h a 12h para el reporte
+        const [h, m] = horaM.split(':');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = (h % 12) || 12;
+        const horaFinal = `${h12}:${m} ${ampm}`;
+
+        if(tipo === 'IN' && est === "ASISTENCIA") {
+            if(verificarRetrasoManual(cargo, turno, horaM)) {
+                est = "RETRASO";
+            }
         }
-        actualizarEstadisticas();
+
+        await db.collection("asistencia_final_manual").add({
+            n, c: cargo, t: turno, f: hoy, e: est, h: horaFinal, tipo: tipo
+        });
+        actualizarVista();
     }
 
-    async function actualizarEstadisticas() {
-        const snap = await db.collection("asistencia_cloud_2026").where("f", "==", hoy).get();
-        let html = "", pres = 0, vaca = 0;
+    async function actualizarVista() {
+        const snap = await db.collection("asistencia_final_manual").where("f", "==", hoy).get();
+        let html = "", pres = 0, rets = 0;
         snap.forEach(doc => {
             const d = doc.data();
             if(d.e === "ASISTENCIA" || d.e === "RETRASO") pres++;
-            if(d.e === "VACACIONES") vaca++;
-            html += `<tr class="${d.e==='VACACIONES'?'fila-vaca':''}"><td>${d.n}</td><td>${d.in}</td><td>${d.out}</td><td>${d.e}</td></tr>`;
+            if(d.e === "RETRASO") rets++;
+            html += `<tr class="${d.e==='RETRASO'?'alerta-retraso':''}"><td>${d.n}</td><td>${d.h}</td><td>${d.c}</td><td>${d.e}</td></tr>`;
         });
         document.getElementById('cuerpo').innerHTML = html;
         document.getElementById('stPre').innerText = pres;
-        document.getElementById('stVaca').innerText = vaca;
-        const totalEfectivo = nominaCloud.length - vaca;
-        document.getElementById('stPor').innerText = totalEfectivo > 0 ? ((pres/totalEfectivo)*100).toFixed(1) + "%" : "0%";
+        document.getElementById('stRet').innerText = rets;
+        document.getElementById('stPor').innerText = nominaCloud.length > 0 ? ((pres/nominaCloud.length)*100).toFixed(1) + "%" : "0%";
     }
 
     function descargarExcel() {
         const wb = XLSX.utils.table_to_book(document.getElementById('tablaRep'));
-        XLSX.writeFile(wb, `EBNLP_Reporte_${hoy}.xlsx`);
+        XLSX.writeFile(wb, `EBNLP_Manual_${hoy}.xlsx`);
     }
-    
-    // Iniciar estadísticas al cargar
-    setTimeout(actualizarEstadisticas, 1000);
+
+    setHoraActual();
+    mostrarTurnoVigilancia();
+    setTimeout(actualizarVista, 1000);
 </script>
 </body>
 </html>
+
