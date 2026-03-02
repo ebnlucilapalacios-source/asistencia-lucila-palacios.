@@ -18,8 +18,12 @@
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
 
-        window.saveData = async (data) => { await setDoc(doc(dbCloud, "alumnos_db", "general"), data); };
+        // Función para guardar datos en la nube
+        window.saveData = async (data) => { 
+            await setDoc(doc(dbCloud, "alumnos_db", "general"), data); 
+        };
         
+        // Escucha en tiempo real de la base de datos
         onSnapshot(doc(dbCloud, "alumnos_db", "general"), (snap) => {
             if (snap.exists()) {
                 window.db = snap.data();
@@ -67,6 +71,7 @@
 </div>
 
 <script>
+    // Inicialización de base de datos local
     window.db = { alumnos: [], asistencias: {} };
 
     window.render = () => {
@@ -75,11 +80,13 @@
         container.innerHTML = "";
 
         if (window.db.alumnos) {
+            // Ordenar alfabéticamente
             window.db.alumnos.sort((a,b) => a.n.localeCompare(b.n)).forEach(a => {
                 const est = window.db.asistencias[fecha]?.[a.id] || 0;
-                let color = "#ccc", txt = "F";
-                if(est === 1) { color = "var(--exito)"; txt = "P"; }
-                if(est === 2) { color = "var(--oro)"; txt = "J"; }
+                let color = "#ccc", txt = "F"; // F = Falta (por defecto)
+                
+                if(est === 1) { color = "var(--exito)"; txt = "P"; } // P = Presente
+                if(est === 2) { color = "var(--oro)"; txt = "J"; }   // J = Justificado
 
                 container.innerHTML += `
                     <div class="student-item">
@@ -93,8 +100,15 @@
     window.agregar = () => {
         const n = document.getElementById('nomAlum').value.toUpperCase();
         if(!n) return alert("Escribe un nombre");
+        
         if(!window.db.alumnos) window.db.alumnos = [];
-        window.db.alumnos.push({ id: Date.now(), n: n, g: document.getElementById('genAlum').value });
+        
+        window.db.alumnos.push({ 
+            id: Date.now(), 
+            n: n, 
+            g: document.getElementById('genAlum').value 
+        });
+        
         window.saveData(window.db);
         document.getElementById('nomAlum').value = "";
     };
@@ -102,11 +116,15 @@
     window.marcar = (id) => {
         const f = document.getElementById('fechaList').value;
         if(!window.db.asistencias[f]) window.db.asistencias[f] = {};
+        
+        // Ciclo de estados: 0 (Falta) -> 1 (Presente) -> 2 (Justificado)
         let actual = window.db.asistencias[f][id] || 0;
-        window.db.asistencias[f][id] = (actual + 1) % 3 || 1;
+        window.db.asistencias[f][id] = (actual + 1) % 3;
+        
         window.saveData(window.db);
     };
 
+    // Establecer fecha de hoy por defecto
     document.getElementById('fechaList').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
