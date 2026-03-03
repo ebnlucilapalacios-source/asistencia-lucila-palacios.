@@ -133,7 +133,7 @@
     </div>
 
     <div class="card">
-        <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL</button>
+        <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE PERSONAL / LIMPIEZA</button>
         <div id="pAdmin" class="hidden">
             <h4>+ Nuevo Personal</h4>
             <input type="text" id="nN" placeholder="Nombre completo">
@@ -147,6 +147,12 @@
             <h4>X Egreso de Personal</h4>
             <select id="sBaja"></select>
             <button class="btn btn-rojo" onclick="baja()">ELIMINAR DEFINITIVAMENTE</button>
+            
+            <hr>
+            <h4 style="color:var(--rojo)">🛠️ MANTENIMIENTO DE BASE DE DATOS</h4>
+            <p style="font-size: 0.7rem; color: #666;">Use estos botones solo para borrar datos de prueba antes de iniciar el uso real.</p>
+            <button class="btn btn-rojo" onclick="borrarTodoElHistorial()">BORRAR TODO EL HISTORIAL DE ASISTENCIA</button>
+            <button class="btn btn-rojo" style="background:#000" onclick="vaciarNomina()">VACIAR TODA LA NÓMINA (INICIO CERO)</button>
         </div>
     </div>
 </div>
@@ -173,7 +179,6 @@
 
     function toggleSeccion(id, show) { document.getElementById(id).className = show ? "" : "hidden"; }
     
-    // CORRECCIÓN: Esta función ahora reinicia la vista desde la base de datos
     function mostrarListaCompleta() {
         toggleSeccion('areaLista', true);
         actualizarTodo(); 
@@ -229,7 +234,6 @@
 
             let cont = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
             
-            // Solo actualizamos la tabla si NO está en modo "oculto/limpio"
             if(!document.getElementById('areaLista').classList.contains('hidden')) {
                 bL.innerHTML = "";
                 dH.forEach(doc => {
@@ -251,7 +255,6 @@
                     bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.e}</td><td>${d.hE}</td><td class="${sTemp?'alerta-salida':''}">${d.hS}${sTemp}</td><td>${d.obs}</td></tr>`;
                 });
             } else {
-                // Si la lista está oculta, igual calculamos los totales para el Dash
                 dH.forEach(doc => { if(doc.data().e === "ASISTENCIA" || doc.data().e === "RETRASO") cont[doc.data().c]++; });
             }
 
@@ -282,6 +285,27 @@
     async function baja() {
         const n = document.getElementById('sBaja').value, p = nomina.find(x => x.n === n);
         if(p && confirm(`¿Eliminar a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
+    }
+
+    // NUEVAS FUNCIONES DE LIMPIEZA MASIVA
+    async function borrarTodoElHistorial() {
+        if (confirm("⚠️ ¿ESTÁS SEGURO? Esto eliminará TODO el historial de asistencia (todos los meses) permanentemente.")) {
+            const snap = await db.collection("asistencia_ebnlp_final").get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("✅ Historial borrado completamente.");
+        }
+    }
+
+    async function vaciarNomina() {
+        if (confirm("⚠️ ¿Eliminar a TODOS los trabajadores de la nómina? Tendrás que registrarlos de nuevo.")) {
+            const snap = await db.collection("nomina_institucional").get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("✅ Nómina vaciada.");
+        }
     }
 
     function generarPDF() {
