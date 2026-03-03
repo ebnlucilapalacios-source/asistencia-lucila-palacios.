@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBNLP 2026 - CONTROL TOTAL</title>
+    <title>SISTEMA MAESTRO EBNLP 2026</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -17,44 +17,67 @@
         .card { background: white; margin: 12px; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h3 { margin-top: 0; color: var(--azul); border-bottom: 2px solid var(--naranja); padding-bottom: 5px; font-size: 14px; text-transform: uppercase; }
         
+        /* ESTADÍSTICAS */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-box { background: white; padding: 10px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); }
         .stat-box p { font-size: 22px; font-weight: bold; margin: 5px 0; color: var(--azul); }
 
+        /* TABLAS */
         table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
         th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        .fila-retraso { background-color: #ffcdd2 !important; color: #b71c1c; font-weight: bold; }
 
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; display: block; text-align: center; }
+        /* AUDITORÍA */
+        .visor-auditoria { background: #fff3e0; border-left: 5px solid var(--naranja); padding: 10px; margin: 10px 0; display: none; border-radius: 5px; font-size: 12px; }
+        .alerta-critica { color: var(--rojo); font-weight: bold; animation: parpadeo 1.5s infinite; }
+        @keyframes parpadeo { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
+
+        /* FORMULARIOS */
+        label { display: block; font-weight: bold; margin-top: 8px; font-size: 11px; color: #444; }
+        select, input { width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 13px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; text-align: center; display: block; }
         .btn-verde { background: var(--verde); }
         .btn-azul { background: var(--azul); }
         .btn-rojo { background: var(--rojo); }
         .btn-pdf { background: #E74C3C; }
         .hidden { display: none; }
-        
+
+        /* VIGILANCIA */
         .vigi-flex { display: flex; gap: 8px; margin-top: 5px; }
         .vigi-card { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 11px; text-align: center; background: #fafafa; }
         .vigi-activa { border: 2px solid var(--naranja); background: #fff3e0; font-weight: bold; }
-        
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <header>
     <h2 style="margin:0; font-size:18px;">E.B.N. "LUCILA PALACIOS"</h2>
-    <p style="margin:2px 0 0; font-size:11px; opacity:0.9;">Control de Personal e Historial Mensual</p>
+    <p style="margin:2px 0 0; font-size:11px; opacity:0.9;">Sistema de Gestión Escolar Integral 2026</p>
 </header>
 
 <div class="card stats-grid">
-    <div class="stat-box"><h4>ASISTENCIA HOY</h4><p id="pTotal">0%</p></div>
-    <div class="stat-box"><h4>RETRASOS</h4><p id="rTotal" style="color:var(--rojo);">0</p></div>
+    <div class="stat-box"><h4>% ASISTENCIA</h4><p id="pTotal">0%</p></div>
+    <div class="stat-box"><h4>RETRASOS HOY</h4><p id="rTotal" style="color:var(--rojo);">0</p></div>
 </div>
 
 <div class="card">
-    <h3>📝 Registrar Marcaje</h3>
+    <h3>🛡️ Vigilancia (Grupo A/B)</h3>
+    <div class="vigi-flex">
+        <div id="vA" class="vigi-card"><b>GRUPO A</b><div id="lA">...</div></div>
+        <div id="vB" class="vigi-card"><b>GRUPO B</b><div id="lB">...</div></div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📝 Registro de Marcaje y Auditoría</h3>
     <label>Trabajador:</label>
-    <select id="sPersona"></select>
+    <select id="sPersona" onchange="ejecutarAuditoria(this.value)"></select>
+
+    <div id="visor" class="visor-auditoria">
+        <div id="infoAuditoria"></div>
+    </div>
+
     <label>Estatus:</label>
     <select id="sEstatus">
         <option value="ASISTENCIA">PRESENTE ✅</option>
@@ -64,31 +87,39 @@
         <option value="REPOSO POR CUIDO">REPOSO POR CUIDO 👶</option>
         <option value="VACACIONES">VACACIONES 🌴</option>
     </select>
+
     <label>Hora:</label>
     <input type="time" id="hEntrada">
-    <button class="btn btn-verde" onclick="guardar()">GUARDAR REGISTRO</button>
+    
+    <button class="btn btn-verde" onclick="guardarRegistro()">GUARDAR EN EXPEDIENTE</button>
 </div>
 
 <div class="card">
-    <h3>📊 Reportes y Exportación</h3>
-    <button class="btn btn-pdf" onclick="generarPDF('hoy')">DESCARGAR PDF DIARIO</button>
-    <button class="btn btn-pdf" style="background: #943126;" onclick="generarPDF('mes')">DESCARGAR PDF MENSUAL</button>
-    <button class="btn btn-azul" onclick="descargarExcel()">EXPORTAR EXCEL DIARIO</button>
-</div>
-
-<div class="card">
-    <h3>📋 Listado de Hoy</h3>
-    <table id="tablaHoy">
-        <thead><tr><th>Nombre</th><th>Estatus</th><th>Hora</th><th>Cargo</th></tr></thead>
-        <tbody id="bHoy"></tbody>
+    <h3>📊 Rendimiento Mensual por Cargos</h3>
+    <table>
+        <thead><tr><th>Cargo</th><th>Hoy</th><th>Nómina</th><th>% Diaro</th><th>% Mensual</th></tr></thead>
+        <tbody id="bCargos"></tbody>
     </table>
 </div>
 
 <div class="card">
-    <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE NÓMINA (ALTAS/BAJAS)</button>
-    <div id="pAdmin" class="hidden" style="margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">
+    <h3>📋 Reporte del Día e Impresión</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="btn btn-pdf" onclick="descargarPDF('hoy')">PDF DIARIO</button>
+        <button class="btn btn-pdf" style="background:#943126" onclick="descargarPDF('mes')">PDF MENSUAL</button>
+    </div>
+    <table id="tablaHoy">
+        <thead><tr><th>Nombre</th><th>Estatus</th><th>Hora</th><th>Cargo</th><th>Turno</th></tr></thead>
+        <tbody id="bHoy"></tbody>
+    </table>
+    <button class="btn btn-azul" onclick="descargarExcel()">EXPORTAR EXCEL DIARIO</button>
+</div>
+
+<div class="card">
+    <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE NÓMINA (ALTAS / BAJAS)</button>
+    <div id="pAdmin" class="hidden" style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
         
-        <h4 style="color:var(--verde);">+ Ingreso de Personal</h4>
+        <h4 style="color:var(--verde);">+ Nuevo Ingreso</h4>
         <input type="text" id="nN" placeholder="Nombre Completo">
         <select id="nC">
             <option value="Docente">Docente</option>
@@ -103,18 +134,17 @@
             <option value="VIGILANCIA DÍA">VIGILANCIA DÍA</option>
             <option value="VIGILANCIA NOCHE">VIGILANCIA NOCHE</option>
         </select>
-        <button class="btn btn-verde" onclick="crear()">DAR DE ALTA</button>
+        <button class="btn btn-verde" onclick="alta()">REGISTRAR ALTA</button>
 
         <hr>
-        
         <h4 style="color:var(--rojo);">X Egreso (Baja de Personal)</h4>
-        <p style="font-size:10px; color:#666;">Seleccione al trabajador que desea retirar de la nómina.</p>
         <select id="sBaja"></select>
-        <button class="btn btn-rojo" onclick="eliminar()">ELIMINAR TRABAJADOR</button>
+        <button class="btn btn-rojo" onclick="baja()">ELIMINAR DE NÓMINA</button>
     </div>
 </div>
 
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -127,90 +157,123 @@
     const mesActual = hoy.substring(0, 7);
     let nomina = [];
 
-    // CARGAR NÓMINA
+    // CARGA DE NÓMINA Y VIGILANCIA
     db.collection("nomina_institucional").orderBy("n").onSnapshot(snap => {
         nomina = [];
         const sP = document.getElementById('sPersona'), sB = document.getElementById('sBaja');
+        const lA = document.getElementById('lA'), lB = document.getElementById('lB');
         sP.innerHTML = sB.innerHTML = '<option value="">-- Seleccionar --</option>';
+        let vA = [], vB = [];
+
         snap.forEach(doc => {
             const d = doc.data(); d.id = doc.id; nomina.push(d);
             const opt = `<option value="${d.n}">${d.n}</option>`;
             sP.innerHTML += opt; sB.innerHTML += opt;
+            if(d.c === "Vigilante") { (d.g === "B") ? vB.push(d.n) : vA.push(d.n); }
         });
+        lA.innerText = vA.join(", "); lB.innerText = vB.join(", ");
         actualizarUI();
     });
 
-    async function guardar() {
-        const n = document.getElementById('sPersona').value, h = document.getElementById('hEntrada').value, e = document.getElementById('sEstatus').value;
+    // AUDITORÍA DE 30 DÍAS
+    async function ejecutarAuditoria(n) {
+        if(!n) { document.getElementById('visor').style.display='none'; return; }
+        const visor = document.getElementById('visor'); visor.style.display='block';
+        const hace30 = Date.now() - (30*24*60*60*1000);
+        const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("ts",">=",hace30).get();
+        let f=0, p=0;
+        snap.forEach(doc => {
+            if(doc.data().e === "INASISTENCIA") f++;
+            if(doc.data().e === "PERMISO PERSONAL") p++;
+        });
+        let html = `Historial: <b>${f}/3 Faltas</b> | <b>${p}/3 Permisos</b>`;
+        if(f>=3 || p>=3) html += `<br><span class="alerta-critica">⚠️ LÍMITE ALCANZADO</span>`;
+        document.getElementById('infoAuditoria').innerHTML = html;
+    }
+
+    async function guardarRegistro() {
+        const n = document.getElementById('sPersona').value, h = document.getElementById('hEntrada').value;
+        let e = document.getElementById('sEstatus').value;
         const p = nomina.find(x => x.n === n);
-        if(!n) return;
+        if(!n) return alert("Seleccione trabajador");
+
+        if(e === "ASISTENCIA" && h) {
+            const hN = parseInt(h.replace(":",""));
+            if(p.t==="MAÑANA" && hN>715) e="RETRASO";
+            else if(p.t==="TARDE" && hN>1215) e="RETRASO";
+            else if(p.t==="VIGILANCIA DÍA" && hN>615) e="RETRASO";
+            else if(p.t==="VIGILANCIA NOCHE" && hN>1815) e="RETRASO";
+        }
+
         await db.collection("asistencia_ebnlp_final").add({ n, c:p.c, t:p.t, h:h||"--", e, f:hoy, ts:Date.now(), mes:mesActual });
-        alert("✅ Registro Guardado");
+        alert("✅ Guardado");
     }
 
     function actualizarUI() {
-        db.collection("asistencia_ebnlp_final").where("f","==",hoy).onSnapshot(snap => {
-            const bHoy = document.getElementById('bHoy');
-            let r=0, p=0; bHoy.innerHTML = "";
-            snap.forEach(doc => {
+        db.collection("asistencia_ebnlp_final").onSnapshot(snapTotal => {
+            const bHoy = document.getElementById('bHoy'), bCargos = document.getElementById('bCargos');
+            const snapHoy = snapTotal.docs.filter(d => d.data().f === hoy);
+            let r=0, pHoy=0; bHoy.innerHTML = "";
+            const cHoy = {Docente:0, Obrero:0, Administrativo:0, Cocinera:0, Vigilante:0}, cMes = {...cHoy};
+
+            snapHoy.forEach(doc => {
                 const d = doc.data();
                 if(d.e==="RETRASO") r++;
-                if(d.e==="ASISTENCIA" || d.e==="RETRASO") p++;
-                bHoy.innerHTML += `<tr><td>${d.n}</td><td>${d.e}</td><td>${d.h}</td><td>${d.c}</td></tr>`;
+                if(d.e==="ASISTENCIA" || d.e==="RETRASO") { pHoy++; cHoy[d.c]++; }
+                bHoy.innerHTML += `<tr class="${d.e==='RETRASO'?'fila-retraso':''}"><td>${d.n}</td><td>${d.e}</td><td>${d.h}</td><td>${d.c}</td><td>${d.t}</td></tr>`;
             });
+
+            snapTotal.forEach(doc => { const d = doc.data(); if(d.mes === mesActual && (d.e==="ASISTENCIA" || d.e==="RETRASO")) cMes[d.c]++; });
+
             document.getElementById('rTotal').innerText = r;
-            document.getElementById('pTotal').innerText = nomina.length > 0 ? Math.round((p/nomina.length)*100)+"%" : "0%";
+            document.getElementById('pTotal').innerText = nomina.length > 0 ? Math.round((pHoy/nomina.length)*100)+"%" : "0%";
+
+            bCargos.innerHTML = "";
+            Object.keys(cHoy).forEach(c => {
+                const total = nomina.filter(x => x.c === c).length;
+                const pD = total > 0 ? Math.round((cHoy[c]/total)*100) : 0;
+                const pM = total > 0 ? Math.min(100, Math.round((cMes[c]/(total*20))*100)) : 0;
+                bCargos.innerHTML += `<tr><td>${c}</td><td>${cHoy[c]}</td><td>${total}</td><td>${pD}%</td><td>${pM}%</td></tr>`;
+            });
+
+            // Lógica rotación Vigilancia
+            const diff = Math.floor((new Date() - new Date("2026-03-02")) / 86400000);
+            const turno = (diff % 2 === 0) ? "A" : "B";
+            document.getElementById('vA').className = (turno === "A") ? "vigi-card vigi-activa" : "vigi-card";
+            document.getElementById('vB').className = (turno === "B") ? "vigi-card vigi-activa" : "vigi-card";
         });
     }
 
-    // PDF PROFESIONAL
-    async function generarPDF(tipo) {
+    async function descargarPDF(tipo) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.setFontSize(16); doc.text("E.B.N. LUCILA PALACIOS", 105, 15, { align: "center" });
         doc.setFontSize(10); doc.text(tipo==='hoy' ? `REPORTE DIARIO: ${hoy}` : `REPORTE MENSUAL: ${mesActual}`, 105, 22, { align: "center" });
 
         const data = [];
-        const query = (tipo==='hoy') ? db.collection("asistencia_ebnlp_final").where("f","==",hoy) : db.collection("asistencia_ebnlp_final").where("mes","==",mesActual);
+        const snap = await db.collection("asistencia_ebnlp_final").where(tipo==='hoy'?'f':'mes', "==", tipo==='hoy'?hoy:mesActual).get();
+        snap.forEach(d => data.push([d.data().n, d.data().f, d.data().e, d.data().h, d.data().c]));
+
+        doc.autoTable({ head: [['Nombre', 'Fecha', 'Estatus', 'Hora', 'Cargo']], body: data, startY: 30, theme: 'grid' });
         
-        const snap = await query.get();
-        snap.forEach(d => {
-            const v = d.data();
-            data.push([v.n, v.f, v.e, v.h, v.c]);
-        });
-
-        doc.autoTable({
-            head: [['Nombre', 'Fecha', 'Estatus', 'Hora', 'Cargo']],
-            body: data,
-            startY: 30,
-            theme: 'grid'
-        });
-
-        // Línea de firma
         const finalY = doc.lastAutoTable.finalY + 30;
-        doc.line(20, finalY, 80, finalY);
-        doc.text("Firma del Director(a)", 50, finalY + 5, { align: "center" });
-        doc.line(130, finalY, 190, finalY);
-        doc.text("Sello Institucional", 160, finalY + 5, { align: "center" });
-
-        doc.save(`EBNLP_${tipo}_${hoy}.pdf`);
+        doc.line(20, finalY, 80, finalY); doc.text("Director(a)", 50, finalY + 5, { align: "center" });
+        doc.line(130, finalY, 190, finalY); doc.text("Sello", 160, finalY + 5, { align: "center" });
+        doc.save(`Reporte_EBNLP_${tipo}.pdf`);
     }
 
     function descargarExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tablaHoy')), `EBNLP_${hoy}.xlsx`); }
 
-    async function crear() {
+    async function alta() {
         const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, t = document.getElementById('nT').value;
         if(n) await db.collection("nomina_institucional").add({ n, c, t, g: "A" });
-        document.getElementById('nN').value = ""; alert("Registrado");
+        document.getElementById('nN').value = ""; alert("Alta Exitosa");
     }
 
-    async function eliminar() {
+    async function baja() {
         const n = document.getElementById('sBaja').value;
         const p = nomina.find(x => x.n === n);
-        if(p && confirm(`¿Seguro que desea retirar a ${n} de la nómina?`)) {
-            await db.collection("nomina_institucional").doc(p.id).delete();
-            alert("Eliminado");
-        }
+        if(p && confirm(`¿Eliminar a ${n}?`)) { await db.collection("nomina_institucional").doc(p.id).delete(); alert("Baja Exitosa"); }
     }
 </script>
 </body>
