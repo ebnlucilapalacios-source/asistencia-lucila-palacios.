@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA MAESTRO EBNLP 2026 - FINAL</title>
+    <title>SISTEMA MAESTRO EBNLP 2026</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -18,18 +18,25 @@
         .card { background: white; margin-bottom: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #ddd; }
         h3 { margin-top: 0; color: var(--azul); border-left: 5px solid var(--naranja); padding-left: 10px; text-transform: uppercase; font-size: 0.9rem; }
         
+        /* Dashboard de Presentes por Cargo */
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .dash-card { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--azul); }
+        .dash-card h4 { margin: 0; font-size: 0.75rem; color: #666; text-transform: uppercase; }
+        .dash-card p { margin: 5px 0 0; font-size: 1.5rem; font-weight: bold; color: var(--azul); }
+        .dash-main { background: var(--azul); color: white; border-top: none; }
+        .dash-main h4, .dash-main p { color: white; }
+
         .t-wrap { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; font-size: 11px; }
         th { background: #f8f9fa; padding: 10px; border: 1px solid #ddd; color: var(--azul); }
         td { padding: 10px; border: 1px solid #ddd; text-align: center; }
         
         .audit-box { background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin: 10px 0; font-size: 0.85rem; color: #856404; }
-        .badge-grupo { background: var(--azul); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
         .hidden { display: none; }
         
         label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.8rem; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 0.9rem; transition: 0.3s; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
         .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-rojo { background: var(--rojo); } .btn-gris { background: #6c757d; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
@@ -38,13 +45,40 @@
 
 <header>
     <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
-    <small>CONTROL DE ASISTENCIA, GRUPOS Y ESTADÍSTICAS</small>
+    <small>CONTROL INTEGRAL: CARGOS, GRUPOS Y ESTADÍSTICAS</small>
 </header>
 
 <div class="contenedor">
 
+    <div class="dashboard" id="dashCargos">
+        <div class="dash-card dash-main">
+            <h4>Asistencia Total</h4>
+            <p id="txtPorcentajeTotal">0%</p>
+        </div>
+        <div class="dash-card">
+            <h4>Docentes</h4>
+            <p id="presDoc">0</p>
+        </div>
+        <div class="dash-card">
+            <h4>Obreros</h4>
+            <p id="presObr">0</p>
+        </div>
+        <div class="dash-card">
+            <h4>Admin.</h4>
+            <p id="presAdm">0</p>
+        </div>
+        <div class="dash-card">
+            <h4>CNAE</h4>
+            <p id="presCnae">0</p>
+        </div>
+        <div class="dash-card">
+            <h4>Vigilantes</h4>
+            <p id="presVig">0</p>
+        </div>
+    </div>
+
     <div class="card">
-        <h3>📝 Registro de Entrada</h3>
+        <h3>📝 Registro de Asistencia</h3>
         <input type="date" id="fManual" onchange="actualizarTodo()">
         
         <label>TRABAJADOR:</label>
@@ -52,9 +86,9 @@
         
         <div id="vAudit" class="hidden audit-box"></div>
 
-        <div id="uiVigilante" class="hidden" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top:10px; border: 1px solid #bbdefb;">
+        <div id="uiVigilante" class="hidden" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top:10px;">
             <p id="labelGrupo" style="margin:0; font-weight:bold; color:var(--azul);"></p>
-            <label>GUARDIA ACTUAL:</label>
+            <label>TURNO DE GUARDIA:</label>
             <select id="turnoVig">
                 <option value="DIA">GUARDIA DÍA (06:00 AM)</option>
                 <option value="NOCHE">GUARDIA NOCHE (18:00 PM)</option>
@@ -74,32 +108,29 @@
     </div>
 
     <div class="card">
-        <h3>📊 Efectividad Mensual por Categoría</h3>
-        <div class="t-wrap">
-            <table>
-                <thead>
-                    <tr><th>Cargo</th><th>Presentes Hoy</th><th>Retardos Hoy</th><th>% Efec. Mensual Total</th></tr>
-                </thead>
-                <tbody id="bStats"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>📅 Consolidado Individual del Mes</h3>
+        <h3>📅 Consolidado Individual Mensual</h3>
         <div id="wrapperMensual" class="hidden">
             <div class="t-wrap">
                 <table>
                     <thead>
-                        <tr><th>Nombre</th><th>Cargo/Grupo</th><th>Asis.</th><th>Ret.</th><th>Faltas</th><th>Perm.</th><th>Vac/Rep.</th></tr>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cargo</th>
+                            <th style="background:#e8f5e9">Asis</th>
+                            <th style="background:#fff9c4">Ret</th>
+                            <th style="background:#ffebee">Fal</th>
+                            <th style="background:#f3e5f5">Perm</th>
+                            <th style="background:#e1f5fe">Reposo</th>
+                            <th style="background:#f1f8e9">Vacac</th>
+                        </tr>
                     </thead>
                     <tbody id="bMensual"></tbody>
                 </table>
             </div>
         </div>
         <div class="grid-2">
-            <button class="btn btn-gris" onclick="toggleSeccion('wrapperMensual', false)">OCULTAR CONSOLIDADO</button>
-            <button class="btn btn-azul" onclick="toggleSeccion('wrapperMensual', true)">MOSTRAR CONSOLIDADO</button>
+            <button class="btn btn-gris" onclick="toggleSeccion('wrapperMensual', false)">OCULTAR REPORTE</button>
+            <button class="btn btn-azul" onclick="toggleSeccion('wrapperMensual', true)">MOSTRAR REPORTE</button>
         </div>
     </div>
 
@@ -120,11 +151,11 @@
             <button class="btn btn-azul" onclick="toggleSeccion('areaLista', true)">MOSTRAR LISTA</button>
         </div>
         <button class="btn btn-gris" style="background:#444" onclick="limpiarPantalla()">LIMPIAR PANTALLA (PRIVACIDAD)</button>
-        <button class="btn btn-rojo" style="background:#800000" onclick="generarPDF()">DESCARGAR PDF DEL DÍA</button>
+        <button class="btn btn-rojo" style="background:#800000" onclick="generarPDF()">DESCARGAR PDF</button>
     </div>
 
     <div class="card">
-        <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE NÓMINA (ALTAS / EGRESOS)</button>
+        <button class="btn btn-azul" onclick="document.getElementById('pAdmin').classList.toggle('hidden')">⚙️ GESTIÓN DE NÓMINA (ALTAS / BAJAS)</button>
         <div id="pAdmin" class="hidden">
             <h4>+ Nuevo Ingreso</h4>
             <input type="text" id="nN" placeholder="Nombre completo">
@@ -144,9 +175,9 @@
             <select id="nT" style="margin-top:10px;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
             <button class="btn btn-verde" onclick="alta()">DAR DE ALTA</button>
             <hr style="margin:20px 0;">
-            <h4>X Egreso de Personal (Baja)</h4>
+            <h4>X Egreso de Personal</h4>
             <select id="sBaja"></select>
-            <button class="btn btn-rojo" onclick="baja()">ELIMINAR DEFINITIVAMENTE DE NÓMINA</button>
+            <button class="btn btn-rojo" onclick="baja()">ELIMINAR DEFINITIVAMENTE</button>
         </div>
     </div>
 </div>
@@ -172,7 +203,7 @@
     });
 
     function toggleSeccion(id, show) { document.getElementById(id).className = show ? "" : "hidden"; }
-    function limpiarPantalla() { document.getElementById('bLista').innerHTML = '<tr><td colspan=4 style="color:#999; padding:20px;">Pantalla despejada para el siguiente trabajador.</td></tr>'; }
+    function limpiarPantalla() { document.getElementById('bLista').innerHTML = '<tr><td colspan=4 style="color:#999; padding:20px;">Lista oculta.</td></tr>'; }
     function checkGrupo(c) { document.getElementById('uiGrupoExtra').className = (c === "Vigilante") ? "" : "hidden"; }
 
     async function procesarSeleccion(n) {
@@ -180,7 +211,7 @@
         const p = nomina.find(x => x.n === n);
         document.getElementById('uiVigilante').className = (p.c === "Vigilante") ? "" : "hidden";
         if(p.c === "Vigilante") document.getElementById('labelGrupo').innerText = `VIGILANTE: ${p.g}`;
-        
+
         const hoyTs = new Date(document.getElementById('fManual').value + "T12:00:00").getTime();
         const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("ts",">=",hoyTs - (30*86400000)).get();
         let i=0, pr=0;
@@ -207,7 +238,7 @@
             }
         }
         await db.collection("asistencia_ebnlp_final").add({ n, e, f, h:h||"--", c:p.c, g:p.g||"", ts:new Date(f+"T12:00:00").getTime(), mes:f.substring(0,7) });
-        alert("¡Registro Exitoso!");
+        alert("¡Guardado!");
     }
 
     function actualizarTodo() {
@@ -215,39 +246,47 @@
         document.getElementById('titFecha').innerText = fH;
 
         db.collection("asistencia_ebnlp_final").onSnapshot(snap => {
-            const bL = document.getElementById('bLista'), bM = document.getElementById('bMensual'), bS = document.getElementById('bStats');
+            const bL = document.getElementById('bLista'), bM = document.getElementById('bMensual');
             const dH = snap.docs.filter(d => d.data().f === fH);
             const dM = snap.docs.filter(d => d.data().mes === mH);
             const diasActivos = [...new Set(dM.map(d => d.data().f))].length || 1;
 
-            let hoyC = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0}, retC = {...hoyC}, mesE = {...hoyC};
+            // Desglose de Presentes por Cargo (Dashboard)
+            let cont = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
+            dH.forEach(d => {
+                if(d.data().e === "ASISTENCIA" || d.data().e === "RETRASO") cont[d.data().c]++;
+            });
+            document.getElementById('presDoc').innerText = cont["Docente"];
+            document.getElementById('presObr').innerText = cont["Obrero"];
+            document.getElementById('presAdm').innerText = cont["Administrativo"];
+            document.getElementById('presCnae').innerText = cont["CNAE (Cocinera)"];
+            document.getElementById('presVig').innerText = cont["Vigilante"];
 
+            // Porcentaje Total Mensual
+            const asistenciasMes = dM.filter(d => ["ASISTENCIA", "RETRASO", "VACACIONES", "REPOSO"].includes(d.data().e)).length;
+            const totalEsperado = nomina.length * diasActivos;
+            document.getElementById('txtPorcentajeTotal').innerText = totalEsperado > 0 ? ((asistenciasMes / totalEsperado) * 100).toFixed(1) + "%" : "0%";
+
+            // Llenar Lista Diaria
             bL.innerHTML = "";
             dH.forEach(doc => {
                 const d = doc.data(); 
-                if(d.e==="ASISTENCIA" || d.e==="RETRASO") hoyC[d.c]++;
-                if(d.e==="RETRASO") retC[d.c]++;
                 bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c} ${d.g?'('+d.g+')':''}</td><td>${d.e}</td><td>${d.h}</td></tr>`;
             });
 
-            dM.forEach(doc => { if(["ASISTENCIA", "RETRASO", "VACACIONES", "REPOSO"].includes(doc.data().e)) mesE[doc.data().c]++; });
-
-            bS.innerHTML = "";
-            Object.keys(hoyC).forEach(c => {
-                const totalN = nomina.filter(x => x.c === c).length;
-                const perc = totalN > 0 ? Math.round((mesE[c] / (totalN * diasActivos)) * 100) : 0;
-                bS.innerHTML += `<tr><td>${c}</td><td>${hoyC[c]}</td><td>${retC[c]}</td><td style="font-weight:bold; color:var(--azul)">${perc}%</td></tr>`;
-            });
-
+            // Llenar Consolidado Mensual
             bM.innerHTML = "";
             nomina.forEach(p => {
                 const r = dM.filter(x => x.data().n === p.n);
-                bM.innerHTML += `<tr><td>${p.n}</td><td>${p.c} ${p.g||''}</td>
-                <td>${r.filter(x => x.data().e==="ASISTENCIA").length}</td>
-                <td>${r.filter(x => x.data().e==="RETRASO").length}</td>
-                <td>${r.filter(x => x.data().e==="INASISTENCIA").length}</td>
-                <td>${r.filter(x => x.data().e==="PERMISO PERSONAL").length}</td>
-                <td>${r.filter(x => ["VACACIONES","REPOSO"].includes(x.data().e)).length}</td></tr>`;
+                bM.innerHTML += `<tr>
+                    <td style="text-align:left">${p.n}</td><td>${p.c}</td>
+                    <td>${r.filter(x => x.data().e==="ASISTENCIA").length}</td>
+                    <td>${r.filter(x => x.data().e==="RETRASO").length}</td>
+                    <td>${r.filter(x => x.data().e==="INASISTENCIA").length}</td>
+                    <td>${r.filter(x => x.data().e==="PERMISO PERSONAL").length}</td>
+                    <td>${r.filter(x => x.data().e==="REPOSO").length}</td>
+                    <td>${r.filter(x => x.data().e==="VACACIONES").length}</td>
+                </tr>`;
             });
         });
     }
@@ -260,10 +299,7 @@
 
     async function baja() {
         const n = document.getElementById('sBaja').value, p = nomina.find(x => x.n === n);
-        if(p && confirm(`¿Desea dar de baja definitiva a ${n}?`)) {
-            await db.collection("nomina_institucional").doc(p.id).delete();
-            alert("Personal eliminado de nómina.");
-        }
+        if(p && confirm(`¿Dar de baja a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
     }
 
     function generarPDF() {
@@ -274,9 +310,9 @@
             const cols = row.querySelectorAll("td");
             if(cols.length > 1) d.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText]);
         });
-        doc.text(`EBNLP - ASISTENCIA DIARIA - ${f}`, 14, 15);
+        doc.text(`EBNLP - REPORTE ${f}`, 14, 15);
         doc.autoTable({ head: [['Nombre', 'Cargo', 'Estatus', 'Hora']], body: d, startY: 20 });
-        doc.save(`EBNLP_Reporte_${f}.pdf`);
+        doc.save(`EBNLP_${f}.pdf`);
     }
 </script>
 </body>
