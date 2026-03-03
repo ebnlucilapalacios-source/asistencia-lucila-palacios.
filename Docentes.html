@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadística Lucila Palacios</title>
+    <title>Sistema Estadístico - Lucila Palacios</title>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -26,6 +26,17 @@
         window.usuarioActual = null;
         window.db = { docente: "", seccion: "", alumnos: [], asistencias: {}, feriados: [] };
 
+        // --- FUNCIONES DE APOYO ---
+        function calcularEdad(fNac) {
+            if(!fNac) return "S/D";
+            const hoy = new Date();
+            const cumple = new Date(fNac);
+            let edad = hoy.getFullYear() - cumple.getFullYear();
+            if (hoy.getMonth() < cumple.getMonth() || (hoy.getMonth() === cumple.getMonth() && hoy.getDate() < cumple.getDate())) edad--;
+            return edad;
+        }
+
+        // --- AUTENTICACIÓN ---
         window.mostrarRegistro = (esReg) => {
             document.getElementById('authTitle').innerText = esReg ? "Registro Nuevo Docente" : "Acceso Docente";
             document.getElementById('regExtra').style.display = esReg ? "block" : "none";
@@ -56,81 +67,91 @@
             } else { alert("Datos incorrectos"); }
         };
 
-        // --- PANEL DIRECCIÓN ---
-        window.generarReporteGlobal = async () => {
-            const resDiv = document.getElementById('resultadosGlobales');
-            resDiv.innerHTML = "⌛ Cargando...";
-            let tH=0, tV=0, tP=0;
-            const hoy = new Date().toISOString().split('T')[0];
-            let html = `<table><tr style="background:#eee"><th>Sección</th><th>H</th><th>V</th><th>Tot</th><th>P</th><th>%</th></tr>`;
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (doc.id === USUARIO_ADMIN || !d.alumnos) return;
-                const h = d.alumnos.filter(a => a.genero === 'F').length;
-                const v = d.alumnos.filter(a => a.genero === 'M').length;
-                const tot = h + v;
-                let pres = d.asistencias[hoy] ? Object.values(d.asistencias[hoy]).filter(s => s === 1).length : 0;
-                tH += h; tV += v; tP += pres;
-                const porc = tot > 0 ? ((pres / tot) * 100).toFixed(0) : 0;
-                html += `<tr><td>${d.seccion || doc.id}</td><td>${h}</td><td>${v}</td><td>${tot}</td><td>${pres}</td><td>${porc}%</td></tr>`;
-            });
-            resDiv.innerHTML = `<div class="resumen-admin">Total Escuela: ${tP}/${tH+tV}</div>${html}</table>`;
-        };
-
-        window.generarConsolidadoMensual = async () => {
-            const resDiv = document.getElementById('resultadosGlobales');
-            resDiv.innerHTML = "⌛ Calculando Mes...";
-            const hoy = new Date();
-            let html = `<table><tr style="background:#eee"><th>Sección</th><th>Matrícula</th><th>Días</th><th>% Mes</th></tr>`;
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (doc.id === USUARIO_ADMIN || !d.alumnos) return;
-                const mat = d.alumnos.length;
-                let asis = 0, dias = 0;
-                Object.keys(d.asistencias).forEach(f => {
-                    const fD = new Date(f + "T00:00:00");
-                    if (fD.getMonth() === hoy.getMonth()) {
-                        asis += Object.values(d.asistencias[f]).filter(s => s === 1).length;
-                        dias++;
-                    }
-                });
-                const prom = (dias > 0 && mat > 0) ? ((asis / (mat * dias)) * 100).toFixed(1) : 0;
-                html += `<tr><td>${d.seccion || doc.id}</td><td>${mat}</td><td>${dias}</td><td><b>${prom}%</b></td></tr>`;
-            });
-            resDiv.innerHTML = `<div class="resumen-admin" style="background:var(--morado)">Consolidado: ${hoy.toLocaleString('es',{month:'long'})}</div>${html}</table>`;
-        };
-
-        // --- FUNCIONES DOCENTE ---
+        // --- RENDERIZADO PRINCIPAL ---
         window.render = () => {
-            const fecha = document.getElementById('fechaSeleccionada').value || new Date().toISOString().split('T')[0];
-            document.getElementById('displayFecha').innerText = fecha;
+            const fechaSel = document.getElementById('fechaSeleccionada').value || new Date().toISOString().split('T')[0];
+            document.getElementById('displayFecha').innerText = fechaSel;
             document.getElementById('docente').value = window.db.docente || "";
             document.getElementById('seccion').value = window.db.seccion || "";
+
+            // 1. LISTA DE ASISTENCIA
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
-            if(!window.db.feriados.includes(fecha)) {
+            if(!window.db.feriados.includes(fechaSel)) {
                 window.db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-                    const est = (window.db.asistencias[fecha] && window.db.asistencias[fecha][a.id]) || 0;
+                    const est = (window.db.asistencias[fechaSel] && window.db.asistencias[fechaSel][a.id]) || 0;
                     let c = "#ccc", t = "F";
                     if(est === 1) { c = "var(--exito)"; t = "P"; }
                     if(est === 2) { c = "var(--morado)"; t = "J"; }
                     lista.innerHTML += `<div class="student-item">
                         <div style="width:10px; height:10px; border-radius:50%; background:${a.genero==='F'?'#ff99cc':'#99ccff'}"></div>
                         <div style="flex-grow:1"><b>${a.nombre}</b> <br> <small style="color:red; cursor:pointer;" onclick="eliminarAlumno(${a.id})">Eliminar</small></div>
-                        <button onclick="marcar(${a.id})" style="width:40px; background:${c}; color:white; border:none; border-radius:5px; font-weight:bold;">${t}</button>
+                        <button onclick="marcar(${a.id})" style="width:40px; background:${c}; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">${t}</button>
                     </div>`;
                 });
             } else { lista.innerHTML = "<p style='color:red; text-align:center;'>DÍA FERIADO</p>"; }
-            let h=0, v=0; window.db.alumnos.forEach(a => { a.genero === 'F' ? h++ : v++; });
-            document.getElementById('resumenSeccion').innerHTML = `Matrícula: ${window.db.alumnos.length} (H: ${h} V: ${v})`;
+
+            // 2. REPORTE ESTADÍSTICO DOCENTE
+            generarReporteDocente();
         };
 
+        function generarReporteDocente() {
+            const hoy = new Date();
+            const mesAct = hoy.getMonth();
+            const anioAct = hoy.getFullYear();
+            
+            let conteoEdades = {};
+            let tH = 0, tV = 0, asisMes = 0, diasMes = 0;
+            const matTotal = window.db.alumnos.length;
+
+            // Procesar edades y género
+            window.db.alumnos.forEach(al => {
+                const edad = calcularEdad(al.nacimiento);
+                if(!conteoEdades[edad]) conteoEdades[edad] = { F: 0, M: 0 };
+                conteoEdades[edad][al.genero]++;
+                al.genero === 'F' ? tH++ : tV++;
+            });
+
+            // Procesar asistencia mensual
+            Object.keys(window.db.asistencias).forEach(f => {
+                const fD = new Date(f + "T00:00:00");
+                if (fD.getMonth() === mesAct && fD.getFullYear() === anioAct) {
+                    asisMes += Object.values(window.db.asistencias[f]).filter(s => s === 1).length;
+                    diasMes++;
+                }
+            });
+
+            const porcMes = (diasMes > 0 && matTotal > 0) ? ((asisMes / (matTotal * diasMes)) * 100).toFixed(1) : 0;
+
+            let filasEdades = "";
+            Object.keys(conteoEdades).sort((a,b) => a-b).forEach(e => {
+                const h = conteoEdades[e].F, v = conteoEdades[e].M;
+                filasEdades += `<tr><td>${e} años</td><td>${h}</td><td>${v}</td><td>${h+v}</td></tr>`;
+            });
+
+            document.getElementById('reporteDocenteContenedor').innerHTML = `
+                <div class="card">
+                    <h3 style="text-align:center; color:var(--azul); margin-top:0;">REPORTE ESTADÍSTICO MENSUAL</h3>
+                    <div class="badge-asistencia">
+                        <small>PROMEDIO ASISTENCIA DEL MES</small><br>
+                        <span style="font-size:2rem;">${porcMes}%</span>
+                    </div>
+                    <h4>📊 Distribución por Edades y Género</h4>
+                    <table>
+                        <thead><tr style="background:#eee"><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead>
+                        <tbody>${filasEdades}</tbody>
+                        <tr style="background:#f9f9f9; font-weight:bold;"><td>TOTAL</td><td>${tH}</td><td>${tV}</td><td>${tH+tV}</td></tr>
+                    </table>
+                    <button onclick="window.print()" class="no-print" style="margin-top:10px; background:var(--azul); color:white;">🖨️ Imprimir para Dirección</button>
+                </div>`;
+        }
+
+        // --- ACCIONES ---
         window.agregarAlumno = () => {
             const nom = document.getElementById('newNombre').value.toUpperCase();
-            if(!nom) return;
-            window.db.alumnos.push({ id: Date.now(), nombre: nom, genero: document.getElementById('newGen').value });
+            const nac = document.getElementById('newNac').value;
+            if(!nom || !nac) return alert("Faltan datos (Nombre o Fecha de Nacimiento)");
+            window.db.alumnos.push({ id: Date.now(), nombre: nom, genero: document.getElementById('newGen').value, nacimiento: nac });
             window.saveToCloud(window.db);
             document.getElementById('newNombre').value = "";
         };
@@ -157,74 +178,76 @@
 
     <style>
         :root { --azul: #1a2a6c; --celeste: #154360; --naranja: #f39c12; --gris: #f4f7f6; --exito: #27ae60; --morado: #8e44ad; --rojo: #e74c3c; }
-        body { font-family: sans-serif; margin: 0; background: var(--gris); }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; }
+        body { font-family: sans-serif; margin: 0; background: var(--gris); color: #333; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 3px solid var(--naranja); }
         .container { max-width: 450px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer;}
-        .student-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; }
-        th, td { border: 1px solid #eee; padding: 4px; }
-        .resumen-admin { background: var(--azul); color: white; padding: 5px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; text-align: center; }
-        .logo-login { width: 80px; height: 80px; margin-bottom: 10px; }
+        .card { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
+        .student-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        .badge-asistencia { background: var(--celeste); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; }
+        .logo-login { width: 90px; height: 90px; margin-bottom: 10px; border-radius: 50%; }
+        @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
     </style>
 </head>
 <body>
 
 <div id="authSection" style="max-width: 320px; margin: 60px auto; padding: 25px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
     <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-login" alt="Logo">
-    <h3 id="authTitle" style="margin: 0 0 15px 0; color: var(--azul);">Lucila Palacios</h3>
-    
+    <h3 id="authTitle" style="margin: 0 0 15px 0; color: var(--azul);">E.B.N. Lucila Palacios</h3>
     <input type="text" id="loginUser" placeholder="Usuario">
     <input type="password" id="loginPass" placeholder="Clave">
-    
     <div id="regExtra" style="display:none;">
         <input type="text" id="regNombreCompleto" placeholder="Nombre Docente">
         <input type="password" id="escuelaCode" placeholder="Código Escuela">
     </div>
-    
     <button onclick="login()" id="btnEntrar" class="btn-main">Entrar</button>
     <button onclick="crearCuenta()" id="btnRegistrar" class="btn-main" style="display:none; background: var(--morado);">Registrar</button>
-    
     <p id="toggleText" style="cursor:pointer; color: var(--azul); font-size: 12px; margin-top: 15px;" onclick="mostrarRegistro(true)">¿No tienes cuenta? Regístrate</p>
 </div>
 
 <div id="appContent" style="display: none;">
     <header>
         <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; font-size:10px; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salir</button>
-        <h4 style="margin:0;">E.B.N. LUCILA PALACIOS</h4>
+        <h4 style="margin:0;">LUCILA PALACIOS</h4>
     </header>
 
     <div class="container">
-        <div id="adminPanelBtn" class="card" style="display:none; background: #f0f0f0;">
-            <b>DIRECCIÓN:</b>
-            <div style="display:flex; gap:5px;">
-                <button onclick="generarReporteGlobal()" style="cursor:pointer;">Hoy</button>
-                <button onclick="generarConsolidadoMensual()" style="background:var(--morado); color:white; cursor:pointer;">Mensual</button>
+        <div id="adminPanelBtn" class="card no-print" style="display:none; background: #f0f0f0; border: 2px solid var(--naranja);">
+            <b>📊 PANEL DE DIRECCIÓN</b>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <button onclick="generarReporteGlobal()" style="font-size:11px; cursor:pointer;">Asistencia Hoy</button>
+                <button onclick="generarConsolidadoMensual()" style="background:var(--morado); color:white; font-size:11px; cursor:pointer;">Mensual Global</button>
             </div>
-            <div id="resultadosGlobales"></div>
+            <div id="resultadosGlobales" style="margin-top:10px;"></div>
         </div>
 
-        <div class="card">
+        <div class="card no-print">
             <input type="text" id="docente" onchange="actualizarPerfil()" placeholder="Nombre Docente">
             <input type="text" id="seccion" onchange="actualizarPerfil()" placeholder="Grado y Sección">
-            <div id="resumenSeccion" style="font-size:12px; font-weight:bold; color:var(--celeste); margin-top:5px;"></div>
         </div>
 
-        <div class="card">
-            <b>+ Nuevo Alumno</b>
+        <div class="card no-print">
+            <b style="color:var(--azul);">➕ Registrar Alumno</b>
             <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
-            <select id="newGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
-            <button onclick="agregarAlumno()" class="btn-main">Guardar</button>
+            <div style="display:flex; gap:5px;">
+                <select id="newGen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
+                <input type="date" id="newNac" style="width:60%">
+            </div>
+            <button onclick="agregarAlumno()" class="btn-main">Guardar en Matrícula</button>
         </div>
 
         <div class="card">
-            <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <button onclick="toggleFeriado()" style="background:var(--rojo); color:white; font-size:11px; cursor:pointer;">🚩 Marcar Feriado</button>
-            <p style="font-size: 12px; margin-top: 10px;">Fecha: <b id="displayFecha"></b></p>
+            <h3 style="margin-top:0;">📅 Pase de Lista</h3>
+            <input type="date" id="fechaSeleccionada" onchange="window.render()" class="no-print">
+            <button onclick="toggleFeriado()" class="no-print" style="background:var(--rojo); color:white; font-size:11px; cursor:pointer;">🚩 Feriado</button>
+            <p style="font-size: 13px; font-weight: bold; text-align: center;">Fecha: <span id="displayFecha"></span></p>
             <div id="listaAsistencia"></div>
         </div>
+
+        <div id="reporteDocenteContenedor"></div>
     </div>
 </div>
 
