@@ -34,7 +34,7 @@
         .alerta-salida { color: var(--rojo); font-weight: bold; }
         
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.8rem; }
-        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
         .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-rojo { background: var(--rojo); } .btn-gris { background: #6c757d; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -43,7 +43,7 @@
 <body>
 
 <header>
-    <h2 style="margin:0;">E.B.N. "LUCILA PALACIOS"</h2>
+    <h2>E.B.N. "LUCILA PALACIOS"</h2>
     <small>CONTROL INTEGRAL DE ASISTENCIA Y OBSERVACIONES</small>
 </header>
 
@@ -70,7 +70,10 @@
         <div id="uiVigilante" class="hidden" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top:10px;">
             <p id="labelGrupo" style="margin:0; font-weight:bold;"></p>
             <label>TURNO VIGILANCIA:</label>
-            <select id="turnoVig"><option value="DIA">DÍA (ENT: 06:00 AM / SAL: 06:00 PM)</option><option value="NOCHE">NOCHE (ENT: 18:00 PM / SAL: 06:00 AM)</option></select>
+            <select id="turnoVig">
+                <option value="DIA">DÍA (ENT: 06:00 AM / SAL: 06:00 PM)</option>
+                <option value="NOCHE">NOCHE (ENT: 18:00 PM / SAL: 06:00 AM)</option>
+            </select>
         </div>
 
         <div class="grid-2">
@@ -84,34 +87,23 @@
                     <option value="VACACIONES">VACACIONES 🌴</option>
                 </select>
             </div>
-            <div>
-                <label>ENTRADA:</label>
-                <input type="time" id="hEntrada">
-            </div>
+            <div><label>ENTRADA:</label><input type="time" id="hEntrada"></div>
         </div>
 
         <div class="grid-2">
-            <div>
-                <label>SALIDA:</label>
-                <input type="time" id="hSalida">
-            </div>
-            <div>
-                <label>OBSERVACIONES:</label>
-                <input type="text" id="tObs" placeholder="Ej: Retiro temprano por salud">
-            </div>
+            <div><label>SALIDA:</label><input type="time" id="hSalida"></div>
+            <div><label>OBSERVACIONES:</label><input type="text" id="tObs" placeholder="Motivo de salida"></div>
         </div>
         
-        <button class="btn btn-verde" onclick="guardar()">GUARDAR REGISTRO JORNADA</button>
+        <button class="btn btn-verde" onclick="guardar()">GUARDAR REGISTRO</button>
     </div>
 
     <div class="card">
-        <h3>📅 Consolidado Mensual Detallado</h3>
+        <h3>📅 Consolidado Mensual</h3>
         <div id="wrapperMensual" class="hidden">
             <div class="t-wrap">
-                <table id="tabMensual">
-                    <thead>
-                        <tr><th>Nombre</th><th>Cargo</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Perm</th><th>Rep</th><th>Vac</th></tr>
-                    </thead>
+                <table>
+                    <thead><tr><th>Nombre</th><th>Cargo</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Perm</th><th>Rep</th><th>Vac</th></tr></thead>
                     <tbody id="bMensual"></tbody>
                 </table>
             </div>
@@ -123,23 +115,21 @@
     </div>
 
     <div class="card">
-        <h3>📋 Lista del Día con Salida: <span id="titFecha"></span></h3>
+        <h3>📋 Lista del Día: <span id="titFecha"></span></h3>
         <div id="areaLista" class="hidden">
             <div class="t-wrap">
                 <table>
-                    <thead>
-                        <tr><th>Nombre</th><th>Cargo/Grupo</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Observaciones</th></tr>
-                    </thead>
+                    <thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Observaciones</th></tr></thead>
                     <tbody id="bLista"></tbody>
                 </table>
             </div>
         </div>
         <div class="grid-2">
             <button class="btn btn-gris" onclick="toggleSeccion('areaLista', false)">OCULTAR LISTA</button>
-            <button class="btn btn-azul" onclick="toggleSeccion('areaLista', true)">MOSTRAR LISTA</button>
+            <button class="btn btn-azul" onclick="mostrarListaCompleta()">MOSTRAR LISTA</button>
         </div>
         <button class="btn btn-gris" style="background:#444" onclick="limpiarPantalla()">LIMPIAR PANTALLA (PRIVACIDAD)</button>
-        <button class="btn btn-rojo" style="background:#800000" onclick="generarPDF()">DESCARGAR REPORTE PDF</button>
+        <button class="btn btn-rojo" style="background:#800000" onclick="generarPDF()">DESCARGAR PDF</button>
     </div>
 
     <div class="card">
@@ -148,15 +138,9 @@
             <h4>+ Nuevo Personal</h4>
             <input type="text" id="nN" placeholder="Nombre completo">
             <select id="nC" onchange="checkGrupo(this.value)">
-                <option value="Docente">Docente</option>
-                <option value="Obrero">Obrero</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
-                <option value="Vigilante">Vigilante</option>
+                <option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option>
             </select>
-            <div id="uiGrupoExtra" class="hidden">
-                <select id="nG" style="margin-top:5px;"><option value="GRUPO A">GRUPO A</option><option value="GRUPO B">GRUPO B</option><option value="GRUPO C">GRUPO C</option><option value="GRUPO D">GRUPO D</option></select>
-            </div>
+            <div id="uiGrupoExtra" class="hidden"><select id="nG"><option value="GRUPO A">GRUPO A</option><option value="GRUPO B">GRUPO B</option><option value="GRUPO C">GRUPO C</option><option value="GRUPO D">GRUPO D</option></select></div>
             <select id="nT" style="margin-top:10px;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
             <button class="btn btn-verde" onclick="alta()">DAR DE ALTA</button>
             <hr>
@@ -188,7 +172,14 @@
     });
 
     function toggleSeccion(id, show) { document.getElementById(id).className = show ? "" : "hidden"; }
-    function limpiarPantalla() { document.getElementById('bLista').innerHTML = '<tr><td colspan=6 style="color:#999; padding:20px;">Pantalla despejada.</td></tr>'; }
+    
+    // CORRECCIÓN: Esta función ahora reinicia la vista desde la base de datos
+    function mostrarListaCompleta() {
+        toggleSeccion('areaLista', true);
+        actualizarTodo(); 
+    }
+
+    function limpiarPantalla() { document.getElementById('bLista').innerHTML = '<tr><td colspan=6 style="color:#999; padding:20px;">Lista despejada. Presione "MOSTRAR LISTA" para ver de nuevo.</td></tr>'; }
     function checkGrupo(c) { document.getElementById('uiGrupoExtra').className = (c === "Vigilante") ? "" : "hidden"; }
 
     async function procesarSeleccion(n) {
@@ -196,7 +187,6 @@
         const p = nomina.find(x => x.n === n);
         document.getElementById('uiVigilante').className = (p.c === "Vigilante") ? "" : "hidden";
         if(p.c === "Vigilante") document.getElementById('labelGrupo').innerText = `VIGILANTE: ${p.g}`;
-
         const hoyTs = new Date(document.getElementById('fManual').value + "T12:00:00").getTime();
         const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("ts",">=",hoyTs - (30*86400000)).get();
         let i=0, pr=0;
@@ -211,7 +201,6 @@
         const p = nomina.find(x => x.n === n);
         if(!p) return alert("Seleccione personal");
 
-        // Lógica de Retraso Entrada
         if(e === "ASISTENCIA" && hE) {
             const t = parseInt(hE.replace(":",""));
             if(p.c === "Vigilante") {
@@ -223,9 +212,8 @@
                 else if(p.c === "CNAE (Cocinera)") { if(t>700) e="RETRASO"; }
             }
         }
-
         await db.collection("asistencia_ebnlp_final").add({ n, e, f, hE:hE||"--", hS:hS||"--", obs:obs||"--", c:p.c, g:p.g||"", t:p.t, ts:new Date(f+"T12:00:00").getTime(), mes:f.substring(0,7) });
-        alert("¡Registro guardado!");
+        alert("¡Guardado!");
         document.getElementById('tObs').value = "";
     }
 
@@ -241,30 +229,32 @@
 
             let cont = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
             
-            bL.innerHTML = "";
-            dH.forEach(doc => {
-                const d = doc.data(); 
-                if(d.e === "ASISTENCIA" || d.e === "RETRASO") cont[d.c]++;
-                
-                // Marcador visual de salida temprana
-                let sTemp = "";
-                if(d.hS !== "--") {
-                    const ts = parseInt(d.hS.replace(":",""));
-                    if(d.t === "MAÑANA") {
-                        if(d.c === "Docente" && ts < 1200) sTemp = " (TEMPRANO)";
-                        if((d.c === "Obrero" || d.c === "Administrativo") && ts < 1245) sTemp = " (TEMPRANO)";
-                        if(d.c === "CNAE (Cocinera)" && ts < 1400) sTemp = " (TEMPRANO)";
-                    } else if(d.t === "TARDE") {
-                        if(d.c === "Docente" && ts < 1700) sTemp = " (TEMPRANO)";
-                        if(d.c === "Obrero" && ts < 1730) sTemp = " (TEMPRANO)";
-                        if(d.c === "Administrativo" && ts < 1800) sTemp = " (TEMPRANO)";
+            // Solo actualizamos la tabla si NO está en modo "oculto/limpio"
+            if(!document.getElementById('areaLista').classList.contains('hidden')) {
+                bL.innerHTML = "";
+                dH.forEach(doc => {
+                    const d = doc.data(); 
+                    if(d.e === "ASISTENCIA" || d.e === "RETRASO") cont[d.c]++;
+                    let sTemp = "";
+                    if(d.hS !== "--") {
+                        const ts = parseInt(d.hS.replace(":",""));
+                        if(d.t === "MAÑANA") {
+                            if(d.c === "Docente" && ts < 1200) sTemp = " (TEMPRANO)";
+                            if((d.c === "Obrero" || d.c === "Administrativo") && ts < 1245) sTemp = " (TEMPRANO)";
+                            if(d.c === "CNAE (Cocinera)" && ts < 1400) sTemp = " (TEMPRANO)";
+                        } else if(d.t === "TARDE") {
+                            if(d.c === "Docente" && ts < 1700) sTemp = " (TEMPRANO)";
+                            if(d.c === "Obrero" && ts < 1730) sTemp = " (TEMPRANO)";
+                            if(d.c === "Administrativo" && ts < 1800) sTemp = " (TEMPRANO)";
+                        }
                     }
-                }
+                    bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.e}</td><td>${d.hE}</td><td class="${sTemp?'alerta-salida':''}">${d.hS}${sTemp}</td><td>${d.obs}</td></tr>`;
+                });
+            } else {
+                // Si la lista está oculta, igual calculamos los totales para el Dash
+                dH.forEach(doc => { if(doc.data().e === "ASISTENCIA" || doc.data().e === "RETRASO") cont[doc.data().c]++; });
+            }
 
-                bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c} ${d.g?'('+d.g+')':''}</td><td>${d.e}</td><td>${d.hE}</td><td class="${sTemp?'alerta-salida':''}">${d.hS}${sTemp}</td><td>${d.obs}</td></tr>`;
-            });
-
-            // Update Dash
             document.getElementById('presDoc').innerText = cont["Docente"];
             document.getElementById('presObr').innerText = cont["Obrero"];
             document.getElementById('presAdm').innerText = cont["Administrativo"];
@@ -291,7 +281,7 @@
 
     async function baja() {
         const n = document.getElementById('sBaja').value, p = nomina.find(x => x.n === n);
-        if(p && confirm(`¿Eliminar permanentemente a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
+        if(p && confirm(`¿Eliminar a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
     }
 
     function generarPDF() {
@@ -302,9 +292,9 @@
             const cols = row.querySelectorAll("td");
             if(cols.length > 1) d.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText, cols[5].innerText]);
         });
-        doc.text(`EBNLP - REPORTE DE JORNADA - ${f}`, 14, 15);
-        doc.autoTable({ head: [['Nombre', 'Cargo', 'Estatus', 'Entrada', 'Salida', 'Observaciones']], body: d, startY: 20 });
-        doc.save(`EBNLP_Salidas_${f}.pdf`);
+        doc.text(`EBNLP - REPORTE ${f}`, 14, 15);
+        doc.autoTable({ head: [['Nombre', 'Cargo', 'Estatus', 'Entrada', 'Salida', 'Obs']], body: d, startY: 20 });
+        doc.save(`EBNLP_${f}.pdf`);
     }
 </script>
 </body>
