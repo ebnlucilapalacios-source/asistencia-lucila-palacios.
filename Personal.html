@@ -17,16 +17,14 @@
         .contenedor { max-width: 1200px; margin: auto; padding: 10px; }
         .card { background: white; margin-bottom: 15px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #ddd; }
         h3 { margin-top: 0; color: var(--azul); border-left: 5px solid var(--naranja); padding-left: 10px; text-transform: uppercase; font-size: 0.9rem; }
-        h4 { color: var(--azul); margin: 15px 0 5px; font-size: 0.85rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-
-        /* Dashboard Expandido para todo el personal */
+        
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .dash-card { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--azul); }
         .dash-card h4 { margin: 0; font-size: 0.65rem; color: #666; text-transform: uppercase; }
         .dash-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: bold; color: var(--azul); }
 
         .t-wrap { overflow-x: auto; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 11px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; font-size: 11px; }
         th { background: #f8f9fa; padding: 10px; border: 1px solid #ddd; color: var(--azul); }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
         
@@ -34,16 +32,17 @@
         label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.8rem; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 0.85rem; }
-        .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-rojo { background: var(--rojo); } .btn-gris { background: #6c757d; }
+        .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-gris { background: #6c757d; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .resaltado { background: #e3f2fd; font-weight: bold; }
+        .col-estatus { font-weight: bold; color: var(--azul); background: #fffde7; }
     </style>
 </head>
 <body>
 
 <header>
     <h2>E.B.N. "LUCILA PALACIOS"</h2>
-    <small>SISTEMA INTEGRAL DE ASISTENCIA 2026</small>
+    <small>CONTROL DE ASISTENCIA Y CONSOLIDADO MENSUAL 2026</small>
 </header>
 
 <div class="contenedor">
@@ -60,14 +59,8 @@
     <div class="card">
         <h3>📝 Registro de Asistencia</h3>
         <input type="date" id="fManual" onchange="actualizarTodo()">
-        
         <label>TRABAJADOR:</label>
-        <select id="sPersona" onchange="checkVig(this.value)"></select>
-        
-        <div id="uiVig" class="hidden" style="margin-top:10px; padding:10px; background:#fff3e0; border-radius:8px;">
-            <span id="txtGrupoVig" style="font-weight:bold; color:var(--naranja);"></span>
-        </div>
-
+        <select id="sPersona"></select>
         <div class="grid-2">
             <div>
                 <label>ESTATUS:</label>
@@ -84,25 +77,27 @@
     </div>
 
     <div class="card">
-        <h3>📅 Consolidado Mensual (Promedios)</h3>
-        <div id="areaMensual" class="hidden">
+        <h3>📊 Consolidado de Estatus por Cargo (Mes)</h3>
+        <div id="areaConsolidado" class="hidden">
             <div class="t-wrap">
                 <table>
                     <thead>
                         <tr>
                             <th>Cargo / Grupo</th>
-                            <th>Nómina</th>
-                            <th style="background:var(--azul); color:white;">Promedio Asistencia Diaria</th>
-                            <th>Eficiencia</th>
+                            <th style="background:#e8f5e9;">Asistencias</th>
+                            <th style="background:#ffebee;">Inasistencias</th>
+                            <th style="background:#fff3e0;">Permisos</th>
+                            <th style="background:#f3e5f5;">Reposos</th>
+                            <th style="background:var(--azul); color:white;">Promedio/Día</th>
                         </tr>
                     </thead>
-                    <tbody id="bEstadisticasCargo"></tbody>
+                    <tbody id="bEstatusMensual"></tbody>
                 </table>
             </div>
         </div>
         <div class="grid-2">
-            <button class="btn btn-gris" onclick="toggleSec('areaMensual', false)">OCULTAR</button>
-            <button class="btn btn-azul" onclick="toggleSec('areaMensual', true)">MOSTRAR REPORTE</button>
+            <button class="btn btn-gris" onclick="toggleSec('areaConsolidado', false)">OCULTAR</button>
+            <button class="btn btn-azul" onclick="toggleSec('areaConsolidado', true)">VER CONSOLIDADO</button>
         </div>
     </div>
 
@@ -120,7 +115,6 @@
             <button class="btn btn-gris" onclick="toggleSec('areaLista', false)">OCULTAR LISTA</button>
             <button class="btn btn-azul" onclick="toggleSec('areaLista', true)">MOSTRAR LISTA</button>
         </div>
-        <button class="btn btn-rojo" style="background:#800000" onclick="generarPDF()">DESCARGAR PDF</button>
     </div>
 
     <div class="card">
@@ -139,19 +133,11 @@
                 <select id="nG"><option value="GRUPO A">GRUPO A</option><option value="GRUPO B">GRUPO B</option></select>
             </div>
             <button class="btn btn-verde" onclick="alta()">REGISTRAR</button>
-            <hr>
-            <h4>🔄 Cambiar Grupo (Vigilantes)</h4>
-            <select id="sVigMod"></select>
-            <select id="nNuevoG"><option value="GRUPO A">A GRUPO A</option><option value="GRUPO B">A GRUPO B</option></select>
-            <button class="btn btn-azul" onclick="modificarGrupo()">ACTUALIZAR</button>
-            <hr>
-            <button class="btn btn-rojo" onclick="baja()">ELIMINAR TRABAJADOR</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Configuración Firebase (Se mantiene la tuya)
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -159,29 +145,18 @@
     document.getElementById('fManual').value = new Date().toISOString().split('T')[0];
     let nomina = [];
 
-    // Listener de Nómina
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = [];
-        const sP = document.getElementById('sPersona'), sVM = document.getElementById('sVigMod');
-        sP.innerHTML = sVM.innerHTML = '<option value="">-- Seleccionar --</option>';
+        const sP = document.getElementById('sPersona');
+        sP.innerHTML = '<option value="">-- Seleccionar --</option>';
         snap.forEach(doc => {
             let d = doc.data(); d.id = doc.id; nomina.push(d);
             sP.innerHTML += `<option value="${d.n}">${d.n} (${d.c})</option>`;
-            if(d.c === "Vigilante") sVM.innerHTML += `<option value="${d.id}">${d.n} (${d.g})</option>`;
         });
         actualizarTodo();
     });
 
     function toggleSec(id, v) { document.getElementById(id).classList.toggle('hidden', !v); }
-    
-    function checkVig(n) {
-        const p = nomina.find(x => x.n === n);
-        const ui = document.getElementById('uiVig');
-        if(p && p.c === "Vigilante") {
-            ui.classList.remove('hidden');
-            document.getElementById('txtGrupoVig').innerText = "ASIGNADO AL: " + p.g;
-        } else ui.classList.add('hidden');
-    }
 
     async function guardar() {
         const n = document.getElementById('sPersona').value, f = document.getElementById('fManual').value, e = document.getElementById('sEstatus').value, h = document.getElementById('hEntrada').value;
@@ -196,7 +171,7 @@
         document.getElementById('titFecha').innerText = fH;
 
         db.collection("asistencia_ebnlp_final").onSnapshot(snap => {
-            const bL = document.getElementById('bLista'), bEst = document.getElementById('bEstadisticasCargo');
+            const bL = document.getElementById('bLista'), bEst = document.getElementById('bEstatusMensual');
             const dH = snap.docs.filter(d => d.data().f === fH);
             const dM = snap.docs.filter(d => d.data().mes === mH);
 
@@ -221,54 +196,41 @@
             document.getElementById('presVigA').innerText = hoy["Vigilante GRUPO A"];
             document.getElementById('presVigB').innerText = hoy["Vigilante GRUPO B"];
 
-            // 2. Estadísticas Mensuales
+            // 2. Consolidado de Estatus Mensual por Cargo
             bEst.innerHTML = "";
-            const grupos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante GRUPO A", "Vigilante GRUPO B"];
-            grupos.forEach(g => {
-                const isVig = g.includes("Vigilante");
-                const cargoR = isVig ? "Vigilante" : g;
-                const grupoR = isVig ? g.replace("Vigilante ","") : "";
+            const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante GRUPO A", "Vigilante GRUPO B"];
+            
+            cargos.forEach(c => {
+                const isVig = c.includes("Vigilante");
+                const cargoR = isVig ? "Vigilante" : c;
+                const grupoR = isVig ? c.replace("Vigilante ","") : "";
                 
-                const nTotal = nomina.filter(p => p.c === cargoR && (isVig ? p.g === grupoR : true)).length;
-                const aMes = dM.filter(d => d.data().c === cargoR && (isVig ? d.data().g === grupoR : true) && d.data().e === "ASISTENCIA");
+                const registrosMes = dM.filter(d => d.data().c === cargoR && (isVig ? d.data().g === grupoR : true));
                 
-                const dias = [...new Set(aMes.map(d => d.data().f))].length || 1;
-                const prom = (aMes.length / dias).toFixed(1);
-                const pct = nTotal > 0 ? ((prom / nTotal) * 100).toFixed(1) : 0;
+                const asis = registrosMes.filter(r => r.data().e === "ASISTENCIA").length;
+                const faltas = registrosMes.filter(r => r.data().e === "INASISTENCIA").length;
+                const permisos = registrosMes.filter(r => r.data().e === "PERMISO").length;
+                const reposos = registrosMes.filter(r => r.data().e === "REPOSO").length;
+                
+                const diasDistintos = [...new Set(registrosMes.map(d => d.data().f))].length || 1;
+                const prom = (asis / diasDistintos).toFixed(1);
 
-                bEst.innerHTML += `<tr><td>${g}</td><td>${nTotal}</td><td class="resaltado">${prom} /día</td><td>${pct}%</td></tr>`;
+                bEst.innerHTML += `<tr>
+                    <td style="text-align:left; font-weight:bold;">${c.toUpperCase()}</td>
+                    <td style="color:green;">${asis}</td>
+                    <td style="color:red;">${faltas}</td>
+                    <td style="color:orange;">${permisos}</td>
+                    <td style="color:purple;">${reposos}</td>
+                    <td class="col-estatus">${prom} /día</td>
+                </tr>`;
             });
         });
     }
 
     async function alta() {
         const n = document.getElementById('nN').value.toUpperCase().trim(), c = document.getElementById('nC').value, g = document.getElementById('nG').value;
-        if(n) await db.collection("nomina_institucional").add({n, c, g: (c==="Vigilante"?g:""), t:"MAÑANA"});
+        if(n) await db.collection("nomina_institucional").add({n, c, g: (c==="Vigilante"?g:"")});
         document.getElementById('nN').value = "";
-    }
-
-    async function modificarGrupo() {
-        const id = document.getElementById('sVigMod').value, ng = document.getElementById('nNuevoG').value;
-        if(id) await db.collection("nomina_institucional").doc(id).update({g: ng});
-        alert("Grupo actualizado");
-    }
-
-    async function baja() {
-        const n = document.getElementById('sPersona').value, p = nomina.find(x => x.n === n);
-        if(p && confirm(`¿Eliminar a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
-    }
-
-    function generarPDF() {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
-        const f = document.getElementById('fManual').value;
-        const d = []; 
-        document.querySelectorAll("#bLista tr").forEach(row => {
-            const cols = row.querySelectorAll("td");
-            if(cols.length > 1) d.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
-        });
-        doc.text(`REPORTE EBNLP - ${f}`, 14, 15);
-        doc.autoTable({ head: [['Nombre', 'Cargo', 'Grupo', 'Estatus', 'Hora']], body: d, startY: 20 });
-        doc.save(`Asistencia_${f}.pdf`);
     }
 </script>
 </body>
