@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>E.B.N. LUCILA PALACIOS - CONTROL DE ASISTENCIA</title>
+    <title>E.B.N. LUCILA PALACIOS - CONTROL DE ASISTENCIA 2026</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -12,27 +12,27 @@
     
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #2d7a31; --gris: #e0e0e0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; color: #333; font-size: 14px; }
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
-        .contenedor { max-width: 700px; margin: auto; padding: 15px; }
+        .contenedor { max-width: 800px; margin: auto; padding: 15px; }
 
         /* DASHBOARD */
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .dash-card { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #ccc; position: relative; border-bottom: 4px solid var(--azul); }
+        .dash-card { background: white; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #ccc; position: relative; border-bottom: 4px solid var(--azul); }
         .dash-card.full { grid-column: 1 / 3; background: var(--azul); color: white; }
-        .pres { font-size: 1.5rem; font-weight: bold; display: block; color: var(--azul); }
-        .dash-card.full .pres { color: white; font-size: 2.2rem; }
-        .promedio-tag { position: absolute; top: 5px; right: 8px; font-size: 0.65rem; padding: 2px 6px; border-radius: 8px; font-weight: bold; }
+        .pres { font-size: 1.4rem; font-weight: bold; display: block; color: var(--azul); }
+        .dash-card.full .pres { color: white; font-size: 2rem; }
+        .promedio-tag { position: absolute; top: 5px; right: 8px; font-size: 0.65rem; padding: 2px 6px; border-radius: 8px; font-weight: bold; background: #eee; }
 
         /* SECCIONES */
-        .card-seccion { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--naranja); }
-        .sec-header { color: var(--azul); font-weight: bold; margin-bottom: 15px; text-transform: uppercase; font-size: 0.85rem; border-left: 4px solid var(--naranja); padding-left: 10px; display: flex; justify-content: space-between; }
+        .card-seccion { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--naranja); }
+        .sec-header { color: var(--azul); font-weight: bold; margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; border-left: 4px solid var(--naranja); padding-left: 10px; }
         
-        label { display: block; margin-top: 10px; font-size: 0.7rem; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+        label { display: block; margin-top: 10px; font-size: 0.75rem; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
 
         /* BOTONES */
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; text-transform: uppercase; font-size: 0.75rem; transition: 0.3s; }
         .btn-verde { background: var(--verde); box-shadow: 0 4px 0 #1e5c25; }
         .btn-azul { background: var(--azul); }
         .btn-rojo { background: var(--rojo); box-shadow: 0 4px 0 #5a0000; }
@@ -41,43 +41,44 @@
 
         /* TABLAS */
         .table-wrap { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; background: white; text-align: center; }
-        th { background: var(--azul); color: white; padding: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; background: white; text-align: center; }
+        th { background: var(--azul); color: white; padding: 10px; }
         td { padding: 8px; border: 1px solid #eee; }
         .txt-rojo { color: var(--rojo); font-weight: bold; }
         .hidden { display: none; }
-        .info-laborado { background: var(--azul); color: white; padding: 10px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 10px; text-align: center; }
+        .audit-info { background: #fff4d1; padding: 8px; border-radius: 8px; font-size: 0.7rem; color: #856404; border: 1px solid #ffeeba; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>E.B.N. "LUCILA PALACIOS"</h1>
-    <p>SISTEMA DE ASISTENCIA Y PUNTUALIDAD</p>
+    <p>CONTROL DE ASISTENCIA Y PUNTUALIDAD 2026</p>
 </header>
 
 <div class="contenedor">
 
-    <div class="dashboard" id="dash">
+    <div class="dashboard">
         <div class="dash-card full"><h4>Efectividad Institucional Hoy</h4><span class="pres" id="txtEfec">0%</span></div>
-        <div class="dash-card" id="cardDoc"><span class="promedio-tag" id="percDoc">0%</span><h4>Docentes</h4><span class="pres" id="pDoc">0</span><small>de <span id="tDoc">0</span></small></div>
-        <div class="dash-card" id="cardObr"><span class="promedio-tag" id="percObr">0%</span><h4>Obreros</h4><span class="pres" id="pObr">0</span><small>de <span id="tObr">0</span></small></div>
-        <div class="dash-card" id="cardAdm"><span class="promedio-tag" id="percAdm">0%</span><h4>Admin.</h4><span class="pres" id="pAdm">0</span><small>de <span id="tAdm">0</span></small></div>
-        <div class="dash-card" id="cardCn"><span class="promedio-tag" id="percCn">0%</span><h4>CNAE</h4><span class="pres" id="pCn">0</span><small>de <span id="tCn">0</span></small></div>
+        <div class="dash-card"><span class="promedio-tag" id="percDoc">0%</span><h4>Docentes</h4><span class="pres" id="pDoc">0</span><small>de <span id="tDoc">0</span></small></div>
+        <div class="dash-card"><span class="promedio-tag" id="percObr">0%</span><h4>Obreros</h4><span class="pres" id="pObr">0</span><small>de <span id="tObr">0</span></small></div>
+        <div class="dash-card"><span class="promedio-tag" id="percAdm">0%</span><h4>Admin.</h4><span class="pres" id="pAdm">0</span><small>de <span id="tAdm">0</span></small></div>
+        <div class="dash-card"><span class="promedio-tag" id="percCn">0%</span><h4>CNAE</h4><span class="pres" id="pCn">0</span><small>de <span id="tCn">0</span></small></div>
     </div>
 
     <div class="card-seccion">
-        <div class="sec-header">📝 Registro de Entrada/Salida</div>
+        <div class="sec-header">📝 REGISTRO DE JORNADA</div>
         <div class="group-btns">
             <input type="date" id="fManual" onchange="actualizarTodo()">
             <select id="sTurno">
-                <option value="MAÑANA">MAÑANA</option>
-                <option value="TARDE">TARDE</option>
+                <option value="MAÑANA">TURNO MAÑANA</option>
+                <option value="TARDE">TURNO TARDE</option>
                 <option value="NOCHE">NOCHE (Vigilancia)</option>
             </select>
         </div>
-        <label>Personal:</label>
-        <select id="sPersona"></select>
+        <label>Nombre del Trabajador:</label>
+        <select id="sPersona" onchange="auditoriaRapida(this.value)"></select>
+        <div id="boxAudit" class="audit-info hidden"></div>
 
         <div class="group-btns">
             <div><label>Estatus:</label>
@@ -87,40 +88,42 @@
                     <option value="RETRASO">RETRASO ⚠️</option>
                     <option value="PERMISO">PERMISO 📝</option>
                     <option value="REPOSO">REPOSO 🏥</option>
+                    <option value="VACACIONES">VACACIONES 🌴</option>
                 </select>
             </div>
             <div><label>Hora Entrada:</label><input type="time" id="hEnt"></div>
         </div>
         <div class="group-btns">
             <div><label>Hora Salida:</label><input type="time" id="hSal"></div>
-            <div><label>Observación:</label><input type="text" id="obs" placeholder="..."></div>
+            <div><label>Observación:</label><input type="text" id="obs" placeholder="Motivo o nota..."></div>
         </div>
-        <button class="btn btn-verde" onclick="guardarAsistencia()">GUARDAR REGISTRO</button>
+        <button class="btn btn-verde" onclick="guardarAsistencia()">GUARDAR EN FIREBASE</button>
     </div>
 
     <div class="card-seccion">
-        <div class="sec-header">📊 Consolidado Maestro Mensual</div>
-        <label>Mes de Consulta:</label>
+        <div class="sec-header">📊 CONSOLIDADO MAESTRO MENSUAL</div>
+        <label>Seleccionar Mes:</label>
         <input type="month" id="mesC" onchange="cargarConsolidado()">
         <div class="group-btns">
-            <button class="btn btn-gris" onclick="toggle('secCon', false)">Ocultar</button>
-            <button class="btn btn-azul" onclick="toggle('secCon', true)">Ver Reporte</button>
+            <button class="btn btn-gris" onclick="toggle('secCon', false)">Ocultar Reporte</button>
+            <button class="btn btn-azul" onclick="toggle('secCon', true)">Ver Reporte Maestro</button>
         </div>
+        
         <div id="secCon" class="hidden">
-            <div id="infoDias" class="info-laborado">Días con registros: 0</div>
+            <div id="infoDias" style="text-align:center; font-weight:bold; padding:10px; color:var(--azul);">Días registrados: 0</div>
             
-            <label>Promedios por Cargo:</label>
+            <label>Promedio Diario de Asistencia por Cargo:</label>
             <div class="table-wrap">
                 <table id="tProm">
-                    <thead><tr><th>Cargo</th><th>Asis. Promedio</th><th>% Efec.</th></tr></thead>
+                    <thead><tr><th>Cargo</th><th>Promedio Real</th><th>% Efec.</th></tr></thead>
                     <tbody id="bProm"></tbody>
                 </table>
             </div>
 
-            <label>Detalle Individual (Acumulado Minutos):</label>
+            <label>Detalle de Estatus y Retrasos por Nombre:</label>
             <div class="table-wrap">
                 <table id="tMes">
-                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Per</th><th>Rep</th><th>Min. Retardo</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Per</th><th>Rep</th><th>Vac</th><th>Total Retardo</th></tr></thead>
                     <tbody id="bMes"></tbody>
                 </table>
             </div>
@@ -129,20 +132,22 @@
     </div>
 
     <div class="card-seccion">
-        <div class="sec-header">📋 Lista del Día: <span id="fTit"></span></div>
+        <div class="sec-header">📋 LISTA DEL DÍA: <span id="fTit"></span></div>
         <div class="group-btns">
-            <button class="btn btn-gris" onclick="toggle('secLis', false)">Ocultar</button>
-            <button class="btn btn-azul" onclick="toggle('secLis', true)">Mostrar</button>
+            <button class="btn btn-gris" onclick="toggle('secLis', false)">Cerrar</button>
+            <button class="btn btn-azul" onclick="toggle('secLis', true)">Abrir Lista</button>
         </div>
-        <div id="secLis" class="table-wrap hidden">
-            <table id="tDia"><thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Ent</th><th>Sal</th><th>Retardo</th></tr></thead><tbody id="bLis"></tbody></table>
-            <button class="btn btn-rojo" onclick="descargarPDFDia()">DESCARGAR LISTA DÍA (PDF)</button>
+        <div id="secLis" class="hidden">
+            <div class="table-wrap">
+                <table id="tDia"><thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Min. Ret</th></tr></thead><tbody id="bLis"></tbody></table>
+            </div>
+            <button class="btn btn-rojo" onclick="descargarPDFDia()">DESCARGAR LISTA DEL DÍA (PDF)</button>
         </div>
     </div>
-
 </div>
 
 <script>
+    // Configuración Firebase (Reemplaza con tus datos si es necesario)
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -151,39 +156,44 @@
     document.getElementById('fManual').value = new Date().toISOString().split('T')[0];
     document.getElementById('mesC').value = new Date().toISOString().substring(0,7);
 
-    // Cargar Nómina y Totales
+    // 1. Cargar Nómina desde Firebase
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         let t = {Doc:0, Obr:0, Adm:0, Cn:0};
         const sP = document.getElementById('sPersona');
-        sP.innerHTML = '<option value="">-- SELECCIONAR --</option>';
+        sP.innerHTML = '<option value="">-- SELECCIONAR NOMBRE --</option>';
+        
         snap.forEach(doc => {
             let d = doc.data(); d.id = doc.id; nominaLocal.push(d);
             sP.innerHTML += `<option value="${d.n}">${d.n}</option>`;
-            if(d.c === "Docente") t.Doc++; else if(d.c === "Obrero") t.Obr++;
-            else if(d.c === "Administrativo") t.Adm++; else if(d.c === "CNAE (Cocinera)") t.Cn++;
+            if(d.c === "Docente") t.Doc++; 
+            else if(d.c === "Obrero") t.Obr++;
+            else if(d.c === "Administrativo") t.Adm++; 
+            else if(d.c === "CNAE (Cocinera)") t.Cn++;
         });
+        
         document.getElementById('tDoc').innerText = t.Doc; document.getElementById('tObr').innerText = t.Obr;
         document.getElementById('tAdm').innerText = t.Adm; document.getElementById('tCn').innerText = t.Cn;
         actualizarTodo();
     });
 
+    // 2. Guardar con Lógica de Minutos de Retardo
     async function guardarAsistencia() {
         const n = document.getElementById('sPersona').value, f = document.getElementById('fManual').value, e_user = document.getElementById('sEstatus').value;
         const hE = document.getElementById('hEnt').value, hS = document.getElementById('hSal').value, o = document.getElementById('obs').value, t = document.getElementById('sTurno').value;
         const p = nominaLocal.find(x => x.n === n);
         
-        if(!p) return alert("Seleccione un trabajador");
+        if(!p) return alert("Error: Debe seleccionar un trabajador.");
 
         let eFinal = e_user;
         let minR = 0;
 
-        if(e_user === "ASISTENCIA" && hE) {
+        if((e_user === "ASISTENCIA" || e_user === "RETRASO") && hE) {
             const [h, m] = hE.split(':').map(Number);
             const totalMin = h * 60 + m;
             let tope = (p.c === "Docente" || p.c === "CNAE (Cocinera)") ? 420 : 405; // 7:00am o 6:45am
-            if(t === "TARDE") tope = 720;
-            if(t === "NOCHE") tope = 1080;
+            if(t === "TARDE") tope = 720; // 12:00pm
+            if(t === "NOCHE") tope = 1080; // 6:00pm
 
             if(totalMin > tope) {
                 eFinal = "RETRASO";
@@ -191,11 +201,32 @@
             }
         }
 
-        await db.collection("asistencia_ebnlp_final").add({ n, f, e: eFinal, hE, hS, o, c: p.c, minR, mes: f.substring(0,7), turno: t, ts: Date.now() });
-        alert("Guardado correctamente");
-        document.getElementById('hEnt').value = ""; document.getElementById('hSal').value = "";
+        await db.collection("asistencia_ebnlp_final").add({ 
+            n, f, e: eFinal, hE, hS, o, c: p.c, minR, mes: f.substring(0,7), turno: t, ts: Date.now() 
+        });
+        
+        alert(`¡Registro Guardado! ${minR > 0 ? 'Retraso de ' + minR + ' min.' : ''}`);
+        document.getElementById('hEnt').value = ""; document.getElementById('hSal').value = ""; document.getElementById('obs').value = "";
     }
 
+    // 3. Auditoría Express (Últimos 30 días)
+    async function auditoriaRapida(nombre) {
+        if(!nombre) return;
+        const unMesAtras = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).get();
+        let fal = 0, per = 0;
+        snap.forEach(d => {
+            if(d.data().ts > unMesAtras) {
+                if(d.data().e === "INASISTENCIA") fal++;
+                if(d.data().e === "PERMISO") per++;
+            }
+        });
+        const box = document.getElementById('boxAudit');
+        box.classList.remove('hidden');
+        box.innerHTML = `⚠️ AUDITORÍA (30d): ${fal} Faltas y ${per} Permisos detectados.`;
+    }
+
+    // 4. Actualizar Dashboard y Lista del Día
     function actualizarTodo() {
         const fH = document.getElementById('fManual').value;
         document.getElementById('fTit').innerText = fH;
@@ -203,6 +234,7 @@
         db.collection("asistencia_ebnlp_final").where("f","==",fH).onSnapshot(snap => {
             let h = {Doc:0, Obr:0, Adm:0, Cn:0};
             const bL = document.getElementById('bLis'); bL.innerHTML = "";
+            
             snap.forEach(doc => {
                 const d = doc.data();
                 if(d.e==="ASISTENCIA" || d.e==="RETRASO") {
@@ -220,10 +252,15 @@
             };
             updateTag(h.Doc,'tDoc','percDoc'); updateTag(h.Obr,'tObr','percObr');
             updateTag(h.Adm,'tAdm','percAdm'); updateTag(h.Cn,'tCn','percCn');
+            
+            let totalAsis = h.Doc + h.Obr + h.Adm + h.Cn;
+            let totalNom = nominaLocal.length;
+            document.getElementById('txtEfec').innerText = totalNom > 0 ? Math.round((totalAsis/totalNom)*100) + "%" : "0%";
         });
         cargarConsolidado();
     }
 
+    // 5. Cargar Consolidado Mensual con Promedios
     async function cargarConsolidado() {
         const m = document.getElementById('mesC').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",m).get();
@@ -232,27 +269,30 @@
 
         snap.forEach(doc => {
             const d = doc.data(); dU.add(d.f);
-            if(!s[d.n]) s[d.n] = { asis:0, ret:0, fal:0, per:0, rep:0, min:0 };
+            if(!s[d.n]) s[d.n] = { asis:0, ret:0, fal:0, per:0, rep:0, vac:0, min:0 };
             if(d.e==="ASISTENCIA") s[d.n].asis++; else if(d.e==="RETRASO") s[d.n].ret++;
             else if(d.e==="INASISTENCIA") s[d.n].fal++; else if(d.e==="PERMISO") s[d.n].per++;
-            else if(d.e==="REPOSO") s[d.n].rep++;
+            else if(d.e==="REPOSO") s[d.n].rep++; else if(d.e==="VACACIONES") s[d.n].vac++;
             s[d.n].min += (d.minR || 0);
 
             if(d.e==="ASISTENCIA" || d.e==="RETRASO") { if(cS.hasOwnProperty(d.c)) cS[d.c]++; }
         });
 
         const bM = document.getElementById('bMes'); bM.innerHTML = "";
-        for(let n in s) { bM.innerHTML += `<tr><td>${n}</td><td>${s[n].asis}</td><td>${s[n].ret}</td><td>${s[n].fal}</td><td>${s[n].per}</td><td>${s[n].rep}</td><td class="txt-rojo">${s[n].min} min</td></tr>`; }
+        for(let n in s) { 
+            bM.innerHTML += `<tr><td>${n}</td><td>${s[n].asis}</td><td>${s[n].ret}</td><td>${s[n].fal}</td><td>${s[n].per}</td><td>${s[n].rep}</td><td>${s[n].vac}</td><td class="txt-rojo">${s[n].min} min</td></tr>`; 
+        }
 
         const dT = dU.size || 1;
-        document.getElementById('infoDias').innerText = `Días laborados registrados: ${dT}`;
+        document.getElementById('infoDias').innerText = `Días laborados con registros en ${m}: ${dT}`;
+        
         const bP = document.getElementById('bProm'); bP.innerHTML = "";
-        const nomina = { Docente: parseInt(document.getElementById('tDoc').innerText), Obrero: parseInt(document.getElementById('tObr').innerText), Administrativo: parseInt(document.getElementById('tAdm').innerText), "CNAE (Cocinera)": parseInt(document.getElementById('tCn').innerText) };
+        const nom = { Docente: parseInt(document.getElementById('tDoc').innerText), Obrero: parseInt(document.getElementById('tObr').innerText), Administrativo: parseInt(document.getElementById('tAdm').innerText), "CNAE (Cocinera)": parseInt(document.getElementById('tCn').innerText) };
 
         for(let c in cS) {
             let prom = (cS[c] / dT).toFixed(1);
-            let efec = nomina[c] > 0 ? ((prom / nomina[c]) * 100).toFixed(0) : 0;
-            bP.innerHTML += `<tr><td>${c}</td><td><b>${prom}</b> de ${nomina[c]}</td><td class="txt-rojo">${efec}%</td></tr>`;
+            let efec = nom[c] > 0 ? ((prom / nom[c]) * 100).toFixed(0) : 0;
+            bP.innerHTML += `<tr><td>${c}</td><td><b>${prom}</b> de ${nom[c]}</td><td class="txt-rojo">${efec}%</td></tr>`;
         }
     }
 
@@ -260,17 +300,17 @@
 
     function descargarPDFDia() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("EBNLP - LISTA DIARIA: " + document.getElementById('fManual').value, 14, 15);
-        doc.autoTable({ html: '#tDia', startY: 20 }); doc.save("Dia.pdf");
+        doc.text("EBN " + document.getElementById('fManual').value, 14, 15);
+        doc.autoTable({ html: '#tDia', startY: 20 }); doc.save("Asistencia_Dia.pdf");
     }
 
     function descargarPDFMensual() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("EBNLP - REPORTE MENSUAL: " + document.getElementById('mesC').value, 14, 15);
-        doc.autoTable({ html: '#tProm', startY: 25 });
-        doc.text("DETALLE POR TRABAJADOR Y MINUTOS DE RETARDO", 14, doc.lastAutoTable.finalY + 10);
+        doc.text("REPORTE MENSUAL EBNLP - MES: " + document.getElementById('mesC').value, 14, 15);
+        doc.autoTable({ html: '#tProm', startY: 22 });
+        doc.text("DETALLE ACUMULADO POR NOMBRE", 14, doc.lastAutoTable.finalY + 10);
         doc.autoTable({ html: '#tMes', startY: doc.lastAutoTable.finalY + 15 });
-        doc.save("Mensual.pdf");
+        doc.save("Reporte_Maestro.pdf");
     }
 </script>
 </body>
