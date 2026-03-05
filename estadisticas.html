@@ -49,13 +49,16 @@
 
         window.render = () => {
             const f = document.getElementById('fechaSeleccionada').value || new Date().toISOString().split('T')[0];
+            const fechaObj = new Date(f + "T00:00:00");
+            const esFinDeSemana = fechaObj.getDay() === 0 || fechaObj.getDay() === 6;
+
             document.getElementById('displayFecha').innerText = f;
             document.getElementById('docente').value = window.db.docente || "";
             document.getElementById('seccion').value = window.db.seccion || "";
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
             
-            if(!window.db.feriados.includes(f)) {
+            if(!window.db.feriados.includes(f) && !esFinDeSemana) {
                 window.db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const est = (window.db.asistencias[f] && window.db.asistencias[f][a.id]) || 0;
                     let c = "#ccc", t = "F";
@@ -67,47 +70,45 @@
                             <b>${a.nombre}</b>
                             <button onclick="eliminarAlumno(${a.id})" class="btn-delete">🗑️ Retirar</button>
                         </div>
-                        <button onclick="marcar(${a.id})" style="width:40px; background:${c}; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">${t}</button>
+                        <button onclick="marcar(${a.id})" style="width:40px; background:${c}; color:white; border:none; border-radius:5px; font-weight:bold;">${t}</button>
                     </div>`;
                 });
-            } else { lista.innerHTML = "<p style='color:red; text-align:center; font-weight:bold;'>🚩 DÍA FERIADO O SIN ACTIVIDAD</p>"; }
+            } else { 
+                lista.innerHTML = `<p style='color:red; text-align:center; font-weight:bold;'>${esFinDeSemana ? 'FIN DE SEMANA (SIN CLASES)' : '🚩 DÍA FERIADO'}</p>`; 
+            }
             
             generarReporteDocente();
         };
 
-        // --- REPORTE MENSUAL INTEGRAL ---
         function generarReporteDocente() {
             const alumnos = window.db.alumnos || [];
             const asistencias = window.db.asistencias || {};
-            const hoy = new Date();
-            const mesAct = hoy.getMonth();
-            const anioAct = hoy.getFullYear();
+            const mesAct = new Date().getMonth();
+            const anioAct = new Date().getFullYear();
 
-            let diasClase = 0, totalP_H = 0, totalP_V = 0, totalFaltas = 0;
+            let diasHabilesConLista = 0, sumaH = 0, sumaV = 0;
 
             Object.keys(asistencias).forEach(fechaStr => {
                 const fecha = new Date(fechaStr + "T00:00:00");
-                if (fecha.getMonth() === mesAct && fecha.getFullYear() === anioAct) {
-                    diasClase++;
+                const diaSemana = fecha.getDay(); 
+                
+                // Solo contar si es Lunes(1) a Viernes(5) Y es del mes actual
+                if (fecha.getMonth() === mesAct && fecha.getFullYear() === anioAct && diaSemana !== 0 && diaSemana !== 6) {
+                    diasHabilesConLista++;
                     alumnos.forEach(al => {
-                        const status = asistencias[fechaStr][al.id];
-                        if (status === 1) { // Presente
-                            al.genero === 'F' ? totalP_H++ : totalP_V++;
-                        } else {
-                            totalFaltas++;
+                        if (asistencias[fechaStr][al.id] === 1) {
+                            al.genero === 'F' ? sumaH++ : sumaV++;
                         }
                     });
                 }
             });
 
-            const promH = diasClase > 0 ? (totalP_H / diasClase).toFixed(1) : "0.0";
-            const promV = diasClase > 0 ? (totalP_V / diasClase).toFixed(1) : "0.0";
-            const promAsis = (parseFloat(promH) + parseFloat(promV)).toFixed(1);
-            
-            const matTotal = alumnos.length;
-            const eficiencia = (diasClase * matTotal) > 0 ? Math.round(((totalP_H + totalP_V) / (diasClase * matTotal)) * 100) : 0;
+            const promH = diasHabilesConLista > 0 ? (sumaH / diasHabilesConLista).toFixed(1) : "0.0";
+            const promV = diasHabilesConLista > 0 ? (sumaV / diasHabilesConLista).toFixed(1) : "0.0";
+            const promTotal = (parseFloat(promH) + parseFloat(promV)).toFixed(1);
+            const totalOportunidades = diasHabilesConLista * alumnos.length;
+            const eficiencia = totalOportunidades > 0 ? Math.round(((sumaH + sumaV) / totalOportunidades) * 100) : 0;
 
-            // Tabla de Matrícula Disgregada
             let disgregacion = {};
             let matH = 0, matV = 0;
             alumnos.forEach(al => {
@@ -126,36 +127,27 @@
                 <div class="reporte-container">
                     <img src="${LOGO_URL}" style="width:55px; display:block; margin: 0 auto 10px;">
                     <h2 class="titulo-reporte">REPORTE ESTADÍSTICO MENSUAL</h2>
-                    
                     <div class="porcentaje-box">
                         <h1>${eficiencia}%</h1>
-                        <p>EFICIENCIA DEL MES</p>
+                        <p>EFICIENCIA (LUNES A VIERNES)</p>
                     </div>
-
                     <div class="promedio-real-card">
-                        <div class="stat-item"><small>PROM. HEMBRAS</small><br><b style="color:#e91e63">${promH}</b></div>
-                        <div class="stat-item" style="border-left:1px solid #ddd; border-right:1px solid #ddd; padding:0 10px;"><small>PROM. VARONES</small><br><b style="color:#2196f3">${promV}</b></div>
-                        <div class="stat-item"><small>ASIST. DIARIA</small><br><b>${promAsis}</b></div>
+                        <div class="stat-item"><small>PROM. H</small><br><b style="color:#e91e63">${promH}</b></div>
+                        <div class="stat-item" style="border-left:1px solid #ddd; border-right:1px solid #ddd; padding:0 10px;"><small>PROM. V</small><br><b style="color:#2196f3">${promV}</b></div>
+                        <div class="stat-item"><small>ASIST. REAL</small><br><b>${promTotal}</b></div>
                     </div>
-
-                    <div class="info-adicional">
-                        <span>Días Laborados: <b>${diasClase}</b></span> | 
-                        <span>Matrícula Total: <b>${matTotal}</b></span>
-                    </div>
-
-                    <p style="font-weight:bold; font-size:11px; margin-top:15px; text-align:center; color:#555;">DISTRIBUCIÓN DE MATRÍCULA</p>
+                    <p style="font-size:11px; text-align:center; margin-top:10px; color:#666;">Días con asistencia en el mes: <b>${diasHabilesConLista}</b></p>
                     <table class="tabla-disgregada">
                         <thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead>
                         <tbody>${filas}</tbody>
                         <tfoot style="background:#eee; font-weight:bold;"><tr><td>TOTAL</td><td>${matH}</td><td>${matV}</td><td>${matH+matV}</td></tr></tfoot>
                     </table>
-                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir para Dirección</button>
+                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte Mensual</button>
                 </div>`;
         }
 
-        // --- FUNCIONES DE ACCIÓN ---
         window.eliminarAlumno = async (id) => {
-            if(confirm("¿Seguro que desea retirar a este alumno del plantel? Esta acción no se puede deshacer.")) {
+            if(confirm("¿Desea retirar permanentemente a este alumno del listado?")) {
                 window.db.alumnos = window.db.alumnos.filter(a => a.id !== id);
                 await window.saveToCloud(window.db);
             }
@@ -191,46 +183,42 @@
 
     <style>
         :root { --azul: #1a2a6c; --celeste: #154360; --gris: #f4f7f6; --exito: #27ae60; --morado: #8e44ad; --rojo: #e74c3c; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: var(--gris); }
+        body { font-family: sans-serif; margin: 0; background: var(--gris); }
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 3px solid #f39c12; }
         .container { max-width: 450px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 12px; }
         input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
         
-        /* Reporte Mensual */
         .reporte-container { background: white; border-radius: 20px; padding: 25px; border-left: 10px solid var(--celeste); box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
-        .titulo-reporte { color: var(--celeste); text-align: center; font-size: 1.1rem; font-weight: 900; letter-spacing: 1px; margin: 5px 0 15px; }
+        .titulo-reporte { color: var(--celeste); text-align: center; font-size: 1.1rem; font-weight: 900; margin: 5px 0 15px; }
         .porcentaje-box { background: var(--celeste); color: white; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 15px; }
         .porcentaje-box h1 { font-size: 3.5rem; margin: 0; }
         .promedio-real-card { display: flex; justify-content: space-around; background: #f8f9fa; border: 1px solid #ddd; border-radius: 12px; padding: 15px; text-align: center; }
-        .stat-item small { font-size: 8px; color: #666; font-weight: bold; text-transform: uppercase; }
-        .info-adicional { font-size: 11px; text-align: center; margin-top: 10px; color: #666; }
-        .tabla-disgregada { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; margin-top: 5px; }
-        .tabla-disgregada th, .tabla-disgregada td { border: 1px solid #eee; padding: 8px; }
-        .btn-imprimir { background: var(--celeste); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; width: 100%; }
+        .stat-item small { font-size: 8px; color: #666; font-weight: bold; }
+        .tabla-disgregada { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+        .tabla-disgregada th, .tabla-disgregada td { border: 1px solid #ddd; padding: 8px; }
+        .btn-imprimir { background: var(--celeste); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
 
-        .student-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #f0f0f0; }
-        .btn-delete { width: auto; background: none; border: none; color: var(--rojo); font-size: 10px; cursor: pointer; padding: 0; margin-left: 10px; text-decoration: underline; }
-        .logo-login { width: 85px; height: 85px; margin-bottom: 10px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        
-        @media print { .card, header, .btn-main, .no-print, .btn-delete { display: none !important; } .reporte-container { border: 1px solid #eee; width: 100%; box-shadow: none; margin: 0; } }
+        .student-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #eee; }
+        .btn-delete { background: none; border: none; color: red; font-size: 10px; cursor: pointer; text-decoration: underline; padding: 0; margin-left: 10px; width: auto; }
+        @media print { .card, header, .btn-main, .btn-delete, .no-print { display: none !important; } .reporte-container { border: none; width: 100%; box-shadow: none; margin: 0; } }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="max-width: 320px; margin: 60px auto; padding: 25px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-login">
-    <h3 style="color: var(--azul); margin:5px 0 20px;">Lucila Palacios</h3>
-    <input type="text" id="loginUser" placeholder="Usuario Docente">
-    <input type="password" id="loginPass" placeholder="Contraseña">
-    <button onclick="login()" class="btn-main" style="margin-top: 15px;">Entrar al Sistema</button>
+<div id="authSection" style="max-width: 320px; margin: 60px auto; padding: 25px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" style="width: 80px; border-radius: 50%;">
+    <h3>Lucila Palacios</h3>
+    <input type="text" id="loginUser" placeholder="Usuario">
+    <input type="password" id="loginPass" placeholder="Clave">
+    <button onclick="login()" class="btn-main">Entrar</button>
 </div>
 
 <div id="appContent" style="display: none;">
     <header>
-        <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; font-size:10px; border:none; padding:5px 12px; border-radius:5px; cursor:pointer;">Cerrar Sesión</button>
-        <h4 style="margin:0; letter-spacing:1px;">LUCILA PALACIOS</h4>
+        <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; font-size:10px; border:none; padding:5px 10px; border-radius:4px;">Salir</button>
+        <h4 style="margin:0;">LUCILA PALACIOS</h4>
     </header>
 
     <div class="container">
@@ -240,21 +228,19 @@
         </div>
 
         <div class="card no-print">
-            <b style="color:var(--celeste); font-size:14px;">📝 Inscripción de Alumno</b>
+            <b>+ Inscribir Alumno</b>
             <input type="text" id="newNombre" placeholder="Apellidos y Nombres">
             <div style="display:flex; gap:5px;">
                 <select id="newGen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
                 <input type="date" id="newNac" style="width:60%">
             </div>
-            <button onclick="agregarAlumno()" class="btn-main">Registrar Alumno</button>
+            <button onclick="agregarAlumno()" class="btn-main">Guardar</button>
         </div>
 
         <div class="card no-print">
-            <div style="display:flex; justify-content: space-between; align-items: center;">
-                <input type="date" id="fechaSeleccionada" onchange="window.render()" style="width:65%;">
-                <button onclick="toggleFeriado()" style="background:var(--rojo); color:white; font-size:10px; width:30%; padding:8px;">🚩 Feriado</button>
-            </div>
-            <p style="font-size: 12px; text-align: center; margin: 10px 0; color:#777;">Control de Asistencia: <b id="displayFecha" style="color:#333;"></b></p>
+            <input type="date" id="fechaSeleccionada" onchange="window.render()">
+            <button onclick="toggleFeriado()" style="background:var(--rojo); color:white; font-size:11px;">🚩 Feriado</button>
+            <p style="font-size: 13px; text-align: center;">Asistencia: <b id="displayFecha"></b></p>
             <div id="listaAsistencia"></div>
         </div>
 
