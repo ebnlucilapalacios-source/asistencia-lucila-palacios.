@@ -65,6 +65,7 @@
             } else alert("Datos incorrectos");
         };
 
+        // --- MOVIMIENTOS Y FERIADOS ---
         window.toggleFeriado = async () => {
             const f = document.getElementById('fechaSeleccionada').value;
             if(!window.db.feriados) window.db.feriados = [];
@@ -94,38 +95,21 @@
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
-            const anioRef = new Date(fSel + "T00:00:00").getFullYear();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            
-            let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos (Mes)</th><th>Egresos (Mes)</th></tr></thead><tbody>`;
-            
+            let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos</th><th>Egresos</th></tr></thead><tbody>`;
             snap.forEach(docSnap => {
                 const d = docSnap.data(); if(docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
                 const activos = d.alumnos.filter(a => !a.retirado);
-                
                 let sH = 0, sV = 0, dias = 0;
                 Object.keys(d.asistencias).forEach(f => {
                     const fO = new Date(f + "T00:00:00");
-                    if(fO.getMonth() === mesRef && fO.getFullYear() === anioRef && fO.getDay()!==0 && fO.getDay()!==6 && !d.feriados?.includes(f)) {
+                    if(fO.getMonth() === mesRef && fO.getDay()!==0 && fO.getDay()!==6 && !d.feriados?.includes(f)) {
                         dias++; activos.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero==='F'?sH++:sV++; });
                     }
                 });
-                const prom = dias > 0 ? ((sH + sV) / dias).toFixed(1) : "0.0";
-
-                // FILTRADO DE NOMBRES PARA DIRECCIÓN
-                const ing = d.alumnos.filter(a => {
-                    if(!a.fechaIngreso) return false;
-                    const f = new Date(a.fechaIngreso + "T00:00:00");
-                    return f.getMonth() === mesRef && f.getFullYear() === anioRef;
-                }).map(a => a.nombre).join(', ') || "-";
-
-                const egr = d.alumnos.filter(a => {
-                    if(!a.retirado || !a.fechaEgreso) return false;
-                    const f = new Date(a.fechaEgreso + "T00:00:00");
-                    return f.getMonth() === mesRef && f.getFullYear() === anioRef;
-                }).map(a => a.nombre).join(', ') || "-";
-
-                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${prom}</td><td style="font-size:8px;">${ing}</td><td style="font-size:8px;">${egr}</td></tr>`;
+                const ing = d.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).map(a => a.nombre).join(', ') || "-";
+                const egr = d.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).map(a => a.nombre).join(', ') || "-";
+                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${dias>0?((sH+sV)/dias).toFixed(1):0}</td><td style="font-size:8px">${ing}</td><td style="font-size:8px">${egr}</td></tr>`;
             });
             document.getElementById('adminOutput').innerHTML = html + "</tbody></table>";
         };
@@ -135,7 +119,6 @@
             const f = document.getElementById('fechaSeleccionada').value;
             const fObjeto = new Date(f + "T00:00:00");
             const mesActual = fObjeto.getMonth();
-            const anioActual = fObjeto.getFullYear();
             const esFeriado = window.db.feriados?.includes(f);
             const esFinDeSemana = (fObjeto.getDay() === 0 || fObjeto.getDay() === 6);
             
@@ -170,7 +153,7 @@
 
             Object.keys(window.db.asistencias).forEach(fecha => {
                 const fo = new Date(fecha + "T00:00:00");
-                if(fo.getMonth() === mesActual && fo.getFullYear() === anioActual && fo.getDay()!==0 && fo.getDay()!==6 && !window.db.feriados?.includes(fecha)) {
+                if(fo.getMonth() === mesActual && fo.getDay()!==0 && fo.getDay()!==6 && !window.db.feriados?.includes(fecha)) {
                     diasHabiles++;
                     activos.forEach(a => { if(window.db.asistencias[fecha][a.id]===1) a.genero==='F'?sH++:sV++; });
                 }
@@ -180,47 +163,26 @@
             const pV = diasHabiles>0 ? (sV/diasHabiles) : 0;
             const efic = activos.length>0 ? (((pH+pV)/activos.length)*100).toFixed(0) : 0;
 
-            // FILTRADO DE MOVIMIENTOS DEL MES
-            const ingMes = window.db.alumnos.filter(a => {
-                if(!a.fechaIngreso) return false;
-                const fi = new Date(a.fechaIngreso + "T00:00:00");
-                return fi.getMonth() === mesActual && fi.getFullYear() === anioActual;
-            });
-            const egrMes = window.db.alumnos.filter(a => {
-                if(!a.retirado || !a.fechaEgreso) return false;
-                const fe = new Date(a.fechaEgreso + "T00:00:00");
-                return fe.getMonth() === mesActual && fe.getFullYear() === anioActual;
-            });
+            const ingMes = window.db.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesActual);
+            const egrMes = window.db.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesActual);
 
-            let tEd = ""; Object.keys(edades).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${edades[e].F}</td><td>${edades[e].M}</td><td>${edades[e].F+edades[e].M}</td></tr>`; });
+            let tEd = ""; Object.keys(edades).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}</td><td>${edades[e].F}</td><td>${edades[e].M}</td><td>${edades[e].F+edades[e].M}</td></tr>`; });
 
-            // RENDER DEL REPORTE CON LOS CAMBIOS ANEXADOS
             document.getElementById('reporteDocente').innerHTML = `
-                <div class="card">
-                    <h2 style="text-align:center; font-size:1.2rem; margin-bottom:15px;">REPORTE ESTADÍSTICO MENSUAL</h2>
+                <div class="reporte-card">
+                    <h2 style="font-size:1.2rem; margin-bottom:15px;">REPORTE ESTADÍSTICO MENSUAL</h2>
                     <div class="circulo-eficiencia"><b>${efic}%</b><br><small>Efic.</small></div>
-                    <div class="promedios-disgregados">
+                    <div class="stats-asistencia">
                         <div>H: <b>${pH.toFixed(1)}</b></div>
                         <div>V: <b>${pV.toFixed(1)}</b></div>
                         <div>Total: <b>${(pH+pV).toFixed(1)}</b></div>
                     </div>
-                    <table class="tabla-911">
-                        <thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead>
-                        <tbody>${tEd}</tbody>
-                        <tfoot><tr><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot>
-                    </table>
-                    
-                    <div style="margin-top:20px; text-align:left; font-size:0.85rem; border-top: 2px solid #eee; padding-top:10px;">
-                        <div style="background:#e8f5e9; padding:8px; border-radius:5px; margin-bottom:10px; border-left:5px solid green;">
-                            <b style="color:green">NIÑOS INGRESADOS EN EL MES:</b><br>
-                            ${ingMes.map(a => a.nombre).join(', ') || 'Sin ingresos'}
-                        </div>
-                        <div style="background:#ffebee; padding:8px; border-radius:5px; border-left:5px solid red;">
-                            <b style="color:red">NIÑOS EGRESADOS EN EL MES:</b><br>
-                            ${egrMes.map(a => a.nombre).join(', ') || 'Sin egresos'}
-                        </div>
+                    <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead><tbody>${tEd}</tbody>
+                    <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
+                    <div style="text-align:left; font-size:10px; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                        <b>INGRESOS:</b> ${ingMes.map(a=>a.nombre).join(', ') || '0'}<br>
+                        <b>EGRESOS:</b> ${egrMes.map(a=>a.nombre).join(', ') || '0'}
                     </div>
-
                     <button onclick="window.print()" class="btn-print no-print">Imprimir para Dirección</button>
                 </div>`;
         };
@@ -233,13 +195,9 @@
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar alumno? Se registrará la fecha de egreso hoy.")){
+            if(confirm("¿Retirar alumno?")){
                 const a = window.db.alumnos.find(x => x.id === id);
-                if(a) { 
-                    a.retirado = true; 
-                    a.fechaEgreso = document.getElementById('fechaSeleccionada').value; 
-                    await window.save(); 
-                }
+                if(a) { a.retirado = true; a.fechaEgreso = document.getElementById('fechaSeleccionada').value; await window.save(); }
             }
         };
 
@@ -253,18 +211,12 @@
         window.agregarAlumno = () => {
             const n = document.getElementById('nom').value.toUpperCase();
             const nac = document.getElementById('nac').value;
-            const fIngreso = document.getElementById('fechaSeleccionada').value;
             if(!n || !nac) return;
             window.db.alumnos.push({
-                id: Date.now(), 
-                nombre: n, 
-                genero: document.getElementById('gen').value, 
-                nacimiento: nac, 
-                retirado: false, 
-                fechaIngreso: fIngreso, 
-                fechaEgreso: null
+                id:Date.now(), nombre:n, genero:document.getElementById('gen').value, 
+                nacimiento:nac, retirado:false, fechaIngreso: document.getElementById('fechaSeleccionada').value
             });
-            window.save(); document.getElementById('nom').value = "";
+            window.save(); document.getElementById('nom').value="";
         };
 
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
@@ -276,35 +228,37 @@
 
     <style>
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --fondo: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
+        body { font-family: sans-serif; background: var(--fondo); margin: 0; color: #333; }
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid #f39c12; }
         .container { max-width: 450px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 15px; }
-        .circulo-eficiencia { width: 85px; height: 85px; border: 6px solid var(--azul); border-radius: 50%; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
-        .promedios-disgregados { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; }
-        .tabla-911 { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
-        .tabla-911 th, .tabla-911 td { border: 1px solid #eee; padding: 8px; }
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-check { width: 45px; height: 40px; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; }
-        .btn-print { background: var(--azul); color: white; border: none; padding: 12px; font-weight: bold; width: 100%; border-radius: 8px; margin-top: 15px; cursor: pointer; }
-        .alumno-fila { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        
+        /* Estilo Reporte de la Imagen */
+        .reporte-card { background: white; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #ddd; }
+        .circulo-eficiencia { width: 90px; height: 90px; border: 7px solid var(--azul); border-radius: 50%; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; }
+        .stats-asistencia { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; border-radius: 6px; margin: 15px 0; font-size: 13px; }
+        .tabla-911 { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tabla-911 th, .tabla-911 td { padding: 8px; border: 1px solid #eee; }
+        
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-check { width: 45px; height: 40px; color: white; font-weight: bold; cursor: pointer; border: none; }
+        .btn-print { background: var(--azul); color: white; font-weight: bold; margin-top: 15px; border: none; }
+        .alumno-fila { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .bola-gen { width: 12px; height: 12px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
-        .tabla-admin { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 10px; }
-        .tabla-admin th, .tabla-admin td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-        @media print { .no-print { display: none !important; } .card { box-shadow: none; border: 1px solid #eee; } }
+        @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
     </style>
 </head>
 <body>
 
 <div id="authSection" style="max-width:320px; margin: 60px auto; text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="85">
     <h2 style="color:var(--azul); margin: 15px 0;">EBN LUCILA PALACIOS</h2>
     <div id="loginForm">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Clave">
-        <button onclick="login()" style="background:var(--azul); color:white; font-weight:bold;">ENTRAR</button>
-        <p onclick="mostrarRegistro(true)" style="font-size:12px; cursor:pointer; color:var(--morado)">Registrar cuenta docente</p>
+        <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
+        <p onclick="mostrarRegistro(true)" style="font-size:12px; cursor:pointer; color:var(--morado); margin-top:10px;">Registrar cuenta docente</p>
     </div>
     <div id="registerForm" style="display:none;">
         <input type="text" id="regNombre" placeholder="Nombre Completo">
@@ -312,25 +266,25 @@
         <input type="password" id="regPass" placeholder="Clave">
         <hr>
         <input type="password" id="regClaveEspecial" placeholder="Clave Institucional">
-        <button onclick="registrarCuenta()" style="background:var(--exito); color:white; font-weight:bold;">REGISTRAR</button>
+        <button onclick="registrarCuenta()" style="background:var(--exito); color:white;">REGISTRAR</button>
         <p onclick="mostrarRegistro(false)" style="font-size:12px; cursor:pointer;">Volver</p>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
-    <header class="no-print"><b>EBN LUCILA PALACIOS</b> <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:5px;">SALIR</button></header>
+    <header class="no-print"><b>EBN LUCILA PALACIOS</b> <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:5px; font-size:12px;">SALIR</button></header>
     
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado)">
             <b style="color:var(--morado)">DIRECCIÓN CENTRAL</b>
-            <button onclick="monitorGlobalHoy()" style="background:var(--morado); color:white;">Monitor Hoy</button>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white;">Consolidado Escuela</button>
+            <button onclick="monitorGlobalHoy()" style="background:var(--morado); color:white; font-size:12px;">Monitor Hoy</button>
+            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; font-size:12px;">Consolidado Escuela</button>
             <div id="adminOutput"></div>
         </div>
 
         <div class="card no-print">
             <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <button id="btnFeriado" onclick="toggleFeriado()" style="color:var(--rojo); background:none; border:1px solid var(--rojo); font-weight:bold;"></button>
+            <button id="btnFeriado" onclick="toggleFeriado()" style="color:var(--rojo); background:white; border:1px solid var(--rojo); font-weight:bold;"></button>
         </div>
 
         <div class="card no-print">
