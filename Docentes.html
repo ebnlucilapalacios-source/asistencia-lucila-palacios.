@@ -26,7 +26,7 @@
         const USUARIO_ADMIN = "admin_lucila";
 
         window.usuarioActual = null;
-        window.db = { docente: "", seccion: "", grado: "", alumnos: [], asistencias: {}, feriados: [] };
+        window.db = { docente: "", seccion: "", grado: "", turno: "", alumnos: [], asistencias: {}, feriados: [] };
 
         const calcularEdad = (f) => {
             if(!f) return 0;
@@ -37,7 +37,7 @@
             return edad;
         };
 
-        // --- ACCESO Y REGISTRO ---
+        // --- ACCESO ---
         window.mostrarRegistro = (v) => { 
             document.getElementById('loginForm').style.display = v ? 'none' : 'block';
             document.getElementById('registerForm').style.display = v ? 'block' : 'none';
@@ -51,6 +51,7 @@
                 pass: document.getElementById('regPass').value, 
                 grado: document.getElementById('regGrado').value, 
                 seccion: document.getElementById('regSeccion').value.toUpperCase(), 
+                turno: document.getElementById('regTurno').value,
                 alumnos: [], asistencias: {}, feriados: [] 
             });
             alert("Cuenta creada."); window.mostrarRegistro(false);
@@ -69,7 +70,17 @@
             } else alert("Acceso denegado");
         };
 
-        // --- PANEL DIRECCIÓN (CONSOLIDADO + PDF) ---
+        // --- ACTUALIZAR PERFIL ---
+        window.actualizarPerfil = async () => {
+            window.db.docente = document.getElementById('editDocente').value.toUpperCase();
+            window.db.grado = document.getElementById('editGrado').value;
+            window.db.seccion = document.getElementById('editSeccion').value.toUpperCase();
+            window.db.turno = document.getElementById('editTurno').value;
+            await window.save();
+            alert("Perfil actualizado correctamente");
+        };
+
+        // --- DIRECCIÓN ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -79,7 +90,7 @@
                         <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
-                     <thead><tr><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
+                     <thead><tr><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
                      <tr><th>H</th><th>V</th><th>T</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>`;
             let T = { mH:0, mV:0, mT:0, pH:0, pV:0, pT:0 };
             snap.forEach(dSnap => {
@@ -95,7 +106,7 @@
                 });
                 const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
                 T.mH+=mH; T.mV+=mV; T.mT+=mT; T.pH+=pH; T.pV+=pV; T.pT+=pT;
-                h += `<tr><td>${d.grado}${d.seccion}</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
+                h += `<tr><td>${d.grado}${d.seccion} (${d.turno || 'S/T'})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
             });
             const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
             h += `<tr class="fila-total"><td>ESCUELA</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
@@ -109,7 +120,7 @@
             doc.save("Reporte_Direccion.pdf");
         };
 
-        // --- MANTENIMIENTO Y LIMPIEZA ---
+        // --- MANTENIMIENTO ---
         window.limpiarMovimientos = async () => {
             if (confirm("¿Limpiar ingresos y egresos? Los niños volverán a estar activos.")) {
                 window.db.alumnos = window.db.alumnos.map(a => ({ ...a, retirado: false, fechaIngreso: null, fechaEgreso: null }));
@@ -118,7 +129,7 @@
         };
 
         window.borrarMatriculaTotal = async () => {
-            if (confirm("¡PELIGRO! Vas a borrar TODOS los niños. ¿Estás seguro?")) {
+            if (confirm("¡PELIGRO! Vas a borrar TODOS los niños.")) {
                 const pass = prompt("Escribe 'BORRAR' para confirmar:");
                 if (pass === "BORRAR") {
                     window.db.alumnos = []; window.db.asistencias = {};
@@ -128,20 +139,27 @@
             }
         };
 
-        // --- RENDER DOCENTE ---
+        // --- RENDER ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const fObj = new Date(fSel + "T00:00:00");
             const esFeriado = window.db.feriados?.includes(fSel);
             const esFinde = (fObj.getDay() === 0 || fObj.getDay() === 6);
             
-            document.getElementById('docenteTxt').innerText = window.db.docente || "";
-            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""}`;
+            document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
+            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""} - ${window.db.turno || ""}`;
+            
+            // Cargar datos en los inputs de edición por si el docente quiere cambiar algo
+            document.getElementById('editDocente').value = window.db.docente || "";
+            document.getElementById('editGrado').value = window.db.grado || "";
+            document.getElementById('editSeccion').value = window.db.seccion || "";
+            document.getElementById('editTurno').value = window.db.turno || "";
+
             document.getElementById('btnFeriado').innerText = esFeriado ? "✅ DÍA HÁBIL" : "🚩 MARCAR FERIADO";
 
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
-            const activos = window.db.alumnos.filter(a => !a.retirado);
+            const activos = (window.db.alumnos || []).filter(a => !a.retirado);
 
             if (esFeriado || esFinde) {
                 lista.innerHTML = `<div class="aviso-no">🚫 DÍA NO LABORABLE</div>`;
@@ -153,7 +171,7 @@
                 });
             }
 
-            // Estadísticas Mensuales
+            // Estadísticas
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -163,14 +181,15 @@
                 }
             });
             const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?((pH+pV)/activos.length*100).toFixed(0):0;
-            const ingM = window.db.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === fObj.getMonth());
-            const egrM = window.db.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === fObj.getMonth());
+            const ingM = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === fObj.getMonth());
+            const egrM = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === fObj.getMonth());
 
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
-                    <h2>ESTADÍSTICA MENSUAL</h2>
+                    <h2>ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
+                    <p>Docente: ${window.db.docente} | Turno: ${window.db.turno}</p>
                     <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
                     <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>TOTAL: <b>${(pH+pV).toFixed(1)}</b></div></div>
                     <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody>
@@ -227,7 +246,7 @@
         .alumno-fila { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; }
         .bola-gen { width: 10px; height: 10px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
-        .btn-check { width: 40px; height: 35px; border: none; color: white; font-weight: bold; border-radius: 5px; }
+        .btn-check { width: 40px; height: 35px; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
@@ -247,8 +266,15 @@
     </div>
     <div id="registerForm" class="card" style="max-width:320px; margin:auto; display:none;">
         <h4>Registro</h4>
-        <input type="text" id="regNombre" placeholder="Nombre completo">
-        <div style="display:flex; gap:4px;"><input type="text" id="regGrado" placeholder="Grado"><input type="text" id="regSeccion" placeholder="Sec"></div>
+        <input type="text" id="regNombre" placeholder="Nombre del Docente">
+        <div style="display:flex; gap:4px;">
+            <input type="text" id="regGrado" placeholder="Grado">
+            <input type="text" id="regSeccion" placeholder="Sec">
+        </div>
+        <select id="regTurno">
+            <option value="Mañana">Mañana</option>
+            <option value="Tarde">Tarde</option>
+        </select>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Contraseña">
         <input type="password" id="regClaveInst" placeholder="Clave Institucional">
@@ -271,15 +297,34 @@
         </div>
 
         <div class="card no-print">
-            <h4 style="margin:0">Mantenimiento</h4>
+            <details>
+                <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil del Docente</summary>
+                <div style="padding-top:10px;">
+                    <input type="text" id="editDocente" placeholder="Nombre completo">
+                    <div style="display:flex; gap:4px;">
+                        <input type="text" id="editGrado" placeholder="Grado">
+                        <input type="text" id="editSeccion" placeholder="Sección">
+                    </div>
+                    <select id="editTurno">
+                        <option value="Mañana">Mañana</option>
+                        <option value="Tarde">Tarde</option>
+                    </select>
+                    <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px; font-weight:bold;">GUARDAR CAMBIOS</button>
+                </div>
+            </details>
+        </div>
+
+        <div class="card no-print">
+            <h4 style="margin:0">Mantenimiento de Matrícula</h4>
             <div style="display:flex; gap:5px; margin-top:5px;">
-                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px;">LIMPIAR MOVIMIENTOS</button>
-                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px;">VACIAR SECCIÓN</button>
+                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
+                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
             </div>
         </div>
 
         <div class="card no-print">
-            <b>Docente:</b> <span id="docenteTxt"></span> | <span id="gradoSeccionTxt"></span>
+            <b>Docente:</b> <span id="docenteTxt"></span><br>
+            <b>Sección:</b> <span id="gradoSeccionTxt"></span>
             <input type="date" id="fechaSeleccionada" value="2026-03-05" onchange="window.render()" style="margin-top:10px;">
             <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
         </div>
