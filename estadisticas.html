@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dirección - Control Total Lucila Palacios</title>
+    <title>Sistema de Control - E.B.N. Lucila Palacios</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -24,14 +24,16 @@
 
         const USUARIO_ADMIN = "admin_lucila";
         window.usuarioActual = null;
-        window.db = { docente: "", seccion: "", alumnos: [], asistencias: {}, feriados: [] };
+        window.db = { docente: "", seccion: "", grado: "", alumnos: [], asistencias: {}, feriados: [] };
 
+        // Lógica de Cálculo de Edad Real
         function calcularEdad(fNac) {
             if(!fNac) return 0;
             const hoy = new Date();
             const cumple = new Date(fNac);
             let edad = hoy.getFullYear() - cumple.getFullYear();
-            if (hoy.getMonth() < cumple.getMonth() || (hoy.getMonth() === cumple.getMonth() && hoy.getDate() < cumple.getDate())) edad--;
+            const m = hoy.getMonth() - cumple.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) edad--;
             return edad;
         }
 
@@ -45,173 +47,101 @@
                 document.getElementById('appContent').style.display = 'block';
                 if (user === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
                 onSnapshot(doc(dbCloud, "docentes_db", user), (s) => { window.db = s.data(); window.render(); });
-            } else { alert("Error de credenciales"); }
+            } else { alert("Acceso denegado"); }
         };
 
-        // --- REPORTE DIRECCIÓN: ASISTENCIA DIARIA CON DISGREGACIÓN ---
-        window.verAsistenciaDiariaCompleta = async () => {
-            const container = document.getElementById('resultadosAdmin');
-            const hoy = document.getElementById('fechaSeleccionada').value;
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+        // --- ESTADÍSTICA DEL DOCENTE: PROMEDIOS POR GÉNERO ---
+        function generarEstadisticaDocente() {
+            const f = document.getElementById('fechaSeleccionada').value;
+            const mesAct = new Date(f + "T00:00:00").getMonth();
+            const anioAct = new Date(f + "T00:00:00").getFullYear();
             
-            let html = `
-                <div class="card-reporte">
-                    <h3 class="titulo-reporte">📅 REPORTE DIARIO DE ASISTENCIA: ${hoy}</h3>
-                    <table class="tabla-maestra" id="tablaAdminDiaria">
-                        <thead>
-                            <tr>
-                                <th>Grado / Sección</th>
-                                <th>Matrícula</th>
-                                <th>H (Asis)</th>
-                                <th>V (Asis)</th>
-                                <th>Total Asis.</th>
-                                <th>% Asis.</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+            let matH = 0, matV = 0;
+            let sumaAsisH = 0, sumaAsisV = 0, diasHabiles = 0;
+            let disgEdades = {};
 
-            let totalM = 0, totalH = 0, totalV = 0;
+            // 1. Matrícula y Edades
+            window.db.alumnos.forEach(al => {
+                const edad = calcularEdad(al.nacimiento);
+                al.genero === 'F' ? matH++ : matV++;
+                if(!disgEdades[edad]) disgEdades[edad] = { F: 0, M: 0 };
+                disgEdades[edad][al.genero]++;
+            });
 
-            snap.forEach(docSnap => {
-                const d = docSnap.data();
-                if (docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
-
-                let asisH = 0, asisV = 0;
-                if (d.asistencias && d.asistencias[hoy]) {
-                    d.alumnos.forEach(al => {
-                        if (d.asistencias[hoy][al.id] === 1) al.genero === 'F' ? asisH++ : asisV++;
+            // 2. Cálculo de Promedio Real (H/V)
+            Object.keys(window.db.asistencias || {}).forEach(fechaStr => {
+                const fechaObj = new Date(fechaStr + "T00:00:00");
+                const esFeriado = window.db.feriados && window.db.feriados.includes(fechaStr);
+                
+                // Solo días del mes actual, que no sean fin de semana ni feriados
+                if (fechaObj.getMonth() === mesAct && fechaObj.getFullYear() === anioAct && 
+                    fechaObj.getDay() !== 0 && fechaObj.getDay() !== 6 && !esFeriado) {
+                    
+                    diasHabiles++;
+                    window.db.alumnos.forEach(al => {
+                        if (window.db.asistencias[fechaStr][al.id] === 1) {
+                            al.genero === 'F' ? sumaAsisH++ : sumaAsisV++;
+                        }
                     });
                 }
-                
-                const mat = d.alumnos.length;
-                const asisT = asisH + asisV;
-                const porc = mat > 0 ? ((asisT / mat) * 100).toFixed(1) : 0;
-
-                totalM += mat; totalH += asisH; totalV += asisV;
-
-                html += `
-                    <tr>
-                        <td style="text-align:left"><b>${d.seccion}</b></td>
-                        <td>${mat}</td>
-                        <td class="txt-hembra">${asisH}</td>
-                        <td class="txt-varon">${asisV}</td>
-                        <td><b>${asisT}</b></td>
-                        <td class="badge-porc">${porc}%</td>
-                    </tr>`;
             });
 
-            const tAsisTotal = totalH + totalV;
-            const tPorcTotal = totalM > 0 ? ((tAsisTotal / totalM) * 100).toFixed(1) : 0;
+            const promH = diasHabiles > 0 ? (sumaAsisH / diasHabiles).toFixed(1) : "0.0";
+            const promV = diasHabiles > 0 ? (sumaAsisV / diasHabiles).toFixed(1) : "0.0";
+            const eficiencia = (matH + matV) > 0 ? (((parseFloat(promH) + parseFloat(promV)) / (matH + matV)) * 100).toFixed(1) : 0;
 
-            html += `
-                        </tbody>
-                        <tfoot class="pie-tabla">
-                            <tr>
-                                <td>TOTAL ESCUELA</td>
-                                <td>${totalM}</td>
-                                <td>${totalH}</td>
-                                <td>${totalV}</td>
-                                <td>${tAsisTotal}</td>
-                                <td>${tPorcTotal}%</td>
-                            </tr>
-                        </tfoot>
+            // Renderizar Tablas de Docente
+            let htmlEdades = "";
+            Object.keys(disgEdades).sort((a,b)=>a-b).forEach(e => {
+                htmlEdades += `<tr><td>${e} años</td><td>${disgEdades[e].F}</td><td>${disgEdades[e].M}</td><td>${disgEdades[e].F+disgEdades[e].M}</td></tr>`;
+            });
+
+            document.getElementById('reporteDocenteContenedor').innerHTML = `
+                <div class="card reporte-docente">
+                    <h4 class="titulo-stat">📊 RESUMEN ESTADÍSTICO MENSUAL</h4>
+                    <div class="grid-promedios">
+                        <div class="item-prom"><b>${promH}</b><br><small>Prom. Hembras</small></div>
+                        <div class="item-prom"><b>${promV}</b><br><small>Prom. Varones</small></div>
+                        <div class="item-prom" style="background:var(--azul); color:white;"><b>${eficiencia}%</b><br><small>Eficiencia</small></div>
+                    </div>
+                    <p class="sub-tit">MATRÍCULA POR EDAD (911)</p>
+                    <table class="tabla-mini">
+                        <thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead>
+                        <tbody>${htmlEdades}</tbody>
+                        <tfoot style="background:#eee"><tr><td><b>TOTAL</b></td><td>${matH}</td><td>${matV}</td><td>${matH+matV}</td></tr></tfoot>
                     </table>
-                    <button onclick="descargarExcel('tablaAdminDiaria', 'Asistencia_Diaria')" class="btn-excel">📥 Exportar a Excel</button>
                 </div>`;
-            container.innerHTML = html;
-        };
-
-        // --- REPORTE DIRECCIÓN: CONSOLIDADO CON EDADES Y PROMEDIOS ---
-        window.verConsolidadoTotal = async () => {
-            const container = document.getElementById('resultadosAdmin');
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            const mesAct = new Date().getMonth();
-            const anioAct = new Date().getFullYear();
-
-            let html = `<div class="card-reporte"><h3 class="titulo-reporte">📊 CONSOLIDADO MENSUAL Y CENSO DE EDADES</h3>`;
-            
-            let gEdades = {};
-            let filasSecciones = "";
-            let tMatH = 0, tMatV = 0, tPromH = 0, tPromV = 0;
-
-            snap.forEach(docSnap => {
-                const d = docSnap.data();
-                if (docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
-
-                let sH = 0, sV = 0, sDias = 0;
-                d.alumnos.forEach(al => {
-                    const e = calcularEdad(al.nacimiento);
-                    al.genero === 'F' ? tMatH++ : tMatV++;
-                    if(!gEdades[e]) gEdades[e] = { F: 0, M: 0 };
-                    gEdades[e][al.genero]++;
-                });
-
-                Object.keys(d.asistencias || {}).forEach(f => {
-                    const fe = new Date(f + "T00:00:00");
-                    const esF = d.feriados && d.feriados.includes(f);
-                    if (fe.getMonth() === mesAct && fe.getFullYear() === anioAct && fe.getDay() !== 0 && fe.getDay() !== 6 && !esF) {
-                        sDias++;
-                        d.alumnos.forEach(al => { if (d.asistencias[f][al.id] === 1) al.genero === 'F' ? sH++ : sV++; });
-                    }
-                });
-
-                const ph = sDias > 0 ? (sH / sDias) : 0;
-                const pv = sDias > 0 ? (sV / sDias) : 0;
-                tPromH += ph; tPromV += pv;
-
-                filasSecciones += `<tr><td>${d.seccion}</td><td>${d.alumnos.length}</td><td>${ph.toFixed(1)}</td><td>${pv.toFixed(1)}</td><td><b>${(ph+pv).toFixed(1)}</b></td></tr>`;
-            });
-
-            html += `
-                <p class="subtitulo">1. PROMEDIOS REALES POR SECCIÓN</p>
-                <table class="tabla-maestra" id="tablaPromedios">
-                    <thead><tr><th>Sección</th><th>Matrícula</th><th>Prom. H</th><th>Prom. V</th><th>Prom. Real</th></tr></thead>
-                    <tbody>${filasSecciones}</tbody>
-                </table>
-
-                <p class="subtitulo">2. DISGREGACIÓN DE MATRÍCULA POR EDADES (Toda la escuela)</p>
-                <table class="tabla-maestra" id="tablaEdades">
-                    <thead><tr><th>Edad</th><th>Hembras</th><th>Varones</th><th>Total</th></tr></thead>
-                    <tbody>`;
-
-            Object.keys(gEdades).sort((a,b)=>a-b).forEach(e => {
-                html += `<tr><td>${e} años</td><td>${gEdades[e].F}</td><td>${gEdades[e].M}</td><td><b>${gEdades[e].F + gEdades[e].M}</b></td></tr>`;
-            });
-
-            html += `</tbody></table>
-                <button onclick="descargarExcel('tablaPromedios', 'Consolidado_Escuela')" class="btn-excel">📥 Descargar Reporte Completo</button>
-            </div>`;
-            container.innerHTML = html;
-        };
-
-        window.descargarExcel = (id, nom) => {
-            const table = document.getElementById(id);
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, `${nom}.xlsx`);
-        };
+        }
 
         window.render = () => {
-            const f = document.getElementById('fechaSeleccionada').value || new Date().toISOString().split('T')[0];
-            document.getElementById('displayFecha').innerText = f;
-            document.getElementById('docente').value = window.db.docente || "";
-            document.getElementById('seccion').value = window.db.seccion || "";
+            const f = document.getElementById('fechaSeleccionada').value;
+            const esFin = (new Date(f + "T00:00:00")).getDay() % 6 === 0;
+            const esFer = window.db.feriados && window.db.feriados.includes(f);
+
+            document.getElementById('docenteNombre').innerText = window.db.docente || "No asignado";
+            document.getElementById('docenteGrado').innerText = (window.db.grado || "-") + " " + (window.db.seccion || "-");
             
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
-            const esFin = (new Date(f + "T00:00:00")).getDay() % 6 === 0;
-            const esFer = window.db.feriados && window.db.feriados.includes(f);
 
             if (!esFin && !esFer) {
                 window.db.alumnos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const est = (window.db.asistencias[f] && window.db.asistencias[f][a.id]) || 0;
-                    let c = "#ccc"; if(est===1) c="var(--exito)"; if(est===2) c="var(--morado)";
-                    lista.innerHTML += `<div class="student-item">
-                        <div class="dot" style="background:${a.genero==='F'?'#ff99cc':'#99ccff'}"></div>
-                        <div style="flex-grow:1"><b>${a.nombre}</b></div>
-                        <button onclick="marcar(${a.id})" class="btn-p" style="background:${c}">${est===1?'P':est===2?'J':'F'}</button>
-                    </div>`;
+                    let color = "#ccc", texto = "F";
+                    if(est === 1) { color = "var(--exito)"; texto = "P"; }
+                    if(est === 2) { color = "var(--morado)"; texto = "J"; }
+
+                    lista.innerHTML += `
+                        <div class="student-row">
+                            <div class="genero-dot ${a.genero}"></div>
+                            <div style="flex-grow:1"><b>${a.nombre}</b></div>
+                            <button onclick="marcar(${a.id})" class="btn-p" style="background:${color}">${texto}</button>
+                        </div>`;
                 });
-            } else { lista.innerHTML = `<p style='text-align:center; color:red;'>DÍA NO LABORABLE</p>`; }
+            } else {
+                lista.innerHTML = `<div class="aviso-feriado">🚫 DÍA NO LABORABLE</div>`;
+            }
+            generarEstadisticaDocente();
         };
 
         window.marcar = (id) => {
@@ -220,76 +150,111 @@
             window.db.asistencias[f][id] = (window.db.asistencias[f][id] + 1) % 3 || 1;
             window.saveToCloud(window.db);
         };
-        window.saveToCloud = async (data) => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), data); };
+
+        window.agregarAlumno = () => {
+            const nom = document.getElementById('newNom').value.toUpperCase();
+            const nac = document.getElementById('newNac').value;
+            if(!nom || !nac) return alert("Complete los datos");
+            window.db.alumnos.push({ id: Date.now(), nombre: nom, genero: document.getElementById('newGen').value, nacimiento: nac });
+            window.saveToCloud(window.db);
+            document.getElementById('newNom').value = "";
+        };
+
+        window.toggleFeriado = () => {
+            const f = document.getElementById('fechaSeleccionada').value;
+            if(!window.db.feriados) window.db.feriados = [];
+            const idx = window.db.feriados.indexOf(f);
+            idx === -1 ? window.db.feriados.push(f) : window.db.feriados.splice(idx, 1);
+            window.saveToCloud(window.db);
+        };
+
+        window.saveToCloud = async (d) => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), d); };
         window.logout = () => location.reload();
         document.addEventListener("DOMContentLoaded", () => { document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0]; });
     </script>
 
     <style>
-        :root { --azul: #003366; --celeste: #0066cc; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --fondo: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--fondo); font-size: 14px; }
-        header { background: var(--azul); color: white; padding: 12px; text-align: center; font-weight: bold; }
-        .container { max-width: 600px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 12px; }
+        :root { --azul: #003366; --celeste: #0056b3; --exito: #28a745; --morado: #6f42c1; --rojo: #d9534f; --fondo: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
         
-        /* Tablas Profesionales */
-        .tabla-maestra { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 12px; }
-        .tabla-maestra th { background: #e9ecef; padding: 10px; border: 1px solid #dee2e6; color: #495057; }
-        .tabla-maestra td { padding: 8px; border: 1px solid #dee2e6; text-align: center; }
-        .pie-tabla { background: #343a40; color: white; font-weight: bold; }
-        
-        .titulo-reporte { color: var(--azul); border-bottom: 2px solid var(--azul); padding-bottom: 5px; margin-top: 0; }
-        .subtitulo { font-weight: bold; color: var(--celeste); margin: 15px 0 5px 0; border-left: 4px solid var(--celeste); padding-left: 8px; }
-        
-        .txt-hembra { color: #e83e8c; font-weight: bold; }
-        .txt-varon { color: #007bff; font-weight: bold; }
-        .badge-porc { background: #e7f3ff; color: #004085; font-weight: bold; }
+        /* Encabezado Institucional */
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid #ffcc00; }
+        .logo-inst { width: 60px; margin-bottom: 5px; }
 
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
-        .btn-excel { background: #1D6F42; color: white; font-weight: bold; cursor: pointer; border: none; margin-top: 15px; }
-        .btn-p { width: 40px; color: white; font-weight: bold; border: none; }
-        .student-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .container { max-width: 480px; margin: auto; padding: 10px; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 15px; }
         
+        /* Datos de la Docente */
+        .info-docente { border-left: 5px solid var(--celeste); background: #eef6ff; }
+        .info-docente b { color: var(--azul); font-size: 16px; }
+
+        /* Estilos de Lista */
+        .student-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .genero-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .genero-dot.F { background: #ff85a2; }
+        .genero-dot.M { background: #3498db; }
+        .btn-p { width: 42px; height: 32px; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        /* Estadísticas */
+        .grid-promedios { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .item-prom { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #ddd; }
+        .item-prom b { font-size: 18px; }
+        .tabla-mini { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
+        .tabla-mini th, .tabla-mini td { border: 1px solid #eee; padding: 6px; }
+        .titulo-stat { margin: 0; color: var(--azul); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .sub-tit { font-size: 11px; font-weight: bold; color: #777; margin-top: 15px; }
+
+        .aviso-feriado { background: #fff5f5; color: #c53030; padding: 20px; text-align: center; font-weight: bold; border-radius: 8px; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+        .btn-add { background: var(--exito); color: white; border: none; font-weight: bold; }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="max-width: 300px; margin: 60px auto; text-align: center; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-    <h2>Lucila Palacios</h2>
+<div id="authSection" style="max-width:320px; margin: 80px auto; text-align: center; background: white; padding: 30px; border-radius: 20px;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" class="logo-inst">
+    <h2 style="color:var(--azul); margin:10px 0;">E.B.N. LUCILA PALACIOS</h2>
     <input type="text" id="loginUser" placeholder="Usuario">
-    <input type="password" id="loginPass" placeholder="Contraseña">
-    <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
+    <input type="password" id="loginPass" placeholder="Clave">
+    <button onclick="login()" style="background:var(--azul); color:white; font-weight:bold;">INGRESAR</button>
 </div>
 
 <div id="appContent" style="display: none;">
     <header>
-        U.E. LUCILA PALACIOS - SISTEMA DE GESTIÓN
-        <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; padding:4px 10px; font-size:12px;">SALIR</button>
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="40" style="vertical-align: middle;">
+        <b>E.B.N. "LUCILA PALACIOS"</b>
+        <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px;">SALIR</button>
     </header>
 
     <div class="container">
-        <div id="adminPanel" class="card no-print" style="display:none; border-top: 5px solid var(--azul);">
-            <b style="color:var(--azul); font-size:16px;">🏢 ÁREA DE DIRECCIÓN</b>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px;">
-                <button onclick="verAsistenciaDiariaCompleta()" style="background:var(--celeste); color:white;">📅 Reporte Diario</button>
-                <button onclick="verConsolidadoTotal()" style="background:var(--morado); color:white;">📊 Consolidado Mensual</button>
-            </div>
-            <div id="resultadosAdmin"></div>
+        <div class="card info-docente no-print">
+            Docente: <b id="docenteNombre"></b><br>
+            Grado y Sección: <b id="docenteGrado"></b>
         </div>
 
         <div class="card no-print">
-            <label>Seleccionar Fecha:</label>
+            <label style="font-size:12px;">Fecha de Asistencia:</label>
             <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <input type="text" id="docente" placeholder="Nombre de la Docente" readonly>
-            <input type="text" id="seccion" placeholder="Grado y Sección" readonly>
+            <button onclick="toggleFeriado()" style="background:#fff; color:var(--rojo); border: 1px solid var(--rojo); font-size:11px;">🚩 MARCAR COMO NO LABORABLE</button>
         </div>
 
         <div class="card no-print">
-            <p style="text-align:center; font-weight:bold;">Asistencia del día: <span id="displayFecha"></span></p>
+            <b style="color:var(--celeste)">+ Registro de Matrícula</b>
+            <input type="text" id="newNom" placeholder="Nombres y Apellidos">
+            <div style="display:flex; gap:5px;">
+                <select id="newGen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
+                <input type="date" id="newNac" style="width:60%">
+            </div>
+            <button onclick="agregarAlumno()" class="btn-add">INSCRIBIR ALUMNO</button>
+        </div>
+
+        <div class="card">
+            <p style="text-align:center; font-weight:bold; margin:0 0 10px 0;">Control del día: <span id="displayFecha"></span></p>
             <div id="listaAsistencia"></div>
         </div>
+
+        <div id="reporteDocenteContenedor"></div>
     </div>
 </div>
 
