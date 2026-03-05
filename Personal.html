@@ -16,14 +16,21 @@
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
         .contenedor { max-width: 1100px; margin: auto; padding: 10px; }
 
-        /* DASHBOARD */
+        /* Colores por Estatus */
+        .row-asistencia { background-color: #d4edda !important; } /* Verde claro */
+        .row-retraso { background-color: #fff3cd !important; }    /* Amarillo */
+        .row-inasistencia { background-color: #f8d7da !important; } /* Rojo claro */
+        .row-permiso-p { background-color: #e2e3e5 !important; }  /* Gris */
+        .row-permiso-m { background-color: #d1ecf1 !important; }  /* Celeste */
+        .row-reposo { background-color: #f5c6cb !important; }     /* Rosa */
+        .row-vacaciones { background-color: #cce5ff !important; }  /* Azul claro */
+
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .dash-card { background: var(--blanco); padding: 10px; border-radius: 12px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .dash-card.full { grid-column: 1 / -1; background: var(--azul); color: white; }
         .pres { font-size: 1.4rem; font-weight: bold; display: block; color: var(--azul); }
         .dash-card.full .pres { color: white; font-size: 2rem; }
 
-        /* SECCIONES */
         .card-seccion { background: var(--blanco); border-radius: 15px; padding: 15px; margin-bottom: 15px; border-top: 4px solid var(--naranja); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .sec-header { color: var(--azul); font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 0.85rem; border-left: 5px solid var(--naranja); padding-left: 10px; }
         
@@ -36,15 +43,10 @@
         .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-rojo { background: var(--rojo); }
         .group-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         
-        /* BUSCADOR CORREGIDO */
-        .search-container { display: flex; gap: 5px; align-items: flex-end; margin-top: 5px; }
-        .btn-icon { width: 45px !important; padding: 10px !important; margin-top: 0 !important; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-
         .table-wrap { overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: center; }
-        th { background: var(--azul); color: white; padding: 8px; position: sticky; top: 0; }
-        td { padding: 8px; border: 1px solid #eee; }
-        .warning-cell { background: #ffcccc !important; color: #850000; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: center; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { padding: 8px; border: 1px solid #ddd; }
         .hidden { display: none; }
         .stats-box { background: #eef2f7; padding: 10px; border-radius: 8px; font-weight: bold; color: var(--azul); text-align: center; font-size: 0.8rem; }
     </style>
@@ -64,8 +66,6 @@
         <div class="dash-card"><h4>Obreros</h4><span class="pres" id="curObr">0</span></div>
         <div class="dash-card"><h4>Admin.</h4><span class="pres" id="curAdm">0</span></div>
         <div class="dash-card"><h4>CNAE</h4><span class="pres" id="curCn">0</span></div>
-        <div class="dash-card"><h4>Vig. A</h4><span class="pres" id="curVA">0</span></div>
-        <div class="dash-card"><h4>Vig. B</h4><span class="pres" id="curVB">0</span></div>
     </div>
 
     <div class="tabs">
@@ -95,22 +95,19 @@
                         <option value="ASISTENCIA">ASISTENCIA ✅</option>
                         <option value="RETRASO">RETRASO ⚠️</option>
                         <option value="INASISTENCIA">INASISTENCIA ❌</option>
-                        <option value="PERMISO">PERMISO 📝</option>
-                        <option value="REPOSO">REPOSO 🏥</option>
+                        <option value="PERMISO PERSONAL">PERMISO PERSONAL 📝</option>
+                        <option value="PERMISO MÉDICO">PERMISO MÉDICO 🏥</option>
+                        <option value="REPOSO">REPOSO 🛌</option>
                         <option value="VACACIONES">VACACIONES 🌴</option>
                     </select>
                 </div>
                 <div><label>Entrada:</label><input type="time" id="horaEntrada"></div>
             </div>
-            <div class="group-btns">
-                <div><label>Salida:</label><input type="time" id="horaSalida"></div>
-                <div><label>Motivo:</label><input type="text" id="motivoSalida"></div>
-            </div>
             <button class="btn btn-verde" onclick="guardarRegistro()">GUARDAR ASISTENCIA</button>
         </div>
         <div class="table-wrap">
             <table id="tablaDia">
-                <thead><tr><th>Nombre</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Ret.</th><th>Ant.</th><th>Acción</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Estatus</th><th>Entrada</th><th>Acción</th></tr></thead>
                 <tbody id="bodyDia"></tbody>
             </table>
         </div>
@@ -118,36 +115,22 @@
 
     <div id="tabReportes" class="tab-content hidden">
         <div class="card-seccion">
-            <div class="sec-header">📊 Consolidado Mensual</div>
-            <div class="group-btns">
-                <div>
-                    <label>Mes:</label>
-                    <input type="month" id="mesReporte" onchange="cargarConsolidado()">
-                </div>
-                <div>
-                    <label>Buscar por Nombre:</label>
-                    <div class="search-container">
-                        <input type="text" id="busqueda" placeholder="Ej: Angel" onkeyup="filtrarTabla()">
-                        <button class="btn btn-azul btn-icon" onclick="filtrarTabla()">🔍</button>
-                        <button class="btn btn-rojo btn-icon" onclick="document.getElementById('busqueda').value=''; filtrarTabla();">✕</button>
-                    </div>
-                </div>
-            </div>
-            
+            <div class="sec-header">📊 Promedio Real Disgregado</div>
+            <input type="month" id="mesReporte" onchange="cargarConsolidado()">
             <div id="diasLaborados" class="stats-box" style="margin-top:10px;"></div>
 
             <div class="table-wrap">
                 <table id="tablaEstadistica">
-                    <thead><tr><th>Cargo</th><th>Nómina</th><th>Prom.</th><th>% Eficacia</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Cargo</th>
+                            <th>Nómina</th>
+                            <th>Prom. F</th>
+                            <th>Prom. M</th>
+                            <th>Prom. Total</th>
+                        </tr>
+                    </thead>
                     <tbody id="bodyEstadistica"></tbody>
-                </table>
-            </div>
-
-            <label style="margin-top:15px; display:block">👤 Detalle Individual (Rojo si > 3):</label>
-            <div class="table-wrap">
-                <table id="tablaMensual">
-                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Per</th><th>Rep</th><th>Vac</th><th>Min.R</th><th>Min.A</th></tr></thead>
-                    <tbody id="bodyMensual"></tbody>
                 </table>
             </div>
             <button class="btn btn-rojo" onclick="generarPDFMensual()">DESCARGAR REPORTE PDF</button>
@@ -166,15 +149,14 @@
                     <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
                     <option value="Vigilante">Vigilante</option>
                 </select>
-                <select id="gruNuevo">
-                    <option value="">SIN GRUPO</option>
-                    <option value="GRUPO A">GRUPO A</option>
-                    <option value="GRUPO B">GRUPO B</option>
+                <select id="genNuevo">
+                    <option value="F">FEMENINO</option>
+                    <option value="M">MASCULINO</option>
                 </select>
             </div>
             <button class="btn btn-azul" onclick="agregarANomina()">AGREGAR A NÓMINA</button>
             <div class="table-wrap">
-                <table><thead><tr><th>Nombre</th><th>Cargo / Grupo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table>
+                <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Gen</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table>
             </div>
         </div>
     </div>
@@ -194,9 +176,19 @@
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
         if(id === 'tabReportes') cargarConsolidado();
     }
+
+    // MAPEO DE COLORES POR ESTATUS
+    const coloresEstatus = {
+        "ASISTENCIA": "row-asistencia",
+        "RETRASO": "row-retraso",
+        "INASISTENCIA": "row-inasistencia",
+        "PERMISO PERSONAL": "row-permiso-p",
+        "PERMISO MÉDICO": "row-permiso-m",
+        "REPOSO": "row-reposo",
+        "VACACIONES": "row-vacaciones"
+    };
 
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
@@ -205,57 +197,38 @@
         snap.forEach(doc => {
             let d = doc.data(); d.id = doc.id; nominaLocal.push(d);
             sel.innerHTML += `<option value="${d.n}">${d.n}</option>`;
-            bNom.innerHTML += `<tr><td>${d.n}</td><td>${d.c} ${d.g}</td><td><button onclick="eliminarDeNomina('${d.id}')">X</button></td></tr>`;
+            bNom.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.gender || 'F'}</td><td><button onclick="eliminarDeNomina('${d.id}')">X</button></td></tr>`;
         });
         actualizarTodo();
     });
 
     async function guardarRegistro() {
         const n = document.getElementById('selectPersona').value, f = document.getElementById('fechaReg').value, e = document.getElementById('estatus').value;
-        const hE = document.getElementById('horaEntrada').value, hS = document.getElementById('horaSalida').value, trn = document.getElementById('turno').value;
+        const hE = document.getElementById('horaEntrada').value, trn = document.getElementById('turno').value;
         const p = nominaLocal.find(x => x.n === n);
         if(!p) return alert("Seleccione trabajador");
 
-        let mRet = 0, mAnt = 0, tE = 0, tS = 0;
-        if(trn === "MAÑANA") {
-            if(p.c === "Docente") { tE = 420; tS = 720; }
-            else if(p.c === "Obrero" || p.c === "Administrativo") { tE = 405; tS = 765; }
-            else if(p.c === "CNAE (Cocinera)") { tE = 420; tS = 840; }
-        } else if(trn === "TARDE") {
-            if(p.c === "Docente") { tE = 720; tS = 1020; }
-            else if(p.c === "Obrero") { tE = 690; tS = 1050; }
-            else if(p.c === "Administrativo") { tE = 720; tS = 1080; }
-        } else if(trn === "NOCHE") { tE = 1080; tS = 360; }
-        else if(trn === "FIN_SEMANA") { tE = 360; tS = 1080; }
-
-        if((e === "ASISTENCIA" || e === "RETRASO") && hE) {
-            const minE = hE.split(':').reduce((h, m) => h * 60 + +m, 0);
-            if(minE > tE) mRet = minE - tE;
-        }
-        if(hS) {
-            const minS = hS.split(':').reduce((h, m) => h * 60 + +m, 0);
-            if(minS < tS && trn !== "NOCHE") mAnt = tS - minS;
-        }
-        await db.collection("asistencia_ebnlp_final").add({ n, f, e, hE, hS, c: p.c, g: p.g||"", minR: mRet, minA: mAnt, mes: f.substring(0,7) });
+        await db.collection("asistencia_ebnlp_final").add({ 
+            n, f, e, hE, c: p.c, gender: p.gender || 'F', mes: f.substring(0,7) 
+        });
         alert("✅ Guardado");
     }
 
     function actualizarTodo() {
         const fH = document.getElementById('fechaReg').value;
         db.collection("asistencia_ebnlp_final").where("f", "==", fH).onSnapshot(snap => {
-            let h = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
+            let h = {Doc:0, Obr:0, Adm:0, Cn:0};
             const bD = document.getElementById('bodyDia'); bD.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
+                const claseColor = coloresEstatus[d.e] || "";
                 if(d.e === "ASISTENCIA" || d.e === "RETRASO") {
                     if(d.c === "Docente") h.Doc++; else if(d.c === "Obrero") h.Obr++; else if(d.c === "Administrativo") h.Adm++; else if(d.c === "CNAE (Cocinera)") h.Cn++;
-                    if(d.g === "GRUPO A") h.VA++; else if(d.g === "GRUPO B") h.VB++;
                 }
-                bD.innerHTML += `<tr><td>${d.n}</td><td>${d.e}</td><td>${d.hE||'-'}</td><td>${d.hS||'-'}</td><td>${d.minR}m</td><td>${d.minA}m</td><td><button onclick="eliminarAsis('${doc.id}')">X</button></td></tr>`;
+                bD.innerHTML += `<tr class="${claseColor}"><td>${d.n}</td><td>${d.e}</td><td>${d.hE||'-'}</td><td><button onclick="eliminarAsis('${doc.id}')">X</button></td></tr>`;
             });
             document.getElementById('curDoc').innerText = h.Doc; document.getElementById('curObr').innerText = h.Obr;
             document.getElementById('curAdm').innerText = h.Adm; document.getElementById('curCn').innerText = h.Cn;
-            document.getElementById('curVA').innerText = h.VA; document.getElementById('curVB').innerText = h.VB;
             let totalActual = Object.values(h).reduce((a,b)=>a+b,0);
             document.getElementById('efecTotal').innerText = nominaLocal.length > 0 ? Math.round((totalActual/nominaLocal.length)*100)+"%" : "0%";
         });
@@ -264,66 +237,54 @@
     async function cargarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
-        let res = {}, cAsis = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0}, dias = new Set();
+        
+        // Estructura para promedios: { Cargo: { M: sumaAsis, F: sumaAsis, total: sumaAsis } }
+        let stats = {
+            "Docente": { M:0, F:0, T:0 },
+            "Obrero": { M:0, F:0, T:0 },
+            "Administrativo": { M:0, F:0, T:0 },
+            "CNAE (Cocinera)": { M:0, F:0, T:0 },
+            "Vigilante": { M:0, F:0, T:0 }
+        };
+        let dias = new Set();
         
         snap.forEach(doc => {
-            const d = doc.data(); dias.add(d.f);
-            if(!res[d.n]) res[d.n] = {asis:0, ret:0, fal:0, per:0, rep:0, vac:0, minR:0, minA:0};
-            if(d.e === "ASISTENCIA") res[d.n].asis++; else if(d.e === "RETRASO") res[d.n].ret++; else if(d.e === "INASISTENCIA") res[d.n].fal++; else if(d.e === "PERMISO") res[d.n].per++; else if(d.e === "REPOSO") res[d.n].rep++; else if(d.e === "VACACIONES") res[d.n].vac++;
-            res[d.n].minR += d.minR || 0; res[d.n].minA += d.minA || 0;
+            const d = doc.data();
             if(d.e === "ASISTENCIA" || d.e === "RETRASO") {
-                if(d.c === "Docente") cAsis.Doc++; else if(d.c === "Obrero") cAsis.Obr++; else if(d.c === "Administrativo") cAsis.Adm++; else if(d.c === "CNAE (Cocinera)") cAsis.Cn++;
-                if(d.g === "GRUPO A") cAsis.VA++; else if(d.g === "GRUPO B") cAsis.VB++;
+                dias.add(d.f);
+                if(stats[d.c]) {
+                    stats[d.c][d.gender || 'F']++;
+                    stats[d.c].T++;
+                }
             }
         });
 
         const nDias = dias.size || 1;
-        document.getElementById('diasLaborados').innerText = `Días con registros: ${nDias}`;
+        document.getElementById('diasLaborados').innerText = `Días laborados en el mes: ${nDias}`;
         
-        // Tabla Estadística
-        const counts = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
-        nominaLocal.forEach(p => {
-            if(p.c === "Docente") counts.Doc++; else if(p.c === "Obrero") counts.Obr++; else if(p.c === "Administrativo") counts.Adm++; else if(p.c === "CNAE (Cocinera)") counts.Cn++;
-            if(p.g === "GRUPO A") counts.VA++; else if(p.g === "GRUPO B") counts.VB++;
-        });
-
         const bE = document.getElementById('bodyEstadistica'); bE.innerHTML = "";
-        const labels = {Doc:"Docentes", Obr:"Obreros", Adm:"Administrativos", Cn:"CNAE", VA:"Vigilancia A", VB:"Vigilancia B"};
-        for(let k in labels) {
-            let nom = counts[k];
-            let esp = k.startsWith('V') ? nom/2 : nom;
-            let prom = (cAsis[k] / nDias).toFixed(1);
-            let efic = esp > 0 ? Math.round((prom/esp)*100) : 0;
-            bE.innerHTML += `<tr><td>${labels[k]}</td><td>${nom}</td><td>${prom}</td><td>${efic > 100 ? 100 : efic}%</td></tr>`;
-        }
+        for(let cargo in stats) {
+            let nFilas = nominaLocal.filter(p => p.c === cargo);
+            let nF = nFilas.filter(p => p.gender === 'F').length || 1;
+            let nM = nFilas.filter(p => p.gender === 'M').length || 1;
+            let nT = nFilas.length || 1;
 
-        // Detalle Individual (Aquí se aplica el filtro)
-        const bM = document.getElementById('bodyMensual'); bM.innerHTML = "";
-        for(let n in res) {
-            const cFal = res[n].fal > 3 ? 'warning-cell' : '';
-            const cPer = res[n].per > 3 ? 'warning-cell' : '';
-            bM.innerHTML += `<tr><td>${n}</td><td>${res[n].asis}</td><td>${res[n].ret}</td><td class="${cFal}">${res[n].fal}</td><td class="${cPer}">${res[n].per}</td><td>${res[n].rep}</td><td>${res[n].vac}</td><td>${res[n].minR}m</td><td>${res[n].minA}m</td></tr>`;
-        }
-        filtrarTabla(); // Aplicar filtro si ya hay algo escrito
-    }
-
-    // FUNCIÓN DE BÚSQUEDA CORREGIDA
-    function filtrarTabla() {
-        let texto = document.getElementById('busqueda').value.toUpperCase();
-        let filas = document.getElementById('bodyMensual').getElementsByTagName('tr');
-        
-        for (let i = 0; i < filas.length; i++) {
-            let celdaNombre = filas[i].getElementsByTagName('td')[0];
-            if (celdaNombre) {
-                let valor = celdaNombre.textContent || celdaNombre.innerText;
-                filas[i].style.display = (valor.toUpperCase().indexOf(texto) > -1) ? "" : "none";
-            }
+            bE.innerHTML += `
+                <tr>
+                    <td>${cargo}</td>
+                    <td>${nFilas.length}</td>
+                    <td>${(stats[cargo].F / nDias).toFixed(2)}</td>
+                    <td>${(stats[cargo].M / nDias).toFixed(2)}</td>
+                    <td>${(stats[cargo].T / nDias).toFixed(2)}</td>
+                </tr>`;
         }
     }
 
     async function agregarANomina() {
-        const n = document.getElementById('nomNuevo').value.toUpperCase(), c = document.getElementById('carNuevo').value, g = document.getElementById('gruNuevo').value;
-        if(n) await db.collection("nomina_institucional").add({n, c, g});
+        const n = document.getElementById('nomNuevo').value.toUpperCase();
+        const c = document.getElementById('carNuevo').value;
+        const g = document.getElementById('genNuevo').value;
+        if(n) await db.collection("nomina_institucional").add({n, c, gender: g});
         document.getElementById('nomNuevo').value = "";
     }
 
@@ -332,10 +293,9 @@
 
     function generarPDFMensual() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("REPORTE MENSUAL EBNLP - " + document.getElementById('mesReporte').value, 14, 15);
+        doc.text("REPORTE ESTADÍSTICO EBNLP - " + document.getElementById('mesReporte').value, 14, 15);
         doc.autoTable({ html: '#tablaEstadistica', startY: 20 });
-        doc.autoTable({ html: '#tablaMensual', startY: doc.lastAutoTable.finalY + 10 });
-        doc.save("Reporte_Mensual.pdf");
+        doc.save("Reporte_Promedios.pdf");
     }
 </script>
 </body>
