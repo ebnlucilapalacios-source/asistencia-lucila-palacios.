@@ -11,109 +11,106 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #c0392b; --verde: #27ae60; --gris: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; }
-        header { background: var(--azul); color: white; text-align: center; padding: 20px 10px; border-bottom: 5px solid var(--naranja); }
-        .contenedor { max-width: 500px; margin: auto; padding: 15px; }
+        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #2d7a31; --gris: #e0e0e0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 0; color: #333; }
+        header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
+        .contenedor { max-width: 600px; margin: auto; padding: 15px; }
 
-        /* Dashboard con Totales y Promedios % */
+        /* DASHBOARD */
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .dash-card { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #e0e4e8; border-bottom: 4px solid var(--azul); position: relative; }
-        .dash-card.efectividad { background: var(--azul); color: white; grid-column: 1 / 3; }
+        .dash-card { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #ccc; position: relative; border-bottom: 4px solid var(--azul); }
+        .dash-card.full { grid-column: 1 / 3; background: var(--azul); color: white; }
         .dash-card h4 { margin: 0; font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; }
-        .dash-card.efectividad h4 { color: #bdc3c7; }
-        .pres { font-size: 1.5rem; font-weight: bold; color: var(--azul); }
-        .dash-card.efectividad .pres { color: white; font-size: 2rem; }
-        .total-label { font-size: 0.8rem; color: #95a5a6; font-weight: normal; }
+        .dash-card.full h4 { color: #bdc3c7; }
+        .pres { font-size: 1.5rem; font-weight: bold; display: block; color: var(--azul); }
+        .dash-card.full .pres { color: white; font-size: 2.2rem; }
+        .total-label { font-size: 0.8rem; color: #95a5a6; }
+        .promedio-tag { position: absolute; top: 5px; right: 8px; font-size: 0.65rem; padding: 2px 6px; border-radius: 8px; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
 
-        /* Etiquetas de Promedio por Cargo */
-        .promedio-tag { position: absolute; top: 5px; right: 8px; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
-        .alerta { background: #ffebee !important; color: #c62828 !important; }
-
-        .card-main { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .section-title { color: var(--azul); font-size: 0.9rem; font-weight: bold; border-left: 5px solid var(--naranja); padding-left: 10px; margin-bottom: 15px; text-transform: uppercase; }
-
-        label { display: block; margin-top: 12px; font-weight: bold; font-size: 0.75rem; color: #2c3e50; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 2px solid #ebedef; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+        /* SECCIONES */
+        .card-seccion { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 4px solid var(--naranja); }
+        .sec-header { color: var(--azul); font-weight: bold; margin-bottom: 15px; text-transform: uppercase; font-size: 0.85rem; border-left: 4px solid var(--naranja); padding-left: 10px; display: flex; justify-content: space-between; }
         
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; font-size: 0.85rem; }
-        .btn-verde { background: var(--verde); box-shadow: 0 4px 0 #1e8449; }
-        .btn-azul { background: var(--azul); }
-        .btn-rojo { background: var(--rojo); box-shadow: 0 4px 0 #922b21; }
-        .btn-gris { background: #7f8c8d; }
+        label { display: block; margin-top: 10px; font-size: 0.7rem; font-weight: bold; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
 
-        .audit-info { background: #fff9e6; padding: 10px; border-radius: 8px; font-size: 0.75rem; color: #7d6608; border: 1px solid #f9e79f; margin: 10px 0; font-weight: bold; }
-        .table-container { overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        th, td { padding: 10px; border: 1px solid #dee2e6; text-align: center; }
+        /* BOTONES */
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 8px; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s; }
+        .btn-verde { background: var(--verde); box-shadow: 0 4px 0 #1e5c25; }
+        .btn-azul { background: var(--azul); }
+        .btn-rojo { background: var(--rojo); box-shadow: 0 4px 0 #5a0000; }
+        .btn-negro { background: #000; }
+        .btn-gris { background: #7f8c8d; }
+        .group-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* TABLAS */
+        .table-wrap { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; background: white; text-align: center; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { padding: 8px; border: 1px solid #eee; }
         .hidden { display: none; }
+        .audit-info { background: #fff4d1; padding: 10px; border-radius: 8px; font-size: 0.7rem; color: #856404; border: 1px solid #ffeeba; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>E.B.N. "LUCILA PALACIOS"</h1>
-    <p>Gestión de Personal, Totales y Promedios 2026</p>
+    <p>SISTEMA MAESTRO DE CONTROL 2026</p>
 </header>
 
 <div class="contenedor">
 
     <div class="dashboard">
-        <div class="dash-card efectividad">
-            <h4>Efectividad de la Institución</h4>
-            <div class="pres" id="txtEfec">0%</div>
+        <div class="dash-card full">
+            <h4>Efectividad Institucional Hoy</h4>
+            <span class="pres" id="txtEfec">0%</span>
         </div>
-        
         <div class="dash-card">
             <span class="promedio-tag" id="percDoc">0%</span>
             <h4>Docentes</h4>
-            <div class="pres"><span id="pDoc">0</span> <span class="total-label">de <span id="tDoc">0</span></span></div>
+            <span class="pres" id="pDoc">0</span><span class="total-label">de <span id="tDoc">0</span></span>
         </div>
-        
         <div class="dash-card">
             <span class="promedio-tag" id="percObr">0%</span>
             <h4>Obreros</h4>
-            <div class="pres"><span id="pObr">0</span> <span class="total-label">de <span id="tObr">0</span></span></div>
+            <span class="pres" id="pObr">0</span><span class="total-label">de <span id="tObr">0</span></span>
         </div>
-
         <div class="dash-card">
             <span class="promedio-tag" id="percAdm">0%</span>
             <h4>Admin.</h4>
-            <div class="pres"><span id="pAdm">0</span> <span class="total-label">de <span id="tAdm">0</span></span></div>
+            <span class="pres" id="pAdm">0</span><span class="total-label">de <span id="tAdm">0</span></span>
         </div>
-
         <div class="dash-card">
             <span class="promedio-tag" id="percCn">0%</span>
             <h4>CNAE</h4>
-            <div class="pres"><span id="pCn">0</span> <span class="total-label">de <span id="tCn">0</span></span></div>
+            <span class="pres" id="pCn">0</span><span class="total-label">de <span id="tCn">0</span></span>
         </div>
-
         <div class="dash-card">
             <span class="promedio-tag" id="percVA">0%</span>
             <h4>Vigilantes A</h4>
-            <div class="pres"><span id="pVA">0</span> <span class="total-label">de <span id="tVA">0</span></span></div>
+            <span class="pres" id="pVA">0</span><span class="total-label">de <span id="tVA">0</span></span>
         </div>
-
         <div class="dash-card">
             <span class="promedio-tag" id="percVB">0%</span>
             <h4>Vigilantes B</h4>
-            <div class="pres"><span id="pVB">0</span> <span class="total-label">de <span id="tVB">0</span></span></div>
+            <span class="pres" id="pVB">0</span><span class="total-label">de <span id="tVB">0</span></span>
         </div>
     </div>
 
-    <div class="card-main">
-        <div class="section-title">📝 Registro de Asistencia</div>
+    <div class="card-seccion">
+        <div class="sec-header"><span>📝 Registro de Jornada</span> <span id="reloj" style="color:var(--naranja)"></span></div>
         <input type="date" id="fManual" onchange="actualizarTodo()">
         
-        <label>Trabajador:</label>
-        <select id="sPersona" onchange="ejecutarAuditoria(this.value)"></select>
+        <label>Personal en Nómina:</label>
+        <select id="sPersona" onchange="auditoria(this.value)"></select>
         <div id="boxAudit" class="audit-info hidden"></div>
 
-        <div style="display:flex; gap:10px;">
-            <div style="flex:1;">
+        <div class="group-btns">
+            <div>
                 <label>Estatus:</label>
                 <select id="sEstatus">
-                    <option value="ASISTENCIA">PRESENTE ✅</option>
+                    <option value="ASISTENCIA">ASISTENCIA ✅</option>
                     <option value="INASISTENCIA">INASISTENCIA ❌</option>
                     <option value="RETRASO">RETRASO ⚠️</option>
                     <option value="PERMISO">PERMISO 📝</option>
@@ -121,48 +118,87 @@
                     <option value="VACACIONES">VACACIONES 🌴</option>
                 </select>
             </div>
-            <div style="flex:1;">
-                <label>Entrada:</label>
-                <input type="time" id="hEntrada">
-            </div>
+            <div><label>H. Entrada:</label><input type="time" id="hEnt"></div>
         </div>
-        <button class="btn btn-verde" onclick="guardarAsistencia()">GUARDAR REGISTRO</button>
+        <div class="group-btns">
+            <div><label>H. Salida:</label><input type="time" id="hSal"></div>
+            <div><label>Observación:</label><input type="text" id="obs" placeholder="Motivo de salida..."></div>
+        </div>
+
+        <button class="btn btn-verde" onclick="guardarAsistencia()">GUARDAR EN FIREBASE</button>
     </div>
 
-    <div class="card-main">
-        <div class="section-title">📋 Lista: <span id="txtFecha"></span></div>
-        <div class="table-container">
-            <table>
-                <thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Hora</th></tr></thead>
+    <div class="card-seccion">
+        <div class="sec-header">📊 Consolidado Maestro</div>
+        <label>Consultar Mes:</label>
+        <input type="month" id="mesC" onchange="cargarConsolidado()">
+        
+        <div class="group-btns">
+            <button class="btn btn-gris" onclick="toggle('secCon', false)">Ocultar Reporte</button>
+            <button class="btn btn-azul" onclick="toggle('secCon', true)">Mostrar Reporte</button>
+        </div>
+
+        <div id="secCon" class="hidden">
+            <h5 style="margin:15px 0 5px 0">PROMEDIOS DIARIOS POR CARGO</h5>
+            <div class="table-wrap">
+                <table id="tProm">
+                    <thead><tr><th>Grupo</th><th>Promedio Asis/Día</th></tr></thead>
+                    <tbody id="bProm"></tbody>
+                </table>
+            </div>
+
+            <h5 style="margin:15px 0 5px 0">DETALLE MENSUAL PERSONAL</h5>
+            <div class="table-wrap">
+                <table id="tMes">
+                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Perm</th><th>Rep</th><th>Vac</th></tr></thead>
+                    <tbody id="bMes"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-seccion">
+        <div class="sec-header">📋 Lista de Asistencia: <span id="fechaTit"></span></div>
+        <div class="group-btns">
+            <button class="btn btn-gris" onclick="toggle('secLis', false)">Ocultar Lista</button>
+            <button class="btn btn-azul" onclick="toggle('secLis', true)">Mostrar Lista</button>
+        </div>
+        <div id="secLis" class="table-wrap">
+            <table id="tablaDia">
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Entrada</th><th>Salida</th></tr></thead>
                 <tbody id="bLista"></tbody>
             </table>
         </div>
         <button class="btn btn-rojo" onclick="descargarPDF()">DESCARGAR REPORTE PDF</button>
-        <button class="btn btn-gris" onclick="limpiarListaDia()">ELIMINAR LISTA DE HOY (EGRESO DIARIO)</button>
+        <button class="btn btn-negro" onclick="limpiarPantalla()">LIMPIAR PANTALLA</button>
     </div>
 
-    <div class="card-main">
-        <div class="section-title">⚙️ Gestión de Nómina (Ingresos/Egresos)</div>
+    <div class="card-seccion">
+        <div class="sec-header">⚙️ Gestión de Nómina</div>
         <label>Nuevo Ingreso:</label>
-        <input type="text" id="insNombre" placeholder="Nombre completo">
-        <select id="insCargo" onchange="document.getElementById('divG').className=(this.value==='Vigilante'?'':'hidden')">
+        <input type="text" id="inN" placeholder="Nombre completo">
+        <select id="inC" onchange="showG(this.value)">
             <option value="Docente">Docente</option>
             <option value="Obrero">Obrero</option>
             <option value="Administrativo">Administrativo</option>
             <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
             <option value="Vigilante">Vigilante</option>
         </select>
-        <div id="divG" class="hidden">
-            <select id="insGrupo"><option value="GRUPO A">GRUPO A</option><option value="GRUPO B">GRUPO B</option></select>
+        <div id="boxG" class="hidden">
+            <select id="inG"><option value="GRUPO A">GRUPO A</option><option value="GRUPO B">GRUPO B</option></select>
         </div>
-        <select id="insTurno" style="margin-top:10px;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
-        <button class="btn btn-verde" onclick="altaPersonal()">CONFIRMAR INGRESO</button>
-        <hr>
-        <label>Dar de Baja (Egreso Definitivo):</label>
-        <select id="sEgreso"></select>
-        <button class="btn btn-rojo" onclick="bajaPersonal()">ELIMINAR DE LA NÓMINA</button>
-    </div>
+        <button class="btn btn-verde" onclick="alta()">REGISTRAR INGRESO</button>
+        
+        <hr style="margin:20px 0; border:0.5px solid #eee">
+        
+        <label>Egreso Definitivo:</label>
+        <select id="sEgr"></select>
+        <button class="btn btn-rojo" onclick="baja()">CONFIRMAR BAJA</button>
 
+        <div class="sec-header" style="margin-top:20px; color:var(--rojo)">🛠️ ZONA DE PELIGRO</div>
+        <button class="btn btn-rojo" onclick="resetAsis()">BORRAR TODO EL HISTORIAL</button>
+        <button class="btn btn-negro" onclick="resetNom()">VACIAR NÓMINA TOTAL</button>
+    </div>
 </div>
 
 <script>
@@ -172,142 +208,152 @@
 
     let nominaLocal = [];
     document.getElementById('fManual').value = new Date().toISOString().split('T')[0];
+    document.getElementById('mesC').value = new Date().toISOString().substring(0,7);
 
-    // CARGAR NÓMINA Y TOTALES
+    // ESCUCHA DE NÓMINA
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         let t = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
-        const sP = document.getElementById('sPersona');
-        const sE = document.getElementById('sEgreso');
-        sP.innerHTML = sE.innerHTML = '<option value="">-- Seleccionar --</option>';
+        const sP = document.getElementById('sPersona'), sE = document.getElementById('sEgr');
+        sP.innerHTML = sE.innerHTML = '<option value="">-- SELECCIONAR --</option>';
         
         snap.forEach(doc => {
             let d = doc.data(); d.id = doc.id; nominaLocal.push(d);
             const opt = `<option value="${d.n}">${d.n}</option>`;
             sP.innerHTML += opt; sE.innerHTML += opt;
-            
-            if(d.c === "Docente") t.Doc++;
-            else if(d.c === "Obrero") t.Obr++;
-            else if(d.c === "Administrativo") t.Adm++;
-            else if(d.c === "CNAE (Cocinera)") t.Cn++;
-            else if(d.g === "GRUPO A") t.VA++;
-            else if(d.g === "GRUPO B") t.VB++;
+            if(d.c === "Docente") t.Doc++; else if(d.c === "Obrero") t.Obr++;
+            else if(d.c === "Administrativo") t.Adm++; else if(d.c === "CNAE (Cocinera)") t.Cn++;
+            else if(d.g === "GRUPO A") t.VA++; else if(d.g === "GRUPO B") t.VB++;
         });
-
-        document.getElementById('tDoc').innerText = t.Doc;
-        document.getElementById('tObr').innerText = t.Obr;
-        document.getElementById('tAdm').innerText = t.Adm;
-        document.getElementById('tCn').innerText = t.Cn;
-        document.getElementById('tVA').innerText = t.VA;
-        document.getElementById('tVB').innerText = t.VB;
+        document.getElementById('tDoc').innerText = t.Doc; document.getElementById('tObr').innerText = t.Obr;
+        document.getElementById('tAdm').innerText = t.Adm; document.getElementById('tCn').innerText = t.Cn;
+        document.getElementById('tVA').innerText = t.VA; document.getElementById('tVB').innerText = t.VB;
         actualizarTodo();
     });
 
-    // AUDITORÍA 30 DÍAS
-    async function ejecutarAuditoria(n) {
+    // AUDITORIA 30 DIAS
+    async function auditoria(n) {
         if(!n) return;
-        const hoy = new Date(document.getElementById('fManual').value + "T12:00:00").getTime();
-        const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).get();
-        let f=0, p=0;
-        snap.forEach(d => {
-            const dat = d.data();
-            if(dat.ts >= hoy - (30*86400000)) {
-                if(dat.e === "INASISTENCIA") f++;
-                if(dat.e === "PERMISO") p++;
-            }
-        });
-        const box = document.getElementById('boxAudit');
-        box.classList.remove('hidden');
-        box.innerHTML = `🛡️ Auditoría (Últimos 30 días): ${f} Faltas | ${p} Permisos`;
+        const lim = new Date().getTime() - (30*86400000);
+        const s = await db.collection("asistencia_ebnlp_final").where("n","==",n).get();
+        let f=0, p=0, r=0;
+        s.forEach(d => { if(d.data().ts > lim) { 
+            if(d.data().e==="INASISTENCIA") f++; 
+            if(d.data().e==="PERMISO") p++; 
+            if(d.data().e==="REPOSO") r++; 
+        }});
+        const b = document.getElementById('boxAudit'); b.classList.remove('hidden');
+        b.innerHTML = `⚠️ AUDITORÍA (30d): ${f} Faltas | ${p} Permisos | ${r} Reposos`;
     }
 
-    // GUARDAR ASISTENCIA CON RETRASO AUTO
+    // GUARDAR ASISTENCIA
     async function guardarAsistencia() {
-        const n = document.getElementById('sPersona').value, f = document.getElementById('fManual').value, hE = document.getElementById('hEntrada').value;
-        let e = document.getElementById('sEstatus').value;
+        const n = document.getElementById('sPersona').value, f = document.getElementById('fManual').value, e_sel = document.getElementById('sEstatus').value;
+        const hE = document.getElementById('hEnt').value, hS = document.getElementById('hSal').value, o = document.getElementById('obs').value;
         const p = nominaLocal.find(x => x.n === n);
-        if(!p) return alert("Seleccione trabajador");
+        if(!p) return alert("Seleccione un trabajador");
 
-        if(e === "ASISTENCIA" && hE) {
-            const t = parseInt(hE.replace(":",""));
-            if(p.c === "Docente" && t > 705) e = "RETRASO";
-            if(p.c === "Obrero" && t > 645) e = "RETRASO";
+        // Lógica automática de retraso
+        let eFinal = e_sel;
+        if(e_sel === "ASISTENCIA" && hE) {
+            const h = parseInt(hE.split(":")[0]), m = parseInt(hE.split(":")[1]);
+            const totalM = (h*60) + m;
+            if(p.c === "Docente" && totalM > 425) eFinal = "RETRASO"; // 7:05 AM
+            if(p.c === "Obrero" && totalM > 405) eFinal = "RETRASO"; // 6:45 AM
         }
 
-        await db.collection("asistencia_ebnlp_final").add({ 
-            n, f, e, hE: hE||"--", c: p.c, g: p.g||"", 
-            ts: new Date(f+"T12:00:00").getTime() 
+        await db.collection("asistencia_ebnlp_final").add({
+            n, f, e: eFinal, hE, hS, o, c: p.c, g: p.g||"", ts: new Date(f+"T12:00:00").getTime(), mes: f.substring(0,7)
         });
-        alert("¡Registro Exitoso!");
+        alert("¡Registro Guardado!");
     }
 
-    // ACTUALIZAR DASHBOARD, PROMEDIOS Y LISTA
+    // ACTUALIZAR DASHBOARD Y LISTA
     function actualizarTodo() {
         const fH = document.getElementById('fManual').value;
-        document.getElementById('txtFecha').innerText = fH;
-        
-        db.collection("asistencia_ebnlp_final").where("f", "==", fH).onSnapshot(snap => {
-            let p = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
+        document.getElementById('fechaTit').innerText = fH;
+        db.collection("asistencia_ebnlp_final").where("f","==",fH).onSnapshot(snap => {
+            let h = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
             const bL = document.getElementById('bLista'); bL.innerHTML = "";
-            
             snap.forEach(doc => {
                 const d = doc.data();
                 if(d.e === "ASISTENCIA" || d.e === "RETRASO") {
-                    if(d.c === "Docente") p.Doc++; else if(d.c === "Obrero") p.Obr++;
-                    else if(d.c === "Administrativo") p.Adm++; else if(d.c === "CNAE (Cocinera)") p.Cn++;
-                    else if(d.g === "GRUPO A") p.VA++; else if(d.g === "GRUPO B") p.VB++;
+                    if(d.c==="Docente") h.Doc++; else if(d.c==="Obrero") h.Obr++; 
+                    else if(d.c==="Administrativo") h.Adm++; else if(d.c==="CNAE (Cocinera)") h.Cn++;
+                    else if(d.g==="GRUPO A") h.VA++; else if(d.g==="GRUPO B") h.VB++;
                 }
-                bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.e}</td><td>${d.hE}</td></tr>`;
+                bL.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.e}</td><td>${d.hE||'--'}</td><td>${d.hS||'--'}</td></tr>`;
             });
-
-            document.getElementById('pDoc').innerText = p.Doc; document.getElementById('pObr').innerText = p.Obr;
-            document.getElementById('pAdm').innerText = p.Adm; document.getElementById('pCn').innerText = p.Cn;
-            document.getElementById('pVA').innerText = p.VA; document.getElementById('pVB').innerText = p.VB;
-
-            // Cálculo de Promedios %
-            const calc = (pres, idT, idP) => {
-                const tot = parseInt(document.getElementById(idT).innerText);
-                const perc = (tot > 0) ? Math.round((pres / tot) * 100) : 0;
-                const el = document.getElementById(idP);
+            document.getElementById('pDoc').innerText = h.Doc; document.getElementById('pObr').innerText = h.Obr;
+            document.getElementById('pAdm').innerText = h.Adm; document.getElementById('pCn').innerText = h.Cn;
+            document.getElementById('pVA').innerText = h.VA; document.getElementById('pVB').innerText = h.VB;
+            
+            const calc = (p, t_id, id) => {
+                const t = parseInt(document.getElementById(t_id).innerText);
+                const perc = (t > 0 ? Math.round((p/t)*100) : 0);
+                const el = document.getElementById(id);
                 el.innerText = perc + "%";
-                el.className = perc < 50 ? "promedio-tag alerta" : "promedio-tag";
+                el.style.color = perc < 50 ? "red" : (perc < 80 ? "orange" : "green");
             };
+            calc(h.Doc,'tDoc','percDoc'); calc(h.Obr,'tObr','percObr'); calc(h.Adm,'tAdm','percAdm');
+            calc(h.Cn,'tCn','percCn'); calc(h.VA,'tVA','percVA'); calc(h.VB,'tVB','percVB');
 
-            calc(p.Doc, 'tDoc', 'percDoc'); calc(p.Obr, 'tObr', 'percObr');
-            calc(p.Adm, 'tAdm', 'percAdm'); calc(p.Cn, 'tCn', 'percCn');
-            calc(p.VA, 'tVA', 'percVA'); calc(p.VB, 'tVB', 'percVB');
-
-            const totalP = p.Doc+p.Obr+p.Adm+p.Cn+p.VA+p.VB;
-            const efec = (nominaLocal.length > 0) ? ((totalP / nominaLocal.length) * 100).toFixed(1) : 0;
-            document.getElementById('txtEfec').innerText = efec + "%";
+            const totalP = h.Doc+h.Obr+h.Adm+h.Cn+h.VA+h.VB;
+            document.getElementById('txtEfec').innerText = (nominaLocal.length > 0 ? ((totalP/nominaLocal.length)*100).toFixed(1) : 0) + "%";
         });
+        cargarConsolidado();
     }
 
-    async function altaPersonal() {
-        const n = document.getElementById('insNombre').value.toUpperCase(), c = document.getElementById('insCargo').value, g = document.getElementById('insGrupo').value, t = document.getElementById('insTurno').value;
-        if(n) await db.collection("nomina_institucional").add({ n, c, g: (c==="Vigilante"?g:""), t });
-        document.getElementById('insNombre').value = "";
+    // CARGAR REPORTE MENSUAL
+    async function cargarConsolidado() {
+        const m = document.getElementById('mesC').value;
+        const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",m).get();
+        let stats = {}, cStats = {Docente:[], Obrero:[], Administrativo:[], "CNAE (Cocinera)":[], "GRUPO A":[], "GRUPO B":[]};
+        let diasU = new Set();
+
+        snap.forEach(doc => {
+            const d = doc.data(); diasU.add(d.f);
+            if(!stats[d.n]) stats[d.n] = { asis:0, ret:0, fal:0, per:0, rep:0, vac:0 };
+            if(d.e==="ASISTENCIA") stats[d.n].asis++; else if(d.e==="RETRASO") stats[d.n].ret++;
+            else if(d.e==="INASISTENCIA") stats[d.n].fal++; else if(d.e==="PERMISO") stats[d.n].per++;
+            else if(d.e==="REPOSO") stats[d.n].rep++; else if(d.e==="VACACIONES") stats[d.n].vac++;
+
+            if(d.e==="ASISTENCIA" || d.e==="RETRASO") {
+                let k = d.c === "Vigilante" ? d.g : d.c;
+                if(cStats[k]) cStats[k].push(d.f);
+            }
+        });
+
+        const bM = document.getElementById('bMes'); bM.innerHTML = "";
+        for(let n in stats) { bM.innerHTML += `<tr><td>${n}</td><td>${stats[n].asis}</td><td>${stats[n].ret}</td><td>${stats[n].fal}</td><td>${stats[n].per}</td><td>${stats[n].rep}</td><td>${stats[n].vac}</td></tr>`; }
+
+        const bP = document.getElementById('bProm'); bP.innerHTML = "";
+        const diasTot = diasU.size || 1;
+        for(let c in cStats) { bP.innerHTML += `<tr><td>${c}</td><td>${(cStats[c].length/diasTot).toFixed(1)} Pers/Día</td></tr>`; }
     }
 
-    async function bajaPersonal() {
-        const n = document.getElementById('sEgreso').value;
-        const p = nominaLocal.find(x => x.n === n);
-        if(p && confirm(`¿Egresar a ${n}?`)) await db.collection("nomina_institucional").doc(p.id).delete();
+    // FUNCIONES AUXILIARES
+    function toggle(id, s) { document.getElementById(id).classList.toggle('hidden', !s); }
+    function showG(v) { document.getElementById('boxG').classList.toggle('hidden', v!=='Vigilante'); }
+    function limpiarPantalla() { document.getElementById('bLista').innerHTML = "<tr><td colspan='5'>Pantalla Limpia por Privacidad</td></tr>"; }
+    
+    async function alta() {
+        const n = document.getElementById('inN').value.toUpperCase(), c = document.getElementById('inC').value, g = document.getElementById('inG').value;
+        if(n) await db.collection("nomina_institucional").add({n, c, g:(c==='Vigilante'?g:'')});
+        document.getElementById('inN').value="";
     }
-
-    async function limpiarListaDia() {
-        if(confirm("¿Borrar registros de hoy?")) {
-            const f = document.getElementById('fManual').value;
-            const snap = await db.collection("asistencia_ebnlp_final").where("f","==",f).get();
-            const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit();
-        }
+    async function baja() {
+        const n = document.getElementById('sEgr').value, p = nominaLocal.find(x=>x.n===n);
+        if(p && confirm("¿Eliminar de la nómina?")) await db.collection("nomina_institucional").doc(p.id).delete();
     }
-
+    async function resetAsis() { if(confirm("¿BORRAR TODO EL HISTORIAL?")) { const s = await db.collection("asistencia_ebnlp_final").get(); const b = db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); }}
+    async function resetNom() { if(confirm("¿VACIAR NÓMINA TOTAL?")) { const s = await db.collection("nomina_institucional").get(); const b = db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); }}
+    
     function descargarPDF() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("Reporte de Asistencia EBNLP - " + document.getElementById('fManual').value, 14, 15);
-        doc.autoTable({ html: 'table', startY: 20 });
-        doc.save("Asistencia.pdf");
+        doc.text("EBNLP 2026 - LISTA DEL DIA " + document.getElementById('fManual').value, 14, 15);
+        doc.autoTable({ html: '#tablaDia', startY: 20, theme: 'grid' });
+        doc.save("Asistencia_EBNLP.pdf");
     }
 </script>
 </body>
