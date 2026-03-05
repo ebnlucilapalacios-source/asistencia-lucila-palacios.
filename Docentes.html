@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBN LUCILA PALACIOS - Sistema Integral</title>
+    <title>EBN LUCILA PALACIOS - Control Total</title>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -19,39 +19,21 @@
 
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
-
-        const CLAVE_ESPECIAL = "LUCILA2026"; 
         const USUARIO_ADMIN = "admin_lucila";
 
         window.usuarioActual = null;
         window.db = { docente: "", seccion: "", grado: "", alumnos: [], asistencias: {}, feriados: [] };
 
-        function calcularEdad(fNac) {
-            if(!fNac) return 0;
+        const calcularEdad = (f) => {
+            if(!f) return 0;
             const hoy = new Date();
-            const cumple = new Date(fNac);
+            const cumple = new Date(f);
             let edad = hoy.getFullYear() - cumple.getFullYear();
             if (hoy.getMonth() < cumple.getMonth() || (hoy.getMonth() === cumple.getMonth() && hoy.getDate() < cumple.getDate())) edad--;
             return edad;
-        }
+        };
 
         // --- ACCESO ---
-        window.mostrarRegistro = (v) => { 
-            document.getElementById('loginForm').style.display = v ? 'none' : 'block';
-            document.getElementById('registerForm').style.display = v ? 'block' : 'none';
-        };
-
-        window.registrarCuenta = async () => {
-            const cEspecial = document.getElementById('regClaveEspecial').value;
-            if(cEspecial !== CLAVE_ESPECIAL) return alert("Clave Institucional Incorrecta");
-            const u = document.getElementById('regUser').value.toLowerCase().trim();
-            const p = document.getElementById('regPass').value;
-            const n = document.getElementById('regNombre').value.toUpperCase();
-            if(!u || !p || !n) return alert("Faltan datos");
-            await setDoc(doc(dbCloud, "docentes_db", u), { docente: n, pass: p, grado: "", seccion: "", alumnos: [], asistencias: {}, feriados: [] });
-            alert("Registro Exitoso"); window.mostrarRegistro(false);
-        };
-
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
@@ -65,140 +47,115 @@
             } else alert("Datos incorrectos");
         };
 
-        // --- MOVIMIENTOS Y FERIADOS ---
-        window.toggleFeriado = async () => {
-            const f = document.getElementById('fechaSeleccionada').value;
-            if(!window.db.feriados) window.db.feriados = [];
-            if(window.db.feriados.includes(f)) {
-                window.db.feriados = window.db.feriados.filter(x => x !== f);
-            } else {
-                window.db.feriados.push(f);
-            }
-            await window.save();
-        };
-
-        // --- DIRECCIÓN ---
-        window.monitorGlobalHoy = async () => {
-            const hoy = document.getElementById('fechaSeleccionada').value;
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let html = `<h3>MONITOR GLOBAL (${hoy})</h3><table class="tabla-admin"><thead><tr><th>Grado/Secc</th><th>Mat.</th><th>H(P)</th><th>V(P)</th><th>Total</th><th>% Efic.</th></tr></thead><tbody>`;
-            snap.forEach(docSnap => {
-                const d = docSnap.data(); if(docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
-                const activos = d.alumnos.filter(a => !a.retirado);
-                let hP = 0, vP = 0;
-                if(d.asistencias[hoy]) { activos.forEach(a => { if(d.asistencias[hoy][a.id] === 1) a.genero === 'F' ? hP++ : vP++; }); }
-                html += `<tr><td>${d.grado}-${d.seccion}</td><td>${activos.length}</td><td>${hP}</td><td>${vP}</td><td>${hP+vP}</td><td>${activos.length>0?((hP+vP)/activos.length*100).toFixed(1):0}%</td></tr>`;
-            });
-            document.getElementById('adminOutput').innerHTML = html + "</tbody></table>";
-        };
-
-        window.consolidadoMensual = async () => {
-            const fSel = document.getElementById('fechaSeleccionada').value;
-            const mesRef = new Date(fSel + "T00:00:00").getMonth();
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos</th><th>Egresos</th></tr></thead><tbody>`;
-            snap.forEach(docSnap => {
-                const d = docSnap.data(); if(docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
-                const activos = d.alumnos.filter(a => !a.retirado);
-                let sH = 0, sV = 0, dias = 0;
-                Object.keys(d.asistencias).forEach(f => {
-                    const fO = new Date(f + "T00:00:00");
-                    if(fO.getMonth() === mesRef && fO.getDay()!==0 && fO.getDay()!==6 && !d.feriados?.includes(f)) {
-                        dias++; activos.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero==='F'?sH++:sV++; });
-                    }
-                });
-                const ing = d.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).map(a => a.nombre).join(', ') || "-";
-                const egr = d.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).map(a => a.nombre).join(', ') || "-";
-                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${dias>0?((sH+sV)/dias).toFixed(1):0}</td><td style="font-size:8px">${ing}</td><td style="font-size:8px">${egr}</td></tr>`;
-            });
-            document.getElementById('adminOutput').innerHTML = html + "</tbody></table>";
-        };
-
-        // --- DOCENTE ---
-        window.render = () => {
-            const f = document.getElementById('fechaSeleccionada').value;
-            const fObjeto = new Date(f + "T00:00:00");
-            const mesActual = fObjeto.getMonth();
-            const esFeriado = window.db.feriados?.includes(f);
-            const esFinDeSemana = (fObjeto.getDay() === 0 || fObjeto.getDay() === 6);
+        // --- LÓGICA DE ALUMNOS (INGRESOS/EGRESOS) ---
+        window.agregarAlumno = async () => {
+            const n = document.getElementById('nom').value.toUpperCase();
+            const nac = document.getElementById('nac').value;
+            const fechaHoy = document.getElementById('fechaSeleccionada').value;
+            if(!n || !nac) return alert("Faltan datos");
             
-            document.getElementById('docenteTxt').innerText = window.db.docente || "";
-            document.getElementById('gradoSeccionTxt').innerText = (window.db.grado || "") + " " + (window.db.seccion || "");
-            document.getElementById('btnFeriado').innerText = esFeriado ? "✅ QUITAR FERIADO" : "🚩 MARCAR FERIADO";
+            const nuevo = {
+                id: Date.now(),
+                nombre: n,
+                genero: document.getElementById('gen').value,
+                nacimiento: nac,
+                retirado: false,
+                fechaIngreso: fechaHoy, // Registro de Ingreso
+                fechaEgreso: null
+            };
+            window.db.alumnos.push(nuevo);
+            await window.save();
+            document.getElementById('nom').value = "";
+        };
 
-            const lista = document.getElementById('listaAsistencia'); lista.innerHTML = "";
+        window.retirarAlumno = async (id) => {
+            if(confirm("¿Confirmar retiro del alumno?")){
+                const a = window.db.alumnos.find(x => x.id === id);
+                if(a) {
+                    a.retirado = true;
+                    a.fechaEgreso = document.getElementById('fechaSeleccionada').value; // Registro de Egreso
+                    await window.save();
+                }
+            }
+        };
+
+        // --- RENDERIZADO Y REPORTE ---
+        window.render = () => {
+            const fSel = document.getElementById('fechaSeleccionada').value;
+            const fObj = new Date(fSel + "T00:00:00");
+            const mesAct = fObj.getMonth();
+            const anioAct = fObj.getFullYear();
+            
+            document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
+            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""}`;
+
+            // Lista de asistencia (solo alumnos activos)
+            const lista = document.getElementById('listaAsistencia');
+            lista.innerHTML = "";
             const activos = window.db.alumnos.filter(a => !a.retirado);
 
-            if(!esFeriado && !esFinDeSemana) {
-                activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
-                    const est = (window.db.asistencias[f] && window.db.asistencias[f][a.id]) || 0;
-                    let c = "#ccc", t = "F"; if(est===1){c="var(--exito)"; t="P";} if(est===2){c="var(--morado)"; t="J";}
-                    lista.innerHTML += `<div class="alumno-fila">
-                        <div class="bola-gen ${a.genero}"></div>
-                        <div style="flex-grow:1"><b>${a.nombre}</b></div>
-                        <button onclick="marcar(${a.id})" class="btn-check" style="background:${c}">${t}</button>
-                        <button onclick="retirarAlumno(${a.id})" style="border:none;background:none;color:red;cursor:pointer">✖</button>
-                    </div>`;
-                });
-            } else {
-                lista.innerHTML = `<div style="text-align:center; padding:20px; color:red; font-weight:bold;">🚫 NO LABORABLE</div>`;
-            }
+            activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
+                const est = (window.db.asistencias[fSel] && window.db.asistencias[fSel][a.id]) || 0;
+                let c = "#ccc", t = "F"; 
+                if(est===1){c="var(--exito)"; t="P";} 
+                if(est===2){c="var(--morado)"; t="J";}
+                
+                lista.innerHTML += `
+                <div class="alumno-fila">
+                    <div class="bola-gen ${a.genero}"></div>
+                    <div style="flex-grow:1">${a.nombre}</div>
+                    <button onclick="marcar(${a.id})" class="btn-check" style="background:${c}">${t}</button>
+                    <button onclick="retirarAlumno(${a.id})" class="btn-x">✖</button>
+                </div>`;
+            });
 
-            // Cálculos Estadísticos
-            let sH=0, sV=0, diasHabiles=0, edades={};
+            // ESTADÍSTICAS REPORTE (Fiel a la imagen)
+            let sH=0, sV=0, diasH=0, edades={};
             activos.forEach(al => {
                 const e = calcularEdad(al.nacimiento);
                 if(!edades[e]) edades[e]={F:0, M:0}; edades[e][al.genero]++;
             });
 
             Object.keys(window.db.asistencias).forEach(fecha => {
-                const fo = new Date(fecha + "T00:00:00");
-                if(fo.getMonth() === mesActual && fo.getDay()!==0 && fo.getDay()!==6 && !window.db.feriados?.includes(fecha)) {
-                    diasHabiles++;
+                const d = new Date(fecha + "T00:00:00");
+                if(d.getMonth() === mesAct && d.getFullYear() === anioAct && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(fecha)) {
+                    diasH++;
                     activos.forEach(a => { if(window.db.asistencias[fecha][a.id]===1) a.genero==='F'?sH++:sV++; });
                 }
             });
 
-            const pH = diasHabiles>0 ? (sH/diasHabiles) : 0; 
-            const pV = diasHabiles>0 ? (sV/diasHabiles) : 0;
+            const pH = diasH>0 ? (sH/diasH) : 0; 
+            const pV = diasH>0 ? (sV/diasH) : 0;
             const efic = activos.length>0 ? (((pH+pV)/activos.length)*100).toFixed(0) : 0;
 
-            const ingMes = window.db.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesActual);
-            const egrMes = window.db.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesActual);
+            const ingMes = window.db.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesAct);
+            const egrMes = window.db.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesAct);
 
-            let tEd = ""; Object.keys(edades).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}</td><td>${edades[e].F}</td><td>${edades[e].M}</td><td>${edades[e].F+edades[e].M}</td></tr>`; });
+            let tEd = ""; 
+            Object.keys(edades).sort((a,b)=>a-b).forEach(e => { 
+                tEd += `<tr><td>${e}a</td><td>${edades[e].F}</td><td>${edades[e].M}</td><td>${edades[e].F+edades[e].M}</td></tr>`; 
+            });
 
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
-                    <h2 style="font-size:1.2rem; margin-bottom:15px;">REPORTE ESTADÍSTICO MENSUAL</h2>
+                    <h2>ESTADÍSTICA MENSUAL</h2>
                     <div class="circulo-eficiencia"><b>${efic}%</b><br><small>Efic.</small></div>
-                    <div class="stats-asistencia">
+                    <div class="grid-promedios">
                         <div>H: <b>${pH.toFixed(1)}</b></div>
                         <div>V: <b>${pV.toFixed(1)}</b></div>
-                        <div>Total: <b>${(pH+pV).toFixed(1)}</b></div>
+                        <div>TOTAL: <b>${(pH+pV).toFixed(1)}</b></div>
                     </div>
-                    <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead><tbody>${tEd}</tbody>
-                    <tfoot><tr style="font-weight:bold; background:#f9f9f9;"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
-                    <div style="text-align:left; font-size:10px; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                        <b>INGRESOS:</b> ${ingMes.map(a=>a.nombre).join(', ') || '0'}<br>
-                        <b>EGRESOS:</b> ${egrMes.map(a=>a.nombre).join(', ') || '0'}
+                    <table class="tabla-911">
+                        <thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead>
+                        <tbody>${tEd}</tbody>
+                        <tfoot style="background:#eee"><tr><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot>
+                    </table>
+                    <div class="movimientos-reporte">
+                        <b>INGRESOS:</b> ${ingMes.map(a=>a.nombre).join(', ') || 'Sin movimientos'}<br>
+                        <b>EGRESOS:</b> ${egrMes.map(a=>a.nombre).join(', ') || 'Sin movimientos'}
                     </div>
-                    <button onclick="window.print()" class="btn-print no-print">Imprimir para Dirección</button>
+                    <button onclick="window.print()" class="btn-print no-print">IMPRIMIR REPORTE</button>
                 </div>`;
-        };
-
-        window.guardarPerfil = async () => {
-            window.db.docente = document.getElementById('editNombre').value.toUpperCase();
-            window.db.grado = document.getElementById('editGrado').value;
-            window.db.seccion = document.getElementById('editSeccion').value.toUpperCase();
-            await window.save(); alert("Perfil Guardado");
-        };
-
-        window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar alumno?")){
-                const a = window.db.alumnos.find(x => x.id === id);
-                if(a) { a.retirado = true; a.fechaEgreso = document.getElementById('fechaSeleccionada').value; await window.save(); }
-            }
         };
 
         window.marcar = (id) => {
@@ -208,93 +165,71 @@
             window.save();
         };
 
-        window.agregarAlumno = () => {
-            const n = document.getElementById('nom').value.toUpperCase();
-            const nac = document.getElementById('nac').value;
-            if(!n || !nac) return;
-            window.db.alumnos.push({
-                id:Date.now(), nombre:n, genero:document.getElementById('gen').value, 
-                nacimiento:nac, retirado:false, fechaIngreso: document.getElementById('fechaSeleccionada').value
-            });
-            window.save(); document.getElementById('nom').value="";
-        };
-
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
-        window.logout = () => location.reload();
-        document.addEventListener("DOMContentLoaded", () => { 
-            document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
-        });
     </script>
 
     <style>
-        :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --fondo: #f4f7f6; }
-        body { font-family: sans-serif; background: var(--fondo); margin: 0; color: #333; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid #f39c12; }
+        :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
         .container { max-width: 450px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* Estilo Reporte de la Imagen */
-        .reporte-card { background: white; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #ddd; }
-        .circulo-eficiencia { width: 90px; height: 90px; border: 7px solid var(--azul); border-radius: 50%; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; }
-        .stats-asistencia { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; border-radius: 6px; margin: 15px 0; font-size: 13px; }
+        /* Reporte Estilo Imagen */
+        .reporte-card { background: white; padding: 20px; border: 1px solid #ccc; text-align: center; border-radius: 10px; }
+        .circulo-eficiencia { width: 85px; height: 85px; border: 6px solid var(--azul); border-radius: 50%; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
+        .grid-promedios { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; margin: 15px 0; border-radius: 5px; font-size: 13px; }
         .tabla-911 { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .tabla-911 th, .tabla-911 td { padding: 8px; border: 1px solid #eee; }
+        .tabla-911 th, .tabla-911 td { border: 1px solid #ddd; padding: 6px; }
+        .movimientos-reporte { text-align: left; font-size: 11px; margin-top: 15px; border-top: 1px dashed #aaa; padding-top: 10px; color: #555; }
         
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn-check { width: 45px; height: 40px; color: white; font-weight: bold; cursor: pointer; border: none; }
-        .btn-print { background: var(--azul); color: white; font-weight: bold; margin-top: 15px; border: none; }
-        .alumno-fila { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .bola-gen { width: 12px; height: 12px; border-radius: 50%; }
+        /* Interfaz */
+        .alumno-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .bola-gen { width: 10px; height: 10px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
-        @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
+        .btn-check { width: 40px; height: 35px; border: none; color: white; font-weight: bold; border-radius: 5px; }
+        .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
+        .btn-print { background: var(--azul); color: white; width: 100%; padding: 12px; border: none; font-weight: bold; margin-top: 15px; border-radius: 5px; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="max-width:320px; margin: 60px auto; text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="85">
-    <h2 style="color:var(--azul); margin: 15px 0;">EBN LUCILA PALACIOS</h2>
-    <div id="loginForm">
+<div id="authSection" style="text-align:center; padding: 50px 20px;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="100">
+    <h2 style="color:var(--azul)">LUCILA PALACIOS</h2>
+    <div class="card" style="max-width:300px; margin:auto">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Clave">
-        <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
-        <p onclick="mostrarRegistro(true)" style="font-size:12px; cursor:pointer; color:var(--morado); margin-top:10px;">Registrar cuenta docente</p>
-    </div>
-    <div id="registerForm" style="display:none;">
-        <input type="text" id="regNombre" placeholder="Nombre Completo">
-        <input type="text" id="regUser" placeholder="Usuario">
-        <input type="password" id="regPass" placeholder="Clave">
-        <hr>
-        <input type="password" id="regClaveEspecial" placeholder="Clave Institucional">
-        <button onclick="registrarCuenta()" style="background:var(--exito); color:white;">REGISTRAR</button>
-        <p onclick="mostrarRegistro(false)" style="font-size:12px; cursor:pointer;">Volver</p>
+        <button onclick="login()" style="background:var(--azul); color:white; padding:12px; width:100%; border:none; border-radius:5px; font-weight:bold;">ENTRAR</button>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
-    <header class="no-print"><b>EBN LUCILA PALACIOS</b> <button onclick="logout()" style="width:auto; float:right; background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:5px; font-size:12px;">SALIR</button></header>
-    
+    <header class="no-print">
+        <b>EBN LUCILA PALACIOS</b>
+    </header>
+
     <div class="container">
-        <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado)">
-            <b style="color:var(--morado)">DIRECCIÓN CENTRAL</b>
-            <button onclick="monitorGlobalHoy()" style="background:var(--morado); color:white; font-size:12px;">Monitor Hoy</button>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; font-size:12px;">Consolidado Escuela</button>
-            <div id="adminOutput"></div>
+        <div class="card no-print">
+            <b>Docente:</b> <span id="docenteTxt"></span><br>
+            <b>Grado/Sección:</b> <span id="gradoSeccionTxt"></span>
         </div>
 
         <div class="card no-print">
-            <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <button id="btnFeriado" onclick="toggleFeriado()" style="color:var(--rojo); background:white; border:1px solid var(--rojo); font-weight:bold;"></button>
+            <input type="date" id="fechaSeleccionada" value="2026-03-05" onchange="window.render()">
         </div>
 
         <div class="card no-print">
-            <h3 style="margin-top:0">+ Inscribir Alumno</h3>
-            <input type="text" id="nom" placeholder="Apellidos y Nombres">
+            <h4 style="margin:0 0 10px 0">+ Nuevo Ingreso</h4>
+            <input type="text" id="nom" placeholder="Nombres Completos">
             <div style="display:flex; gap:5px;">
                 <select id="gen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
                 <input type="date" id="nac" style="width:60%">
             </div>
-            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; font-weight:bold;">AGREGAR</button>
+            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; margin-top:5px;">REGISTRAR INGRESO</button>
         </div>
 
         <div class="card">
@@ -304,5 +239,6 @@
         <div id="reporteDocente"></div>
     </div>
 </div>
+
 </body>
 </html>
