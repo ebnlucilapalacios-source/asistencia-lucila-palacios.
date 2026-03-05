@@ -98,13 +98,12 @@
             const anioRef = new Date(fSel + "T00:00:00").getFullYear();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
-            let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos (Mes)</th><th>Egresos (Mes)</th></tr></thead><tbody>`;
+            let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos (Nombres)</th><th>Egresos (Nombres)</th></tr></thead><tbody>`;
             
             snap.forEach(docSnap => {
                 const d = docSnap.data(); if(docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
                 const activos = d.alumnos.filter(a => !a.retirado);
                 
-                // Cálculo de promedios simple para el resumen
                 let sH = 0, sV = 0, dias = 0;
                 Object.keys(d.asistencias).forEach(f => {
                     const fO = new Date(f + "T00:00:00");
@@ -115,6 +114,7 @@
                 const prom = dias > 0 ? ((sH + sV) / dias).toFixed(1) : "0.0";
 
                 const ing = d.alumnos.filter(a => {
+                    if(!a.fechaIngreso) return false;
                     const f = new Date(a.fechaIngreso + "T00:00:00");
                     return f.getMonth() === mesRef && f.getFullYear() === anioRef;
                 }).map(a => a.nombre).join(', ') || "-";
@@ -125,7 +125,7 @@
                     return f.getMonth() === mesRef && f.getFullYear() === anioRef;
                 }).map(a => a.nombre).join(', ') || "-";
 
-                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${prom}</td><td style="font-size:9px; text-align:left">${ing}</td><td style="font-size:9px; text-align:left">${egr}</td></tr>`;
+                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${prom}</td><td style="font-size:8px; text-align:left">${ing}</td><td style="font-size:8px; text-align:left">${egr}</td></tr>`;
             });
             document.getElementById('adminOutput').innerHTML = html + "</tbody></table>";
         };
@@ -182,8 +182,8 @@
             const pV = diasHabiles>0 ? (sV/diasHabiles) : 0;
             const efic = activos.length>0 ? (((pH+pV)/activos.length)*100).toFixed(0) : 0;
 
-            // Filtro de Ingresos/Egresos del Mes
             const ingresosMes = window.db.alumnos.filter(a => {
+                if(!a.fechaIngreso) return false;
                 const fI = new Date(a.fechaIngreso + "T00:00:00");
                 return fI.getMonth() === mesActual && fI.getFullYear() === anioActual;
             });
@@ -207,9 +207,11 @@
                     <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead><tbody>${tEd}</tbody>
                     <tfoot><tr><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
                     
-                    <div style="text-align:left; font-size:10px; margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
-                        <b style="color:green">INGRESOS DEL MES:</b> ${ingresosMes.map(a=>a.nombre).join(', ') || 'Ninguno'}<br>
-                        <b style="color:red">EGRESOS DEL MES:</b> ${egresosMes.map(a=>a.nombre).join(', ') || 'Ninguno'}
+                    <div style="text-align:left; font-size:10px; margin-top:15px; border:1px solid #eee; padding:8px; border-radius:5px; background:#fcfcfc;">
+                        <b style="color:green; display:block; border-bottom:1px solid #eee; margin-bottom:3px;">INGRESOS DEL MES (${ingresosMes.length}):</b> 
+                        ${ingresosMes.map(a=>a.nombre).join(', ') || 'Sin movimientos'}<br><br>
+                        <b style="color:red; display:block; border-bottom:1px solid #eee; margin-bottom:3px;">EGRESOS DEL MES (${egresosMes.length}):</b> 
+                        ${egresosMes.map(a=>a.nombre).join(', ') || 'Sin movimientos'}
                     </div>
                     
                     <button onclick="window.print()" class="btn-print no-print">Imprimir para Dirección</button>
@@ -291,7 +293,7 @@
 <body>
 
 <div id="authSection" style="max-width:320px; margin: 60px auto; text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80" alt="Logo Institucional">
     <h2 style="color:var(--azul); margin: 15px 0;">EBN LUCILA PALACIOS</h2>
     <div id="loginForm">
         <input type="text" id="loginUser" placeholder="Usuario">
