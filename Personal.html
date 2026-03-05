@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA INTEGRAL E.B.N. LUCILA PALACIOS</title>
+    <title>SISTEMA CONTROL E.B.N. LUCILA PALACIOS</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,7 +14,7 @@
         :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #2d7a31; --gris: #f4f4f4; --blanco: #ffffff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; color: #333; }
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); }
-        .contenedor { max-width: 1000px; margin: auto; padding: 15px; }
+        .contenedor { max-width: 1100px; margin: auto; padding: 15px; }
 
         /* DASHBOARD */
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -22,55 +22,44 @@
         .dash-card.full { grid-column: 1 / -1; background: var(--azul); color: white; }
         .pres { font-size: 1.6rem; font-weight: bold; display: block; color: var(--azul); }
         .dash-card.full .pres { color: white; font-size: 2.2rem; }
-        .p-tag { position: absolute; top: 5px; right: 5px; font-size: 0.7rem; padding: 2px 5px; border-radius: 5px; font-weight: bold; background: #eee; color: #333; }
 
-        /* SECCIONES */
+        /* SECCIONES Y TABS */
         .card-seccion { background: var(--blanco); border-radius: 15px; padding: 20px; margin-bottom: 20px; border-top: 4px solid var(--naranja); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .sec-header { color: var(--azul); font-weight: bold; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9rem; border-left: 5px solid var(--naranja); padding-left: 10px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 12px; background: #ddd; border: none; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .tab-btn.active { background: var(--naranja); color: white; }
         
         label { display: block; margin-top: 10px; font-size: 0.75rem; font-weight: bold; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .input-busqueda { background-color: #fff9f0; border: 2px solid var(--naranja); margin-bottom: 10px; }
-
-        /* BOTONES */
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s; }
-        .btn-verde { background: var(--verde); }
-        .btn-azul { background: var(--azul); }
-        .btn-rojo { background: var(--rojo); }
-        .btn-small { padding: 5px 10px; width: auto; font-size: 0.6rem; margin-top: 0; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; font-size: 0.75rem; }
+        .btn-verde { background: var(--verde); } .btn-azul { background: var(--azul); } .btn-rojo { background: var(--rojo); }
         .group-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        /* TABLAS */
-        .table-wrap { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eee; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: center; }
-        th { background: var(--azul); color: white; padding: 10px; }
-        td { padding: 10px; border: 1px solid #eee; }
-        .retardo-cell { color: var(--rojo); font-weight: bold; background: #fff0f0; }
+        .table-wrap { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: center; }
+        th { background: var(--azul); color: white; padding: 8px; }
+        td { padding: 8px; border: 1px solid #eee; }
+        .warning-cell { color: var(--rojo); font-weight: bold; background: #fff0f0; }
         .hidden { display: none; }
-        
-        /* PESTAÑAS */
-        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 12px; background: #ddd; border: none; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 0.75rem; }
-        .tab-btn.active { background: var(--naranja); color: white; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>E.B.N. "LUCILA PALACIOS"</h1>
-    <p>SISTEMA INTEGRAL DE GESTIÓN 2026</p>
+    <p>SISTEMA DE CONTROL DE ASISTENCIA Y SALIDA 2026</p>
 </header>
 
 <div class="contenedor">
 
     <div class="dashboard">
-        <div class="dash-card full"><h4>Efectividad Institucional Hoy</h4><span class="pres" id="efecTotal">0%</span></div>
-        <div class="dash-card"><span class="p-tag" id="pctDoc">0%</span><h4>Docentes</h4><span class="pres" id="curDoc">0</span><small>de <span id="totDoc">0</span></small></div>
-        <div class="dash-card"><span class="p-tag" id="pctObr">0%</span><h4>Obreros</h4><span class="pres" id="curObr">0</span><small>de <span id="totObr">0</span></small></div>
-        <div class="dash-card"><span class="p-tag" id="pctAdm">0%</span><h4>Admin.</h4><span class="pres" id="curAdm">0</span><small>de <span id="totAdm">0</span></small></div>
-        <div class="dash-card"><span class="p-tag" id="pctCn">0%</span><h4>CNAE</h4><span class="pres" id="curCn">0</span><small>de <span id="totCn">0</span></small></div>
-        <div class="dash-card"><span class="p-tag" id="pctVA">0%</span><h4>Vig. A</h4><span class="pres" id="curVA">0</span><small>de <span id="totVA">0</span></small></div>
-        <div class="dash-card"><span class="p-tag" id="pctVB">0%</span><h4>Vig. B</h4><span class="pres" id="curVB">0</span><small>de <span id="totVB">0</span></small></div>
+        <div class="dash-card full"><h4>Efectividad de Hoy</h4><span class="pres" id="efecTotal">0%</span></div>
+        <div class="dash-card"><h4>Docentes</h4><span class="pres" id="curDoc">0</span></div>
+        <div class="dash-card"><h4>Obreros</h4><span class="pres" id="curObr">0</span></div>
+        <div class="dash-card"><h4>Admin.</h4><span class="pres" id="curAdm">0</span></div>
+        <div class="dash-card"><h4>CNAE</h4><span class="pres" id="curCn">0</span></div>
+        <div class="dash-card"><h4>Vig. A</h4><span class="pres" id="curVA">0</span></div>
+        <div class="dash-card"><h4>Vig. B</h4><span class="pres" id="curVB">0</span></div>
     </div>
 
     <div class="tabs">
@@ -81,20 +70,19 @@
 
     <div id="tabRegistro" class="tab-content">
         <div class="card-seccion">
-            <div class="sec-header">📝 Registro Diario</div>
+            <div class="sec-header">📝 Registro Jornada</div>
             <div class="group-btns">
                 <input type="date" id="fechaReg" onchange="actualizarTodo()">
                 <select id="turno">
-                    <option value="MAÑANA">MAÑANA</option>
-                    <option value="TARDE">TARDE</option>
-                    <option value="NOCHE">NOCHE</option>
+                    <option value="MAÑANA">MAÑANA (Salida 12:10 PM)</option>
+                    <option value="TARDE">TARDE (Salida 5:30 PM)</option>
+                    <option value="NOCHE">NOCHE (Salida 10:00 PM)</option>
                 </select>
             </div>
             <label>Trabajador:</label>
             <select id="selectPersona"></select>
             <div class="group-btns">
-                <div>
-                    <label>Estatus:</label>
+                <div><label>Estatus:</label>
                     <select id="estatus">
                         <option value="ASISTENCIA">ASISTENCIA ✅</option>
                         <option value="RETRASO">RETRASO ⚠️</option>
@@ -106,18 +94,21 @@
                 </div>
                 <div><label>Hora Entrada:</label><input type="time" id="horaEntrada"></div>
             </div>
-            <button class="btn btn-verde" onclick="guardarRegistro()">GUARDAR ASISTENCIA</button>
+            <div class="group-btns">
+                <div><label>Hora Salida:</label><input type="time" id="horaSalida"></div>
+                <div><label>Motivo Salida Anticipada:</label><input type="text" id="motivoSalida" placeholder="Solo si sale antes..."></div>
+            </div>
+            <button class="btn btn-verde" onclick="guardarRegistro()">GUARDAR REGISTRO</button>
         </div>
 
         <div class="card-seccion">
-            <div class="sec-header">📋 Lista de hoy: <span id="fTit"></span></div>
+            <div class="sec-header">📋 Lista Diaria</div>
             <div class="table-wrap">
                 <table id="tablaDia">
-                    <thead><tr><th>Nombre</th><th>Estatus</th><th>Entrada</th><th>Retardo</th><th>Acción</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Retardo</th><th>Anticipada</th><th>Motivo</th><th>Acción</th></tr></thead>
                     <tbody id="bodyDia"></tbody>
                 </table>
             </div>
-            <button class="btn btn-rojo" onclick="generarPDFDia()">PDF LISTA DIARIA</button>
         </div>
     </div>
 
@@ -125,34 +116,23 @@
         <div class="card-seccion">
             <div class="sec-header">📊 Consolidado Mensual</div>
             <div class="group-btns">
-                <div><label>Mes:</label><input type="month" id="mesReporte" onchange="cargarConsolidado()"></div>
-                <div><label>Filtrar por Nombre:</label><input type="text" id="busquedaTrabajador" class="input-busqueda" placeholder="Buscar..." onkeyup="filtrarTablaMensual()"></div>
+                <input type="month" id="mesReporte" onchange="cargarConsolidado()">
+                <input type="text" id="busqueda" placeholder="Buscar trabajador..." onkeyup="filtrarTabla()">
             </div>
-            <div id="diasLaborados" style="text-align:center; padding:10px; font-weight:bold; color:var(--azul);"></div>
-            
-            <label>Eficacia por Categoría:</label>
-            <div class="table-wrap">
-                <table id="tablaPromedios">
-                    <thead><tr><th>Cargo</th><th>Promedio Presencia</th><th>% Eficacia</th></tr></thead>
-                    <tbody id="bodyPromedios"></tbody>
-                </table>
-            </div>
-
-            <label style="margin-top:15px;">Detalle por Trabajador:</label>
             <div class="table-wrap">
                 <table id="tablaMensual">
-                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Per</th><th>Rep</th><th>Vac</th><th>Min. Ret</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Asis</th><th>Ret</th><th>Fal</th><th>Per</th><th>Rep</th><th>Vac</th><th>Min. Ret</th><th>Sal. Ant</th></tr></thead>
                     <tbody id="bodyMensual"></tbody>
                 </table>
             </div>
-            <button class="btn btn-rojo" onclick="generarPDFMensual()">PDF REPORTE MENSUAL</button>
+            <button class="btn btn-rojo" onclick="generarPDFMensual()">DESCARGAR PDF MENSUAL</button>
         </div>
     </div>
 
     <div id="tabNomina" class="tab-content hidden">
         <div class="card-seccion">
-            <div class="sec-header">👤 Registro de Personal</div>
-            <input type="text" id="nomNuevo" placeholder="NOMBRE COMPLETO" style="text-transform: uppercase;">
+            <div class="sec-header">👥 Gestión de Personal</div>
+            <input type="text" id="nomNuevo" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase">
             <div class="group-btns">
                 <select id="carNuevo">
                     <option value="Docente">Docente</option>
@@ -170,19 +150,15 @@
             <button class="btn btn-azul" onclick="agregarANomina()">AGREGAR A NÓMINA</button>
         </div>
         <div class="card-seccion">
-            <div class="sec-header">📋 Listado de Personal</div>
             <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Nombre</th><th>Cargo/Grupo</th><th>Acción</th></tr></thead>
-                    <tbody id="bodyNomina"></tbody>
-                </table>
+                <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table>
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
-    // FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -199,61 +175,54 @@
         if(id === 'tabReportes') cargarConsolidado();
     }
 
-    // NÓMINA
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
-        let t = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
         const sel = document.getElementById('selectPersona');
-        const bN = document.getElementById('bodyNomina');
+        const bNom = document.getElementById('bodyNomina');
         sel.innerHTML = '<option value="">-- SELECCIONAR --</option>';
-        bN.innerHTML = "";
-
+        bNom.innerHTML = "";
         snap.forEach(doc => {
             let d = doc.data(); d.id = doc.id; nominaLocal.push(d);
             sel.innerHTML += `<option value="${d.n}">${d.n}</option>`;
-            bN.innerHTML += `<tr><td>${d.n}</td><td>${d.c} ${d.g}</td><td><button class="btn btn-rojo btn-small" onclick="eliminarDeNomina('${d.id}')">ELIMINAR</button></td></tr>`;
-            if(d.c === "Docente") t.Doc++; else if(d.c === "Obrero") t.Obr++; else if(d.c === "Administrativo") t.Adm++; else if(d.c === "CNAE (Cocinera)") t.Cn++;
-            if(d.g === "GRUPO A") t.VA++; if(d.g === "GRUPO B") t.VB++;
+            bNom.innerHTML += `<tr><td>${d.n}</td><td>${d.c} ${d.g}</td><td><button class="btn btn-rojo btn-small" onclick="eliminarDeNomina('${d.id}')">X</button></td></tr>`;
         });
-
-        document.getElementById('totDoc').innerText = t.Doc; document.getElementById('totObr').innerText = t.Obr;
-        document.getElementById('totAdm').innerText = t.Adm; document.getElementById('totCn').innerText = t.Cn;
-        document.getElementById('totVA').innerText = t.VA; document.getElementById('totVB').innerText = t.VB;
         actualizarTodo();
     });
 
-    async function agregarANomina() {
-        const n = document.getElementById('nomNuevo').value.toUpperCase();
-        const c = document.getElementById('carNuevo').value;
-        const g = document.getElementById('gruNuevo').value;
-        if(!n) return alert("Ingrese nombre");
-        await db.collection("nomina_institucional").add({ n, c, g });
-        document.getElementById('nomNuevo').value = "";
-    }
-
-    async function eliminarDeNomina(id) { if(confirm("¿Eliminar trabajador?")) await db.collection("nomina_institucional").doc(id).delete(); }
-
-    // ASISTENCIA
     async function guardarRegistro() {
         const n = document.getElementById('selectPersona').value, f = document.getElementById('fechaReg').value, e = document.getElementById('estatus').value;
-        const hE = document.getElementById('horaEntrada').value, trn = document.getElementById('turno').value, p = nominaLocal.find(x => x.n === n);
+        const hE = document.getElementById('horaEntrada').value, hS = document.getElementById('horaSalida').value, trn = document.getElementById('turno').value;
+        const mS = document.getElementById('motivoSalida').value, p = nominaLocal.find(x => x.n === n);
+        
         if(!p) return alert("Seleccione trabajador");
 
-        let eF = e, mR = 0;
+        let eF = e, mRet = 0, mAnt = 0;
+        
+        // Lógica Retardo
         if((e === "ASISTENCIA" || e === "RETRASO") && hE) {
-            const [h, m] = hE.split(':').map(Number);
-            const tm = h * 60 + m;
-            let tp = (p.c === "Docente" || p.c === "CNAE (Cocinera)") ? 420 : 405;
-            if(trn === "TARDE") tp = 720; if(trn === "NOCHE") tp = 1080;
-            if(tm > tp) { eF = "RETRASO"; mR = tm - tp; }
+            const tmE = hE.split(':').reduce((h, m) => h * 60 + +m, 0);
+            let topeE = (p.c === "Docente" || p.c === "CNAE (Cocinera)") ? 420 : 405; // 7:00 vs 6:45
+            if(trn === "TARDE") topeE = 750; // 12:30
+            if(tmE > topeE) { eF = "RETRASO"; mRet = tmE - topeE; }
         }
-        await db.collection("asistencia_ebnlp_final").add({ n, f, e: eF, hE, c: p.c, g: p.g || "", minR: mR, mes: f.substring(0,7) });
-        alert("✅ Guardado");
+
+        // Lógica Salida Anticipada
+        if(hS) {
+            const tmS = hS.split(':').reduce((h, m) => h * 60 + +m, 0);
+            let topeS = 730; // 12:10 PM Mañana
+            if(trn === "TARDE") topeS = 1050; // 5:30 PM
+            if(trn === "NOCHE") topeS = 1320; // 10:00 PM
+            if(tmS < topeS) mAnt = topeS - tmS;
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({
+            n, f, e: eF, hE, hS, mS, c: p.c, g: p.g || "", minR: mRet, minA: mAnt, mes: f.substring(0,7)
+        });
+        alert("✅ Registro guardado");
     }
 
     function actualizarTodo() {
         const fH = document.getElementById('fechaReg').value;
-        document.getElementById('fTit').innerText = fH;
         db.collection("asistencia_ebnlp_final").where("f", "==", fH).onSnapshot(snap => {
             let h = {Doc:0, Obr:0, Adm:0, Cn:0, VA:0, VB:0};
             const bD = document.getElementById('bodyDia'); bD.innerHTML = "";
@@ -263,82 +232,53 @@
                     if(d.c === "Docente") h.Doc++; else if(d.c === "Obrero") h.Obr++; else if(d.c === "Administrativo") h.Adm++; else if(d.c === "CNAE (Cocinera)") h.Cn++;
                     if(d.g === "GRUPO A") h.VA++; else if(d.g === "GRUPO B") h.VB++;
                 }
-                bD.innerHTML += `<tr><td>${d.n}</td><td>${d.e}</td><td>${d.hE||'-'}</td><td class="${d.minR>0?'retardo-cell':''}">${d.minR||0}m</td><td><button class="btn btn-rojo btn-small" onclick="eliminarAsis('${doc.id}')">X</button></td></tr>`;
+                bD.innerHTML += `<tr><td>${d.n}</td><td>${d.e}</td><td>${d.hE||'-'}</td><td>${d.hS||'-'}</td><td class="${d.minR>0?'warning-cell':''}">${d.minR}m</td><td class="${d.minA>0?'warning-cell':''}">${d.minA}m</td><td>${d.mS||'-'}</td><td><button onclick="eliminarAsis('${doc.id}')">X</button></td></tr>`;
             });
-
-            const upd = (pres, totId, pctId, curId) => {
-                const t = parseInt(document.getElementById(totId).innerText) || 0;
-                const p = t > 0 ? Math.round((pres/t)*100) : 0;
-                document.getElementById(pctId).innerText = p + "%";
-                document.getElementById(curId).innerText = pres;
-            };
-            upd(h.Doc,'totDoc','pctDoc','curDoc'); upd(h.Obr,'totObr','pctObr','curObr');
-            upd(h.Adm,'totAdm','pctAdm','curAdm'); upd(h.Cn,'totCn','pctCn','curCn');
-            upd(h.VA,'totVA','pctVA','curVA'); upd(h.VB,'totVB','pctVB','curVB');
+            // (Aquí va la lógica de actualización de IDs de dashboard de códigos anteriores)
+            document.getElementById('curDoc').innerText = h.Doc; document.getElementById('curObr').innerText = h.Obr;
+            document.getElementById('curAdm').innerText = h.Adm; document.getElementById('curCn').innerText = h.Cn;
+            document.getElementById('curVA').innerText = h.VA; document.getElementById('curVB').innerText = h.VB;
             const total = h.Doc+h.Obr+h.Adm+h.Cn+h.VA+h.VB;
             document.getElementById('efecTotal').innerText = nominaLocal.length > 0 ? Math.round((total/nominaLocal.length)*100) + "%" : "0%";
         });
     }
 
-    async function eliminarAsis(id) { if(confirm("¿Eliminar registro?")) await db.collection("asistencia_ebnlp_final").doc(id).delete(); }
-
-    // REPORTES Y FILTRO
     async function cargarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
-        let res = {}, cRes = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, "GRUPO A":0, "GRUPO B":0}, dias = new Set();
-
+        let res = {};
         snap.forEach(doc => {
-            const d = doc.data(); dias.add(d.f);
-            if(!res[d.n]) res[d.n] = {asis:0, ret:0, fal:0, per:0, rep:0, vac:0, min:0};
+            const d = doc.data();
+            if(!res[d.n]) res[d.n] = {asis:0, ret:0, fal:0, per:0, rep:0, vac:0, minR:0, minA:0};
             if(d.e === "ASISTENCIA") res[d.n].asis++; else if(d.e === "RETRASO") res[d.n].ret++; else if(d.e === "INASISTENCIA") res[d.n].fal++; else if(d.e === "PERMISO") res[d.n].per++; else if(d.e === "REPOSO") res[d.n].rep++; else if(d.e === "VACACIONES") res[d.n].vac++;
-            res[d.n].min += (d.minR || 0);
-            if(d.e === "ASISTENCIA" || d.e === "RETRASO") {
-                let cat = d.c === "Vigilante" ? d.g : d.c;
-                if(cRes.hasOwnProperty(cat)) cRes[cat]++;
-            }
+            res[d.n].minR += d.minR; res[d.n].minA += (d.minA || 0);
         });
-
         const bM = document.getElementById('bodyMensual'); bM.innerHTML = "";
-        for(let n in res) { 
-            bM.innerHTML += `<tr><td>${n}</td><td>${res[n].asis}</td><td>${res[n].ret}</td><td>${res[n].fal}</td><td>${res[n].per}</td><td>${res[n].rep}</td><td>${res[n].vac}</td><td class="retardo-cell">${res[n].min}m</td></tr>`; 
-        }
-
-        const cantD = dias.size || 1;
-        document.getElementById('diasLaborados').innerText = `Días con registros en el mes: ${cantD}`;
-        const bP = document.getElementById('bodyPromedios'); bP.innerHTML = "";
-        const noms = { "Docente": parseInt(document.getElementById('totDoc').innerText), "Obrero": parseInt(document.getElementById('totObr').innerText), "Administrativo": parseInt(document.getElementById('totAdm').innerText), "CNAE (Cocinera)": parseInt(document.getElementById('totCn').innerText), "GRUPO A": parseInt(document.getElementById('totVA').innerText), "GRUPO B": parseInt(document.getElementById('totVB').innerText) };
-        for(let c in cRes) {
-            let p = (cRes[c] / cantD).toFixed(1);
-            let e = noms[c] > 0 ? Math.round((p/noms[c])*100) : 0;
-            bP.innerHTML += `<tr><td>${c}</td><td>${p} de ${noms[c]}</td><td>${e}%</td></tr>`;
+        for(let n in res) {
+            bM.innerHTML += `<tr><td>${n}</td><td>${res[n].asis}</td><td>${res[n].ret}</td><td>${res[n].fal}</td><td>${res[n].per}</td><td>${res[n].rep}</td><td>${res[n].vac}</td><td>${res[n].minR}m</td><td>${res[n].minA}m</td></tr>`;
         }
     }
 
-    function filtrarTablaMensual() {
-        let input = document.getElementById("busquedaTrabajador").value.toUpperCase();
-        let filas = document.getElementById("bodyMensual").getElementsByTagName("tr");
-        for (let i = 0; i < filas.length; i++) {
-            let td = filas[i].getElementsByTagName("td")[0];
-            if (td) {
-                filas[i].style.display = (td.textContent.toUpperCase().indexOf(input) > -1) ? "" : "none";
-            }
-        }
+    function filtrarTabla() {
+        let val = document.getElementById('busqueda').value.toUpperCase();
+        let filas = document.getElementById('bodyMensual').getElementsByTagName('tr');
+        for(let f of filas) f.style.display = f.innerText.toUpperCase().includes(val) ? "" : "none";
     }
 
-    function generarPDFDia() {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("Asistencia Diaria - EBNLP - " + document.getElementById('fechaReg').value, 14, 15);
-        doc.autoTable({ html: '#tablaDia', startY: 20 });
-        doc.save("Dia.pdf");
+    async function agregarANomina() {
+        const n = document.getElementById('nomNuevo').value.toUpperCase(), c = document.getElementById('carNuevo').value, g = document.getElementById('gruNuevo').value;
+        if(!n) return; await db.collection("nomina_institucional").add({n, c, g});
+        document.getElementById('nomNuevo').value = "";
     }
+
+    async function eliminarAsis(id) { if(confirm("¿Eliminar registro?")) await db.collection("asistencia_ebnlp_final").doc(id).delete(); }
+    async function eliminarDeNomina(id) { if(confirm("¿Eliminar de nómina?")) await db.collection("nomina_institucional").doc(id).delete(); }
 
     function generarPDFMensual() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
         doc.text("Reporte Mensual EBNLP - " + document.getElementById('mesReporte').value, 14, 15);
-        doc.autoTable({ html: '#tablaPromedios', startY: 25 });
-        doc.autoTable({ html: '#tablaMensual', startY: doc.lastAutoTable.finalY + 10 });
-        doc.save("Reporte_Mensual.pdf");
+        doc.autoTable({ html: '#tablaMensual', startY: 20 });
+        doc.save("Reporte.pdf");
     }
 </script>
 </body>
