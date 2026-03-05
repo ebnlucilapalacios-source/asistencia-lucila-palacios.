@@ -7,7 +7,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -21,6 +21,7 @@
         const dbCloud = getFirestore(app);
 
         const CODIGO_ESCUELA = "LUCILA2026";
+        const USUARIO_ADMIN = "admin_lucila";
         const LOGO_URL = "https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png";
 
         window.usuarioActual = null;
@@ -43,8 +44,66 @@
                 window.usuarioActual = user;
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
-                onSnapshot(doc(dbCloud, "docentes_db", user), (s) => { window.db = s.data(); window.render(); });
+                
+                // Mostrar panel de dirección si es admin
+                if (user === USUARIO_ADMIN) {
+                    document.getElementById('adminPanel').style.display = 'block';
+                }
+
+                onSnapshot(doc(dbCloud, "docentes_db", user), (s) => { 
+                    window.db = s.data(); 
+                    window.render(); 
+                });
             } else { alert("Datos incorrectos"); }
+        };
+
+        // --- LÓGICA DEL PANEL DE DIRECCIÓN ---
+        window.cargarConsolidado = async () => {
+            const resDiv = document.getElementById('resultadosAdmin');
+            resDiv.innerHTML = "⌛ Cargando datos de secciones...";
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            const mesAct = new Date().getMonth();
+            const anioAct = new Date().getFullYear();
+
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>Sección</th>
+                        <th>Mat.</th>
+                        <th>Días</th>
+                        <th>Prom.</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                if (docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
+
+                let diasClase = 0, presentesTotal = 0;
+                Object.keys(d.asistencias || {}).forEach(f => {
+                    const fecha = new Date(f + "T00:00:00");
+                    if (fecha.getMonth() === mesAct && fecha.getFullYear() === anioAct) {
+                        diasClase++;
+                        presentesTotal += Object.values(d.asistencias[f]).filter(s => s === 1).length;
+                    }
+                });
+
+                const matTotal = d.alumnos.length;
+                const prom = (diasClase * matTotal) > 0 
+                    ? ((presentesTotal / (diasClase * matTotal)) * 100).toFixed(1) 
+                    : "0.0";
+
+                html += `<tr>
+                    <td style="text-align:left">${d.seccion || 'Sin nombre'}</td>
+                    <td>${matTotal}</td>
+                    <td>${diasClase}</td>
+                    <td style="font-weight:bold; color:var(--morado)">${prom}%</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            resDiv.innerHTML = html;
         };
 
         window.render = () => {
@@ -91,8 +150,6 @@
             Object.keys(asistencias).forEach(fechaStr => {
                 const fecha = new Date(fechaStr + "T00:00:00");
                 const diaSemana = fecha.getDay(); 
-                
-                // Solo contar si es Lunes(1) a Viernes(5) Y es del mes actual
                 if (fecha.getMonth() === mesAct && fecha.getFullYear() === anioAct && diaSemana !== 0 && diaSemana !== 6) {
                     diasHabilesConLista++;
                     alumnos.forEach(al => {
@@ -129,25 +186,24 @@
                     <h2 class="titulo-reporte">REPORTE ESTADÍSTICO MENSUAL</h2>
                     <div class="porcentaje-box">
                         <h1>${eficiencia}%</h1>
-                        <p>EFICIENCIA (LUNES A VIERNES)</p>
+                        <p>EFICIENCIA DEL MES</p>
                     </div>
                     <div class="promedio-real-card">
                         <div class="stat-item"><small>PROM. H</small><br><b style="color:#e91e63">${promH}</b></div>
                         <div class="stat-item" style="border-left:1px solid #ddd; border-right:1px solid #ddd; padding:0 10px;"><small>PROM. V</small><br><b style="color:#2196f3">${promV}</b></div>
                         <div class="stat-item"><small>ASIST. REAL</small><br><b>${promTotal}</b></div>
                     </div>
-                    <p style="font-size:11px; text-align:center; margin-top:10px; color:#666;">Días con asistencia en el mes: <b>${diasHabilesConLista}</b></p>
                     <table class="tabla-disgregada">
                         <thead><tr><th>Edad</th><th>H</th><th>V</th><th>Total</th></tr></thead>
                         <tbody>${filas}</tbody>
                         <tfoot style="background:#eee; font-weight:bold;"><tr><td>TOTAL</td><td>${matH}</td><td>${matV}</td><td>${matH+matV}</td></tr></tfoot>
                     </table>
-                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte Mensual</button>
+                    <button onclick="window.print()" class="btn-imprimir">🖨️ Imprimir Reporte</button>
                 </div>`;
         }
 
         window.eliminarAlumno = async (id) => {
-            if(confirm("¿Desea retirar permanentemente a este alumno del listado?")) {
+            if(confirm("¿Desea retirar permanentemente a este alumno?")) {
                 window.db.alumnos = window.db.alumnos.filter(a => a.id !== id);
                 await window.saveToCloud(window.db);
             }
@@ -162,15 +218,14 @@
             document.getElementById('newNombre').value = "";
         };
 
+        window.saveToCloud = async (data) => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), data); };
+        window.actualizarPerfil = () => { window.db.docente = document.getElementById('docente').value; window.db.seccion = document.getElementById('seccion').value; window.saveToCloud(window.db); };
         window.marcar = (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
             if(!window.db.asistencias[f]) window.db.asistencias[f] = {};
             window.db.asistencias[f][id] = (window.db.asistencias[f][id] + 1) % 3 || 1;
             window.saveToCloud(window.db);
         };
-
-        window.saveToCloud = async (data) => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), data); };
-        window.actualizarPerfil = () => { window.db.docente = document.getElementById('docente').value; window.db.seccion = document.getElementById('seccion').value; window.saveToCloud(window.db); };
         window.logout = () => location.reload();
         window.toggleFeriado = () => {
             const f = document.getElementById('fechaSeleccionada').value;
@@ -190,19 +245,26 @@
         input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-main { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; }
         
+        /* Panel Dirección */
+        .panel-admin { background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .btn-admin-tab { background: var(--morado); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* Estilo Tablas */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #f5f5f5; }
+
         .reporte-container { background: white; border-radius: 20px; padding: 25px; border-left: 10px solid var(--celeste); box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
         .titulo-reporte { color: var(--celeste); text-align: center; font-size: 1.1rem; font-weight: 900; margin: 5px 0 15px; }
         .porcentaje-box { background: var(--celeste); color: white; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 15px; }
         .porcentaje-box h1 { font-size: 3.5rem; margin: 0; }
         .promedio-real-card { display: flex; justify-content: space-around; background: #f8f9fa; border: 1px solid #ddd; border-radius: 12px; padding: 15px; text-align: center; }
         .stat-item small { font-size: 8px; color: #666; font-weight: bold; }
-        .tabla-disgregada { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
-        .tabla-disgregada th, .tabla-disgregada td { border: 1px solid #ddd; padding: 8px; }
-        .btn-imprimir { background: var(--celeste); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-imprimir { background: var(--celeste); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; width: 100%; }
 
         .student-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #eee; }
         .btn-delete { background: none; border: none; color: red; font-size: 10px; cursor: pointer; text-decoration: underline; padding: 0; margin-left: 10px; width: auto; }
-        @media print { .card, header, .btn-main, .btn-delete, .no-print { display: none !important; } .reporte-container { border: none; width: 100%; box-shadow: none; margin: 0; } }
+        @media print { .card, header, .btn-main, .btn-delete, .no-print, .panel-admin { display: none !important; } .reporte-container { border: none; width: 100%; box-shadow: none; margin: 0; } }
     </style>
 </head>
 <body>
@@ -222,6 +284,15 @@
     </header>
 
     <div class="container">
+        <div id="adminPanel" class="panel-admin" style="display:none;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>📊</span>
+                <b style="color:#856404;">PANEL DE DIRECCIÓN</b>
+            </div>
+            <button onclick="cargarConsolidado()" class="btn-admin-tab" style="margin-top:10px; width:100%;">Generar Consolidado Mensual</button>
+            <div id="resultadosAdmin"></div>
+        </div>
+
         <div class="card no-print">
             <input type="text" id="docente" onchange="actualizarPerfil()" placeholder="Nombre del Docente">
             <input type="text" id="seccion" onchange="actualizarPerfil()" placeholder="Grado y Sección">
@@ -234,13 +305,12 @@
                 <select id="newGen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
                 <input type="date" id="newNac" style="width:60%">
             </div>
-            <button onclick="agregarAlumno()" class="btn-main">Guardar</button>
+            <button onclick="agregarAlumno()" class="btn-main">Guardar en Matrícula</button>
         </div>
 
         <div class="card no-print">
             <input type="date" id="fechaSeleccionada" onchange="window.render()">
             <button onclick="toggleFeriado()" style="background:var(--rojo); color:white; font-size:11px;">🚩 Feriado</button>
-            <p style="font-size: 13px; text-align: center;">Asistencia: <b id="displayFecha"></b></p>
             <div id="listaAsistencia"></div>
         </div>
 
