@@ -98,9 +98,11 @@
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
             let html = `<h3>CONSOLIDADO MENSUAL</h3><table class="tabla-admin"><thead><tr><th>Secc</th><th>Mat.</th><th>Prom.</th><th>Ingresos (Mes)</th><th>Egresos (Mes)</th></tr></thead><tbody>`;
+            
             snap.forEach(docSnap => {
                 const d = docSnap.data(); if(docSnap.id === USUARIO_ADMIN || !d.alumnos) return;
                 const activos = d.alumnos.filter(a => !a.retirado);
+                
                 let sH = 0, sV = 0, dias = 0;
                 Object.keys(d.asistencias).forEach(f => {
                     const fO = new Date(f + "T00:00:00");
@@ -109,17 +111,21 @@
                     }
                 });
                 const prom = dias > 0 ? ((sH + sV) / dias).toFixed(1) : "0.0";
+
+                // FILTRADO DE NOMBRES PARA DIRECCIÓN
                 const ing = d.alumnos.filter(a => {
                     if(!a.fechaIngreso) return false;
                     const f = new Date(a.fechaIngreso + "T00:00:00");
                     return f.getMonth() === mesRef && f.getFullYear() === anioRef;
                 }).map(a => a.nombre).join(', ') || "-";
+
                 const egr = d.alumnos.filter(a => {
                     if(!a.retirado || !a.fechaEgreso) return false;
                     const f = new Date(a.fechaEgreso + "T00:00:00");
                     return f.getMonth() === mesRef && f.getFullYear() === anioRef;
                 }).map(a => a.nombre).join(', ') || "-";
-                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${prom}</td><td>${ing}</td><td>${egr}</td></tr>`;
+
+                html += `<tr><td>${d.grado}${d.seccion}</td><td>${activos.length}</td><td>${prom}</td><td style="font-size:8px;">${ing}</td><td style="font-size:8px;">${egr}</td></tr>`;
             });
             document.getElementById('adminOutput').innerHTML = html + "</tbody></table>";
         };
@@ -155,7 +161,7 @@
                 lista.innerHTML = `<div style="text-align:center; padding:20px; color:red; font-weight:bold;">🚫 NO LABORABLE</div>`;
             }
 
-            // Estadísticas
+            // Cálculos Estadísticos
             let sH=0, sV=0, diasHabiles=0, edades={};
             activos.forEach(al => {
                 const e = calcularEdad(al.nacimiento);
@@ -174,6 +180,7 @@
             const pV = diasHabiles>0 ? (sV/diasHabiles) : 0;
             const efic = activos.length>0 ? (((pH+pV)/activos.length)*100).toFixed(0) : 0;
 
+            // FILTRADO DE MOVIMIENTOS DEL MES
             const ingMes = window.db.alumnos.filter(a => {
                 if(!a.fechaIngreso) return false;
                 const fi = new Date(a.fechaIngreso + "T00:00:00");
@@ -187,6 +194,7 @@
 
             let tEd = ""; Object.keys(edades).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${edades[e].F}</td><td>${edades[e].M}</td><td>${edades[e].F+edades[e].M}</td></tr>`; });
 
+            // RENDER DEL REPORTE CON LOS CAMBIOS ANEXADOS
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="card">
                     <h2 style="text-align:center; font-size:1.2rem; margin-bottom:15px;">REPORTE ESTADÍSTICO MENSUAL</h2>
@@ -202,9 +210,15 @@
                         <tfoot><tr><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot>
                     </table>
                     
-                    <div class="movimientos-box">
-                        <div class="mov-item"><b>Ingresos:</b> ${ingMes.map(a=>a.nombre).join(', ') || 'Ninguno'}</div>
-                        <div class="mov-item"><b>Egresos:</b> ${egrMes.map(a=>a.nombre).join(', ') || 'Ninguno'}</div>
+                    <div style="margin-top:20px; text-align:left; font-size:0.85rem; border-top: 2px solid #eee; padding-top:10px;">
+                        <div style="background:#e8f5e9; padding:8px; border-radius:5px; margin-bottom:10px; border-left:5px solid green;">
+                            <b style="color:green">NIÑOS INGRESADOS EN EL MES:</b><br>
+                            ${ingMes.map(a => a.nombre).join(', ') || 'Sin ingresos'}
+                        </div>
+                        <div style="background:#ffebee; padding:8px; border-radius:5px; border-left:5px solid red;">
+                            <b style="color:red">NIÑOS EGRESADOS EN EL MES:</b><br>
+                            ${egrMes.map(a => a.nombre).join(', ') || 'Sin egresos'}
+                        </div>
                     </div>
 
                     <button onclick="window.print()" class="btn-print no-print">Imprimir para Dirección</button>
@@ -219,9 +233,13 @@
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar alumno?")){
+            if(confirm("¿Retirar alumno? Se registrará la fecha de egreso hoy.")){
                 const a = window.db.alumnos.find(x => x.id === id);
-                if(a) { a.retirado = true; a.fechaEgreso = document.getElementById('fechaSeleccionada').value; await window.save(); }
+                if(a) { 
+                    a.retirado = true; 
+                    a.fechaEgreso = document.getElementById('fechaSeleccionada').value; 
+                    await window.save(); 
+                }
             }
         };
 
@@ -235,8 +253,17 @@
         window.agregarAlumno = () => {
             const n = document.getElementById('nom').value.toUpperCase();
             const nac = document.getElementById('nac').value;
+            const fIngreso = document.getElementById('fechaSeleccionada').value;
             if(!n || !nac) return;
-            window.db.alumnos.push({id:Date.now(), nombre:n, genero:document.getElementById('gen').value, nacimiento:nac, retirado:false, fechaIngreso: document.getElementById('fechaSeleccionada').value, fechaEgreso:null});
+            window.db.alumnos.push({
+                id: Date.now(), 
+                nombre: n, 
+                genero: document.getElementById('gen').value, 
+                nacimiento: nac, 
+                retirado: false, 
+                fechaIngreso: fIngreso, 
+                fechaEgreso: null
+            });
             window.save(); document.getElementById('nom').value = "";
         };
 
@@ -253,24 +280,18 @@
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid #f39c12; }
         .container { max-width: 450px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 15px; }
-        
-        /* Estilos idénticos a la imagen */
         .circulo-eficiencia { width: 85px; height: 85px; border: 6px solid var(--azul); border-radius: 50%; margin: 15px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
         .promedios-disgregados { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; }
         .tabla-911 { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
         .tabla-911 th, .tabla-911 td { border: 1px solid #eee; padding: 8px; }
-        .tabla-911 th { background: #fafafa; }
-        .btn-print { background: var(--azul); color: white; border: none; padding: 12px; font-weight: bold; width: 100%; border-radius: 8px; margin-top: 15px; cursor: pointer; }
-        
-        /* Nuevos cuadros de movimientos */
-        .movimientos-box { margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; font-size: 0.8rem; text-align: left; }
-        .mov-item { margin-bottom: 5px; line-height: 1.3; }
-
         input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-check { width: 45px; height: 40px; border: none; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-print { background: var(--azul); color: white; border: none; padding: 12px; font-weight: bold; width: 100%; border-radius: 8px; margin-top: 15px; cursor: pointer; }
         .alumno-fila { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
         .bola-gen { width: 12px; height: 12px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
+        .tabla-admin { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 10px; }
+        .tabla-admin th, .tabla-admin td { border: 1px solid #ddd; padding: 4px; text-align: center; }
         @media print { .no-print { display: none !important; } .card { box-shadow: none; border: 1px solid #eee; } }
     </style>
 </head>
