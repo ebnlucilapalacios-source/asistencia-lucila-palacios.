@@ -2,164 +2,219 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGA - E.B.N. Lucila Palacios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SGA Móvil - Lucila Palacios</title>
+    
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        :root { --blue-lp: #003399; --red-lp: #cc0000; --gold-lp: #ffcc00; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
-        .card { max-width: 800px; margin: auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
-        .lp-header { background: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--blue-lp); }
-        .lp-logo { width: 120px; height: auto; }
-        .content { padding: 30px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .full { grid-column: 1 / -1; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-lp); }
-        select, input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        .btn-group { margin-top: 25px; display: flex; gap: 10px; }
-        button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .save { background: var(--blue-lp); color: white; }
-        .pdf { background: #555; color: white; }
-        .info-box { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b2d7ff; margin-top: 10px; display: none; }
+        :root { 
+            --blue-lp: #003399; 
+            --gold-lp: #ffcc00; 
+            --bg: #f4f7fa;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Contenedor adaptado a pantallas pequeñas */
+        .mobile-card { 
+            width: 100%; 
+            max-width: 450px; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            overflow: hidden;
+            border-top: 10px solid var(--blue-lp);
+        }
+
+        .header { 
+            text-align: center; 
+            padding: 20px 15px; 
+            background: #fff;
+        }
+
+        .logo { width: 80px; height: auto; margin-bottom: 10px; }
+
+        h1 { font-size: 1.4rem; margin: 0; color: var(--blue-lp); }
+        p { font-size: 0.9rem; color: #666; margin: 5px 0 0; }
+
+        .content { padding: 20px; }
+
+        .form-group { margin-bottom: 20px; }
+
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            color: #333;
+            font-size: 1rem;
+        }
+
+        /* Inputs grandes para dedos (fácil de tocar) */
+        select, input { 
+            width: 100%; 
+            padding: 14px; 
+            border: 2px solid #ddd; 
+            border-radius: 12px; 
+            font-size: 16px; /* Evita que el iPhone haga zoom automático */
+            background-color: #fff;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--blue-lp);
+            outline: none;
+        }
+
+        /* Botones táctiles potentes */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: transform 0.1s, opacity 0.3s;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-save { background-color: var(--blue-lp); color: white; }
+        .btn-pdf { background-color: #333; color: white; }
+
+        .footer-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 10px;
+            padding-bottom: 20px;
+        }
+
+        /* Estilo para el campo de matrícula variable */
+        .variable-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="lp-header">
-        <img src="421692.png" alt="Logo Lucila Palacios" class="lp-logo">
-        <h1 style="margin: 10px 0 0 0;">E.B.N. LUCILA PALACIOS</h1>
-        <p style="margin: 0; color: #666;">Control de Especialistas - San Félix</p>
+<div class="mobile-card">
+    <div class="header">
+        <img src="421692.png" alt="Logo LP" class="logo">
+        <h1>E.B.N. Lucila Palacios</h1>
+        <p>Control de Especialistas</p>
     </div>
 
     <div class="content">
-        <div class="grid">
-            <div class="form-group full">
-                <label>Especialista</label>
-                <select id="esp" onchange="adaptarFormulario()">
-                    <option value="Ingles|M|25">Inglés (Mañana - 25 Sec)</option>
-                    <option value="Cultura|A|6">Cultura (Ambos Turnos - Todos los grados)</option>
-                    <option value="RPA|A|6">RPA (Pequeños Grupos - Todos los grados)</option>
-                    <option value="Deporte I|A|3">Deporte I Etapa (1º-3º)</option>
-                    <option value="Deporte II|A|3">Deporte II Etapa (4º-6º)</option>
-                    <option value="Aula|T|6">Aula Integrada (Tarde - Indiv.)</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Turno</label>
-                <select id="turno">
-                    <option value="Mañana">Mañana</option>
-                    <option value="Tarde">Tarde</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Grado</label>
-                <select id="grado">
-                    <option value="1">1er Grado</option>
-                    <option value="2">2do Grado</option>
-                    <option value="3">3er Grado</option>
-                    <option value="4">4to Grado</option>
-                    <option value="5">5to Grado</option>
-                    <option value="6">6to Grado</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="cont_mat">
-                <label id="label_mat">Matrícula (Sección)</label>
-                <input type="number" id="mat" placeholder="Ej: 38" min="1" max="40">
-            </div>
-
-            <div class="form-group">
-                <label>Minutos</label>
-                <select id="min">
-                    <option value="45">45 Minutos</option>
-                    <option value="90">90 Minutos</option>
-                </select>
-            </div>
-
-            <div id="msg_especial" class="full info-box">
-                <p id="txt_ayuda" style="margin:0; font-size: 14px; color: #004085;"></p>
-            </div>
+        <div class="form-group">
+            <label>Especialista</label>
+            <select id="esp">
+                <option value="Ingles">Inglés (15 M / 10 T)</option>
+                <option value="Cultura">Cultura (Todos)</option>
+                <option value="RPA">RPA (Grupos)</option>
+                <option value="Deporte I">Deporte I (1-3)</option>
+                <option value="Deporte II">Deporte II (4-6)</option>
+                <option value="Aula">Aula Integrada</option>
+            </select>
         </div>
 
-        <div class="btn-group">
-            <button class="save" onclick="guardar()">GUARDAR REGISTRO</button>
-            <button class="pdf" onclick="generarPDF()">PDF MENSUAL</button>
+        <div class="form-group">
+            <label>Turno</label>
+            <select id="turno">
+                <option value="Mañana">Mañana</option>
+                <option value="Tarde">Tarde</option>
+            </select>
         </div>
+
+        <div class="form-group">
+            <label>Grado / Sección</label>
+            <input type="text" id="grado_sec" placeholder="Ej: 5to C">
+        </div>
+
+        <div class="form-group">
+            <label>Matrícula Real (Hoy)</label>
+            <input type="number" id="mat" placeholder="¿Cuántos asistieron?">
+            <div class="variable-badge">Matrícula dinámica (2-6 grado)</div>
+        </div>
+
+        <div class="form-group">
+            <label>Tiempo</label>
+            <select id="min">
+                <option value="45">45 Minutos</option>
+                <option value="90">90 Minutos</option>
+                <option value="0">Inasistencia</option>
+            </select>
+        </div>
+
+        <button class="btn btn-save" onclick="guardar()">GUARDAR REGISTRO</button>
+        <button class="btn btn-pdf" onclick="descargarPDF()">PDF REPORTE</button>
+    </div>
+    
+    <div class="footer-info">
+        E.B.N. Lucila Palacios • San Félix • 1972
     </div>
 </div>
 
 <script>
-    // Inicialización de Firebase (Usa tus credenciales del repo 'asistencia')
-    const firebaseConfig = { apiKey: "TU_API_KEY", projectId: "TU_ID", appId: "TU_APP_ID" };
+    // Configuración de Firebase
+    const firebaseConfig = { apiKey: "TU_API_KEY", projectId: "TU_PROYECTO", appId: "TU_APP_ID" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function adaptarFormulario() {
-        const sel = document.getElementById('esp').value.split('|')[0];
-        const msg = document.getElementById('msg_especial');
-        const txt = document.getElementById('txt_ayuda');
-        const labelMat = document.getElementById('label_mat');
-
-        msg.style.display = "block";
-        
-        if(sel === "RPA") {
-            txt.innerText = "Modo RPA: Registro de atención a grupos pequeños (Refuerzo Pedagógico).";
-            labelMat.innerText = "Cant. Niños en Grupo";
-        } else if(sel === "Cultura") {
-            txt.innerText = "Modo Cultura: Cobertura de secciones en ambos turnos.";
-            labelMat.innerText = "Matrícula de Sección";
-        } else if(sel === "Aula") {
-            txt.innerText = "Modo Aula Integrada: Atención individualizada o pequeños grupos (Turno Tarde).";
-            labelMat.innerText = "Niños Atendidos";
-        } else {
-            msg.style.display = "none";
-            labelMat.innerText = "Matrícula (Sección)";
-        }
-    }
-
     async function guardar() {
-        const esp = document.getElementById('esp').value.split('|')[0];
+        const mat = parseInt(document.getElementById('mat').value);
+        if (!mat) { alert("Ingresa la asistencia real"); return; }
+
         const data = {
-            especialidad: esp,
+            esp: document.getElementById('esp').value,
             turno: document.getElementById('turno').value,
-            grado: document.getElementById('grado').value,
-            matricula: parseInt(document.getElementById('mat').value),
-            minutos: parseInt(document.getElementById('min').value),
+            clase: document.getElementById('grado_sec').value,
+            asistencia: mat,
+            tiempo: parseInt(document.getElementById('min').value),
             fecha: new Date().toLocaleDateString(),
-            impacto: parseInt(document.getElementById('mat').value) * parseInt(document.getElementById('min').value)
+            impacto: mat * parseInt(document.getElementById('min').value)
         };
 
         try {
-            await db.collection("asistencias_lp_especialistas").add(data);
-            alert("Registro guardado para " + esp);
+            await db.collection("asistencias_lp").add(data);
+            alert("¡Guardado correctamente!");
+            document.getElementById('mat').value = "";
         } catch(e) { alert("Error al guardar"); }
     }
 
-    function generarPDF() {
+    function descargarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("E.B.N. LUCILA PALACIOS - REPORTE MENSUAL", 105, 20, {align:"center"});
-        
-        // La tabla incluirá el desglose por género y efectividad real
+        doc.setFontSize(18);
+        doc.text("Reporte Lucila Palacios", 105, 20, {align: "center"});
         doc.autoTable({
             startY: 30,
-            head: [['Especialidad', 'Turno', 'Grados', 'Promedio Real']],
-            body: [
-                ['Inglés', 'Mañana', '2-6', '95%'],
-                ['Cultura', 'Ambos', '1-6', '98%'],
-                ['RPA', 'Ambos', '1-6', '100%'],
-                ['Deporte', 'Ambos', '1-6', '92%']
-            ],
+            head: [['Docente', 'Turno', 'Alumnos', 'Impacto']],
+            body: [[document.getElementById('esp').value, document.getElementById('turno').value, 'Variable', 'Real']],
             headStyles: { fillColor: [0, 51, 153] }
         });
-        doc.save("Estadistica_Lucila_Palacios.pdf");
+        doc.save("Asistencia_LP_Movil.pdf");
     }
 </script>
+
 </body>
 </html>
