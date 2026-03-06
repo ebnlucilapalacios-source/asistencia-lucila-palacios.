@@ -21,15 +21,18 @@
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .contenedor { max-width: 1300px; margin: auto; padding: 15px; }
 
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .dash-card { background: var(--blanco); padding: 15px; border-radius: 12px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .dash-card h4 { margin: 0; font-size: 0.8rem; color: #666; text-transform: uppercase; }
         .dash-card .valor { font-size: 1.8rem; font-weight: bold; color: var(--azul); display: block; margin-top: 5px; }
 
+        /* Navegación */
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 15px; background: #ddd; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
         .tab-btn.active { background: var(--naranja); color: white; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
+        /* Interfaz de Marcaje */
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .ficha { background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; text-align: center; transition: 0.3s; position: relative; }
         .ficha p { font-weight: bold; font-size: 0.9rem; margin-bottom: 12px; color: var(--azul); min-height: 40px; display: flex; align-items: center; justify-content: center; }
@@ -37,6 +40,7 @@
         .btn-check { width: 100%; padding: 8px; margin: 3px 0; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: 0.2s; }
         .btn-check:hover { filter: brightness(0.9); transform: scale(1.02); }
 
+        /* Colores de tabla */
         .row-asistencia { background-color: #d4edda !important; }
         .row-retraso { background-color: #fff3cd !important; }
         .row-inasistencia { background-color: #f8d7da !important; }
@@ -50,9 +54,7 @@
         .sec-header { background: var(--naranja); color: white; padding: 10px 20px; border-radius: 8px; margin: 25px 0 10px 0; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .hidden { display: none; }
         input, select { padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; }
-        
-        .btn-backup { background: #555; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; }
-        .btn-backup:hover { background: #333; }
+        .btn-backup { background: #555; color: white; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -87,7 +89,7 @@
                 <option value="TARDE">TARDE</option>
                 <option value="VIGILANCIA">VIGILANCIA (6-6)</option>
             </select>
-            <input type="text" id="buscador" placeholder="Buscar trabajador..." onkeyup="filtrarFichas()" style="flex-grow:1;">
+            <input type="text" id="buscador" placeholder="Buscar por nombre..." onkeyup="filtrarFichas()" style="flex-grow:1;">
         </div>
         <div id="fichasGrid" class="grid-fichas"></div>
         <div class="sec-header">REPORTE DE ASISTENCIA DEL DÍA</div>
@@ -106,11 +108,11 @@
             <label><b>Seleccionar Mes:</b></label>
             <input type="month" id="mesReporte" onchange="procesarConsolidado()">
         </div>
-        <div class="sec-header">1. RESUMEN DISGREGADO POR CARGO</div>
+        <div class="sec-header">1. RESUMEN DISGREGADO POR CARGO (PROMEDIOS REALES)</div>
         <div class="table-wrap">
             <table id="tablaConsCargo">
                 <thead>
-                    <tr><th>Cargo</th><th>Nómina</th><th>F</th><th>M</th><th>Promedio Total</th><th>% Efectividad</th></tr>
+                    <tr><th>Cargo</th><th>Nómina</th><th>Prom. F</th><th>Prom. M</th><th>Promedio Total</th><th>% Efectividad</th></tr>
                 </thead>
                 <tbody id="bodyConsCargo"></tbody>
             </table>
@@ -149,8 +151,8 @@
             </div>
             
             <div style="background:white; padding:20px; border-radius:12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center;">
-                <h3>Respaldo (Backup)</h3>
-                <button class="btn-backup" onclick="exportarRespaldo()">📥 DESCARGAR RESPALDO</button>
+                <h3>Respaldo Externo</h3>
+                <button class="btn-backup" onclick="exportarRespaldo()">📥 DESCARGAR COPIA</button>
                 <hr>
                 <input type="file" id="importFile" style="display:none" onchange="importarRespaldo(event)">
                 <button class="btn-backup" style="background:var(--rojo)" onclick="document.getElementById('importFile').click()">📤 RESTAURAR DATOS</button>
@@ -174,6 +176,14 @@
     let nominaLocal = [];
     document.getElementById('fechaFiltro').value = new Date().toISOString().split('T')[0];
 
+    // RECORDATORIO VIERNES
+    window.addEventListener('load', () => {
+        const hoy = new Date();
+        if(hoy.getDay() === 5 && hoy.getHours() >= 13) {
+            alert("📅 AVISO DE CIERRE: Es viernes por la tarde. Recuerde descargar el Respaldo de Seguridad semanal.");
+        }
+    });
+
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
@@ -189,6 +199,7 @@
         });
     }
 
+    // REGISTRO DE ENTRADA
     async function marcar(nombre, estatus) {
         const fecha = document.getElementById('fechaFiltro').value;
         const turno = document.getElementById('turnoFiltro').value;
@@ -198,7 +209,7 @@
         if(estatus === "PERMISO PERSONAL" || estatus === "INASISTENCIA") {
             const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).where("mes", "==", fecha.substring(0,7)).get();
             let count = snap.docs.filter(d => d.data().e === estatus).length;
-            if(count >= 2) alert(`⚠️ ALERTA: ${nombre} ya tiene ${count} registros de ${estatus} este mes.`);
+            if(count >= 2) alert(`⚠️ ALERTA: ${nombre} ya registra ${count} ${estatus} este mes.`);
         }
 
         if(estatus === "ASISTENCIA" || estatus === "RETRASO") {
@@ -207,8 +218,7 @@
             if(!hE) return;
             if(estatus === "RETRASO") obs = prompt("Motivo del retraso:");
         } else {
-            obs = prompt("Observación / Motivo:");
-            hE = "JUSTIFICADO"; hS = "JUSTIFICADO";
+            obs = prompt("Motivo:"); hE = "JUSTIFICADO"; hS = "JUSTIFICADO";
         }
 
         await db.collection("asistencia_ebnlp_final").add({
@@ -217,6 +227,7 @@
         dibujarPaseLista();
     }
 
+    // REGISTRO DE SALIDA (VALIDA ANTICIPACIÓN)
     async function registrarSalida(nombre) {
         const fecha = document.getElementById('fechaFiltro').value;
         const turno = document.getElementById('turnoFiltro').value;
@@ -236,7 +247,7 @@
         };
 
         if (toMin(hS) < toMin(hOficial)) {
-            obsSalida = prompt("EL TRABAJADOR SALE ANTES DE LA HORA. INDIQUE EL MOTIVO:");
+            obsSalida = prompt("⚠️ SALIDA ANTICIPADA DETECTADA. INDIQUE EL MOTIVO:");
             if (obsSalida) obsSalida = "SALIDA ANTICIPADA: " + obsSalida;
         }
 
@@ -269,7 +280,7 @@
                     <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','PERMISO PERSONAL')">📄 P. PERSONAL</button>`;
             } else if (m.hS === "---" || m.hS === "") {
                 div.style.border = "2px solid var(--naranja)";
-                div.innerHTML = `<p>${p.n}</p><button class="btn-check" style="background:var(--azul); color:white; height:60px;" onclick="registrarSalida('${p.n}')">🚪 MARCAR SALIDA</button>`;
+                div.innerHTML = `<p>${p.n}</p><button class="btn-check" style="background:var(--azul); color:white; height:60px;" onclick="registrarSalida('${p.n}')">🚪 REGISTRAR SALIDA</button>`;
             } else {
                 div.style.background = "#f0f0f0"; div.style.opacity = "0.7";
                 div.innerHTML = `<p>${p.n}</p><b style="color:var(--verde)">✓ JORNADA CERRADA</b>`;
@@ -277,6 +288,43 @@
             cont.appendChild(div);
         });
         cargarTablaDiaria();
+    }
+
+    // CONSOLIDADO REVISADO (Cálculo de Efectividad Real)
+    async function procesarConsolidado() {
+        const mes = document.getElementById('mesReporte').value; if(!mes) return;
+        const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
+        const data = snap.docs.map(d => d.data());
+        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+        const diasHabiles = 20;
+
+        const bCargo = document.getElementById('bodyConsCargo'); bCargo.innerHTML = "";
+        cargos.forEach(cargo => {
+            const personalNomina = nominaLocal.filter(x => x.c === cargo);
+            const asisCargo = data.filter(x => x.c === cargo && x.e !== "INASISTENCIA");
+            
+            const promF = (asisCargo.filter(x => x.gender === 'F').length / diasHabiles).toFixed(2);
+            const promM = (asisCargo.filter(x => x.gender === 'M').length / diasHabiles).toFixed(2);
+            const promTot = (parseFloat(promF) + parseFloat(promM)).toFixed(2);
+            const efec = personalNomina.length > 0 ? Math.round((promTot / personalNomina.length) * 100) : 0;
+
+            bCargo.innerHTML += `<tr><td>${cargo}</td><td>${personalNomina.length}</td><td>${promF}</td><td>${promM}</td><td><strong>${promTot}</strong></td><td style="background:#e8f5e9; font-weight:bold;">${efec}%</td></tr>`;
+        });
+
+        const bInd = document.getElementById('bodyConsIndiv'); bInd.innerHTML = "";
+        nominaLocal.forEach(p => {
+            const dP = data.filter(x => x.n === p.n);
+            const c = {A:0, R:0, PM:0, PP:0, V:0, I:0};
+            dP.forEach(x => {
+                if(x.e === "ASISTENCIA") c.A++; else if(x.e === "RETRASO") c.R++;
+                else if(x.e === "PERMISO MÉDICO") c.PM++; else if(x.e === "PERMISO PERSONAL") c.PP++;
+                else if(x.e === "VACACIONES") c.V++; else if(x.e === "INASISTENCIA") c.I++;
+            });
+            const totAsis = c.A + c.R + c.PM + c.PP + c.V;
+            const promR = (totAsis / diasHabiles).toFixed(2);
+            const efP = Math.round((totAsis / diasHabiles) * 100);
+            bInd.innerHTML += `<tr><td>${p.n}</td><td>${c.A}</td><td>${c.R}</td><td>${c.PM}</td><td>${c.PP}</td><td>${c.V}</td><td>${c.I}</td><td>${promR}</td><td>${efP}%</td></tr>`;
+        });
     }
 
     function cargarTablaDiaria() {
@@ -295,89 +343,40 @@
             document.getElementById('dAdm').innerText = counts.Administrativo;
             document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
             document.getElementById('dVig').innerText = counts.Vigilante;
-            let tot = nominaLocal.length;
             let asis = Object.values(counts).reduce((a, b) => a + b, 0);
-            document.getElementById('dEfec').innerText = tot > 0 ? Math.round((asis / tot) * 100) + "%" : "0%";
+            document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((asis / nominaLocal.length) * 100) + "%" : "0%";
         });
     }
 
-    // SISTEMA DE RESPALDO (BACKUP/RESTORE)
+    // RESPALDO Y RESTAURACIÓN
     async function exportarRespaldo() {
-        if(!confirm("¿Desea descargar una copia de seguridad de toda la base de datos?")) return;
-        const nom = await db.collection("nomina_institucional").get();
-        const asis = await db.collection("asistencia_ebnlp_final").get();
-        
-        const backup = {
-            fecha_creacion: new Date().toLocaleString(),
-            nomina: nom.docs.map(d => d.data()),
-            asistencia: asis.docs.map(d => d.data())
-        };
-
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "RESPALDO_LUCILA_PALACIOS_" + new Date().toLocaleDateString() + ".json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        if(!confirm("¿Exportar copia de seguridad?")) return;
+        const nS = await db.collection("nomina_institucional").get();
+        const aS = await db.collection("asistencia_ebnlp_final").get();
+        const backup = { nom: nS.docs.map(d => d.data()), asis: aS.docs.map(d => d.data()) };
+        const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url;
+        link.download = `RESPALDO_LUCILA_PALACIOS_${new Date().toLocaleDateString()}.json`;
+        link.click();
     }
 
     async function importarRespaldo(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-
+        const file = event.target.files[0]; if(!file) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
             const data = JSON.parse(e.target.result);
-            if(!confirm("¡ADVERTENCIA! Vas a restaurar datos. Esto NO borrará lo actual, solo añadirá lo del archivo. ¿Continuar?")) return;
-            
-            // Restaurar Nómina
-            for(let p of data.nomina) {
+            if(!confirm("¿Confirmar restauración? Se añadirán los registros del archivo.")) return;
+            for(let p of data.nom) {
                 const existe = nominaLocal.find(x => x.n === p.n);
                 if(!existe) await db.collection("nomina_institucional").add(p);
             }
-
-            // Restaurar Asistencia (solo las que no existan para evitar duplicados exactos)
-            alert("Restaurando asistencias... Por favor espere.");
-            for(let a of data.asistencia) {
-                await db.collection("asistencia_ebnlp_final").add(a);
-            }
-            alert("Restauración completada con éxito.");
+            alert("Restaurando datos... por favor espere.");
+            for(let a of data.asis) { await db.collection("asistencia_ebnlp_final").add(a); }
+            alert("Restauración finalizada.");
+            location.reload();
         };
         reader.readAsText(file);
-    }
-
-    async function procesarConsolidado() {
-        const mes = document.getElementById('mesReporte').value; if(!mes) return;
-        const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
-        const data = snap.docs.map(d => d.data());
-        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-        
-        const bCargo = document.getElementById('bodyConsCargo'); bCargo.innerHTML = "";
-        cargos.forEach(cargo => {
-            const nomC = nominaLocal.filter(x => x.c === cargo);
-            const asisC = data.filter(x => x.c === cargo && x.e !== "INASISTENCIA");
-            const fP = (asisC.filter(x => x.gender === 'F').length / 20).toFixed(2);
-            const mP = (asisC.filter(x => x.gender === 'M').length / 20).toFixed(2);
-            const tP = (parseFloat(fP) + parseFloat(mP)).toFixed(2);
-            const ef = nomC.length > 0 ? Math.round((tP / nomC.length) * 100) : 0;
-            bCargo.innerHTML += `<tr><td>${cargo}</td><td>${nomC.length}</td><td>${fP}</td><td>${mP}</td><td><strong>${tP}</strong></td><td>${ef}%</td></tr>`;
-        });
-
-        const bInd = document.getElementById('bodyConsIndiv'); bInd.innerHTML = "";
-        nominaLocal.forEach(p => {
-            const dP = data.filter(x => x.n === p.n);
-            const c = {A:0, R:0, PM:0, PP:0, V:0, I:0};
-            dP.forEach(x => {
-                if(x.e === "ASISTENCIA") c.A++; else if(x.e === "RETRASO") c.R++;
-                else if(x.e === "PERMISO MÉDICO") c.PM++; else if(x.e === "PERMISO PERSONAL") c.PP++;
-                else if(x.e === "VACACIONES") c.V++; else if(x.e === "INASISTENCIA") c.I++;
-            });
-            const tA = c.A + c.R + c.PM + c.PP + c.V;
-            const pR = (tA / 20).toFixed(2);
-            const ef = Math.round((tA / 20) * 100);
-            bInd.innerHTML += `<tr><td>${p.n}</td><td>${c.A}</td><td>${c.R}</td><td>${c.PM}</td><td>${c.PP}</td><td>${c.V}</td><td>${c.I}</td><td>${pR}</td><td>${ef}%</td></tr>`;
-        });
     }
 
     function verTab(id) {
@@ -388,9 +387,9 @@
     }
 
     function filtrarFichas() {
-        const val = document.getElementById('buscador').value.toLowerCase();
+        const v = document.getElementById('buscador').value.toLowerCase();
         document.querySelectorAll('.ficha').forEach(f => {
-            f.style.display = f.innerText.toLowerCase().includes(val) ? "block" : "none";
+            f.style.display = f.innerText.toLowerCase().includes(v) ? "block" : "none";
         });
     }
 
@@ -407,16 +406,16 @@
     
     function generarPDF() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.text("CONSOLIDADO MENSUAL E.B.N. LUCILA PALACIOS", 14, 15);
+        doc.text("CONSOLIDADO MENSUAL - E.B.N. LUCILA PALACIOS", 14, 15);
         doc.autoTable({ html: '#tablaConsCargo', startY: 25 });
         doc.addPage(); doc.text("AUDITORÍA INDIVIDUAL", 14, 15);
         doc.autoTable({ html: '#tablaIndividual', startY: 25 });
-        doc.save(`Consolidado_${document.getElementById('mesReporte').value}.pdf`);
+        doc.save(`REPORTE_MENSUAL_${document.getElementById('mesReporte').value}.pdf`);
     }
 
     function descargarExcel() {
         const wb = XLSX.utils.table_to_book(document.getElementById('tablaIndividual'));
-        XLSX.writeFile(wb, `Reporte_Individual_${document.getElementById('mesReporte').value}.xlsx`);
+        XLSX.writeFile(wb, `REPORTE_MENSUAL_${document.getElementById('mesReporte').value}.xlsx`);
     }
 </script>
 </body>
