@@ -21,7 +21,7 @@
         header { background: var(--azul); color: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--naranja); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .contenedor { max-width: 1300px; margin: auto; padding: 15px; }
 
-        /* Dashboard de Contadores Diarios */
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .dash-card { background: var(--blanco); padding: 15px; border-radius: 12px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .dash-card h4 { margin: 0; font-size: 0.8rem; color: #666; text-transform: uppercase; }
@@ -32,7 +32,7 @@
         .tab-btn { flex: 1; padding: 15px; background: #ddd; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
         .tab-btn.active { background: var(--naranja); color: white; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
-        /* Fichas de Marcaje (Semáforo) */
+        /* Fichas de Marcaje */
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
         .ficha { background: white; padding: 15px; border-radius: 15px; border: 1px solid #ddd; text-align: center; transition: 0.3s; position: relative; }
         .ficha p { font-weight: bold; font-size: 0.9rem; margin-bottom: 12px; color: var(--azul); min-height: 40px; display: flex; align-items: center; justify-content: center; }
@@ -40,11 +40,11 @@
         .btn-check { width: 100%; padding: 8px; margin: 3px 0; border: 1px solid #eee; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: 0.2s; }
         .btn-check:hover { filter: brightness(0.9); transform: scale(1.02); }
 
-        /* Colores de Filas en Tabla Diaria */
-        .row-asistencia { background-color: #d4edda !important; } /* Verde claro */
-        .row-retraso { background-color: #fff3cd !important; }    /* Amarillo claro */
-        .row-inasistencia { background-color: #f8d7da !important; } /* Rojo claro */
-        .row-permiso { background-color: #d1ecf1 !important; }    /* Celeste/Azul claro */
+        /* Colores de Filas */
+        .row-asistencia { background-color: #d4edda !important; }
+        .row-retraso { background-color: #fff3cd !important; }
+        .row-inasistencia { background-color: #f8d7da !important; }
+        .row-permiso { background-color: #d1ecf1 !important; }
 
         /* Tablas */
         .table-wrap { overflow-x: auto; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 15px; }
@@ -115,14 +115,7 @@
         <div class="table-wrap">
             <table id="tablaConsCargo">
                 <thead>
-                    <tr>
-                        <th>Cargo</th>
-                        <th>Nómina</th>
-                        <th>Prom. Hembras (F)</th>
-                        <th>Prom. Varones (M)</th>
-                        <th>Promedio Total</th>
-                        <th>% Efectividad</th>
-                    </tr>
+                    <tr><th>Cargo</th><th>Nómina</th><th>Prom. Hembras (F)</th><th>Prom. Varones (M)</th><th>Promedio Total</th><th>% Efectividad</th></tr>
                 </thead>
                 <tbody id="bodyConsCargo"></tbody>
             </table>
@@ -132,17 +125,7 @@
         <div class="table-wrap">
             <table id="tablaIndividual">
                 <thead>
-                    <tr>
-                        <th>Nombre del Trabajador</th>
-                        <th>Asis.</th>
-                        <th>Retr.</th>
-                        <th>P.Med.</th>
-                        <th>P.Pers.</th>
-                        <th>Vacac.</th>
-                        <th>Faltas</th>
-                        <th>Prom. Real</th>
-                        <th>% Efect.</th>
-                    </tr>
+                    <tr><th>Nombre</th><th>Asis.</th><th>Retr.</th><th>P.Med.</th><th>P.Pers.</th><th>Vacac.</th><th>Faltas</th><th>Prom. Real</th><th>% Efect.</th></tr>
                 </thead>
                 <tbody id="bodyConsIndiv"></tbody>
             </table>
@@ -180,7 +163,6 @@
 </div>
 
 <script>
-    // Configuración Firebase (Usando tus credenciales previas)
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -188,7 +170,7 @@
     let nominaLocal = [];
     document.getElementById('fechaFiltro').value = new Date().toISOString().split('T')[0];
 
-    // --- CARGA DE DATOS ---
+    // CARGA INICIAL
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
@@ -204,14 +186,13 @@
         });
     }
 
-    // --- LÓGICA DE ASISTENCIA (Semaforizada) ---
+    // REGISTRO DE ENTRADA
     async function marcar(nombre, estatus) {
         const fecha = document.getElementById('fechaFiltro').value;
         const turno = document.getElementById('turnoFiltro').value;
         const p = nominaLocal.find(x => x.n === nombre);
         let hE = "---", hS = "---", obs = "";
 
-        // Alerta de reglas (3 permisos / 3 faltas)
         if(estatus === "PERMISO PERSONAL" || estatus === "INASISTENCIA") {
             const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).where("mes", "==", fecha.substring(0,7)).get();
             let count = snap.docs.filter(d => d.data().e === estatus).length;
@@ -234,24 +215,48 @@
         dibujarPaseLista();
     }
 
+    // REGISTRO DE SALIDA CON VALIDACIÓN DE HORA (NUEVO)
     async function registrarSalida(nombre) {
         const fecha = document.getElementById('fechaFiltro').value;
+        const turno = document.getElementById('turnoFiltro').value;
         const p = nominaLocal.find(x => x.n === nombre);
-        let sugS = (p.c === 'Obrero' || p.c === 'Administrativo') ? (document.getElementById('turnoFiltro').value === 'MAÑANA' ? "12:45" : "17:30") : "12:00";
-        const hS = prompt(`Hora Salida para ${nombre}:`, sugS);
-        if(!hS) return;
+        
+        // Determinar hora oficial de salida
+        let hOficial = (p.c === 'Obrero' || p.c === 'Administrativo') 
+            ? (turno === 'MAÑANA' ? "12:45" : "17:30") 
+            : (turno === 'MAÑANA' ? "12:00" : "17:00");
+
+        const hS = prompt(`Hora Salida para ${nombre}:`, hOficial);
+        if (!hS) return;
+
+        let obsSalida = "";
+        const toMin = (t) => {
+            const [h, m] = t.split(':').map(Number);
+            return (h * 60) + m;
+        };
+
+        // Si sale antes de tiempo, pedir motivo igual que el retraso
+        if (toMin(hS) < toMin(hOficial)) {
+            obsSalida = prompt("EL TRABAJADOR SALE ANTES DE LA HORA. INDIQUE EL MOTIVO:");
+            if (obsSalida) obsSalida = "SALIDA ANTICIPADA: " + obsSalida;
+        }
 
         const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).where("f", "==", fecha).get();
-        if(!snap.empty) await db.collection("asistencia_ebnlp_final").doc(snap.docs[0].id).update({ hS });
+        if(!snap.empty) {
+            const docRef = db.collection("asistencia_ebnlp_final").doc(snap.docs[0].id);
+            const dataPrevia = snap.docs[0].data();
+            let obsFinal = dataPrevia.obs || "";
+            if (obsSalida) obsFinal += (obsFinal ? " | " : "") + obsSalida;
+
+            await docRef.update({ hS, obs: obsFinal });
+        }
         dibujarPaseLista();
     }
 
-    // Dibujar Fichas evitando duplicados
     async function dibujarPaseLista() {
         const fecha = document.getElementById('fechaFiltro').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
         const marcados = {}; snap.forEach(d => marcados[d.data().n] = d.data());
-        
         const cont = document.getElementById('fichasGrid'); cont.innerHTML = "";
         
         nominaLocal.forEach(p => {
@@ -265,8 +270,7 @@
                     <button class="btn-check" style="background:#fff3cd" onclick="marcar('${p.n}','RETRASO')">⚠️ RETRASO</button>
                     <button class="btn-check" style="background:#f8d7da" onclick="marcar('${p.n}','INASISTENCIA')">❌ INASISTENCIA</button>
                     <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','PERMISO MÉDICO')">🏥 P. MÉDICO</button>
-                    <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','PERMISO PERSONAL')">📄 P. PERSONAL</button>
-                    <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','VACACIONES')">🌴 VACACIONES</button>`;
+                    <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','PERMISO PERSONAL')">📄 P. PERSONAL</button>`;
             } else if (m.hS === "---" || m.hS === "") {
                 div.style.border = "2px solid var(--naranja)";
                 div.innerHTML = `<p>${p.n}</p><button class="btn-check" style="background:var(--azul); color:white; height:60px;" onclick="registrarSalida('${p.n}')">🚪 MARCAR SALIDA</button>`;
@@ -279,29 +283,23 @@
         cargarTablaDiaria();
     }
 
-    // --- CONSOLIDADO (Promedios Reales) ---
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
         const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
         
-        // 1. Por Cargo
         const bCargo = document.getElementById('bodyConsCargo'); bCargo.innerHTML = "";
         cargos.forEach(cargo => {
             const nomC = nominaLocal.filter(x => x.c === cargo);
             const asisC = data.filter(x => x.c === cargo && x.e !== "INASISTENCIA");
-            
-            // Promedios disgregados (Basado en 20 días)
             const fProm = (asisC.filter(x => x.gender === 'F').length / 20).toFixed(2);
             const mProm = (asisC.filter(x => x.gender === 'M').length / 20).toFixed(2);
             const totProm = (parseFloat(fProm) + parseFloat(mProm)).toFixed(2);
             const efec = nomC.length > 0 ? Math.round((totProm / nomC.length) * 100) : 0;
-            
             bCargo.innerHTML += `<tr><td>${cargo}</td><td>${nomC.length}</td><td>${fProm}</td><td>${mProm}</td><td><strong>${totProm}</strong></td><td>${efec}%</td></tr>`;
         });
 
-        // 2. Individual
         const bInd = document.getElementById('bodyConsIndiv'); bInd.innerHTML = "";
         nominaLocal.forEach(p => {
             const dP = data.filter(x => x.n === p.n);
@@ -318,7 +316,6 @@
         });
     }
 
-    // --- FUNCIONES AUXILIARES ---
     function cargarTablaDiaria() {
         const fecha = document.getElementById('fechaFiltro').value;
         db.collection("asistencia_ebnlp_final").where("f", "==", fecha).onSnapshot(snap => {
@@ -367,10 +364,10 @@
     
     function generarPDF() {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.setFontSize(14); doc.text("CONSOLIDADO MENSUAL E.B.N. LUCILA PALACIOS", 14, 15);
-        doc.autoTable({ html: '#tablaConsCargo', startY: 25, headStyles: {fillColor: [10, 33, 68]} });
+        doc.text("CONSOLIDADO MENSUAL E.B.N. LUCILA PALACIOS", 14, 15);
+        doc.autoTable({ html: '#tablaConsCargo', startY: 25 });
         doc.addPage(); doc.text("AUDITORÍA INDIVIDUAL", 14, 15);
-        doc.autoTable({ html: '#tablaIndividual', startY: 25, headStyles: {fillColor: [243, 156, 18]} });
+        doc.autoTable({ html: '#tablaIndividual', startY: 25 });
         doc.save(`Consolidado_${document.getElementById('mesReporte').value}.pdf`);
     }
 
