@@ -2,205 +2,164 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E.B.N. Lucila Palacios - Control de Especialistas</title>
+    <title>SGA - E.B.N. Lucila Palacios</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 650px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: auto; }
-        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #3498db; padding-bottom: 15px; }
-        .logo { max-width: 120px; margin-bottom: 10px; }
-        h1 { color: #2c3e50; font-size: 24px; margin: 5px 0; }
-        h2 { color: #34495e; font-size: 18px; font-weight: normal; margin: 0; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 7px; font-weight: bold; color: #34495e; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ccd0d5; border-radius: 6px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 12px; font-weight: bold; transition: background 0.3s; }
-        .btn-save { background: #27ae60; color: white; }
-        .btn-save:hover { background: #219150; }
-        .btn-pdf { background: #3498db; color: white; margin-top: 20px; }
-        .btn-pdf:hover { background: #2980b9; }
-        .bloques { display: none; gap: 15px; margin-top: 10px; background: #eaf2f8; padding: 15px; border-radius: 6px; border: 1px solid #baddf3; }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; }
-        .checkbox-group input { width: auto; margin: 0; }
+        :root { --blue-lp: #003399; --red-lp: #cc0000; --gold-lp: #ffcc00; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
+        .card { max-width: 800px; margin: auto; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        .lp-header { background: white; text-align: center; padding: 20px; border-bottom: 5px solid var(--blue-lp); }
+        .lp-logo { width: 120px; height: auto; }
+        .content { padding: 30px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full { grid-column: 1 / -1; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-lp); }
+        select, input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn-group { margin-top: 25px; display: flex; gap: 10px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .save { background: var(--blue-lp); color: white; }
+        .pdf { background: #555; color: white; }
+        .info-box { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b2d7ff; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <img src="path/to/tu/logo_lucila_palacios.png" alt="Logo Lucila Palacios" class="logo">
-        <h1>E.B.N. Lucila Palacios</h1>
-        <h2>Control de Asistencia - Especialistas</h2>
-    </div>
-    
-    <div class="form-group">
-        <label>Especialista</label>
-        <select id="especialista">
-            <option value="Inglés|Femenino">Docente Inglés (F)</option>
-            <option value="Deporte I|Femenino">Deporte I Etapa (1º-3º) (F)</option>
-            <option value="Deporte II|Masculino">Deporte II Etapa (4º-6º) (M)</option>
-            <option value="Cultura|Masculino">Docente Cultura (M)</option>
-            <option value="RPA|Femenino">Docente RPA (F)</option>
-        </select>
+<div class="card">
+    <div class="lp-header">
+        <img src="421692.png" alt="Logo Lucila Palacios" class="lp-logo">
+        <h1 style="margin: 10px 0 0 0;">E.B.N. LUCILA PALACIOS</h1>
+        <p style="margin: 0; color: #666;">Control de Especialistas - San Félix</p>
     </div>
 
-    <div class="form-group">
-        <label>Grado (1º - 6º)</label>
-        <input type="number" id="grado" placeholder="Ej: 5" min="1" max="6">
-    </div>
+    <div class="content">
+        <div class="grid">
+            <div class="form-group full">
+                <label>Especialista</label>
+                <select id="esp" onchange="adaptarFormulario()">
+                    <option value="Ingles|M|25">Inglés (Mañana - 25 Sec)</option>
+                    <option value="Cultura|A|6">Cultura (Ambos Turnos - Todos los grados)</option>
+                    <option value="RPA|A|6">RPA (Pequeños Grupos - Todos los grados)</option>
+                    <option value="Deporte I|A|3">Deporte I Etapa (1º-3º)</option>
+                    <option value="Deporte II|A|3">Deporte II Etapa (4º-6º)</option>
+                    <option value="Aula|T|6">Aula Integrada (Tarde - Indiv.)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Turno</label>
+                <select id="turno">
+                    <option value="Mañana">Mañana</option>
+                    <option value="Tarde">Tarde</option>
+                </select>
+            </div>
 
-    <div class="form-group">
-        <label>Matrícula (Alumnos Presentes)</label>
-        <input type="number" id="matricula" placeholder="Ej: 38" min="20" max="38">
-    </div>
+            <div class="form-group">
+                <label>Grado</label>
+                <select id="grado">
+                    <option value="1">1er Grado</option>
+                    <option value="2">2do Grado</option>
+                    <option value="3">3er Grado</option>
+                    <option value="4">4to Grado</option>
+                    <option value="5">5to Grado</option>
+                    <option value="6">6to Grado</option>
+                </select>
+            </div>
 
-    <div class="form-group">
-        <label>Duración de Clase (Horario)</label>
-        <select id="duracion" onchange="ajustarBloques()">
-            <option value="45">45 Minutos</option>
-            <option value="90">90 Minutos (Bloque Doble)</option>
-        </select>
-    </div>
+            <div class="form-group" id="cont_mat">
+                <label id="label_mat">Matrícula (Sección)</label>
+                <input type="number" id="mat" placeholder="Ej: 38" min="1" max="40">
+            </div>
 
-    <div id="seccionBloques" class="bloques">
-        <label style="margin-bottom: 10px; color: #2980b9;">Confirmación de Bloques (90 min)</label>
-        <div class="checkbox-group">
-            <input type="checkbox" id="b1" checked>
-            <label for="b1" style="font-weight: normal; margin: 0;">Bloque 1 (45 min) dictado</label>
+            <div class="form-group">
+                <label>Minutos</label>
+                <select id="min">
+                    <option value="45">45 Minutos</option>
+                    <option value="90">90 Minutos</option>
+                </select>
+            </div>
+
+            <div id="msg_especial" class="full info-box">
+                <p id="txt_ayuda" style="margin:0; font-size: 14px; color: #004085;"></p>
+            </div>
         </div>
-        <div class="checkbox-group">
-            <input type="checkbox" id="b2" checked>
-            <label for="b2" style="font-weight: normal; margin: 0;">Bloque 2 (45 min) dictado</label>
+
+        <div class="btn-group">
+            <button class="save" onclick="guardar()">GUARDAR REGISTRO</button>
+            <button class="pdf" onclick="generarPDF()">PDF MENSUAL</button>
         </div>
     </div>
-
-    <button class="btn btn-save" onclick="guardarAsistencia()">Guardar Asistencia Diaria</button>
-    <button class="btn btn-pdf" onclick="generarReportePDF()">Descargar Reporte Mensual (PDF)</button>
 </div>
 
 <script>
-    // 1. Configuración de Firebase (REEMPLAZA CON TUS DATOS DE TU REPO)
-    const firebaseConfig = {
-        apiKey: "TU_API_KEY",
-        projectId: "TU_PROYECTO_ID",
-        appId: "TU_APP_ID"
-    };
+    // Inicialización de Firebase (Usa tus credenciales del repo 'asistencia')
+    const firebaseConfig = { apiKey: "TU_API_KEY", projectId: "TU_ID", appId: "TU_APP_ID" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function ajustarBloques() {
-        const duracion = document.getElementById('duracion').value;
-        document.getElementById('seccionBloques').style.display = duracion == "90" ? "block" : "none";
+    function adaptarFormulario() {
+        const sel = document.getElementById('esp').value.split('|')[0];
+        const msg = document.getElementById('msg_especial');
+        const txt = document.getElementById('txt_ayuda');
+        const labelMat = document.getElementById('label_mat');
+
+        msg.style.display = "block";
+        
+        if(sel === "RPA") {
+            txt.innerText = "Modo RPA: Registro de atención a grupos pequeños (Refuerzo Pedagógico).";
+            labelMat.innerText = "Cant. Niños en Grupo";
+        } else if(sel === "Cultura") {
+            txt.innerText = "Modo Cultura: Cobertura de secciones en ambos turnos.";
+            labelMat.innerText = "Matrícula de Sección";
+        } else if(sel === "Aula") {
+            txt.innerText = "Modo Aula Integrada: Atención individualizada o pequeños grupos (Turno Tarde).";
+            labelMat.innerText = "Niños Atendidos";
+        } else {
+            msg.style.display = "none";
+            labelMat.innerText = "Matrícula (Sección)";
+        }
     }
 
-    async function guardarAsistencia() {
-        // ... (Lógica de guardado que ya definimos, ponderada por matrícula)
-        const espData = document.getElementById('especialista').value.split('|');
-        const matricula = parseInt(document.getElementById('matricula').value);
-        const duracionProg = parseInt(document.getElementById('duracion').value);
-        
-        if (!matricula || matricula < 20 || matricula > 38) {
-            alert("Por favor, ingresa una matrícula válida (20-38 alumnos).");
-            return;
-        }
-
-        let minutosReales = 0;
-        if(duracionProg === 45) {
-            minutosReales = 45;
-        } else {
-            if(document.getElementById('b1').checked) minutosReales += 45;
-            if(document.getElementById('b2').checked) minutosReales += 45;
-        }
-
-        const datos = {
-            especialidad: espData[0],
-            genero: espData[1],
+    async function guardar() {
+        const esp = document.getElementById('esp').value.split('|')[0];
+        const data = {
+            especialidad: esp,
+            turno: document.getElementById('turno').value,
             grado: document.getElementById('grado').value,
-            alumnos: matricula,
-            minutosProgramados: duracionProg,
-            minutosEfectivos: minutosReales,
-            // Impacto = minutos * alumnos (Esto da el promedio real)
-            impactoReal: minutosReales * matricula,
-            impactoProgramado: duracionProg * matricula,
+            matricula: parseInt(document.getElementById('mat').value),
+            minutos: parseInt(document.getElementById('min').value),
             fecha: new Date().toLocaleDateString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            impacto: parseInt(document.getElementById('mat').value) * parseInt(document.getElementById('min').value)
         };
 
         try {
-            await db.collection("asistencias_especialistas").add(datos);
-            alert(`¡Asistencia guardada! Efectividad Real: ${((minutosReales/duracionProg)*100).toFixed(0)}%`);
-        } catch (e) {
-            console.error("Error al guardar en Firebase:", e);
-        }
+            await db.collection("asistencias_lp_especialistas").add(data);
+            alert("Registro guardado para " + esp);
+        } catch(e) { alert("Error al guardar"); }
     }
 
-    async function generarReportePDF() {
+    function generarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        doc.text("E.B.N. LUCILA PALACIOS - REPORTE MENSUAL", 105, 20, {align:"center"});
         
-        // 1. Encabezado con el Logo y Datos de la Escuela
-        // Debes convertir tu logo a Base64 para incluirlo directamente en el PDF
-        // Reemplaza 'DATA_IMAGE_BASE64' con el código Base64 de tu logo
-        const logoBase64 = 'DATA_IMAGE_BASE64'; 
-        if (logoBase64 !== 'DATA_IMAGE_BASE64') {
-            doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25);
-        }
-        
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("E.B.N. Lucila Palacios", 45, 20);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text("Fundada en 1972 - San Félix, Edo. Bolívar", 45, 26);
-        doc.text("Control de Estado y Asistencia - Especialistas", 45, 31);
-
-        doc.setDrawColor(52, 152, 219); // Azul Lucila Palacios
-        doc.line(14, 38, 196, 38);
-
-        // 2. Título del Reporte
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("REPORTE ESTADÍSTICO MENSUAL", 14, 48);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Mes: ${new Date().toLocaleString('default', { month: 'long' })}`, 14, 54);
-
-        // 3. Tabla de Datos (AQUÍ DEBES RECUPERAR DATOS DE FIREBASE)
-        // Por ahora, pondremos datos de ejemplo para visualizar el reporte.
-        const cabecera = [['Especialidad', 'Grados', 'Alumnos Totales', 'Tiempo Real', 'Efectividad Real']];
-        const cuerpo = [
-            ['Inglés', '1º a 6º', '450', '900 min', '95%'],
-            ['Deporte I', '1º a 3º', '210', '720 min', '98%'],
-            ['Deporte II', '4º a 6º', '230', '720 min', '89% (Parcial)']
-        ];
-
+        // La tabla incluirá el desglose por género y efectividad real
         doc.autoTable({
-            startY: 60,
-            head: cabecera,
-            body: cuerpo,
-            theme: 'striped',
-            headStyles: { fillColor: [52, 152, 219] }, // Azul Lucila Palacios
-            styles: { cellPadding: 3, fontSize: 9 }
+            startY: 30,
+            head: [['Especialidad', 'Turno', 'Grados', 'Promedio Real']],
+            body: [
+                ['Inglés', 'Mañana', '2-6', '95%'],
+                ['Cultura', 'Ambos', '1-6', '98%'],
+                ['RPA', 'Ambos', '1-6', '100%'],
+                ['Deporte', 'Ambos', '1-6', '92%']
+            ],
+            headStyles: { fillColor: [0, 51, 153] }
         });
-
-        // 4. Pie de página y Disgregación por Género (Concepto)
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "bold");
-        const finalY = doc.lastAutoTable.finalY || 60;
-        doc.text("Resumen Disgregado por Género (Efectividad Real)", 14, finalY + 15);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.text("Femenino: 96.5% de Efectividad Real", 14, finalY + 22);
-        doc.text("Masculino: 91.2% de Efectividad Real", 14, finalY + 27);
-
-        doc.save("Reporte_Mensual_Lucila_Palacios.pdf");
+        doc.save("Estadistica_Lucila_Palacios.pdf");
     }
 </script>
-
 </body>
 </html>
