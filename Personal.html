@@ -12,11 +12,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; }
+        :root { 
+            --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; 
+            --celeste: #3498db; --gris: #f4f4f4; --blanco: #ffffff; 
+        }
+        
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
         header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
         .contenedor { max-width: 1300px; margin: auto; padding: 10px; }
 
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .dash-card { background: white; padding: 12px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .dash-card .valor { font-size: 1.6rem; font-weight: bold; color: var(--azul); display: block; }
@@ -25,6 +30,7 @@
         .tab-btn { flex: 1; padding: 12px; background: #ddd; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
+        /* Fichas */
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .ficha { background: white; padding: 12px; border-radius: 12px; border: 1px solid #ddd; text-align: center; position: relative; }
         .badge-vigilante { position: absolute; top: 5px; right: 5px; background: var(--rojo); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 3px; font-weight: bold; }
@@ -34,6 +40,14 @@
         th { background: var(--azul); color: white; padding: 10px; border: 1px solid #334; }
         td { padding: 8px; border: 1px solid #eee; text-align: center; }
         
+        /* Colores de Estatus en Tabla */
+        .row-asistencia { background-color: #d4edda !important; color: #155724; font-weight: bold; }
+        .row-inasistencia { background-color: #f8d7da !important; color: #721c24; font-weight: bold; }
+        .row-retraso { background-color: #fff3cd !important; color: #856404; font-weight: bold; }
+        .row-actividad { background-color: #d1ecf1 !important; color: #0c5460; font-weight: bold; }
+        .row-permiso-p { background-color: #e2e3e5 !important; color: #383d41; }
+        .row-permiso-m { background-color: #e8daef !important; color: #6e2c00; }
+
         .sec-header { background: var(--naranja); color: white; padding: 8px 15px; border-radius: 5px; margin-top: 20px; font-weight: bold; }
         .hidden { display: none; }
         .btn-check { width: 100%; padding: 6px; margin: 2px 0; border-radius: 4px; border: 1px solid #ddd; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
@@ -43,7 +57,7 @@
 
 <header>
     <h1>E.B.N. "LUCILA PALACIOS"</h1>
-    <p>SISTEMA DE ASISTENCIA - CONTROL DE SEGURIDAD POR GRUPOS</p>
+    <p>CONTROL DE PERSONAL - REGISTRO POR COLORES</p>
 </header>
 
 <div class="contenedor">
@@ -65,21 +79,21 @@
     <div id="tabReg" class="tab-content">
         <div style="background:white; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:15px; border-left: 5px solid var(--azul);">
             <b>Fecha:</b> <input type="date" id="fechaFiltro" onchange="dibujarPaseLista(); cargarTablaDiaria();">
-            <b>Turno Actual:</b>
+            <b>Turno:</b>
             <select id="turnoFiltro" onchange="dibujarPaseLista()">
                 <option value="MAÑANA">MAÑANA (L-V)</option>
                 <option value="TARDE">TARDE (L-V)</option>
                 <option value="VIGILANCIA GRUPO I">VIGILANCIA GRUPO I</option>
                 <option value="VIGILANCIA GRUPO II">VIGILANCIA GRUPO II</option>
-                <option value="VIGILANCIA DÍA (CONTINGENCIA)">VIGILANCIA DÍA (SÁB/DOM/FERIADO)</option>
-                <option value="VIGILANCIA NOCHE (CONTINGENCIA)">VIGILANCIA NOCHE (SÁB/DOM/FERIADO)</option>
+                <option value="VIGILANCIA DÍA (CONTINGENCIA)">VIGILANCIA DÍA (FINES DE SEMANA)</option>
+                <option value="VIGILANCIA NOCHE (CONTINGENCIA)">VIGILANCIA NOCHE (FINES DE SEMANA)</option>
             </select>
             <input type="text" id="buscador" placeholder="Filtrar por nombre..." onkeyup="filtrarFichas()" style="flex-grow:1; padding:8px;">
         </div>
 
         <div id="fichasGrid" class="grid-fichas"></div>
 
-        <div class="sec-header">REGISTROS DEL DÍA</div>
+        <div class="sec-header">HISTORIAL DE REGISTROS (VISTA POR COLORES)</div>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Nombre</th><th>Cargo</th><th>Estatus</th><th>Entrada</th><th>Salida</th><th>Obs.</th><th>Acción</th></tr></thead>
@@ -108,15 +122,11 @@
                 <tbody id="bodyConsIndiv"></tbody>
             </table>
         </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="descargarExcel()" style="flex:1; background:var(--verde); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">EXCEL</button>
-            <button onclick="generarPDF()" style="flex:1; background:var(--rojo); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">PDF</button>
-        </div>
     </div>
 
     <div id="tabNom" class="tab-content hidden">
         <div style="background:white; padding:20px; border-radius:10px; margin-bottom:15px; border-top: 4px solid var(--azul);">
-            <h3>Gestión de Personal</h3>
+            <h3>Gestión de Nómina</h3>
             <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap:10px;">
                 <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase; padding:8px;">
                 <select id="nCargo" onchange="toggleGrupoInput()">
@@ -126,19 +136,19 @@
                     <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
                     <option value="Vigilante">Vigilante</option>
                 </select>
-                <select id="nGrupo">
-                    <option value="N/A">Sin Grupo (Personal L-V)</option>
+                <select id="nGrupo" disabled>
+                    <option value="N/A">N/A (Personal L-V)</option>
                     <option value="GRUPO I">GRUPO I (Vigilancia)</option>
                     <option value="GRUPO II">GRUPO II (Vigilancia)</option>
                 </select>
                 <select id="nGenero"><option value="F">F</option><option value="M">M</option></select>
-                <button onclick="agregarPersonal()" style="background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">AÑADIR</button>
+                <button onclick="agregarPersonal()" style="background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR</button>
             </div>
         </div>
 
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo (Solo Vigilancia)</th><th>Género</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Género</th><th>Acciones</th></tr></thead>
                 <tbody id="bodyNomina"></tbody>
             </table>
         </div>
@@ -146,7 +156,7 @@
 </div>
 
 <script>
-    // Inicialización Firebase
+    // Configuración Firebase
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -162,74 +172,53 @@
         dibujarPaseLista();
     });
 
-    // Lógica de Fichas con Filtro de Grupos para Vigilantes
-    function dibujarPaseLista() {
-        const fecha = document.getElementById('fechaFiltro').value;
-        const turno = document.getElementById('turnoFiltro').value;
-        
-        db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get().then(snap => {
-            const marcados = {}; snap.forEach(d => marcados[d.data().n] = d.data());
-            const cont = document.getElementById('fichasGrid'); cont.innerHTML = "";
+    // Función: Cargar Tabla Diaria con COLORES según Estatus
+    function cargarTablaDiaria() {
+        const f = document.getElementById('fechaFiltro').value;
+        db.collection("asistencia_ebnlp_final").where("f", "==", f).onSnapshot(snap => {
+            const b = document.getElementById('bodyDia'); b.innerHTML = "";
+            let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
             
-            nominaLocal.forEach(p => {
-                let opacidad = 1;
-                let esVigilante = p.c === "Vigilante";
-                
-                // Si el turno es de vigilancia específica (G1 o G2)
-                if(turno.includes("GRUPO I") || turno.includes("GRUPO II")) {
-                    if(!esVigilante || !turno.includes(p.grupo)) opacidad = 0.25;
-                } 
-                // Si el turno es Mañana/Tarde (Personal administrativo/docente)
-                else if(turno === "MAÑANA" || turno === "TARDE") {
-                    if(esVigilante) opacidad = 0.25;
+            snap.forEach(doc => {
+                const d = doc.data(); 
+                if(d.e !== "INASISTENCIA") counts[d.c]++;
+
+                // Lógica de color de fila
+                let claseColor = "";
+                switch(d.e) {
+                    case "ASISTENCIA": claseColor = "row-asistencia"; break;
+                    case "INASISTENCIA": claseColor = "row-inasistencia"; break;
+                    case "RETRASO": claseColor = "row-retraso"; break;
+                    case "ACTIVIDAD INST.": claseColor = "row-actividad"; break;
+                    case "PERMISO PERSONAL": claseColor = "row-permiso-p"; break;
+                    case "PERMISO MÉDICO": claseColor = "row-permiso-m"; break;
                 }
 
-                const div = document.createElement('div'); div.className = "ficha"; div.style.opacity = opacidad;
-                const m = marcados[p.n];
-                
-                let badge = esVigilante ? `<span class="badge-vigilante">${p.grupo}</span>` : "";
-
-                if(!m) {
-                    div.innerHTML = `${badge}<p>${p.n}</p>
-                        <button class="btn-check" style="background:#d4edda" onclick="marcar('${p.n}','ASISTENCIA')">✅ ASISTENCIA</button>
-                        <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','ACTIVIDAD INST.')">🏛️ ACT. INST.</button>
-                        <button class="btn-check" style="background:#fff3cd" onclick="marcar('${p.n}','RETRASO')">⚠️ RETRASO</button>
-                        <button class="btn-check" style="background:#f8d7da" onclick="marcar('${p.n}','INASISTENCIA')">❌ INASISTENCIA</button>
-                        <button class="btn-check" style="background:#e2e3e5" onclick="marcar('${p.n}','PERMISO MÉDICO')">🏥 P. MÉDICO</button>
-                        <button class="btn-check" style="background:#fff" onclick="marcar('${p.n}','PERMISO PERSONAL')">📄 P. PERSONAL</button>`;
-                } else if (m.hS === "---" || m.hS === "") {
-                    div.innerHTML = `<p>${p.n}</p><button class="btn-check" style="background:var(--azul); color:white; height:45px;" onclick="registrarSalida('${p.n}')">🚪 CERRAR SALIDA</button>`;
-                } else {
-                    div.style.background = "#eee"; div.innerHTML = `<p>${p.n}</p><small>✓ FINALIZADO</small>`;
-                }
-                cont.appendChild(div);
+                b.innerHTML += `<tr class="${claseColor}">
+                    <td>${d.n}</td><td>${d.c}</td><td>${d.e}</td>
+                    <td>${d.hE}</td><td>${d.hS}</td><td>${d.obs}</td>
+                    <td><button onclick="db.collection('asistencia_ebnlp_final').doc('${doc.id}').delete()" style="cursor:pointer; background:none; border:none;">🗑️</button></td>
+                </tr>`;
             });
+            
+            document.getElementById('dDoc').innerText = counts.Docente;
+            document.getElementById('dObr').innerText = counts.Obrero;
+            document.getElementById('dAdm').innerText = counts.Administrativo;
+            document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
+            document.getElementById('dVig').innerText = counts.Vigilante;
         });
-        cargarTablaDiaria();
-    }
-
-    // Bloqueo de inputs de grupo si no es Vigilante
-    function toggleGrupoInput() {
-        const cargo = document.getElementById('nCargo').value;
-        const grupoSelect = document.getElementById('nGrupo');
-        if(cargo !== "Vigilante") {
-            grupoSelect.value = "N/A";
-            grupoSelect.disabled = true;
-        } else {
-            grupoSelect.disabled = false;
-        }
     }
 
     async function marcar(nombre, estatus) {
         const fecha = document.getElementById('fechaFiltro').value;
-        const mesActual = fecha.substring(0,7);
         const p = nominaLocal.find(x => x.n === nombre);
         const turno = document.getElementById('turnoFiltro').value;
+        const mesActual = fecha.substring(0,7);
 
-        // Regla de 3 Permisos Personales
+        // Límite Permisos Personales
         if(estatus === "PERMISO PERSONAL") {
             const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).where("mes", "==", mesActual).where("e", "==", "PERMISO PERSONAL").get();
-            if(snap.size >= 3) { alert("🚫 BLOQUEO: Límite de 3 permisos personales alcanzado este mes."); return; }
+            if(snap.size >= 3) { alert("🚫 BLOQUEO: Límite de 3 permisos personales alcanzado."); return; }
         }
 
         let hE = "---", hS = "---", obs = "";
@@ -254,11 +243,44 @@
         dibujarPaseLista();
     }
 
+    function dibujarPaseLista() {
+        const fecha = document.getElementById('fechaFiltro').value;
+        const turno = document.getElementById('turnoFiltro').value;
+        db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get().then(snap => {
+            const marcados = {}; snap.forEach(d => marcados[d.data().n] = d.data());
+            const cont = document.getElementById('fichasGrid'); cont.innerHTML = "";
+            nominaLocal.forEach(p => {
+                let opacidad = 1;
+                if(turno.includes("GRUPO") && (p.c !== "Vigilante" || !turno.includes(p.grupo))) opacidad = 0.25;
+                else if((turno === "MAÑANA" || turno === "TARDE") && p.c === "Vigilante") opacidad = 0.25;
+
+                const div = document.createElement('div'); div.className = "ficha"; div.style.opacity = opacidad;
+                const m = marcados[p.n];
+                let badge = p.c === "Vigilante" ? `<span class="badge-vigilante">${p.grupo}</span>` : "";
+
+                if(!m) {
+                    div.innerHTML = `${badge}<p>${p.n}</p>
+                        <button class="btn-check" style="background:#d4edda" onclick="marcar('${p.n}','ASISTENCIA')">✅ ASISTENCIA</button>
+                        <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','ACTIVIDAD INST.')">🏛️ ACT. INST.</button>
+                        <button class="btn-check" style="background:#fff3cd" onclick="marcar('${p.n}','RETRASO')">⚠️ RETRASO</button>
+                        <button class="btn-check" style="background:#f8d7da" onclick="marcar('${p.n}','INASISTENCIA')">❌ INASISTENCIA</button>
+                        <button class="btn-check" style="background:#e2e3e5" onclick="marcar('${p.n}','PERMISO MÉDICO')">🏥 P. MÉDICO</button>
+                        <button class="btn-check" style="background:#fff" onclick="marcar('${p.n}','PERMISO PERSONAL')">📄 P. PERSONAL</button>`;
+                } else if (m.hS === "---" || m.hS === "") {
+                    div.innerHTML = `<p>${p.n}</p><button class="btn-check" style="background:var(--azul); color:white; height:45px;" onclick="registrarSalida('${p.n}')">🚪 CERRAR SALIDA</button>`;
+                } else {
+                    div.style.background = "#eee"; div.innerHTML = `<p>${p.n}</p><small>✓ FINALIZADO</small>`;
+                }
+                cont.appendChild(div);
+            });
+        });
+        cargarTablaDiaria();
+    }
+
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
-        
         const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
         let res = { Docente:{t:0,a:0,i:0}, Obrero:{t:0,a:0,i:0}, Administrativo:{t:0,a:0,i:0}, "CNAE (Cocinera)":{t:0,a:0,i:0}, Vigilante:{t:0,a:0,i:0} };
 
@@ -271,10 +293,7 @@
                 else if(x.e === "PERMISO PERSONAL") c.PP++; else if(x.e === "INASISTENCIA") c.I++;
             });
             let totalA = c.A + c.AI + c.R + c.PM + c.PP;
-            let cargoGrupo = p.c === "Vigilante" ? `${p.c} (${p.grupo})` : p.c;
-            
-            bI.innerHTML += `<tr><td>${p.n}</td><td>${cargoGrupo}</td><td>${c.A}</td><td>${c.AI}</td><td>${c.R}</td><td>${c.PM}</td><td>${c.PP}</td><td>${c.I}</td><td>${(totalA/20).toFixed(2)}</td><td>${Math.round((totalA/20)*100)}%</td></tr>`;
-            
+            bI.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${c.A}</td><td>${c.AI}</td><td>${c.R}</td><td>${c.PM}</td><td>${c.PP}</td><td>${c.I}</td><td>${(totalA/20).toFixed(2)}</td><td>${Math.round((totalA/20)*100)}%</td></tr>`;
             if(res[p.c]) { res[p.c].t++; res[p.c].a += totalA; res[p.c].i += c.I; }
         });
 
@@ -287,35 +306,24 @@
         }
     }
 
-    function cargarTablaDiaria() {
-        const f = document.getElementById('fechaFiltro').value;
-        db.collection("asistencia_ebnlp_final").where("f", "==", f).onSnapshot(snap => {
-            const b = document.getElementById('bodyDia'); b.innerHTML = "";
-            let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
-            snap.forEach(doc => {
-                const d = doc.data(); if(d.e !== "INASISTENCIA") counts[d.c]++;
-                b.innerHTML += `<tr><td>${d.n}</td><td>${d.c}</td><td>${d.e}</td><td>${d.hE}</td><td>${d.hS}</td><td>${d.obs}</td>
-                    <td><button onclick="db.collection('asistencia_ebnlp_final').doc('${doc.id}').delete()">🗑️</button></td></tr>`;
-            });
-            document.getElementById('dDoc').innerText = counts.Docente;
-            document.getElementById('dObr').innerText = counts.Obrero;
-            document.getElementById('dAdm').innerText = counts.Administrativo;
-            document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
-            document.getElementById('dVig').innerText = counts.Vigilante;
-        });
+    function toggleGrupoInput() {
+        const cargo = document.getElementById('nCargo').value;
+        const grupoSelect = document.getElementById('nGrupo');
+        if(cargo !== "Vigilante") { grupoSelect.value = "N/A"; grupoSelect.disabled = true; } 
+        else { grupoSelect.disabled = false; }
     }
 
     function renderizarNomina() {
         const b = document.getElementById('bodyNomina'); b.innerHTML = "";
         nominaLocal.forEach(p => {
-            let btnGrupo = p.c === "Vigilante" ? `<button onclick="cambiarGrupo('${p.id}','${p.grupo}')" style="background:var(--azul); color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">🔄 CAMBIAR GRUPO</button>` : "N/A";
-            b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td><strong>${p.grupo}</strong></td><td>${p.gender}</td>
-                <td>${btnGrupo} <button onclick="eliminarNomina('${p.id}')" style="background:var(--rojo); color:white; border:none; padding:4px; border-radius:3px; cursor:pointer;">❌</button></td></tr>`;
+            let btnG = p.c === "Vigilante" ? `<button onclick="cambiarGrupo('${p.id}','${p.grupo}')">🔄 GRUPO</button>` : "N/A";
+            b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.grupo}</td><td>${p.gender}</td>
+                <td>${btnG} <button onclick="eliminarNomina('${p.id}')">❌</button></td></tr>`;
         });
     }
 
     async function cambiarGrupo(id, act) {
-        const nG = prompt("Cambiar a: 1. GRUPO I | 2. GRUPO II | 3. N/A", act);
+        const nG = prompt("1. GRUPO I | 2. GRUPO II | 3. N/A", act);
         let v = (nG==="1")?"GRUPO I":(nG==="2")?"GRUPO II":(nG==="3")?"N/A":act;
         await db.collection("nomina_institucional").doc(id).update({ grupo: v });
     }
@@ -336,8 +344,6 @@
         document.getElementById('nNombre').value = "";
     }
     async function eliminarNomina(id) { if(confirm("¿Eliminar?")) await db.collection("nomina_institucional").doc(id).delete(); }
-    function generarPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("REPORTE MENSUAL", 10, 10); doc.autoTable({ html: '#tablaIndividual' }); doc.save("Reporte.pdf"); }
-    function descargarExcel() { const wb = XLSX.utils.table_to_book(document.getElementById('tablaIndividual')); XLSX.writeFile(wb, "Reporte.xlsx"); }
 </script>
 </body>
 </html>
