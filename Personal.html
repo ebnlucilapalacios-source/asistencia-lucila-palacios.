@@ -10,40 +10,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; }
+        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; --marron: #5d4037; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
         header { background: var(--azul); color: white; text-align: center; padding: 12px; border-bottom: 5px solid var(--naranja); }
         
-        /* Dashboard Restaurado (Captura 438611) */
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; padding: 10px; }
+        /* Dashboard (Captura 438611 y 438770) */
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 10px; }
         .dash-card { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .dash-card h4 { margin: 0; color: #666; font-size: 0.9rem; }
         .dash-card .valor { font-size: 1.8rem; font-weight: bold; color: var(--azul); }
 
-        /* Tabs (Captura 438611) */
         .tabs { display: flex; gap: 5px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 15px; border: none; border-radius: 5px; font-weight: bold; background: #ddd; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 15px; border: none; border-radius: 5px; font-weight: bold; background: #ddd; cursor: pointer; text-transform: uppercase; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Fichas y Bloqueo */
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 10px; }
         .ficha { background: white; padding: 12px; border-radius: 12px; border: 1px solid #ddd; text-align: center; position: relative; }
-        .vigilante-bloqueado { opacity: 0.3; pointer-events: none; filter: grayscale(1); background: #f9f9f9; }
-        .vigilante-bloqueado::after { content: "NO TOCA GUARDIA"; position: absolute; top: 40%; left: 0; width: 100%; color: var(--rojo); font-weight: bold; font-size: 0.7rem; }
+        .vigilante-bloqueado { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
 
         .btn-check { width: 100%; padding: 7px; margin: 2px 0; border: 1px solid #eee; border-radius: 5px; cursor: pointer; font-size: 0.65rem; font-weight: bold; }
 
-        /* Tablas y Reportes */
-        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
         th { background: var(--azul); color: white; padding: 10px; text-transform: uppercase; }
         td { padding: 10px; border: 1px solid #eee; text-align: center; }
-        .sec-header { background: var(--naranja); color: white; padding: 12px; margin: 10px; font-weight: bold; border-radius: 5px; }
+        .sec-header { background: var(--naranja); color: white; padding: 12px; margin: 10px; font-weight: bold; border-radius: 5px; text-transform: uppercase; }
 
         .hidden { display: none; }
         input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        .btn-excel { background: var(--verde); color: white; border: none; padding: 15px; width: 48%; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .btn-pdf { background: var(--rojo); color: white; border: none; padding: 15px; width: 48%; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        /* Botones Especiales */
+        .btn-respaldo { background: var(--marron); color: white; }
+        .btn-restaurar { background: var(--rojo); color: white; }
+        .btn-excel { background: var(--verde); color: white; }
+        .btn-pdf { background: var(--rojo); color: white; }
+        .action-btn { border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; margin: 5px; }
     </style>
 </head>
 <body>
@@ -51,8 +52,6 @@
 <header><h2>E.B.N. "LUCILA PALACIOS"</h2></header>
 
 <div class="dashboard">
-    <div class="dash-card"><h4>Docentes</h4><span class="valor" id="dDoc">0</span></div>
-    <div class="dash-card"><h4>Obreros</h4><span class="valor" id="dObr">0</span></div>
     <div class="dash-card"><h4>Admin.</h4><span class="valor" id="dAdm">0</span></div>
     <div class="dash-card"><h4>CNAE</h4><span class="valor" id="dCnae">0</span></div>
     <div class="dash-card"><h4>Vigilancia</h4><span class="valor" id="dVig">0</span></div>
@@ -61,14 +60,14 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="verTab('tabReg')">DIARIO</button>
-    <button class="tab-btn" onclick="verTab('tabCons')">MENSUAL/PDF</button>
-    <button class="tab-btn" onclick="verTab('tabNom')">PERSONAL</button>
+    <button class="tab-btn" onclick="verTab('tabCons')">MENSUAL</button>
+    <button class="tab-btn" onclick="verTab('tabNom')">NÓMINA</button>
 </div>
 
 <div id="tabReg" class="tab-content">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; display:flex; gap:10px; align-items:center; border: 2px solid var(--azul);">
         <b>Fecha:</b> <input type="date" id="fechaFiltro" onchange="dibujarPaseLista()">
-        <b>Vigilancia Activa:</b> 
+        <b>Guardia:</b> 
         <select id="grupoVigActivo" onchange="dibujarPaseLista()" style="font-weight:bold; color:var(--rojo)">
             <option value="GRUPO I">GRUPO I</option>
             <option value="GRUPO II">GRUPO II</option>
@@ -80,11 +79,10 @@
 <div id="tabCons" class="tab-content hidden">
     <div style="background:white; padding:15px; margin:10px; border-radius:8px; display:flex; gap:10px; align-items:center;">
         <b>Mes:</b> <input type="month" id="mesReporte">
-        <b>Días Hábiles:</b> <input type="number" id="diasHabiles" value="20" style="width:60px">
-        <button onclick="procesarConsolidado()" style="background:var(--azul); color:white; padding:10px; border:none; border-radius:5px; font-weight:bold;">CALCULAR ESTADÍSTICA</button>
+        <button onclick="procesarConsolidado()" class="action-btn" style="background:var(--azul); color:white;">CALCULAR ESTADÍSTICA</button>
     </div>
 
-    <div class="sec-header">RESUMEN POR CARGO (PROMEDIOS REALES)</div>
+    <div class="sec-header">Resumen por Cargo (Promedios Reales)</div>
     <div class="table-wrap">
         <table id="tablaResumen">
             <thead><tr><th>Cargo</th><th>Nómina</th><th>Prom. F</th><th>Prom. M</th><th>Promedio Total</th><th>% Efec.</th></tr></thead>
@@ -92,23 +90,34 @@
         </table>
     </div>
 
-    <div class="sec-header">AUDITORÍA INDIVIDUAL</div>
+    <div class="sec-header">Auditoría Individual (Todos los Estatus)</div>
     <div class="table-wrap">
         <table id="tablaAuditoria">
-            <thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Asis.</th><th>Retr.</th><th>Inasist.</th><th>Permisos</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Asist.</th>
+                    <th>Retr.</th>
+                    <th>Inasist.</th>
+                    <th>Vacac.</th>
+                    <th>Act. Inst.</th>
+                    <th>P. Méd.</th>
+                    <th>P. Pers.</th>
+                </tr>
+            </thead>
             <tbody id="bodyConsIndiv"></tbody>
         </table>
     </div>
 
     <div style="padding:10px; display:flex; justify-content:space-between;">
-        <button class="btn-excel" onclick="exportarExcel()">EXCEL</button>
-        <button class="btn-pdf" onclick="window.print()">PDF OFICIAL FIRMADO</button>
+        <button class="action-btn btn-excel" style="flex:1" onclick="exportarExcel()">EXCEL</button>
+        <button class="action-btn btn-pdf" style="flex:1" onclick="window.print()">PDF OFICIAL FIRMADO</button>
     </div>
 </div>
 
 <div id="tabNom" class="tab-content hidden">
     <div style="background:white; padding:20px; margin:10px; border-radius:10px; border: 1px solid #ddd;">
-        <h3>Registrar Personal</h3>
+        <h3>Nuevo Personal</h3>
         <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px;">
             <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase">
             <select id="nCargo">
@@ -120,23 +129,30 @@
             </select>
             <select id="nGenero"><option value="F">F</option><option value="M">M</option></select>
             <select id="nGrupo">
-                <option value="undefined">General</option>
+                <option value="General">General</option>
                 <option value="GRUPO I">GRUPO I</option>
                 <option value="GRUPO II">GRUPO II</option>
             </select>
         </div>
-        <button onclick="agregarPersonal()" style="margin-top:10px; width:100%; background:var(--verde); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
+        <button onclick="agregarPersonal()" class="action-btn" style="width:100%; background:var(--verde); color:white; margin-top:10px;">GUARDAR EN NÓMINA</button>
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="respaldoJSON()" class="action-btn btn-respaldo" style="flex:1">📤 RESPALDO JSON</button>
+            <button onclick="document.getElementById('inputRestaurar').click()" class="action-btn btn-restaurar" style="flex:1">📥 RESTAURAR</button>
+            <input type="file" id="inputRestaurar" class="hidden" accept=".json" onchange="restaurarJSON(event)">
+        </div>
     </div>
+
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Nombre</th><th>Cargo</th><th>Género</th><th>Grupo</th><th>Eliminar</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Cargo</th><th>Género</th><th>Acción</th></tr></thead>
             <tbody id="bodyNomina"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
+    // --- FIREBASE ---
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -157,7 +173,7 @@
         const fecha = document.getElementById('fechaFiltro').value;
         await db.collection("asistencia_ebnlp_final").add({
             n: nombre, f: fecha, e: estatus, c: p.c, gender: p.gender, 
-            mes: fecha.substring(0,7), grupo: p.grupo || "undefined"
+            mes: fecha.substring(0,7), grupo: p.grupo
         });
         dibujarPaseLista();
     }
@@ -187,7 +203,7 @@
                         <button class="btn-check" style="background:#ffffff; border:1px solid #ddd" onclick="marcar('${p.n}','P. PERSONAL')">📄 P. PERSONAL</button>`;
                 } else {
                     div.style.background = "#eee";
-                    div.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ REGISTRADO</b><br><small>${m.e}</small><br>
+                    div.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br>
                     <button onclick="borrarRegistro('${m.n}','${m.f}')" style="color:red; border:none; background:none; cursor:pointer; font-size:10px;">(Eliminar)</button>`;
                 }
                 cont.appendChild(div);
@@ -196,47 +212,75 @@
         });
     }
 
-    function actualizarDashboard(marcados) {
-        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
-        Object.values(marcados).forEach(m => { if(["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e)) c[m.c]++; });
-        document.getElementById('dDoc').innerText = c.Docente;
-        document.getElementById('dObr').innerText = c.Obrero;
-        document.getElementById('dAdm').innerText = c.Administrativo;
-        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
-        document.getElementById('dVig').innerText = c.Vigilante;
-        let t = Object.values(c).reduce((a, b) => a + b, 0);
-        document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((t/nominaLocal.length)*100)+"%" : "0%";
-    }
-
+    // --- REPORTES Y AUDITORÍA ---
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
-        const diasH = parseFloat(document.getElementById('diasHabiles').value) || 20;
+        if(!mes) return alert("Seleccione un mes");
+        
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
 
-        const bC = document.getElementById('bodyConsCargo'); bC.innerHTML = "";
-        ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(cargo => {
-            const nomC = nominaLocal.filter(x => x.c === cargo);
-            const asisC = data.filter(x => x.c === cargo && ["ASISTENCIA", "RETRASO", "ACT. INST."].includes(x.e));
-            let div = (cargo === "Vigilante") ? 15 : diasH;
-            const fP = (asisC.filter(x => x.gender === 'F').length / div).toFixed(2);
-            const mP = (asisC.filter(x => x.gender === 'M').length / div).toFixed(2);
-            const tP = (parseFloat(fP) + parseFloat(mP)).toFixed(2);
-            bC.innerHTML += `<tr><td><b>${cargo}</b></td><td>${nomC.length}</td><td>${fP}</td><td>${mP}</td><td>${tP}</td><td>${nomC.length > 0 ? Math.round((tP/nomC.length)*100) : 0}%</td></tr>`;
-        });
-
+        // Tabla Individual (Sin Columna Grupo, Con Todos los Status)
         const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
         nominaLocal.forEach(p => {
             const dP = data.filter(x => x.n === p.n);
-            const counts = {A:0, R:0, I:0, P:0};
+            const s = {asis:0, retr:0, ina:0, vac:0, act:0, pmed:0, pper:0};
             dP.forEach(x => {
-                if(["ASISTENCIA","ACT. INST.","VACACIONES"].includes(x.e)) counts.A++;
-                else if(x.e === "RETRASO") counts.R++;
-                else if(x.e === "INASISTENCIA") counts.I++;
-                else counts.P++;
+                if(x.e === "ASISTENCIA") s.asis++;
+                else if(x.e === "RETRASO") s.retr++;
+                else if(x.e === "INASISTENCIA") s.ina++;
+                else if(x.e === "VACACIONES") s.vac++;
+                else if(x.e === "ACT. INST.") s.act++;
+                else if(x.e === "P. MÉDICO") s.pmed++;
+                else if(x.e === "P. PERSONAL") s.pper++;
             });
-            bI.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.grupo || 'General'}</td><td>${counts.A}</td><td>${counts.R}</td><td>${counts.I}</td><td>${counts.P}</td></tr>`;
+            bI.innerHTML += `<tr><td>${p.n}</td><td>${s.asis}</td><td>${s.retr}</td><td>${s.ina}</td><td>${s.vac}</td><td>${s.act}</td><td>${s.pmed}</td><td>${s.pper}</td></tr>`;
         });
+    }
+
+    // --- RESPALDO JSON ---
+    function respaldoJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nominaLocal));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "respaldo_nomina_lucila.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function restaurarJSON(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const data = JSON.parse(e.target.result);
+            for(let p of data) {
+                await db.collection("nomina_institucional").add({n:p.n, c:p.c, gender:p.gender, grupo:p.grupo});
+            }
+            alert("Nómina Restaurada");
+        };
+        reader.readAsText(file);
+    }
+
+    // --- AUXILIARES ---
+    function verTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        if(event) event.currentTarget.classList.add('active');
+    }
+
+    function actualizarDashboard(marcados) {
+        let c = {Admin:0, Cnae:0, Vig:0};
+        Object.values(marcados).forEach(m => {
+            if(m.c === "Administrativo") c.Admin++;
+            if(m.c.includes("CNAE")) c.Cnae++;
+            if(m.c === "Vigilante") c.Vig++;
+        });
+        document.getElementById('dAdm').innerText = c.Admin;
+        document.getElementById('dCnae').innerText = c.Cnae;
+        document.getElementById('dVig').innerText = c.Vig;
+        document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((Object.keys(marcados).length/nominaLocal.length)*100)+"%" : "0%";
     }
 
     function agregarPersonal() {
@@ -251,28 +295,15 @@
 
     function renderizarNomina() {
         const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nominaLocal.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`);
+        nominaLocal.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="border:none; background:none; cursor:pointer;">❌</button></td></tr>`);
     }
 
     async function borrarRegistro(n, f) {
-        if(confirm("¿Eliminar?")) {
-            const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-            q.forEach(d => d.ref.delete());
-            dibujarPaseLista();
-        }
-    }
-
-    function verTab(id) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden');
-        if(event) event.currentTarget.classList.add('active');
-    }
-
-    function exportarExcel() {
-        const wb = XLSX.utils.table_to_book(document.getElementById('tablaAuditoria'));
-        XLSX.writeFile(wb, "Reporte_Asistencia_Lucila_Palacios.xlsx");
+        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
+        q.forEach(d => d.ref.delete());
+        dibujarPaseLista();
     }
 </script>
 </body>
-</html>
+        </html>
+                    
