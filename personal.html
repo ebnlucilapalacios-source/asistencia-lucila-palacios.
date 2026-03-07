@@ -14,7 +14,6 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 5px; border-bottom: 4px solid var(--naranja); }
         
-        /* Dashboard Estilo Captura */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; background: #fff; }
         .dash-card { border: 1px solid #ddd; padding: 5px; border-radius: 4px; text-align: center; border-bottom: 3px solid var(--azul); }
         .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
@@ -24,7 +23,6 @@
         .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 4px; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.65rem; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Acordeones y Fichas */
         .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; }
         .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
         .cargo-content { display: none; padding: 10px; }
@@ -43,7 +41,6 @@
         .btn-per { background: #f3e5f5; color: #4a148c; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
 
-        /* Tablas de Resumen y Estadística */
         .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; }
         .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
@@ -52,6 +49,7 @@
         .row-total { background: #f0f4f8; font-weight: bold; color: var(--azul); }
         
         .hidden { display: none; }
+        .turno-badge { font-size: 0.6rem; padding: 2px 4px; border-radius: 3px; background: #eee; }
     </style>
 </head>
 <body>
@@ -74,12 +72,18 @@
 </div>
 
 <div id="tabEscuela" class="tab-content">
-    <div style="padding:10px;"><input type="date" id="fechaEscuela" onchange="actualizarTodo()"></div>
+    <div style="padding:10px; display: flex; gap: 10px;">
+        <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
+        <select id="turnoSeleccionado" style="flex:1; padding: 5px;">
+            <option value="MAÑANA">TURNO MAÑANA</option>
+            <option value="TARDE">TURNO TARDE</option>
+        </select>
+    </div>
     <div id="contEscuela"></div>
     <div class="sub-t">LISTA DIARIA DE ASISTENCIA (ESCUELA)</div>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Nombre</th><th>Estatus</th><th>Entrada/Salida</th><th>Obs</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Turno</th><th>Estatus</th><th>Ent/Sal</th><th>Obs/Motivo</th></tr></thead>
             <tbody id="resumenEscuela"></tbody>
         </table>
     </div>
@@ -106,22 +110,10 @@
         <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px;">CALCULAR</button>
         <button onclick="exportarExcel('tablaEstadistica', 'Estadistica_Mensual')" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px;">EXCEL</button>
     </div>
-
     <div class="sub-t">PROMEDIO REAL DISGREGADO (POR GÉNERO)</div>
-    <div class="table-wrap">
-        <table id="tablaEstadistica">
-            <thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM REAL</th><th>% EFEC</th></tr></thead>
-            <tbody id="bodyEstadistica"></tbody>
-        </table>
-    </div>
-
+    <div class="table-wrap"><table id="tablaEstadistica"><thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM REAL</th><th>% EFEC</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
     <div class="sub-t">CONSOLIDADO INDIVIDUAL (MENSUAL)</div>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th><th>%</th></tr></thead>
-            <tbody id="bodyIndividual"></tbody>
-        </table>
-    </div>
+    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th><th>%</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
@@ -135,9 +127,6 @@
         </div>
         <button onclick="agregarNomina()" style="width:100%; padding:10px; margin-top:5px; background:var(--verde); color:white; border:none; border-radius:5px;">+ GUARDAR</button>
     </div>
-
-    <div class="sub-t">RESPALDO Y LISTA DE PERSONAL</div>
-    <div style="padding:10px;"><button onclick="descargarRespaldo()" style="width:100%; padding:12px; background:var(--azul); color:white; border:none; border-radius:5px;">📥 DESCARGAR RESPALDO HISTÓRICO (EXCEL)</button></div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
 
@@ -145,6 +134,12 @@
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    // Configuración de Horarios de Salida
+    const HORARIOS_SALIDA = {
+        "MAÑANA": { "Docente": "12:00", "Obrero": "12:45", "Administrativo": "12:45", "CNAE (Cocinera)": "14:00" },
+        "TARDE": { "Docente": "17:00", "Obrero": "17:30", "Administrativo": "18:00", "CNAE (Cocinera)": "17:00" }
+    };
 
     let nomina = [];
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
@@ -211,9 +206,11 @@
                         <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO','${fecha}')">P. MÉDICO</button>
                         <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL','${fecha}')">P. PERSONAL</button>`;
                 } else {
-                    f.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br><small>${m.hE}-${m.hS}</small><br><button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px;">ELIMINAR</button>`;
-                    if(m.hS === "---" && ["ASISTENCIA","RETRASO"].includes(m.e)) f.innerHTML += `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>`;
-                    resBody.innerHTML += `<tr><td>${p.n}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""}</td></tr>`;
+                    f.innerHTML = `<b>${p.n}</b><br><span class="turno-badge">${m.turno || 'S/T'}</span><br><b style="color:green">✓ ${m.e}</b><br><small>${m.hE}-${m.hS}</small><br><button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px;">ELIMINAR</button>`;
+                    if(m.hS === "---" && ["ASISTENCIA","RETRASO"].includes(m.e)) {
+                        f.innerHTML += `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}','${m.turno}','${p.c}')">SALIDA</button>`;
+                    }
+                    resBody.innerHTML += `<tr><td>${p.n}</td><td>${m.turno || '-'}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""} ${m.motivoSalida ? '(Salida: '+m.motivoSalida+')' : ""}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
@@ -225,17 +222,37 @@
 
     async function registrar(n, e, f) {
         const p = nomina.find(x => x.n === n);
+        const t = document.getElementById('turnoSeleccionado').value;
         let hE = "---", obs = "";
-        if(["ASISTENCIA","RETRASO"].includes(e)) { hE = prompt("Hora Entrada:", "07:00"); if(!hE) return; }
-        else { obs = prompt("Observación:"); }
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE, hS: "---", obs: obs || "" });
+        if(["ASISTENCIA","RETRASO"].includes(e)) { 
+            hE = prompt("Hora Entrada (HH:MM):", t === "MAÑANA" ? "07:00" : "12:00"); 
+            if(!hE) return; 
+        } else { 
+            obs = prompt("Observación:"); 
+        }
+        await db.collection("asistencia_ebnlp_final").add({ 
+            n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, 
+            mes: f.substring(0,7), hE, hS: "---", obs: obs || "", 
+            turno: (p.c === "Vigilante" ? "N/A" : t) 
+        });
         actualizarTodo();
     }
 
-    async function marcarSalida(n, f) {
-        const hS = prompt("Hora Salida:", "12:00"); if(!hS) return;
+    async function marcarSalida(n, f, turno, cargo) {
+        const hS = prompt("Hora Salida (HH:MM):"); if(!hS) return;
+        let motivo = "";
+        
+        // Validar salida temprana
+        if(turno !== "N/A" && HORARIOS_SALIDA[turno] && HORARIOS_SALIDA[turno][cargo]) {
+            const horaOficial = HORARIOS_SALIDA[turno][cargo];
+            if(hS < horaOficial) {
+                motivo = prompt("Saliendo antes de la hora ("+horaOficial+"). Indique motivo:");
+                if(!motivo) { alert("Debe indicar un motivo para salida anticipada."); return; }
+            }
+        }
+
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
+        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, motivoSalida: motivo || "" });
         actualizarTodo();
     }
 
@@ -245,7 +262,6 @@
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
-        
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
 
@@ -296,4 +312,3 @@
 </script>
 </body>
 </html>
-
