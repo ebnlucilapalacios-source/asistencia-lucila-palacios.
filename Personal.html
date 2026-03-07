@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA LUCILA PALACIOS - V2.0</title>
+    <title>SISTEMA LUCILA PALACIOS - CORREGIDO</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -65,7 +64,7 @@
 
 <div class="tabs">
     <button class="tab-btn active" onclick="verTab('tabReg', this)">DIARIO</button>
-    <button class="tab-btn" onclick="verTab('tabCons', this)">ESTADÍSTICA mes</button>
+    <button class="tab-btn" onclick="verTab('tabCons', this)">ESTADÍSTICA</button>
     <button class="tab-btn" onclick="verTab('tabNom', this)">NÓMINA</button>
 </div>
 
@@ -134,12 +133,17 @@
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; margin-bottom:10px; text-transform:uppercase; padding:10px;">
         <div style="display:flex; gap:5px; margin-bottom:10px;">
             <select id="nCargo" style="flex:1;">
-                <option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option>
-                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option>
+                <option value="Docente">Docente</option>
+                <option value="Obrero">Obrero</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+                <option value="Vigilante">Vigilante</option>
             </select>
             <select id="nGenero" style="width:60px;"><option value="F">F</option><option value="M">M</option></select>
             <select id="nGrupo" style="flex:1;">
-                <option value="General">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option>
+                <option value="General">Escuela (L-V)</option>
+                <option value="GRUPO I">VIGILANCIA G-I</option>
+                <option value="GRUPO II">VIGILANCIA G-II</option>
             </select>
         </div>
         <button onclick="agregarPersonal()" class="action-btn" style="background:var(--verde); width:100%;">REGISTRAR EN NÓMINA</button>
@@ -151,7 +155,6 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -159,7 +162,6 @@
     let nominaLocal = [];
     document.getElementById('fechaFiltro').value = new Date().toISOString().split('T')[0];
 
-    // CARGAR NÓMINA
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
@@ -168,7 +170,6 @@
         dibujarPaseLista();
     });
 
-    // MARCAR ASISTENCIA
     async function marcar(nombre, estatus) {
         const p = nominaLocal.find(x => x.n === nombre);
         const f = document.getElementById('fechaFiltro').value;
@@ -195,40 +196,45 @@
         dibujarPaseLista();
     }
 
-    // DIBUJAR INTERFAZ DIARIA
+    // --- FUNCIÓN CRÍTICA CORREGIDA ---
     async function dibujarPaseLista() {
         const fecha = document.getElementById('fechaFiltro').value;
-        const gVig = document.getElementById('grupoVigActivo').value;
+        const gVigSelect = document.getElementById('grupoVigActivo').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
         const marcados = {}; 
         let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
 
         snap.forEach(d => {
             const data = d.data(); marcados[data.n] = data;
-            if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) counts[data.c]++;
+            if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) {
+                if(counts[data.c] !== undefined) counts[data.c]++;
+            }
         });
 
+        // Actualizar Dashboard
         document.getElementById('dDoc').innerText = counts.Docente;
         document.getElementById('dObr').innerText = counts.Obrero;
         document.getElementById('dAdm').innerText = counts.Administrativo;
         document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
         document.getElementById('dVig').innerText = counts.Vigilante;
-        
-        let tPres = Object.values(counts).reduce((a,b)=>a+b,0);
-        document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((tPres/nominaLocal.length)*100)+"%" : "0%";
 
-        const cont = document.getElementById('seccionesCargos'); cont.innerHTML = "";
+        const cont = document.getElementById('seccionesCargos');
+        cont.innerHTML = "";
         const listaCargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
 
         listaCargos.forEach(cargo => {
+            // Filtrar personal
             let pFiltrado = nominaLocal.filter(p => p.c === cargo);
 
-            // FILTRO DE VIGILANTES POR GRUPO
-            if(cargo === "Vigilante") {
-                if(gVig === "General") return; 
-                pFiltrado = pFiltrado.filter(p => p.grupo === gVig);
+            // LOGICA DE VISUALIZACION
+            if (cargo === "Vigilante") {
+                // Si el selector dice "General", NO mostrar vigilantes
+                if (gVigSelect === "General") return;
+                // Si el selector dice Grupo I o II, mostrar solo esos
+                pFiltrado = pFiltrado.filter(p => p.grupo === gVigSelect);
             } else {
-                if(gVig !== "General") return; 
+                // Si el selector NO dice "General", NO mostrar docentes/obreros
+                if (gVigSelect !== "General") return;
             }
 
             if(pFiltrado.length === 0) return;
@@ -265,14 +271,13 @@
         });
     }
 
-    // ESTADÍSTICA DISGREGADA POR CARGO Y GÉNERO
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
+        if(!mes) return alert("Selecciona un mes");
         const diasH = parseFloat(document.getElementById('diasHabiles').value) || 20;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
         
-        // 1. Promedio Real Disgregado
         const bDis = document.getElementById('bodyDisgregado'); bDis.innerHTML = "";
         const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
         
@@ -289,7 +294,6 @@
             });
         });
 
-        // 2. Auditoría Individual
         const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
         nominaLocal.forEach(p => {
             const dP = data.filter(x => x.n === p.n);
@@ -306,7 +310,6 @@
         });
     }
 
-    // FUNCIONES DE SOPORTE
     async function exportarTodoJSON() {
         const nom = await db.collection("nomina_institucional").get();
         const asis = await db.collection("asistencia_ebnlp_final").get();
@@ -320,7 +323,7 @@
         const r = new FileReader();
         r.onload = async (e) => {
             const d = JSON.parse(e.target.result);
-            if(confirm("¿Restaurar? Se sumarán a la base de datos.")){
+            if(confirm("¿Restaurar datos? Se sumarán a la base de datos.")){
                 if(d.nomina) for(let p of d.nomina) await db.collection("nomina_institucional").add(p);
                 if(d.asistencia) for(let a of d.asistencia) await db.collection("asistencia_ebnlp_final").add(a);
                 alert("Restaurado correctamente"); location.reload();
@@ -353,10 +356,4 @@
     function verTab(id, btn) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
-    }
-
-    function exportarExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tabCons')), "Estadistica_Lucila.xlsx"); }
-</script>
-</body>
-</html>
+        document.getElementById(id).classList.remove('hidden');
