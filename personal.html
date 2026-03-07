@@ -77,7 +77,7 @@
     <div class="sub-t">LISTA DIARIA / NOVEDADES</div>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Nombre</th><th>Estatus</th><th>E/S</th><th>Obs. Entrada</th><th>Motivo Salida</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Estatus</th><th>E/S</th><th>Obs. Entrada/Just.</th><th>Obs. Salida</th></tr></thead>
             <tbody id="resumenEscuela"></tbody>
         </table>
     </div>
@@ -124,6 +124,7 @@
 </div>
 
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -132,6 +133,7 @@
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
+    // CARGA DE DATOS
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
@@ -149,12 +151,7 @@
         const marcados = {}; const resBody = resId ? document.getElementById(resId) : null;
         if(resBody) resBody.innerHTML = "";
         
-        snap.forEach(d => {
-            const data = d.data();
-            data.docId = d.id;
-            marcados[data.n] = data;
-        });
-
+        snap.forEach(d => { let data = d.data(); data.docId = d.id; marcados[data.n] = data; });
         const cont = document.getElementById(contId); cont.innerHTML = "";
 
         cargos.forEach(cargo => {
@@ -180,7 +177,7 @@
                 } else {
                     f.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br>
                         <small>E: ${m.hE} | S: ${m.hS}</small><br>
-                        ${m.hS === "---" && ["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.docId}','${m.n}')">SALIDA</button>` : ''}
+                        ${m.hS === "---" && ["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.docId}','${m.n}')">MARCAR SALIDA</button>` : ''}
                         <button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px; cursor:pointer; background:none; margin-top:5px;">[BORRAR]</button>`;
                     if(resBody) resBody.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||"-"}</td><td>${m.obs_salida||"-"}</td></tr>`;
                 }
@@ -196,15 +193,33 @@
         let limite = "07:15"; let sug = "07:00";
         if(p.c === "Obrero") { sug = "06:30"; limite = "06:45"; }
 
+        // LÓGICA 3 PERMISOS / 3 INASISTENCIAS EN 30 DÍAS
+        if (e === "P. PERSONAL" || e === "INASISTENCIA") {
+            const fActual = new Date(f);
+            const fInicio = new Date(); fInicio.setDate(fActual.getDate() - 30);
+            const fStr = fInicio.toISOString().split('T')[0];
+
+            const hist = await db.collection("asistencia_ebnlp_final")
+                .where("n", "==", n).where("f", ">=", fStr).where("f", "<=", f).get();
+            
+            let cont = 0;
+            hist.forEach(d => { if(d.data().e === e) cont++; });
+
+            if (cont >= 3) {
+                if(!confirm(`⚠️ ATENCIÓN: ${n} ya acumuló ${cont} registros de ${e} en los últimos 30 días.\n¿Desea proceder con el registro?`)) return;
+            }
+        }
+
         if(["ASISTENCIA","RETRASO","ACT. INST."].includes(e)) {
             hE = prompt(`Hora Entrada para ${n}:`, sug);
             if(!hE) return;
             if(hE > limite && e === "ASISTENCIA") {
-                if(confirm("Se detecta hora después del límite. ¿Cambiar a RETRASO?")){
-                    e = "RETRASO"; obs = prompt("Motivo del retraso:");
-                }
+                if(confirm("Llegada fuera de horario. ¿Cambiar a RETRASO?")){ e = "RETRASO"; obs = prompt("Motivo del retraso:"); }
             }
-        } else { obs = prompt("Motivo de la inasistencia/permiso:"); }
+        } else { 
+            obs = prompt(`Justificación para ${e}:`); 
+            if(!obs && (e === "P. PERSONAL" || e === "INASISTENCIA")) return alert("Debe indicar el motivo.");
+        }
 
         await db.collection("asistencia_ebnlp_final").add({ 
             n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), 
@@ -220,8 +235,8 @@
 
         let motivo = "";
         if(hS < hSugerida) {
-            motivo = prompt("SALIDA ANTICIPADA. Ingrese motivo del retiro:");
-            if(!motivo) { alert("Debe indicar un motivo."); return; }
+            motivo = prompt("SALIDA ANTICIPADA detectada. Indique motivo:");
+            if(!motivo) return alert("Debe justificar la salida anticipada.");
         }
         await db.collection("asistencia_ebnlp_final").doc(docId).update({ hS, obs_salida: motivo || "Completa" });
         actualizarTodo();
@@ -278,7 +293,7 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.table_to_sheet(document.getElementById('tablaEstFinal')), "Estadistica");
         XLSX.utils.book_append_sheet(wb, XLSX.utils.table_to_sheet(document.getElementById('tablaIndFinal')), "Individual");
-        XLSX.writeFile(wb, `Reporte_Control_LP_${document.getElementById('mesReporte').value}.xlsx`);
+        XLSX.writeFile(wb, `Reporte_LP_${document.getElementById('mesReporte').value}.xlsx`);
     }
 
     function descargarNominaRespaldo() {
@@ -308,4 +323,15 @@
     
     function renderNomina() { 
         const b = document.getElementById('bodyNomina'); b.innerHTML = ""; 
-        nomina
+        nomina.forEach(p => b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`); 
+    }
+    
+    async function agregarNomina() { 
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return; 
+        await db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value }); 
+        document.getElementById('nNombre').value = ""; 
+    }
+</script>
+</body>
+</html>
+
