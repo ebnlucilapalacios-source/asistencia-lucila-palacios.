@@ -25,7 +25,7 @@
         .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 4px; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Secciones y Fichas (DIARIO Y VIGILANCIA) */
+        /* Secciones y Fichas */
         .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; }
         .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
         .cargo-content { display: none; padding: 10px; }
@@ -33,7 +33,6 @@
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 8px; }
         .ficha { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        /* Botones de Estatus (7 BOTONES) */
         .btn-check { width: 100%; padding: 5px; margin: 2px 0; border: none; border-radius: 3px; cursor: pointer; font-size: 0.6rem; font-weight: bold; }
         .btn-asis { background: #d4edda; color: #155724; }
         .btn-act { background: #d1ecf1; color: #0c5460; }
@@ -44,16 +43,13 @@
         .btn-per { background: #f3e5f5; color: #4a148c; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
 
-        /* Reportes y Tablas */
         .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
         .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
         th { background: #444; color: white; padding: 8px; }
         td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
         
-        /* Fila de Total Resaltada */
         .row-total-cargo { background: #e3f2fd !important; font-weight: bold; color: var(--azul); border-top: 2px solid var(--azul); }
-        
         .hidden { display: none; }
     </style>
 </head>
@@ -81,6 +77,13 @@
         <select id="turnoSeleccionado" style="flex:1; padding:5px;"><option value="MAÑANA">TURNO MAÑANA</option><option value="TARDE">TURNO TARDE</option></select>
     </div>
     <div id="contEscuela"></div>
+    <div class="sub-t">LISTA DIARIA DE ASISTENCIA</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Nombre</th><th>Estatus</th><th>Ent/Sal</th><th>Obs/Motivo</th></tr></thead>
+            <tbody id="resumenEscuela"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="tabVigilancia" class="tab-content hidden">
@@ -107,14 +110,12 @@
     </div>
 
     <div class="sub-t">CONSOLIDADO INDIVIDUAL (MENSUAL)</div>
-    <div style="padding:0 10px;"><input type="text" id="buscarTrabajador" placeholder="🔍 Buscar nombre..." onkeyup="filtrarConsolidado()" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;"></div>
     <div class="table-wrap" id="imprimirTabla2">
         <table>
             <thead><tr><th>NOMBRE</th><th>ASIS</th><th>RET</th><th>INA</th><th>P.M</th><th>P.P</th><th>PROM</th><th>% EFEC</th></tr></thead>
             <tbody id="bodyIndividual"></tbody>
         </table>
     </div>
-    <button onclick="imprimirReporte()" style="margin:10px; width:calc(100% - 20px); padding:12px; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">🖨️ IMPRIMIR REPORTE (PDF)</button>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
@@ -155,13 +156,16 @@
     });
 
     async function actualizarTodo() {
-        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], document.getElementById('fechaEscuela').value);
-        dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, document.getElementById('filtroGrupo').value);
+        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], document.getElementById('fechaEscuela').value, "resumenEscuela");
+        dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, null, document.getElementById('filtroGrupo').value);
     }
 
-    async function dibujarSeccion(contId, cargos, fecha, grupo = null) {
+    async function dibujarSeccion(contId, cargos, fecha, resId = null, grupo = null) {
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
         const marcados = {};
+        const resBody = resId ? document.getElementById(resId) : null;
+        if(resBody) resBody.innerHTML = "";
+        
         snap.forEach(d => marcados[d.data().n] = d.data());
         const cont = document.getElementById(contId);
         cont.innerHTML = "";
@@ -183,14 +187,15 @@
                 if(!m) {
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA','${fecha}')">ASISTENCIA</button>
-                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>
-                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
-                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
-                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
-                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
-                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
+                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.','${fecha}')">ACT. INST.</button>
+                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO','${fecha}')">RETRASO</button>
+                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA','${fecha}')">INASISTENCIA</button>
+                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES','${fecha}')">VACACIONES</button>
+                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO','${fecha}')">P. MÉDICO</button>
+                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL','${fecha}')">P. PERSONAL</button>`;
                 } else {
                     f.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br><small>${m.hE}-${m.hS}</small><br><button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px;">ELIMINAR</button>`;
+                    if(resBody) resBody.innerHTML += `<tr><td>${p.n}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
@@ -198,7 +203,15 @@
         });
     }
 
-    // --- LÓGICA DE ESTADÍSTICA ACTUALIZADA ---
+    async function registrar(n, e, f) {
+        const p = nomina.find(x => x.n === n);
+        let hE = "---", obs = "";
+        if(["ASISTENCIA","RETRASO"].includes(e)) { hE = prompt("Hora Entrada:", "07:00"); if(!hE) return; }
+        else { obs = prompt("Observación:"); }
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE, hS: "---", obs: obs || "" });
+        actualizarTodo();
+    }
+
     async function generarReportes() {
         const mes = document.getElementById('mesReporte').value;
         if(!mes) return alert("Seleccione un mes.");
@@ -211,7 +224,6 @@
     function renderEstadisticaImagen(data) {
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-
         cargos.forEach(c => {
             let nTot = 0, aTot = 0, pTot = 0;
             ["F", "M"].forEach(g => {
@@ -239,20 +251,14 @@
             const diasH = (p.c === "Vigilante") ? 15 : 20;
             const prom = (c.asis / diasH).toFixed(2);
             const efec = ((prom / 1) * 100).toFixed(1);
-
-            bInd.innerHTML += `<tr class="fila-trabajador">
-                <td style="text-align:left;"><b>${p.n}</b></td>
-                <td>${c.asis}</td><td>${c.ret}</td><td>${c.inas}</td><td>${c.med}</td><td>${c.per}</td>
-                <td style="font-weight:bold;">${prom}</td><td style="color:var(--verde); font-weight:bold;">${efec}%</td>
-            </tr>`;
+            bInd.innerHTML += `<tr><td style="text-align:left;"><b>${p.n}</b></td><td>${c.asis}</td><td>${c.ret}</td><td>${c.inas}</td><td>${c.med}</td><td>${c.per}</td><td style="font-weight:bold;">${prom}</td><td style="color:var(--verde); font-weight:bold;">${efec}%</td></tr>`;
         });
     }
 
     function verTab(id, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); btn.classList.add('active'); }
     function renderNomina() { const b = document.getElementById('bodyNomina'); b.innerHTML = ""; nomina.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`); }
     async function agregarNomina() { const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return; await db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value }); document.getElementById('nNombre').value = ""; }
-    function filtrarConsolidado() { const val = document.getElementById('buscarTrabajador').value.toUpperCase(); document.querySelectorAll('.fila-trabajador').forEach(f => { f.style.display = f.cells[0].innerText.includes(val) ? "" : "none"; }); }
-    function imprimirReporte() { window.print(); }
+    function borrar(n, f) { if(confirm("¿Borrar registro?")) { db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get().then(q => q.forEach(d => d.ref.delete())); } }
 </script>
 </body>
 </html>
