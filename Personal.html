@@ -8,33 +8,27 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; --blanco: #ffffff; }
+        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 5px solid var(--naranja); }
         
-        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; padding: 10px; }
         .dash-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .dash-card h4 { margin: 0; font-size: 0.7rem; color: #666; }
-        .dash-card .valor { font-size: 1.3rem; font-weight: bold; color: var(--azul); }
+        .dash-card .valor { font-size: 1.2rem; font-weight: bold; color: var(--azul); }
 
-        /* Navegación */
         .tabs { display: flex; gap: 4px; padding: 0 10px; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 4px; font-weight: bold; background: #ddd; cursor: pointer; font-size: 0.7rem; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Secciones por Cargo */
-        .cargo-container { margin: 15px 10px; background: #e9ecef; border-radius: 8px; padding: 5px; }
-        .cargo-header { background: var(--azul); color: white; padding: 8px 15px; border-radius: 5px; font-size: 0.85rem; font-weight: bold; display: flex; justify-content: space-between; }
+        .cargo-container { margin: 15px 10px; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; }
+        .cargo-header { background: var(--azul); color: white; padding: 8px 15px; font-size: 0.85rem; font-weight: bold; display: flex; justify-content: space-between; }
         
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; padding: 10px 0; }
-        .ficha { background: white; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 0.8rem; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; padding: 10px; }
+        .ficha { background: #f9f9f9; padding: 8px; border-radius: 8px; border: 1px solid #ddd; text-align: center; font-size: 0.8rem; }
         
-        /* Botones de Acción */
-        .btn-check { width: 100%; padding: 5px; margin: 2px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.6rem; font-weight: bold; transition: 0.2s; }
+        .btn-check { width: 100%; padding: 5px; margin: 2px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.6rem; font-weight: bold; }
         .btn-asis { background: #d4edda; color: #155724; } 
         .btn-ret { background: #fff3cd; color: #856404; } 
         .btn-ina { background: #f8d7da; color: #721c24; } 
@@ -42,26 +36,21 @@
         .btn-med { background: #e2e3e5; color: #383d41; } 
         .btn-per { background: #f3e5f5; color: #4a148c; } 
         .btn-act { background: #d1ecf1; color: #0c5460; }
-        .btn-salida { background: var(--azul); color: white; height: 35px; margin-top: 5px; }
+        .btn-salida { background: var(--azul); color: white; height: 35px; }
 
-        /* Tablas */
-        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 600px; }
-        th { background: #444; color: white; padding: 8px; text-align: center; }
-        td { padding: 6px; border: 1px solid #eee; text-align: center; }
+        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        th { background: #444; color: white; padding: 10px; }
+        td { padding: 8px; border: 1px solid #eee; text-align: center; }
         
-        .action-btn { border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 0.7rem; }
-        
-        /* Barra de Respaldo */
-        .backup-bar { background: #222; color: white; margin: 15px 10px; padding: 15px; border-radius: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; align-items: center; }
-        
+        .backup-bar { background: #222; color: white; margin: 15px 10px; padding: 15px; border-radius: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .action-btn { border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; }
         .hidden { display: none; }
-        canvas { background: white; border-radius: 8px; margin: 10px auto; display: block; }
     </style>
 </head>
 <body>
 
-<header><h3>E.B.N. "LUCILA PALACIOS" - CONTROL 2026</h3></header>
+<header><h3>SISTEMA E.B.N. "LUCILA PALACIOS"</h3></header>
 
 <div class="dashboard">
     <div class="dash-card"><h4>DOC</h4><span class="valor" id="dDoc">0</span></div>
@@ -69,7 +58,7 @@
     <div class="dash-card"><h4>ADM</h4><span class="valor" id="dAdm">0</span></div>
     <div class="dash-card"><h4>CNAE</h4><span class="valor" id="dCnae">0</span></div>
     <div class="dash-card"><h4>VIG</h4><span class="valor" id="dVig">0</span></div>
-    <div class="dash-card" style="border-bottom-color: var(--verde);"><h4>EFEC.</h4><span class="valor" id="dEfec">0%</span></div>
+    <div class="dash-card" style="border-bottom-color: var(--verde);"><h4>EFEC</h4><span class="valor" id="dEfec">0%</span></div>
 </div>
 
 <div class="tabs">
@@ -79,49 +68,57 @@
 </div>
 
 <div id="tabReg" class="tab-content">
-    <div style="background:white; padding:10px; margin:10px; border-radius:8px; display:flex; gap:8px; flex-wrap: wrap; align-items:center;">
+    <div style="background:white; padding:10px; margin:10px; border-radius:8px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <b>Fecha:</b> <input type="date" id="fechaFiltro" onchange="dibujarPaseLista()">
         <b>Guardia:</b>
         <select id="grupoVigActivo" onchange="dibujarPaseLista()">
             <option value="General">ESCUELA (L-V)</option>
-            <option value="GRUPO I">VIGILANCIA G.I</option>
-            <option value="GRUPO II">VIGILANCIA G.II</option>
+            <option value="GRUPO I">VIGILANCIA G-I</option>
+            <option value="GRUPO II">VIGILANCIA G-II</option>
         </select>
-        <input type="text" id="buscador" placeholder="Buscar personal..." onkeyup="filtrarFichas()" style="flex-grow:1; padding:8px; border-radius:4px; border:1px solid #ccc;">
+        <input type="text" id="buscador" placeholder="Buscar..." onkeyup="filtrarFichas()" style="flex:1; padding:8px;">
     </div>
     
     <div id="seccionesCargos"></div>
 
     <div class="backup-bar">
-        <b>SISTEMA DE SEGURIDAD:</b>
-        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 EXPORTAR RESPALDO (.JSON)</button>
-        <button onclick="document.getElementById('fileIn1').click()" class="action-btn" style="background:var(--rojo)">📤 RESTAURAR DATOS</button>
+        <b>SEGURIDAD DIARIA:</b>
+        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 RESPALDO COMPLETO</button>
+        <button onclick="document.getElementById('fileIn1').click()" class="action-btn" style="background:var(--rojo)">📤 RESTAURAR</button>
         <input type="file" id="fileIn1" class="hidden" accept=".json" onchange="importarTodoJSON(event)">
     </div>
 </div>
 
 <div id="tabCons" class="tab-content hidden">
-    <div style="background:white; padding:15px; margin:10px; border-radius:8px; display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+    <div style="background:white; padding:15px; margin:10px; border-radius:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <b>Mes:</b> <input type="month" id="mesReporte">
-        <b>Días Hábiles:</b> <input type="number" id="diasHabiles" value="20" style="width:50px">
-        <button onclick="procesarConsolidado()" class="action-btn" style="background:var(--azul)">GENERAR ESTADÍSTICA</button>
-        <button onclick="exportarExcel()" class="action-btn" style="background:var(--verde)">DESCARGAR EXCEL</button>
+        <b>Días Hábiles:</b> <input type="number" id="diasHabiles" value="20" style="width:60px">
+        <button onclick="procesarConsolidado()" class="action-btn" style="background:var(--azul)">GENERAR TODO</button>
+        <button onclick="exportarExcel()" class="action-btn" style="background:var(--verde)">EXCEL</button>
     </div>
 
+    <div style="padding:0 10px;"><h3 style="color:var(--azul); border-left:5px solid var(--naranja); padding-left:10px;">PROMEDIO REAL POR CARGO Y GÉNERO</h3></div>
     <div class="table-wrap">
-        <table id="tablaAuditoria">
+        <table>
             <thead>
                 <tr>
-                    <th>Nombre</th>
-                    <th style="background:#d4edda; color:#155724">Asis</th>
-                    <th style="background:#d1ecf1; color:#0c5460">Act</th>
-                    <th style="background:#fff3cd; color:#856404">Ret</th>
-                    <th style="background:#f8d7da; color:#721c24">Inas</th>
-                    <th style="background:#d1e7ff; color:#004085">Vac</th>
-                    <th style="background:#e2e3e5; color:#383d41">Med</th>
-                    <th style="background:#f3e5f5; color:#4a148c">Pers</th>
-                    <th>Prom</th>
-                    <th>% Efec</th>
+                    <th>Cargo</th>
+                    <th>Género</th>
+                    <th>Nómina</th>
+                    <th>Promedio Real (Mes)</th>
+                    <th>% Efectividad</th>
+                </tr>
+            </thead>
+            <tbody id="bodyResumenCargo"></tbody>
+        </table>
+    </div>
+
+    <div style="padding:0 10px;"><h3 style="color:var(--azul); border-left:5px solid var(--naranja); padding-left:10px;">AUDITORÍA INDIVIDUAL (7 ESTATUS)</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Inas</th><th>Vac</th><th>Med</th><th>Pers</th><th>Prom</th><th>%</th>
                 </tr>
             </thead>
             <tbody id="bodyConsIndiv"></tbody>
@@ -134,39 +131,28 @@
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; margin-bottom:10px; text-transform:uppercase; padding:8px;">
         <div style="display:flex; gap:5px; margin-bottom:10px;">
             <select id="nCargo" style="flex:1;">
-                <option value="Docente">Docente</option>
-                <option value="Obrero">Obrero</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
-                <option value="Vigilante">Vigilante</option>
+                <option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option>
+                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option>
             </select>
             <select id="nGenero" style="width:55px;"><option value="F">F</option><option value="M">M</option></select>
-            <select id="nGrupo" style="flex:1;">
-                <option value="General">Escuela (L-V)</option>
-                <option value="GRUPO I">Vigilancia I</option>
-                <option value="GRUPO II">Vigilancia II</option>
-            </select>
+            <select id="nGrupo" style="flex:1;"><option value="General">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
         </div>
-        <button onclick="agregarPersonal()" class="action-btn" style="background:var(--verde); width:100%;">REGISTRAR EN NÓMINA</button>
+        <button onclick="agregarPersonal()" class="action-btn" style="background:var(--verde); width:100%;">REGISTRAR</button>
     </div>
     
     <div class="table-wrap">
-        <table>
-            <thead><tr><th>Nombre</th><th>Cargo</th><th>Gen</th><th>Grupo</th><th>Borrar</th></tr></thead>
-            <tbody id="bodyNomina"></tbody>
-        </table>
+        <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Gen</th><th>Grupo</th><th>X</th></tr></thead><tbody id="bodyNomina"></tbody></table>
     </div>
 
     <div class="backup-bar">
         <b>GESTIÓN DE NÓMINA:</b>
-        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 EXPORTAR COPIA</button>
-        <button onclick="document.getElementById('fileIn2').click()" class="action-btn" style="background:var(--rojo)">📤 RESTAURAR PERSONAL</button>
+        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 RESPALDO COMPLETO</button>
+        <button onclick="document.getElementById('fileIn2').click()" class="action-btn" style="background:var(--rojo)">📤 RESTAURAR</button>
         <input type="file" id="fileIn2" class="hidden" accept=".json" onchange="importarTodoJSON(event)">
     </div>
 </div>
 
 <script>
-    // Configuración Firebase (Reemplazar con tus credenciales si cambian)
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -174,7 +160,6 @@
     let nominaLocal = [];
     document.getElementById('fechaFiltro').value = new Date().toISOString().split('T')[0];
 
-    // Carga de Datos
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
@@ -187,8 +172,8 @@
         const p = nominaLocal.find(x => x.n === nombre);
         const f = document.getElementById('fechaFiltro').value;
         const mes = f.substring(0,7);
-
         let hE = "---", hS = "---", obs = "";
+
         if(["ASISTENCIA", "RETRASO"].includes(estatus)) {
             hE = prompt("Hora Entrada:", "07:00"); if(!hE) return;
         } else {
@@ -213,52 +198,46 @@
         const fecha = document.getElementById('fechaFiltro').value;
         const gVig = document.getElementById('grupoVigActivo').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
-        
         const marcados = {}; 
-        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
+        let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
 
         snap.forEach(d => {
             const data = d.data(); marcados[data.n] = data;
-            if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) c[data.c]++;
+            if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) counts[data.c]++;
         });
 
-        // Actualizar Dash
-        document.getElementById('dDoc').innerText = c.Docente;
-        document.getElementById('dObr').innerText = c.Obrero;
-        document.getElementById('dAdm').innerText = c.Administrativo;
-        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
-        document.getElementById('dVig').innerText = c.Vigilante;
-        let totalP = Object.values(c).reduce((a,b)=>a+b,0);
-        document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((totalP/nominaLocal.length)*100)+"%" : "0%";
+        document.getElementById('dDoc').innerText = counts.Docente;
+        document.getElementById('dObr').innerText = counts.Obrero;
+        document.getElementById('dAdm').innerText = counts.Administrativo;
+        document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
+        document.getElementById('dVig').innerText = counts.Vigilante;
 
         const cont = document.getElementById('seccionesCargos'); cont.innerHTML = "";
         const listaCargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
 
         listaCargos.forEach(cargo => {
-            let personalFiltrado = nominaLocal.filter(p => p.c === cargo);
+            let pFiltrado = nominaLocal.filter(p => p.c === cargo);
 
-            // LOGICA VIGILANTES: Solo mostrar si el grupo coincide
+            // CORRECCIÓN VIGILANTES:
             if(cargo === "Vigilante") {
-                if(gVig === "General") return; // En modo escuela no se listan vigilantes
-                personalFiltrado = personalFiltrado.filter(p => p.grupo === gVig);
+                if(gVig === "General") return; 
+                pFiltrado = pFiltrado.filter(p => p.grupo === gVig);
             } else {
-                if(gVig !== "General") return; // En modo vigilancia solo se listan vigilantes
+                if(gVig !== "General") return; 
             }
 
-            if(personalFiltrado.length === 0) return;
+            if(pFiltrado.length === 0) return;
 
             const sec = document.createElement('div');
             sec.className = "cargo-container";
-            sec.innerHTML = `<div class="cargo-header"><span>${cargo.toUpperCase()}</span> <span>Total: ${personalFiltrado.length}</span></div>`;
-            
+            sec.innerHTML = `<div class="cargo-header"><span>${cargo.toUpperCase()}</span> <span>Cant: ${pFiltrado.length}</span></div>`;
             const grid = document.createElement('div');
             grid.className = "grid-fichas";
 
-            personalFiltrado.forEach(p => {
+            pFiltrado.forEach(p => {
                 const m = marcados[p.n];
                 const ficha = document.createElement('div');
                 ficha.className = "ficha";
-                
                 if(!m) {
                     ficha.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="marcar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
@@ -271,8 +250,8 @@
                 } else if (m.hS === "---" && (m.e === "ASISTENCIA" || m.e === "RETRASO")) {
                     ficha.innerHTML = `<b>${p.n}</b><br><button class="btn-check btn-salida" onclick="registrarSalida('${p.n}')">MARCAR SALIDA</button>`;
                 } else {
-                    ficha.style.background = "#f0f0f0";
-                    ficha.innerHTML = `<b>${p.n}</b><br><span style="color:green; font-weight:bold">✓ ${m.e}</span><br><button onclick="borrarRegistro('${m.n}','${m.f}')" style="border:none; background:none; color:red; font-size:10px; cursor:pointer">Eliminar</button>`;
+                    ficha.style.background = "#eee";
+                    ficha.innerHTML = `<b>${p.n}</b><br><span style="color:green; font-weight:bold">✓ ${m.e}</span><br><button onclick="borrarReg('${m.n}','${m.f}')" style="border:none; background:none; color:red; cursor:pointer; font-size:10px;">Eliminar</button>`;
                 }
                 grid.appendChild(ficha);
             });
@@ -281,74 +260,71 @@
         });
     }
 
-    // Estadísticas con los 7 estatus
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
         const diasH = parseFloat(document.getElementById('diasHabiles').value) || 20;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
         
-        const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
+        // 1. Estadística Disgregada por Cargo y Género
+        const bCargo = document.getElementById('bodyResumenCargo'); bCargo.innerHTML = "";
+        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+        
+        cargos.forEach(c => {
+            ['F', 'M'].forEach(g => {
+                const nomTotal = nominaLocal.filter(p => p.c === c && p.gender === g);
+                if(nomTotal.length > 0) {
+                    const asisCargo = data.filter(x => x.c === c && x.gender === g && ["ASISTENCIA","RETRASO","ACT. INST.","VACACIONES"].includes(x.e));
+                    let divisor = (c === "Vigilante") ? 15 : diasH;
+                    let promReal = (asisCargo.length / divisor).toFixed(2);
+                    let efec = Math.round((promReal / nomTotal.length) * 100);
+                    bCargo.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nomTotal.length}</td><td>${promReal}</td><td><b>${efec}%</b></td></tr>`;
+                }
+            });
+        });
+
+        // 2. Auditoría Individual
+        const bIndiv = document.getElementById('bodyConsIndiv'); bIndiv.innerHTML = "";
         nominaLocal.forEach(p => {
             const dP = data.filter(x => x.n === p.n);
             const s = {asis:0, act:0, ret:0, ina:0, vac:0, med:0, per:0};
-            dP.forEach(x => {
-                if(x.e === "ASISTENCIA") s.asis++; else if(x.e === "ACT. INST.") s.act++;
-                else if(x.e === "RETRASO") s.ret++; else if(x.e === "INASISTENCIA") s.ina++;
-                else if(x.e === "VACACIONES") s.vac++; else if(x.e === "P. MÉDICO") s.med++;
-                else if(x.e === "P. PERSONAL") s.per++;
+            dP.forEach(x => { 
+                if(x.e === "ASISTENCIA") s.asis++; else if(x.e === "ACT. INST.") s.act++; else if(x.e === "RETRASO") s.ret++; 
+                else if(x.e === "INASISTENCIA") s.ina++; else if(x.e === "VACACIONES") s.vac++; else if(x.e === "P. MÉDICO") s.med++; else if(x.e === "P. PERSONAL") s.per++; 
             });
-            
-            let valEfectivo = s.asis + s.ret + s.vac + s.act;
-            let div = (p.c === "Vigilante") ? 15 : diasH;
-            let prom = (valEfectivo / div).toFixed(2);
-            let porc = Math.min(Math.round((valEfectivo/div)*100), 100);
-
-            bI.innerHTML += `<tr>
-                <td style="text-align:left"><b>${p.n}</b></td>
-                <td>${s.asis}</td><td>${s.act}</td><td>${s.ret}</td>
-                <td style="color:red">${s.ina}</td><td>${s.vac}</td><td>${s.med}</td><td>${s.per}</td>
-                <td>${prom}</td><td><b>${porc}%</b></td>
-            </tr>`;
+            let divisor = (p.c === "Vigilante") ? 15 : diasH;
+            let val = s.asis + s.act + s.ret + s.vac;
+            let prom = (val / divisor).toFixed(2);
+            let porc = Math.min(Math.round((val/divisor)*100), 100);
+            bIndiv.innerHTML += `<tr><td>${p.n}</td><td>${s.asis}</td><td>${s.act}</td><td>${s.ret}</td><td>${s.ina}</td><td>${s.vac}</td><td>${s.med}</td><td>${s.per}</td><td>${prom}</td><td>${porc}%</td></tr>`;
         });
     }
 
-    // Respaldo Total (JSON)
     async function exportarTodoJSON() {
         const nom = await db.collection("nomina_institucional").get();
         const asis = await db.collection("asistencia_ebnlp_final").get();
-        const backup = {
-            nomina: nom.docs.map(d => d.data()),
-            asistencia: asis.docs.map(d => d.data())
-        };
-        const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `RESPALDO_LUCILA_PALACIOS_${new Date().toLocaleDateString()}.json`;
-        a.click();
+        const b = { nomina: nom.docs.map(d => d.data()), asistencia: asis.docs.map(d => d.data()) };
+        const blob = new Blob([JSON.stringify(b)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `RESPALDO_LUCILA_${new Date().toLocaleDateString()}.json`; a.click();
     }
 
     function importarTodoJSON(event) {
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const data = JSON.parse(e.target.result);
-            if(confirm("¿Restaurar datos? Se añadirán a la base de datos actual.")){
-                if(data.nomina) for(let p of data.nomina) await db.collection("nomina_institucional").add(p);
-                if(data.asistencia) for(let a of data.asistencia) await db.collection("asistencia_ebnlp_final").add(a);
-                alert("Restauración Completada"); location.reload();
+            const d = JSON.parse(e.target.result);
+            if(confirm("¿Restaurar datos? Se sumarán a los actuales.")){
+                if(d.nomina) for(let p of d.nomina) await db.collection("nomina_institucional").add(p);
+                if(d.asistencia) for(let a of d.asistencia) await db.collection("asistencia_ebnlp_final").add(a);
+                alert("Éxito"); location.reload();
             }
         };
         reader.readAsText(event.target.files[0]);
     }
 
-    // Funciones Auxiliares
     function agregarPersonal() {
         const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ 
-            n, c: document.getElementById('nCargo').value, 
-            gender: document.getElementById('nGenero').value, 
-            grupo: document.getElementById('nGrupo').value 
-        });
+        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGenero').value, grupo: document.getElementById('nGrupo').value });
         document.getElementById('nNombre').value = "";
     }
 
@@ -357,7 +333,7 @@
         nominaLocal.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`);
     }
 
-    async function borrarRegistro(n, f) {
+    async function borrarReg(n, f) {
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
         q.forEach(d => d.ref.delete()); dibujarPaseLista();
     }
@@ -373,7 +349,6 @@
         document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
     }
 
-    function exportarExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tabCons')), "Estadistica_Lucila_Palacios.xlsx"); }
-</script>
-</body>
-</html>
+    function exportarExcel() { 
+        let table = document.getElementById("tabCons"); 
+        XLSX.writeFile(XLSX.utils.table_to_book(table
