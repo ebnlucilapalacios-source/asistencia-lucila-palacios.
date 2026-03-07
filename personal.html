@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA LUCILA PALACIOS - V10.0</title>
+    <title>SISTEMA LUCILA PALACIOS - V11.0</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -12,27 +12,31 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 5px; border-bottom: 4px solid var(--naranja); }
         
+        /* Dashboard Superior */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; background: #fff; }
         .dash-card { border: 1px solid #ddd; padding: 5px; border-radius: 4px; text-align: center; border-bottom: 3px solid var(--azul); }
         .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
         .dash-card .valor { font-size: 1rem; font-weight: bold; color: var(--azul); }
 
+        /* Pestañas de Navegación */
         .tabs { display: flex; gap: 2px; padding: 5px; background: #fff; position: sticky; top: 0; z-index: 100; }
         .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 4px; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.65rem; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
+        /* Controles de Fecha y Turno */
         .controles { display: flex; gap: 10px; padding: 10px; background: #fff; border-bottom: 1px solid #ddd; }
         .controles input, .controles select { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; }
 
+        /* Secciones Desplegables */
         .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; }
         .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
-        .cargo-content { display: none; padding: 10px; }
+        .cargo-content { display: none; padding: 10px; } /* Inicia oculto */
         .cargo-content.open { display: block; }
 
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; }
         .ficha { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        /* Botones de los 7 Estatus */
+        /* Botones de Estatus (Los 7 solicitados) */
         .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.62rem; font-weight: bold; text-transform: uppercase; }
         .btn-asis { background: #d4edda; color: #155724; }
         .btn-act { background: #d1ecf1; color: #0c5460; }
@@ -43,11 +47,14 @@
         .btn-per { background: #f3e5f5; color: #4a148c; }
 
         .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; }
+        
+        /* Tablas de Estadística */
         .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
         th { background: #444; color: white; padding: 8px; border: 1px solid #555; }
         td { padding: 8px; border: 1px solid #eee; text-align: center; }
-        .fila-total { background: #eef2f7; font-weight: bold; }
+        .fila-total { background: #eef2f7; font-weight: bold; color: #000; }
+        
         .hidden { display: none; }
     </style>
 </head>
@@ -92,12 +99,24 @@
     <div class="controles">
         <input type="month" id="mesReporte" style="flex:2">
         <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1;">CALCULAR</button>
+        <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px; flex:1;">EXCEL</button>
     </div>
+
     <div class="sub-t">PROMEDIO REAL DISGREGADO (POR GÉNERO Y TOTAL)</div>
     <div class="table-wrap">
         <table id="tablaPromedio">
             <thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM REAL</th><th>% EFEC</th></tr></thead>
             <tbody id="bodyPromedio"></tbody>
+        </table>
+    </div>
+
+    <div class="sub-t">CONSOLIDADO INDIVIDUAL (7 ESTATUS)</div>
+    <div class="table-wrap">
+        <table id="tablaIndividual">
+            <thead>
+                <tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr>
+            </thead>
+            <tbody id="bodyIndividual"></tbody>
         </table>
     </div>
 </div>
@@ -120,6 +139,7 @@
         const f = document.getElementById('fechaEscuela').value;
         const t = document.getElementById('turnoEscuela').value;
         dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], f, "resumenEscuela", null, t);
+        actualizarDash(f);
     }
 
     async function registrar(n, e, f, t) {
@@ -138,9 +158,7 @@
                 if((p.c === "Docente" || p.c === "Administrativo") && totalM > 720) finalE = "RETRASO";
                 if(p.c === "Obrero" && totalM > 690) finalE = "RETRASO";
             }
-        } else { 
-            obs = prompt("Observación (Opcional):"); 
-        }
+        } else { obs = prompt("Observación:"); }
 
         await db.collection("asistencia_ebnlp_final").add({ n, e: finalE, f, t, hE, hS: "---", obs: obs||"", c: p.c, gender: p.gender, mes: f.substring(0,7) });
         actualizarTodo();
@@ -187,12 +205,12 @@
         if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const asistencias = snap.docs.map(d => d.data());
+        
+        // Tabla Disgregada con TOTALES
         const bProm = document.getElementById('bodyPromedio'); bProm.innerHTML = "";
-
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(cargo => {
             let cargoNomina = nomina.filter(p => p.c === cargo);
             let tNom = 0, tAsis = 0, tProm = 0;
-
             ["F", "M"].forEach(gen => {
                 let nFiltro = cargoNomina.filter(p => p.gender === gen);
                 if(nFiltro.length > 0) {
@@ -204,9 +222,35 @@
             });
             if(tNom > 0) bProm.innerHTML += `<tr class="fila-total"><td>TOTAL ${cargo.toUpperCase()}</td><td>-</td><td>${tNom}</td><td>${tAsis}</td><td>${tProm.toFixed(2)}</td><td>${((tProm/tNom)*100).toFixed(1)}%</td></tr>`;
         });
+
+        // Consolidado Individual 7 Estatus
+        const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
+        nomina.sort((a,b) => a.n.localeCompare(b.n)).forEach(p => {
+            let pAsis = asistencias.filter(a => a.n === p.n);
+            let c = { AS: 0, AC: 0, RE: 0, IN: 0, VA: 0, ME: 0, PE: 0 };
+            pAsis.forEach(a => {
+                if(a.e === "ASISTENCIA") c.AS++; if(a.e === "ACT. INST.") c.AC++; if(a.e === "RETRASO") c.RE++;
+                if(a.e === "INASISTENCIA") c.IN++; if(a.e === "VACACIONES") c.VA++; if(a.e === "P. MÉDICO") c.ME++; if(a.e === "P. PERSONAL") c.PE++;
+            });
+            let prom = ((c.AS + c.RE) / 20).toFixed(2);
+            bInd.innerHTML += `<tr><td>${p.n}</td><td>${c.AS}</td><td>${c.AC}</td><td>${c.RE}</td><td>${c.IN}</td><td>${c.VA}</td><td>${c.ME}</td><td>${c.PE}</td><td>${prom}</td></tr>`;
+        });
     }
 
-    function verTab(id, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); btn.classList.add('active'); }
+    async function actualizarDash(f) {
+        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
+        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
+        snap.forEach(d => { if(d.data().e !== "INASISTENCIA") c[d.data().c]++; });
+        document.getElementById('dDoc').innerText = c.Docente; document.getElementById('dObr').innerText = c.Obrero;
+        document.getElementById('dAdm').innerText = c.Administrativo; document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"]; document.getElementById('dVig').innerText = c.Vigilante;
+    }
+
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        btn.classList.add('active');
+    }
 </script>
 </body>
 </html>
