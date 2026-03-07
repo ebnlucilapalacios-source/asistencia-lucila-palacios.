@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA LUCILA PALACIOS - CORREGIDO</title>
+    <title>SISTEMA LUCILA PALACIOS - V2.1</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -51,7 +51,7 @@
 </head>
 <body>
 
-<header><h3>E.B.N. "LUCILA PALACIOS" - CONTROL DIGITAL</h3></header>
+<header><h3>E.B.N. "LUCILA PALACIOS"</h3></header>
 
 <div class="dashboard">
     <div class="dash-card"><h4>DOC</h4><span class="valor" id="dDoc">0</span></div>
@@ -83,8 +83,7 @@
     <div id="seccionesCargos"></div>
 
     <div class="backup-bar">
-        <b>CONTROL DE SEGURIDAD:</b>
-        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 RESPALDO COMPLETO</button>
+        <button onclick="exportarTodoJSON()" class="action-btn" style="background:var(--azul)">📥 RESPALDO</button>
         <button onclick="document.getElementById('fileIn1').click()" class="action-btn" style="background:var(--rojo)">📤 RESTAURAR</button>
         <input type="file" id="fileIn1" class="hidden" accept=".json" onchange="importarTodoJSON(event)">
     </div>
@@ -94,34 +93,25 @@
     <div style="background:white; padding:15px; margin:10px; border-radius:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <b>Mes:</b> <input type="month" id="mesReporte">
         <b>Días Hábiles:</b> <input type="number" id="diasHabiles" value="20" style="width:60px">
-        <button onclick="procesarConsolidado()" class="action-btn" style="background:var(--azul)">CALCULAR ESTADÍSTICAS</button>
+        <button onclick="procesarConsolidado()" class="action-btn" style="background:var(--azul)">CALCULAR</button>
         <button onclick="exportarExcel()" class="action-btn" style="background:var(--verde)">EXCEL</button>
     </div>
 
-    <h3 class="sub-titulo">PROMEDIO REAL DISGREGADO (CARGO Y GÉNERO)</h3>
+    <h3 class="sub-titulo">PROMEDIO REAL DISGREGADO</h3>
     <div class="table-wrap">
         <table>
             <thead>
-                <tr>
-                    <th>Cargo</th>
-                    <th>Género</th>
-                    <th>Nómina</th>
-                    <th>Asis. Mes</th>
-                    <th>Promedio Real</th>
-                    <th>% Efectividad</th>
-                </tr>
+                <tr><th>Cargo</th><th>Género</th><th>Nómina</th><th>Asis. Mes</th><th>Promedio Real</th><th>% Efec.</th></tr>
             </thead>
             <tbody id="bodyDisgregado"></tbody>
         </table>
     </div>
 
-    <h3 class="sub-titulo">DETALLE INDIVIDUAL (7 ESTATUS)</h3>
+    <h3 class="sub-titulo">DETALLE INDIVIDUAL</h3>
     <div class="table-wrap">
         <table>
             <thead>
-                <tr>
-                    <th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Inas</th><th>Vac</th><th>Med</th><th>Pers</th><th>Prom</th><th>%</th>
-                </tr>
+                <tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Inas</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th><th>%</th></tr>
             </thead>
             <tbody id="bodyConsIndiv"></tbody>
         </table>
@@ -146,7 +136,7 @@
                 <option value="GRUPO II">VIGILANCIA G-II</option>
             </select>
         </div>
-        <button onclick="agregarPersonal()" class="action-btn" style="background:var(--verde); width:100%;">REGISTRAR EN NÓMINA</button>
+        <button onclick="agregarPersonal()" class="action-btn" style="background:var(--verde); width:100%;">REGISTRAR</button>
     </div>
     
     <div class="table-wrap">
@@ -155,21 +145,35 @@
 </div>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
+    // 1. Configuración de Firebase
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", 
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com", 
+        projectId: "control-de-asistencia-d585e", 
+        appId: "1:368890880546:web:a97ab4372dea536217207b" 
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let nominaLocal = [];
     document.getElementById('fechaFiltro').value = new Date().toISOString().split('T')[0];
 
+    // 2. Sincronización de Nómina
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
-        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
+        snap.forEach(doc => { 
+            let d = doc.data(); 
+            d.id = doc.id; 
+            nominaLocal.push(d); 
+        });
         nominaLocal.sort((a, b) => a.n.localeCompare(b.n)); 
         renderizarNomina();
         dibujarPaseLista();
+    }, err => {
+        console.error("Error en Snapshot:", err);
     });
 
+    // 3. Funciones de Registro
     async function marcar(nombre, estatus) {
         const p = nominaLocal.find(x => x.n === nombre);
         const f = document.getElementById('fechaFiltro').value;
@@ -182,118 +186,126 @@
             obs = prompt("Observación:"); hE = "J"; hS = "J";
         }
 
-        await db.collection("asistencia_ebnlp_final").add({
-            n: nombre, f, e: estatus, c: p.c, gender: p.gender, mes, grupo: p.grupo, hE, hS, obs: obs || ""
-        });
-        dibujarPaseLista();
+        try {
+            await db.collection("asistencia_ebnlp_final").add({
+                n: nombre, f, e: estatus, c: p.c, gender: p.gender, mes, grupo: p.grupo || "General", hE, hS, obs: obs || ""
+            });
+            dibujarPaseLista();
+        } catch(e) { alert("Error al guardar"); }
     }
 
     async function registrarSalida(nombre) {
         const f = document.getElementById('fechaFiltro').value;
         const hS = prompt("Hora Salida:", "12:00"); if(!hS) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("n","==",nombre).where("f","==",f).get();
-        if(!snap.empty) await db.collection("asistencia_ebnlp_final").doc(snap.docs[0].id).update({ hS });
-        dibujarPaseLista();
+        if(!snap.empty) {
+            await db.collection("asistencia_ebnlp_final").doc(snap.docs[0].id).update({ hS });
+            dibujarPaseLista();
+        }
     }
 
-    // --- FUNCIÓN CRÍTICA CORREGIDA ---
+    // 4. Dibujar Pase de Lista (Filtro Vigilantes)
     async function dibujarPaseLista() {
         const fecha = document.getElementById('fechaFiltro').value;
         const gVigSelect = document.getElementById('grupoVigActivo').value;
-        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
-        const marcados = {}; 
-        let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
+        
+        try {
+            const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
+            const marcados = {}; 
+            let counts = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
 
-        snap.forEach(d => {
-            const data = d.data(); marcados[data.n] = data;
-            if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) {
-                if(counts[data.c] !== undefined) counts[data.c]++;
-            }
-        });
-
-        // Actualizar Dashboard
-        document.getElementById('dDoc').innerText = counts.Docente;
-        document.getElementById('dObr').innerText = counts.Obrero;
-        document.getElementById('dAdm').innerText = counts.Administrativo;
-        document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
-        document.getElementById('dVig').innerText = counts.Vigilante;
-
-        const cont = document.getElementById('seccionesCargos');
-        cont.innerHTML = "";
-        const listaCargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-
-        listaCargos.forEach(cargo => {
-            // Filtrar personal
-            let pFiltrado = nominaLocal.filter(p => p.c === cargo);
-
-            // LOGICA DE VISUALIZACION
-            if (cargo === "Vigilante") {
-                // Si el selector dice "General", NO mostrar vigilantes
-                if (gVigSelect === "General") return;
-                // Si el selector dice Grupo I o II, mostrar solo esos
-                pFiltrado = pFiltrado.filter(p => p.grupo === gVigSelect);
-            } else {
-                // Si el selector NO dice "General", NO mostrar docentes/obreros
-                if (gVigSelect !== "General") return;
-            }
-
-            if(pFiltrado.length === 0) return;
-
-            const sec = document.createElement('div');
-            sec.className = "cargo-section";
-            sec.innerHTML = `<div class="cargo-title"><span>${cargo.toUpperCase()}</span> <span>Cant: ${pFiltrado.length}</span></div>`;
-            const grid = document.createElement('div');
-            grid.className = "grid-fichas";
-
-            pFiltrado.forEach(p => {
-                const m = marcados[p.n];
-                const ficha = document.createElement('div');
-                ficha.className = "ficha";
-                if(!m) {
-                    ficha.innerHTML = `<b>${p.n}</b><br>
-                        <button class="btn-check btn-asis" onclick="marcar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                        <button class="btn-check btn-act" onclick="marcar('${p.n}','ACT. INST.')">ACT. INST.</button>
-                        <button class="btn-check btn-ret" onclick="marcar('${p.n}','RETRASO')">RETRASO</button>
-                        <button class="btn-check btn-ina" onclick="marcar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
-                        <button class="btn-check btn-vac" onclick="marcar('${p.n}','VACACIONES')">VACACIONES</button>
-                        <button class="btn-check btn-med" onclick="marcar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
-                        <button class="btn-check btn-per" onclick="marcar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
-                } else if (m.hS === "---" && (m.e === "ASISTENCIA" || m.e === "RETRASO")) {
-                    ficha.innerHTML = `<b>${p.n}</b><br><button class="btn-check btn-salida" onclick="registrarSalida('${p.n}')">MARCAR SALIDA</button>`;
-                } else {
-                    ficha.style.background = "#eee";
-                    ficha.innerHTML = `<b>${p.n}</b><br><span style="color:green; font-weight:bold">✓ ${m.e}</span><br><button onclick="borrarRegistro('${m.n}','${m.f}')" style="border:none; background:none; color:red; cursor:pointer; font-size:9px;">[X]</button>`;
+            snap.forEach(d => {
+                const data = d.data(); 
+                marcados[data.n] = data;
+                if(!["INASISTENCIA", "P. PERSONAL"].includes(data.e)) {
+                    if(counts[data.c] !== undefined) counts[data.c]++;
                 }
-                grid.appendChild(ficha);
             });
-            sec.appendChild(grid);
-            cont.appendChild(sec);
-        });
+
+            document.getElementById('dDoc').innerText = counts.Docente;
+            document.getElementById('dObr').innerText = counts.Obrero;
+            document.getElementById('dAdm').innerText = counts.Administrativo;
+            document.getElementById('dCnae').innerText = counts["CNAE (Cocinera)"];
+            document.getElementById('dVig').innerText = counts.Vigilante;
+
+            const cont = document.getElementById('seccionesCargos');
+            cont.innerHTML = "";
+            const listaCargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+
+            listaCargos.forEach(cargo => {
+                let pFiltrado = nominaLocal.filter(p => p.c === cargo);
+
+                // FILTRO DE GRUPO
+                if (cargo === "Vigilante") {
+                    if (gVigSelect === "General") return;
+                    pFiltrado = pFiltrado.filter(p => (p.grupo || "General") === gVigSelect);
+                } else {
+                    if (gVigSelect !== "General") return;
+                }
+
+                if(pFiltrado.length === 0) return;
+
+                const sec = document.createElement('div');
+                sec.className = "cargo-section";
+                sec.innerHTML = `<div class="cargo-title"><span>${cargo.toUpperCase()}</span> <span>Nómina: ${pFiltrado.length}</span></div>`;
+                
+                const grid = document.createElement('div');
+                grid.className = "grid-fichas";
+
+                pFiltrado.forEach(p => {
+                    const m = marcados[p.n];
+                    const ficha = document.createElement('div');
+                    ficha.className = "ficha";
+                    
+                    if(!m) {
+                        ficha.innerHTML = `<b>${p.n}</b><br>
+                            <button class="btn-check btn-asis" onclick="marcar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
+                            <button class="btn-check btn-act" onclick="marcar('${p.n}','ACT. INST.')">ACT. INST.</button>
+                            <button class="btn-check btn-ret" onclick="marcar('${p.n}','RETRASO')">RETRASO</button>
+                            <button class="btn-check btn-ina" onclick="marcar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
+                            <button class="btn-check btn-vac" onclick="marcar('${p.n}','VACACIONES')">VACACIONES</button>
+                            <button class="btn-check btn-med" onclick="marcar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
+                            <button class="btn-check btn-per" onclick="marcar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
+                    } else if (m.hS === "---" && (m.e === "ASISTENCIA" || m.e === "RETRASO")) {
+                        ficha.innerHTML = `<b>${p.n}</b><br><button class="btn-check btn-salida" onclick="registrarSalida('${p.n}')">MARCAR SALIDA</button>`;
+                    } else {
+                        ficha.style.background = "#eee";
+                        ficha.innerHTML = `<b>${p.n}</b><br><span style="color:green; font-weight:bold">✓ ${m.e}</span><br><button onclick="borrarRegistro('${m.n}','${m.f}')" style="border:none; background:none; color:red; cursor:pointer; font-size:9px;">[X]</button>`;
+                    }
+                    grid.appendChild(ficha);
+                });
+                sec.appendChild(grid);
+                cont.appendChild(sec);
+            });
+        } catch(e) { console.error("Error al dibujar:", e); }
     }
 
+    // 5. Estadísticas
     async function procesarConsolidado() {
         const mes = document.getElementById('mesReporte').value;
-        if(!mes) return alert("Selecciona un mes");
+        if(!mes) { alert("Elige un mes"); return; }
         const diasH = parseFloat(document.getElementById('diasHabiles').value) || 20;
+        
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = snap.docs.map(d => d.data());
         
+        // Disgregado
         const bDis = document.getElementById('bodyDisgregado'); bDis.innerHTML = "";
         const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-        
         cargos.forEach(c => {
             ['F', 'M'].forEach(g => {
-                const nomTotal = nominaLocal.filter(p => p.c === c && p.gender === g);
-                if(nomTotal.length > 0) {
-                    const asistenciasValidas = data.filter(x => x.c === c && x.gender === g && ["ASISTENCIA","RETRASO","ACT. INST.","VACACIONES"].includes(x.e));
-                    let divisor = (c === "Vigilante") ? 15 : diasH;
-                    let pReal = (asistenciasValidas.length / divisor).toFixed(2);
-                    let efec = Math.round((pReal / nomTotal.length) * 100);
-                    bDis.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nomTotal.length}</td><td>${asistenciasValidas.length}</td><td style="font-weight:bold;">${pReal}</td><td>${efec}%</td></tr>`;
+                const nomT = nominaLocal.filter(p => p.c === c && p.gender === g);
+                if(nomT.length > 0) {
+                    const asisV = data.filter(x => x.c === c && x.gender === g && ["ASISTENCIA","RETRASO","ACT. INST.","VACACIONES"].includes(x.e));
+                    let div = (c === "Vigilante") ? 15 : diasH;
+                    let pReal = (asisV.length / div).toFixed(2);
+                    let efec = Math.round((pReal / nomT.length) * 100);
+                    bDis.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nomT.length}</td><td>${asisV.length}</td><td>${pReal}</td><td>${efec}%</td></tr>`;
                 }
             });
         });
 
+        // Individual
         const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
         nominaLocal.forEach(p => {
             const dP = data.filter(x => x.n === p.n);
@@ -310,50 +322,75 @@
         });
     }
 
+    // 6. Nómina y Auxiliares
+    function agregarPersonal() {
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
+        db.collection("nomina_institucional").add({ 
+            n, 
+            c: document.getElementById('nCargo').value, 
+            gender: document.getElementById('nGenero').value, 
+            grupo: document.getElementById('nGrupo').value 
+        });
+        document.getElementById('nNombre').value = "";
+    }
+
+    function renderizarNomina() {
+        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
+        nominaLocal.forEach(p => {
+            b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`;
+        });
+    }
+
+    async function borrarRegistro(n, f) {
+        if(!confirm("¿Eliminar?")) return;
+        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
+        q.forEach(d => d.ref.delete());
+        dibujarPaseLista();
+    }
+
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden'); 
+        btn.classList.add('active');
+    }
+
+    function filtrarFichas() {
+        const v = document.getElementById('buscador').value.toLowerCase();
+        document.querySelectorAll('.ficha').forEach(f => {
+            f.style.display = f.innerText.toLowerCase().includes(v) ? "block" : "none";
+        });
+    }
+
     async function exportarTodoJSON() {
         const nom = await db.collection("nomina_institucional").get();
         const asis = await db.collection("asistencia_ebnlp_final").get();
-        const backup = { nomina: nom.docs.map(d => d.data()), asistencia: asis.docs.map(d => d.data()) };
+        const backup = { 
+            nomina: nom.docs.map(d => d.data()), 
+            asistencia: asis.docs.map(d => d.data()) 
+        };
         const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = `LUCILA_PALACIOS_RESPALDO_${new Date().toLocaleDateString()}.json`; a.click();
+        a.download = `RESPALDO_LUCILA_PALACIOS.json`; a.click();
     }
 
     function importarTodoJSON(event) {
         const r = new FileReader();
         r.onload = async (e) => {
             const d = JSON.parse(e.target.result);
-            if(confirm("¿Restaurar datos? Se sumarán a la base de datos.")){
-                if(d.nomina) for(let p of d.nomina) await db.collection("nomina_institucional").add(p);
-                if(d.asistencia) for(let a of d.asistencia) await db.collection("asistencia_ebnlp_final").add(a);
-                alert("Restaurado correctamente"); location.reload();
+            if(confirm("¿Restaurar datos?")){
+                for(let p of (d.nomina || [])) await db.collection("nomina_institucional").add(p);
+                for(let a of (d.asistencia || [])) await db.collection("asistencia_ebnlp_final").add(a);
+                location.reload();
             }
         };
         r.readAsText(event.target.files[0]);
     }
 
-    function agregarPersonal() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGenero').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
+    function exportarExcel() { 
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById('tabCons')), "Estadistica_Lucila.xlsx"); 
     }
+</script>
+</body>
+</html>
 
-    function renderizarNomina() {
-        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nominaLocal.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`);
-    }
-
-    async function borrarRegistro(n, f) {
-        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        q.forEach(d => d.ref.delete()); dibujarPaseLista();
-    }
-
-    function filtrarFichas() {
-        const v = document.getElementById('buscador').value.toLowerCase();
-        document.querySelectorAll('.ficha').forEach(f => f.style.display = f.innerText.toLowerCase().includes(v) ? "block" : "none");
-    }
-
-    function verTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden');
