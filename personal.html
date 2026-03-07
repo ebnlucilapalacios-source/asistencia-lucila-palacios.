@@ -27,12 +27,18 @@
         .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
         .cargo-content { display: none; padding: 10px; }
         .cargo-content.open { display: block; }
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 8px; }
         .ficha { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; }
         
-        .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 3px; cursor: pointer; font-size: 0.6rem; font-weight: bold; }
+        /* Botones de Estatus (7 BOTONES) */
+        .btn-check { width: 100%; padding: 5px; margin: 2px 0; border: none; border-radius: 3px; cursor: pointer; font-size: 0.6rem; font-weight: bold; }
         .btn-asis { background: #d4edda; color: #155724; }
+        .btn-act { background: #d1ecf1; color: #0c5460; }
+        .btn-ret { background: #fff3cd; color: #856404; }
         .btn-ina { background: #f8d7da; color: #721c24; }
+        .btn-vac { background: #d1e7ff; color: #004085; }
+        .btn-med { background: #e2e3e5; color: #383d41; }
+        .btn-per { background: #f3e5f5; color: #4a148c; }
         
         .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
         .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
@@ -42,7 +48,6 @@
         .row-total { background: #f2f2f2; font-weight: bold; border-top: 2px solid #ccc; }
         .hidden { display: none; }
         .btn-limpiar { background: var(--rojo); color: white; border: none; padding: 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; cursor: pointer; }
-        .btn-excel { background: var(--verde); color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; }
     </style>
 </head>
 <body>
@@ -67,6 +72,7 @@
     <div style="padding:10px; display:flex; gap:5px; align-items: center; background: white;">
         <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
         <button class="btn-limpiar" onclick="limpiarDia('fechaEscuela')">LIMPIAR DÍA</button>
+        <select id="turnoSeleccionado" style="flex:1; padding:5px;"><option value="MAÑANA">TURNO MAÑANA</option><option value="TARDE">TURNO TARDE</option></select>
     </div>
     <div id="contEscuela"></div>
     <div class="sub-t">LISTA DIARIA DE ASISTENCIA</div>
@@ -86,40 +92,34 @@
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; display:flex; gap:10px;">
         <input type="month" id="mesReporte" style="flex:2; padding:10px; border:1px solid #ccc;">
         <button onclick="generarReportes()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">CALCULAR</button>
-        <button onclick="exportarEstadistica()" class="btn-excel">📊 EXCEL</button>
+        <button onclick="exportarEstadistica()" style="flex:1; background:var(--verde); color:white; border:none; border-radius:5px; font-weight:bold;">EXCEL</button>
     </div>
-    <div class="sub-t">REPORTE MENSUAL DISGREGADO</div>
-    <div class="table-wrap">
-        <table id="tablaEstadisticaFinal">
-            <thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM</th><th>% EFEC</th></tr></thead>
-            <tbody id="bodyEstadistica"></tbody>
-        </table>
-    </div>
+    <div class="sub-t">PROMEDIO REAL DISGREGADO</div>
+    <div class="table-wrap"><table id="tablaEstFinal"><thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM</th><th>% EFEC</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
     <div class="sub-t">CONSOLIDADO INDIVIDUAL</div>
-    <div class="table-wrap">
-        <table id="tablaIndividualFinal">
-            <thead><tr><th>NOMBRE</th><th>ASIS</th><th>RET</th><th>INA</th><th>P.M</th><th>P.P</th><th>PROM</th><th>%</th></tr></thead>
-            <tbody id="bodyIndividual"></tbody>
-        </table>
-    </div>
+    <div class="table-wrap"><table id="tablaIndFinal"><thead><tr><th>NOMBRE</th><th>ASIS</th><th>RET</th><th>INA</th><th>P.M</th><th>P.P</th><th>PROM</th><th>%</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
-        <h4 style="margin:0 0 10px 0;">Gestionar Personal</h4>
+        <h4 style="margin:0 0 10px 0;">Nuevo Personal</h4>
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; padding:10px; margin-bottom:5px; text-transform:uppercase;">
         <div style="display:flex; gap:5px;">
             <select id="nCargo" style="flex:1; padding:8px;"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
             <select id="nGen" style="padding:8px;"><option value="F">F</option><option value="M">M</option></select>
             <select id="nGrupo" style="flex:1; padding:8px;"><option value="General">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
         </div>
-        <button onclick="agregarNomina()" style="width:100%; padding:12px; margin-top:8px; background:var(--naranja); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
+        <button onclick="agregarNomina()" style="width:100%; padding:12px; margin-top:8px; background:var(--naranja); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR</button>
+    </div>
+    <div style="padding:10px; display:flex; gap:5px;">
+        <button onclick="descargarNominaRespaldo()" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:5px; font-size:0.7rem;">📥 RESPALDO JSON</button>
+        <button onclick="document.getElementById('fileRestaurar').click()" style="flex:1; padding:10px; background:var(--rojo); color:white; border:none; border-radius:5px; font-size:0.7rem;">📤 RESTAURAR</button>
+        <input type="file" id="fileRestaurar" hidden accept=".json" onchange="importarNominaJSON(this)">
     </div>
     <div class="table-wrap"><table><thead style="background:var(--azul); color:white;"><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
 
 <script>
-    // FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -132,8 +132,7 @@
         nomina = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
         nomina.sort((a,b) => a.n.localeCompare(b.n));
-        renderNomina();
-        actualizarTodo();
+        renderNomina(); actualizarTodo();
     });
 
     async function actualizarTodo() {
@@ -143,8 +142,7 @@
 
     async function dibujarSeccion(contId, cargos, fecha, resId = null, grupo = null) {
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
-        const marcados = {};
-        const resBody = resId ? document.getElementById(resId) : null;
+        const marcados = {}; const resBody = resId ? document.getElementById(resId) : null;
         if(resBody) resBody.innerHTML = "";
         snap.forEach(d => marcados[d.data().n] = d.data());
         const cont = document.getElementById(contId); cont.innerHTML = "";
@@ -157,10 +155,18 @@
             sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()}</span> <span>▼</span></div>`;
             const content = document.createElement('div'); content.className = "cargo-content";
             const grid = document.createElement('div'); grid.className = "grid-fichas";
+
             list.forEach(p => {
                 const m = marcados[p.n]; const f = document.createElement('div'); f.className = "ficha";
                 if(!m) {
-                    f.innerHTML = `<b>${p.n}</b><br><button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA','${fecha}')">ASISTENCIA</button><button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA','${fecha}')">INASISTENCIA</button>`;
+                    f.innerHTML = `<b>${p.n}</b><br>
+                        <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA','${fecha}')">ASISTENCIA</button>
+                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.','${fecha}')">ACT. INST.</button>
+                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO','${fecha}')">RETRASO</button>
+                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA','${fecha}')">INASISTENCIA</button>
+                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES','${fecha}')">VACACIONES</button>
+                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO','${fecha}')">P. MÉDICO</button>
+                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL','${fecha}')">P. PERSONAL</button>`;
                 } else {
                     f.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br><button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px; cursor:pointer; background:none;">[ELIMINAR]</button>`;
                     if(resBody) resBody.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""}</td></tr>`;
@@ -172,8 +178,10 @@
     }
 
     async function registrar(n, e, f) {
-        const p = nomina.find(x => x.n === n);
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE: "07:00", hS: "---" });
+        const p = nomina.find(x => x.n === n); let hE = "---", obs = "";
+        if(["ASISTENCIA","RETRASO"].includes(e)) { hE = prompt("Hora Entrada:", "07:00"); if(!hE) return; }
+        else { obs = prompt("Motivo:"); }
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE, hS: "---", obs: obs || "" });
         actualizarTodo();
     }
 
@@ -186,28 +194,26 @@
     }
 
     async function limpiarDia(idInput) {
-        const fecha = document.getElementById(idInput).value;
-        if(confirm(`Borrar todo el día ${fecha}?`)) {
-            const q = await db.collection("asistencia_ebnlp_final").where("f","==",fecha).get();
+        const f = document.getElementById(idInput).value;
+        if(confirm(`¿Borrar todo el día ${f}?`)) {
+            const q = await db.collection("asistencia_ebnlp_final").where("f","==",f).get();
             const batch = db.batch(); q.forEach(d => batch.delete(d.ref)); await batch.commit();
             actualizarTodo();
         }
     }
 
     async function generarReportes() {
-        const mes = document.getElementById('mesReporte').value;
-        if(!mes) return alert("Seleccione un mes.");
+        const mes = document.getElementById('mesReporte').value; if(!mes) return alert("Seleccione un mes.");
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
-        const dataMes = []; snap.forEach(d => dataMes.push(d.data()));
+        const data = []; snap.forEach(d => data.push(d.data()));
         
-        // Render Estadística
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
             let nTot = 0, aTot = 0, pTot = 0;
             ["F", "M"].forEach(g => {
                 const nT = nomina.filter(p => p.c === c && p.gender === g).length;
                 if (nT > 0) {
-                    const asis = dataMes.filter(x => x.c === c && x.gender === g && x.e === "ASISTENCIA").length;
+                    const asis = data.filter(x => x.c === c && x.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(x.e)).length;
                     const prom = (asis / (c === "Vigilante" ? 15 : 20)).toFixed(2);
                     bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT)*100).toFixed(1)}%</td></tr>`;
                     nTot += nT; aTot += asis; pTot += parseFloat(prom);
@@ -216,23 +222,42 @@
             if (nTot > 0) bEst.innerHTML += `<tr class="row-total"><td>TOTAL ${c}</td><td>-</td><td>${nTot}</td><td>${aTot}</td><td>${pTot.toFixed(2)}</td><td>${((pTot/nTot)*100).toFixed(1)}%</td></tr>`;
         });
 
-        // Render Consolidado
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
         nomina.forEach(p => {
-            const reg = dataMes.filter(x => x.n === p.n); if(reg.length === 0) return;
-            const asis = reg.filter(r => r.e === "ASISTENCIA").length;
+            const r = data.filter(x => x.n === p.n); if(r.length === 0) return;
+            const asis = r.filter(x => ["ASISTENCIA","ACT. INST."].includes(x.e)).length;
             const prom = (asis / (p.c === "Vigilante" ? 15 : 20)).toFixed(2);
-            bInd.innerHTML += `<tr><td style="text-align:left"><b>${p.n}</b></td><td>${asis}</td><td>0</td><td>0</td><td>0</td><td>0</td><td>${prom}</td><td>${(prom*100).toFixed(1)}%</td></tr>`;
+            bInd.innerHTML += `<tr><td style="text-align:left"><b>${p.n}</b></td><td>${asis}</td><td>${r.filter(x=>x.e==="RETRASO").length}</td><td>${r.filter(x=>x.e==="INASISTENCIA").length}</td><td>${r.filter(x=>x.e==="P. MÉDICO").length}</td><td>${r.filter(x=>x.e==="P. PERSONAL").length}</td><td>${prom}</td><td>${(prom*100).toFixed(1)}%</td></tr>`;
         });
     }
 
     function exportarEstadistica() {
         const wb = XLSX.utils.book_new();
-        const ws1 = XLSX.utils.table_to_sheet(document.getElementById('tablaEstadisticaFinal'));
+        const ws1 = XLSX.utils.table_to_sheet(document.getElementById('tablaEstFinal'));
         XLSX.utils.book_append_sheet(wb, ws1, "Estadistica");
-        const ws2 = XLSX.utils.table_to_sheet(document.getElementById('tablaIndividualFinal'));
+        const ws2 = XLSX.utils.table_to_sheet(document.getElementById('tablaIndFinal'));
         XLSX.utils.book_append_sheet(wb, ws2, "Individual");
-        XLSX.writeFile(wb, `Reporte_LucilaPalacios_${document.getElementById('mesReporte').value}.xlsx`);
+        XLSX.writeFile(wb, `Reporte_LP_${document.getElementById('mesReporte').value}.xlsx`);
+    }
+
+    function descargarNominaRespaldo() {
+        const blob = new Blob([JSON.stringify(nomina)], {type: "application/json"});
+        const url = URL.createObjectURL(blob); const a = document.createElement("a");
+        a.href = url; a.download = "nomina_respaldo.json"; a.click();
+    }
+
+    function importarNominaJSON(input) {
+        const reader = new FileReader();
+        reader.onload = async function() {
+            const data = JSON.parse(reader.result);
+            if(confirm("¿Restaurar nómina? Se borrará la actual.")){
+                const snap = await db.collection("nomina_institucional").get();
+                const batch = db.batch(); snap.forEach(d => batch.delete(d.ref));
+                data.forEach(p => { const ref = db.collection("nomina_institucional").doc(); batch.set(ref, {n:p.n, c:p.c, gender:p.gender, grupo:p.grupo}); });
+                await batch.commit(); alert("Nómina restaurada.");
+            }
+        };
+        reader.readAsText(input.files[0]);
     }
 
     function verTab(id, btn) { 
@@ -243,7 +268,7 @@
     
     function renderNomina() { 
         const b = document.getElementById('bodyNomina'); b.innerHTML = ""; 
-        nomina.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`); 
+        nomina.forEach(p => b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`); 
     }
     
     async function agregarNomina() { 
