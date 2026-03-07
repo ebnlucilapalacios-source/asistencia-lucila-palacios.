@@ -10,95 +10,135 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; --gris: #f4f4f4; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
-        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 5px solid var(--naranja); }
+        :root { 
+            --azul: #0a2144; --naranja: #f39c12; --rojo: #850000; --verde: #1d6f42; 
+            --celeste: #3498db; --gris: #f4f4f4; --blanco: #ffffff; 
+        }
         
-        /* Dashboard Estilo Captura */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
-        .dash-card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .dash-card h4 { margin: 0; color: #444; font-size: 1.1rem; }
-        .dash-card .valor { font-size: 2rem; font-weight: bold; color: var(--azul); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; color: #333; }
+        header { background: var(--azul); color: white; text-align: center; padding: 12px; border-bottom: 5px solid var(--naranja); }
+        .contenedor { max-width: 1300px; margin: auto; padding: 10px; }
 
-        /* Tabs Estilo Captura */
-        .tabs { display: flex; gap: 5px; padding: 10px; }
-        .tab-btn { flex: 1; padding: 15px; border: none; border-radius: 5px; font-weight: bold; background: #ddd; cursor: pointer; text-transform: uppercase; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .dash-card { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--azul); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .dash-card .valor { font-size: 1.8rem; font-weight: bold; color: var(--azul); display: block; }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 14px; background: #ddd; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Fichas y Bloqueo */
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; padding: 10px; }
-        .ficha { background: white; padding: 15px; border-radius: 12px; border: 1px solid #ddd; text-align: center; position: relative; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+        .ficha { background: white; padding: 12px; border-radius: 12px; border: 1px solid #ddd; text-align: center; position: relative; transition: 0.3s; }
         
-        /* Reparación: Bloqueo Visual */
-        .vigilante-bloqueado { opacity: 0.25; pointer-events: none; filter: grayscale(1); }
-        .vigilante-bloqueado::before { content: "NO TOCA TRABAJAR"; position: absolute; top: 40%; left: 0; width: 100%; color: var(--rojo); font-weight: bold; font-size: 0.8rem; z-index: 10; }
+        /* Lógica de Bloqueo Vigilantes */
+        .vigilante-bloqueado { opacity: 0.25; pointer-events: none; filter: grayscale(1); background: #f9f9f9; }
+        .vigilante-bloqueado::after { content: "FUERA DE GUARDIA"; position: absolute; top: 40%; left: 0; width: 100%; color: var(--rojo); font-weight: bold; font-size: 0.75rem; }
 
-        /* Botones de Acción */
-        .btn-pdf { background: var(--rojo); color: white; }
-        .btn-excel { background: var(--verde); color: white; }
-        .action-btn { width: 48%; padding: 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-check { width: 100%; padding: 7px; margin: 2px 0; border: 1px solid #eee; border-radius: 5px; cursor: pointer; font-size: 0.65rem; font-weight: bold; text-align: center; }
+
+        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { background: var(--azul); color: white; padding: 10px; text-transform: uppercase; }
+        td { padding: 10px; border: 1px solid #eee; text-align: center; }
+        
+        .sec-header { background: var(--naranja); color: white; padding: 10px 15px; border-radius: 5px; margin-top: 20px; font-weight: bold; text-transform: uppercase; }
+        
+        .btn-footer { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-exp { flex: 1; padding: 15px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .excel { background: var(--verde); }
+        .pdf { background: var(--rojo); }
 
         .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; background: white; font-size: 0.8rem; }
-        th { background: var(--azul); color: white; padding: 10px; }
-        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
-<header><h2>E.B.N. "LUCILA PALACIOS"</h2></header>
+<header>
+    <h1>E.B.N. "LUCILA PALACIOS"</h1>
+    <p>CONTROL DE ASISTENCIA - TODOS LOS ESTATUS</p>
+</header>
 
-<div class="dashboard">
-    <div class="dash-card"><h4>Vigilancia</h4><span class="valor" id="dVig">0</span></div>
-    <div class="dash-card" style="border-bottom: 4px solid var(--verde)"><h4>Efectividad</h4><span class="valor" id="dEfec">0%</span></div>
-</div>
-
-<div class="tabs">
-    <button class="tab-btn active" onclick="verTab('tabReg')">DIARIO</button>
-    <button class="tab-btn" onclick="verTab('tabCons')">MENSUAL/PDF</button>
-    <button class="tab-btn" onclick="verTab('tabNom')">PERSONAL</button>
-</div>
-
-<div id="tabReg" class="tab-content">
-    <div style="padding:10px; background:white; margin:10px; border-radius:8px;">
-        <b>Fecha:</b> <input type="date" id="fechaFiltro" onchange="dibujarPaseLista()">
-        <br><br>
-        <b style="color:var(--rojo)">Vigilancia Activa:</b>
-        <select id="grupoVigActivo" onchange="dibujarPaseLista()" style="padding:5px; font-weight:bold;">
-            <option value="Grupo I">GRUPO I</option>
-            <option value="Grupo II">GRUPO II</option>
-        </select>
-    </div>
-    <div id="fichasGrid" class="grid-fichas"></div>
-</div>
-
-<div id="tabCons" class="tab-content hidden" style="padding:10px;">
-    <div style="background:white; padding:15px; border-radius:8px;">
-        <b>Mes:</b> <input type="month" id="mesReporte">
-        <button onclick="procesarConsolidado()" style="background:var(--azul); color:white; padding:10px; border:none; border-radius:5px; margin-left:10px;">CALCULAR ESTADÍSTICA</button>
+<div class="contenedor">
+    <div class="dashboard">
+        <div class="dash-card"><h4>Docentes</h4><span class="valor" id="dDoc">0</span></div>
+        <div class="dash-card"><h4>Obreros</h4><span class="valor" id="dObr">0</span></div>
+        <div class="dash-card"><h4>Vigilancia</h4><span class="valor" id="dVig">0</span></div>
+        <div class="dash-card" style="border-bottom-color: var(--verde);"><h4>Efectividad</h4><span class="valor" id="dEfec">0%</span></div>
     </div>
 
-    <div style="background:var(--naranja); color:white; padding:10px; margin-top:15px; font-weight:bold; border-radius:5px;">AUDITORÍA INDIVIDUAL</div>
-    <table id="tablaAuditoria">
-        <thead><tr><th>Cédula</th><th>Nombre</th><th>Grupo</th><th>Asis.</th><th>Retr.</th><th>Perm.</th></tr></thead>
-        <tbody id="bodyAuditoria"></tbody>
-    </table>
-
-    <div style="display:flex; justify-content: space-between;">
-        <button class="action-btn btn-excel" onclick="descargarExcel()">EXCEL</button>
-        <button class="action-btn btn-pdf">PDF OFICIAL FIRMADO</button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="verTab('tabReg')">DIARIO</button>
+        <button class="tab-btn" onclick="verTab('tabCons')">MENSUAL/PDF</button>
+        <button class="tab-btn" onclick="verTab('tabNom')">PERSONAL</button>
     </div>
-</div>
 
-<div id="tabNom" class="tab-content hidden" style="padding:10px;">
-    <table>
-        <thead><tr><th>Cédula</th><th>Nombre</th><th>Cargo</th><th>Género</th><th>Grupo</th><th>Eliminar</th></tr></thead>
-        <tbody id="bodyNomina"></tbody>
-    </table>
+    <div id="tabReg" class="tab-content">
+        <div style="display:flex; gap:10px; margin-bottom:15px; background:white; padding:15px; border-radius:8px; align-items:center; flex-wrap: wrap; border: 2px solid var(--azul);">
+            <b>Fecha:</b> <input type="date" id="fechaFiltro" onchange="dibujarPaseLista();">
+            <b style="color: var(--rojo);">Vigilancia Activa:</b> 
+            <select id="grupoVigActivo" onchange="dibujarPaseLista()" style="font-weight: bold;">
+                <option value="GRUPO I">GRUPO I</option>
+                <option value="GRUPO II">GRUPO II</option>
+            </select>
+            <input type="text" id="buscador" placeholder="Buscar personal..." onkeyup="filtrarFichas()" style="flex-grow:1;">
+        </div>
+        
+        <div id="fichasGrid" class="grid-fichas"></div>
+    </div>
+
+    <div id="tabCons" class="tab-content hidden">
+        <div style="background:white; padding:15px; border-radius:8px; margin-bottom:10px; display: flex; gap: 15px; align-items: center; border: 1px solid #ddd;">
+            <label><b>Mes:</b></label> <input type="month" id="mesReporte">
+            <button onclick="procesarConsolidado()" style="background:var(--azul); color:white; padding:12px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">GENERAR REPORTE</button>
+        </div>
+
+        <div class="sec-header">AUDITORÍA INDIVIDUAL</div>
+        <div class="table-wrap">
+            <table id="tablaAuditoria">
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Asis.</th><th>Retr.</th><th>Inasist.</th><th>Permisos</th></tr></thead>
+                <tbody id="bodyConsIndiv"></tbody>
+            </table>
+        </div>
+
+        <div class="btn-footer">
+            <button class="btn-exp excel" onclick="exportarExcel()">EXCEL</button>
+            <button class="btn-exp pdf" onclick="window.print()">IMPRIMIR PDF</button>
+        </div>
+    </div>
+
+    <div id="tabNom" class="tab-content hidden">
+        <div style="background:white; padding:20px; border-radius:10px; margin-bottom:15px; border: 1px solid #ddd;">
+            <h3>Registrar Nuevo Personal</h3>
+            <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px;">
+                <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase">
+                <select id="nCargo">
+                    <option value="Docente">Docente</option>
+                    <option value="Obrero">Obrero</option>
+                    <option value="Administrativo">Administrativo</option>
+                    <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+                    <option value="Vigilante">Vigilante</option>
+                </select>
+                <select id="nGenero"><option value="F">F</option><option value="M">M</option></select>
+                <select id="nGrupo">
+                    <option value="General">General</option>
+                    <option value="GRUPO I">GRUPO I</option>
+                    <option value="GRUPO II">GRUPO II</option>
+                </select>
+            </div>
+            <button onclick="agregarPersonal()" style="margin-top:10px; width:100%; background:var(--verde); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Nombre</th><th>Cargo</th><th>Género</th><th>Grupo</th><th>Eliminar</th></tr></thead>
+                <tbody id="bodyNomina"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Configuración Firebase (Usando la tuya)
+    // Configuración Firebase
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -109,41 +149,51 @@
     db.collection("nomina_institucional").onSnapshot(snap => {
         nominaLocal = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nominaLocal.push(d); });
+        nominaLocal.sort((a,b) => a.n.localeCompare(b.n));
         renderizarNomina();
         dibujarPaseLista();
     });
 
-    // REPARACIÓN DE BLOQUEO: Comparación de texto ultra-segura
+    async function marcar(nombre, estatus) {
+        const fecha = document.getElementById('fechaFiltro').value;
+        const p = nominaLocal.find(x => x.n === nombre);
+        
+        await db.collection("asistencia_ebnlp_final").add({
+            n: nombre, f: fecha, e: estatus,
+            c: p.c, gender: p.gender, mes: fecha.substring(0,7), grupo: p.grupo
+        });
+        dibujarPaseLista();
+    }
+
     function dibujarPaseLista() {
         const fecha = document.getElementById('fechaFiltro').value;
-        const selector = document.getElementById('grupoVigActivo').value.toLowerCase().replace(/\s/g, '');
+        const gActivo = document.getElementById('grupoVigActivo').value;
         
         db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get().then(snap => {
             const marcados = {}; snap.forEach(d => marcados[d.data().n] = d.data());
-            const cont = document.getElementById('fichasGrid'); 
-            cont.innerHTML = "";
+            const cont = document.getElementById('fichasGrid'); cont.innerHTML = "";
             
             nominaLocal.forEach(p => {
                 const div = document.createElement('div');
                 div.className = "ficha";
                 
-                // Normalizamos el grupo de la nómina (Ej: "GRUPO II" -> "grupoii")
-                const grupoNomina = (p.grupo || "").toLowerCase().replace(/\s/g, '');
-
-                // Lógica de Bloqueo Reparada: 
-                // Solo bloquea si es Vigilante Y los grupos no coinciden limpiamente
-                if (p.c === "Vigilante" && grupoNomina !== selector) {
-                    div.classList.add('vigilante-bloqueado');
-                }
+                // Lógica de Bloqueo Vigilantes
+                if(p.c === "Vigilante" && p.grupo !== gActivo) div.classList.add('vigilante-bloqueado');
 
                 const m = marcados[p.n];
                 if(!m) {
-                    div.innerHTML = `<b>${p.n}</b><br><small>${p.c}</small><br>
-                        <button onclick="marcar('${p.n}','ASISTENCIA')" style="background:#d4edda; width:100%; margin-top:5px; border:1px solid #ccc; padding:5px; font-weight:bold;">ASISTENCIA</button>
-                        <button onclick="marcar('${p.n}','INASISTENCIA')" style="background:#f8d7da; width:100%; margin-top:5px; border:1px solid #ccc; padding:5px; font-weight:bold;">FALTA</button>`;
+                    div.innerHTML = `<p><b>${p.n}</b></p>
+                        <button class="btn-check" style="background:#d4edda" onclick="marcar('${p.n}','ASISTENCIA')">✅ ASISTENCIA</button>
+                        <button class="btn-check" style="background:#d1e7ff" onclick="marcar('${p.n}','VACACIONES')">🏖️ VACACIONES</button>
+                        <button class="btn-check" style="background:#d1ecf1" onclick="marcar('${p.n}','ACT. INST.')">🏛️ ACT. INST.</button>
+                        <button class="btn-check" style="background:#fff3cd" onclick="marcar('${p.n}','RETRASO')">⚠️ RETRASO</button>
+                        <button class="btn-check" style="background:#f8d7da" onclick="marcar('${p.n}','INASISTENCIA')">❌ INASISTENCIA</button>
+                        <button class="btn-check" style="background:#e2e3e5" onclick="marcar('${p.n}','P. MÉDICO')">🏥 P. MÉDICO</button>
+                        <button class="btn-check" style="background:#ffffff; border:1px solid #ddd" onclick="marcar('${p.n}','P. PERSONAL')">📄 P. PERSONAL</button>`;
                 } else {
-                    div.style.background = "#eee";
-                    div.innerHTML = `<b>${p.n}</b><br><p style="color:green; font-weight:bold;">✓ ${m.e}</p>`;
+                    div.style.background = "#eee"; 
+                    div.innerHTML = `<p><b>${p.n}</b></p><b style="color:green">✓ REGISTRADO</b><br><small>${m.e}</small><br>
+                                     <button onclick="eliminarRegistro('${m.n}','${m.f}')" style="margin-top:5px; font-size:10px; border:none; background:none; color:red; cursor:pointer;">(Eliminar)</button>`;
                 }
                 cont.appendChild(div);
             });
@@ -151,58 +201,73 @@
         });
     }
 
-    async function marcar(nombre, estatus) {
-        const p = nominaLocal.find(x => x.n === nombre);
-        const fecha = document.getElementById('fechaFiltro').value;
-        const mes = fecha.substring(0,7);
-        
-        await db.collection("asistencia_ebnlp_final").add({
-            n: nombre, f: fecha, e: estatus, c: p.c, mes: mes, cedula: p.cedula || "S/C"
-        });
+    async function eliminarRegistro(nombre, fecha) {
+        if(!confirm("¿Eliminar registro?")) return;
+        const q = await db.collection("asistencia_ebnlp_final").where("n","==",nombre).where("f","==",fecha).get();
+        q.forEach(d => d.ref.delete());
         dibujarPaseLista();
     }
 
+    async function procesarConsolidado() {
+        const mes = document.getElementById('mesReporte').value;
+        const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
+        const data = snap.docs.map(d => d.data());
+        const bI = document.getElementById('bodyConsIndiv'); bI.innerHTML = "";
+        
+        nominaLocal.forEach(p => {
+            const dP = data.filter(x => x.n === p.n);
+            const c = {A:0, R:0, I:0, P:0};
+            dP.forEach(x => {
+                if(x.e === "ASISTENCIA" || x.e === "ACT. INST." || x.e === "VACACIONES") c.A++;
+                else if(x.e === "RETRASO") c.R++;
+                else if(x.e === "INASISTENCIA") c.I++;
+                else if(x.e.includes("PERMISO")) c.P++;
+            });
+            bI.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.grupo}</td><td>${c.A}</td><td>${c.R}</td><td>${c.I}</td><td>${c.P}</td></tr>`;
+        });
+    }
+
     function actualizarDashboard(marcados) {
-        let asisVig = 0;
-        Object.values(marcados).forEach(m => { if(m.c === "Vigilante" && m.e === "ASISTENCIA") asisVig++; });
-        document.getElementById('dVig').innerText = asisVig;
+        let counts = {Docente:0, Obrero:0, Vigilante:0};
+        Object.values(marcados).forEach(m => { if(["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e)) counts[m.c]++; });
+        document.getElementById('dDoc').innerText = counts.Docente || 0;
+        document.getElementById('dObr').innerText = counts.Obrero || 0;
+        document.getElementById('dVig').innerText = counts.Vigilante || 0;
         let total = Object.keys(marcados).length;
         document.getElementById('dEfec').innerText = nominaLocal.length > 0 ? Math.round((total/nominaLocal.length)*100)+"%" : "0%";
+    }
+
+    function agregarPersonal() {
+        db.collection("nomina_institucional").add({
+            n: document.getElementById('nNombre').value.toUpperCase(),
+            c: document.getElementById('nCargo').value,
+            gender: document.getElementById('nGenero').value,
+            grupo: document.getElementById('nGrupo').value
+        });
+        document.getElementById('nNombre').value = "";
+        alert("Personal Guardado");
+    }
+
+    function renderizarNomina() {
+        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
+        nominaLocal.forEach(p => b.innerHTML += `<tr><td>${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`);
     }
 
     function verTab(id) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
+        if(event) event.currentTarget.classList.add('active');
     }
 
-    function renderizarNomina() {
-        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nominaLocal.forEach(p => {
-            b.innerHTML += `<tr><td>${p.cedula || '---'}</td><td>${p.n}</td><td>${p.c}</td><td>${p.gender || '---'}</td><td>${p.grupo}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`;
-        });
+    function filtrarFichas() {
+        const v = document.getElementById('buscador').value.toLowerCase();
+        document.querySelectorAll('.ficha').forEach(f => f.style.display = f.innerText.toLowerCase().includes(v) ? "block" : "none");
     }
 
-    // Funciones de Reporte (Captura 1)
-    async function procesarConsolidado() {
-        const mes = document.getElementById('mesReporte').value;
-        const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
-        const data = snap.docs.map(d => d.data());
-        const b = document.getElementById('bodyAuditoria'); b.innerHTML = "";
-        
-        nominaLocal.forEach(p => {
-            const ind = data.filter(x => x.n === p.n);
-            const asis = ind.filter(x => x.e === "ASISTENCIA").length;
-            const retr = ind.filter(x => x.e === "RETRASO").length;
-            const perm = ind.filter(x => x.e.includes("PERMISO")).length;
-            b.innerHTML += `<tr><td>${p.cedula || ''}</td><td>${p.n}</td><td>${p.grupo}</td><td>${asis}</td><td>${retr}</td><td>${perm}</td></tr>`;
-        });
-    }
-
-    function descargarExcel() {
+    function exportarExcel() {
         const wb = XLSX.utils.table_to_book(document.getElementById('tablaAuditoria'));
-        XLSX.writeFile(wb, "Reporte_Lucila_Palacios.xlsx");
+        XLSX.writeFile(wb, "Reporte_Asistencia.xlsx");
     }
 </script>
 </body>
