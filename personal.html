@@ -39,10 +39,6 @@
         .btn-asis { background: #d4edda; color: #155724; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
 
-        .lista-diaria-tabla { width: 100%; border-collapse: collapse; font-size: 0.65rem; margin-top: 10px; background: #fff; }
-        .lista-diaria-tabla th { background: #f0f0f0; color: #333; padding: 6px; border: 1px solid #ccc; }
-        .lista-diaria-tabla td { padding: 6px; border: 1px solid #ccc; text-align: center; }
-
         .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
         th { background: #444; color: white; padding: 8px; }
@@ -105,22 +101,24 @@
     <div class="seccion-titulo">PROMEDIO POR GÉNERO</div>
     <div class="table-wrap"><table><thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
     <div class="seccion-titulo">CONSOLIDADO INDIVIDUAL</div>
-    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Asis</th><th style="color:red">S.A.</th><th>Ina</th><th>Per</th><th>Vac</th><th>Prom</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase;">
         <div style="display:flex; gap:5px;">
-            <select id="nCargo"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
+            <select id="nCargo">
+                <option value="Docente">Docente</option>
+                <option value="Obrero">Obrero</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+                <option value="Vigilante">Vigilante</option>
+            </select>
             <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
         </div>
         <select id="nGrupo" style="margin-top:8px;"><option value="-">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
         <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR</button>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <button onclick="respaldarJSON()" style="background:#8d4944; color:white; border:none; padding:8px; border-radius:5px; font-size:0.6rem;">📥 JSON</button>
-            <button onclick="exportarExcelNomina()" style="background:var(--verde); color:white; border:none; padding:8px; border-radius:5px; font-size:0.6rem;">📊 EXCEL</button>
-        </div>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
@@ -131,6 +129,25 @@
     const db = firebase.firestore();
 
     let nomina = [];
+    
+    // Configuración de Horarios
+    const HORARIOS = {
+        "MAÑANA": {
+            "Docente": { entrada: "07:00", salida: "12:00" },
+            "Obrero": { entrada: "06:45", salida: "12:45" },
+            "Administrativo": { entrada: "06:45", salida: "12:45" },
+            "CNAE (Cocinera)": { entrada: "07:00", salida: "14:00" },
+            "Vigilante": { entrada: "06:00", salida: "18:00" }
+        },
+        "TARDE": {
+            "Docente": { entrada: "12:00", salida: "17:00" },
+            "Obrero": { entrada: "11:30", salida: "17:00" },
+            "Administrativo": { entrada: "12:00", salida: "18:00" },
+            "CNAE (Cocinera)": { entrada: "12:00", salida: "18:00" },
+            "Vigilante": { entrada: "18:00", salida: "06:00" }
+        }
+    };
+
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
@@ -146,7 +163,7 @@
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
 
         snap.forEach(doc => {
-            const d = doc.data(); marcados[d.n] = d;
+            const d = doc.data(); marcados[d.n + d.f] = d;
             if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
             else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
         });
@@ -169,79 +186,106 @@
 
     function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null) {
         const cont = document.getElementById(contId); cont.innerHTML = "";
+        let personalParaListaGeneral = [];
+
+        const coloresEstatus = {
+            "ASISTENCIA": "#d4edda", "ACT. INST.": "#d1ecf1", "RETRASO": "#fff3cd",
+            "INASISTENCIA": "#f8d7da", "VACACIONES": "#e0f7fa", "P. PERSONAL": "#efebe9", "PENDIENTE": "#ffffff"
+        };
+
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
             if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
             if(lista.length === 0) return;
-
-            const presentes = lista.filter(p => marcados[p.n] && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(marcados[p.n].e)).length;
-            const porc = Math.round((presentes/lista.length)*100);
+            personalParaListaGeneral = personalParaListaGeneral.concat(lista);
 
             const sec = document.createElement('div');
             sec.className = "cargo-section";
             sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>${cargo.toUpperCase()} (${lista.length}) - ${porc}%</span> <span>▼</span>
+                <span>${cargo.toUpperCase()} (${lista.length})</span> <span>▼</span>
             </div>`;
             
             const content = document.createElement('div');
             content.className = "cargo-content";
-            
             const grid = document.createElement('div');
             grid.className = "grid-fichas";
 
-            // Iniciamos la tabla que incluirá a TODOS
-            let tablaHTML = `<table class="lista-diaria-tabla"><thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th></tr></thead><tbody>`;
-
             lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-                const m = marcados[p.n];
+                const m = marcados[p.n + fecha];
                 const f = document.createElement('div'); f.className = "ficha";
-                
                 if(!m) {
-                    // Si no está marcado, mostramos botones y en la tabla como "PENDIENTE"
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                        <button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
                         <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
-                        <button class="btn-check" style="background:#f3e5f5" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
                         <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
-                    
-                    tablaHTML += `<tr><td style="text-align:left">${p.n}</td><td style="color:#999">PENDIENTE</td><td>-</td><td>-</td></tr>`;
                 } else {
-                    // Si está marcado, mostramos estatus y en la tabla sus datos reales
-                    f.style.borderColor = "var(--verde)";
+                    f.style.borderColor = "var(--azul)";
                     f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
+                        <small>${m.hE} / ${m.hS}</small><br>
                         ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(m.e) ? 
-                        `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
-                    
-                    let colorEstatus = m.e === "INASISTENCIA" ? "red" : (["ASISTENCIA","ACT. INST."].includes(m.e) ? "green" : "orange");
-                    tablaHTML += `<tr><td style="text-align:left; font-weight:bold;">${p.n}</td><td style="color:${colorEstatus}">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td></tr>`;
+                        `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : ""}`;
                 }
                 grid.appendChild(f);
             });
-
-            tablaHTML += `</tbody></table>`;
-            content.appendChild(grid);
-            content.innerHTML += `<div style="font-weight:bold; font-size:0.75rem; margin-top:15px; border-bottom:1px solid #ddd; padding-bottom:5px;">LISTA COMPLETA: ${cargo.toUpperCase()}</div>` + tablaHTML;
-            sec.appendChild(content); cont.appendChild(sec);
+            content.appendChild(grid); sec.appendChild(content); cont.appendChild(sec);
         });
+
+        if(personalParaListaGeneral.length > 0) {
+            const titulo = document.createElement('div'); titulo.className = "seccion-titulo"; titulo.innerText = "TABLA DE CONTROL DIARIO POR ESTATUS";
+            cont.appendChild(titulo);
+            const wrap = document.createElement('div'); wrap.className = "table-wrap";
+            let tablaHTML = `<table><thead><tr><th>NOMBRE</th><th>CARGO</th><th>ESTATUS</th><th>H.E. / H.S.</th><th>OBSERVACIÓN</th></tr></thead><tbody>`;
+            personalParaListaGeneral.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+                const m = marcados[p.n + fecha];
+                let est = m ? m.e : "PENDIENTE";
+                let color = coloresEstatus[est] || "#fff";
+                let hE = m ? m.hE : "-"; let hS = m ? m.hS : "-";
+                let obs = (m && m.motivoSalida && m.motivoSalida !== "N/A") ? `<span style="color:red">S.A: ${m.motivoSalida}</span>` : "-";
+                tablaHTML += `<tr style="background:${color}; border-bottom:1px solid #ccc">
+                    <td style="text-align:left; font-weight:bold; padding:8px;">${p.n}</td>
+                    <td style="font-size:0.5rem">${p.c.toUpperCase()}</td>
+                    <td>${est}</td><td>${hE} / ${hS}</td><td style="font-size:0.55rem">${obs}</td></tr>`;
+            });
+            tablaHTML += `</tbody></table>`; wrap.innerHTML = tablaHTML; cont.appendChild(wrap);
+        }
     }
 
     async function registrar(n, e) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
+        
         let hE = "---";
         if(!["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(e)) {
-            hE = prompt("Hora Entrada:", (t === "MAÑANA" ? "07:00" : "12:00")); if(!hE) return;
+            hE = prompt(`Confirmar hora entrada para ${p.c}:`, HORARIOS[t][p.c].entrada);
+            if(!hE) return;
         }
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t });
+
+        if(e === "INASISTENCIA" || e === "P. PERSONAL") {
+            const f30 = new Date(f); f30.setDate(f30.getDate() - 30);
+            const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f",">=",f30.toISOString().split('T')[0]).where("e","==",e).get();
+            if(snap.size >= 3) alert(`⚠️ ALERTA: ${n} ya posee ${snap.size} registros de ${e} en 30 días.`);
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t, motivoSalida: "N/A" });
         actualizarTodo();
     }
 
     async function marcarSalida(n, f) {
-        const hS = prompt("Hora Salida:"); if(!hS) return;
+        const p = nomina.find(x => x.n === n);
+        const t = document.getElementById('turnoSeleccionado').value;
+        const prog = HORARIOS[t][p.c].salida;
+        const hS = prompt(`Hora Salida (Programada ${prog}):`, prog); if(!hS) return;
+
+        let motivo = "N/A";
+        const [hR, mR] = hS.split(':').map(Number); const [hP, mP] = prog.split(':').map(Number);
+        if((hR*60+mR) < (hP*60+mP)) {
+            motivo = prompt("⚠️ SALIDA ANTICIPADA detectada. Ingrese motivo:");
+            if(!motivo) return alert("Motivo obligatorio.");
+        }
+
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
+        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, motivoSalida: motivo });
         actualizarTodo();
     }
 
@@ -251,22 +295,25 @@
         const docs = snap.docs.map(d => d.data());
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
+
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
-                    const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const pr = (aC / (c === "Vigilante" ? 15 : 20)).toFixed(2);
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
+                    const asis = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
+                    const prom = (asis / 20).toFixed(2);
+                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT.length)*100).toFixed(1)}%</td></tr>`;
                 }
             });
         });
+
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             const m = docs.filter(d => d.n === p.n);
             if(m.length > 0) {
-                const r = (e) => m.filter(x => x.e === e).length;
-                const pr = ((r("ASISTENCIA")+r("ACT. INST.")+r("RETRASO")) / (p.c === "Vigilante" ? 15 : 20)).toFixed(2);
-                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${pr}</b></td></tr>`;
+                const count = (e) => m.filter(x => x.e === e).length;
+                const asis = count("ASISTENCIA") + count("ACT. INST.") + count("RETRASO");
+                const sa = m.filter(x => x.motivoSalida && x.motivoSalida !== "N/A").length;
+                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${asis}</td><td style="color:red; font-weight:bold">${sa}</td><td>${count("INASISTENCIA")}</td><td>${count("P. PERSONAL")}</td><td>${count("VACACIONES")}</td><td><b>${(asis/20).toFixed(2)}</b></td></tr>`;
             }
         });
     }
@@ -280,23 +327,4 @@
     function renderNomina() {
         const b = document.getElementById('bodyNomina'); b.innerHTML = "";
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red;border:none;background:none;font-weight:bold;">X</button></td></tr>`;
-        });
-    }
-
-    function respaldarJSON() {
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(nomina, null, 2)], {type:"application/json"})); a.download="nomina.json"; a.click();
-    }
-
-    function exportarExcelNomina() {
-        const ws = XLSX.utils.json_to_sheet(nomina); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Nómina"); XLSX.writeFile(wb, "Nomina.xlsx");
-    }
-
-    function verTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
-    }
-</script>
-</body>
-</html>
+            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td
