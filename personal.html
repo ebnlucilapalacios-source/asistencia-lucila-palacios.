@@ -93,6 +93,19 @@
         </select>
     </div>
     <div id="contEscuela"></div>
+    <div class="cargo-section">
+        <div class="cargo-title" style="background:var(--azul)" onclick="this.nextElementSibling.classList.toggle('open')">
+            <span>LISTA DE ASISTENCIA DIARIA GENERAL (ESCUELA)</span> <span>▼</span>
+        </div>
+        <div class="cargo-content table-wrap">
+            <table class="lista-diaria-tabla">
+                <thead>
+                    <tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th><th>EFEC</th><th>OBSERVACIONES</th></tr>
+                </thead>
+                <tbody id="tablaGeneralEscuela"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div id="tabVigilancia" class="tab-content hidden">
@@ -104,6 +117,19 @@
         </select>
     </div>
     <div id="contVigilancia"></div>
+    <div class="cargo-section">
+        <div class="cargo-title" style="background:var(--azul)" onclick="this.nextElementSibling.classList.toggle('open')">
+            <span>LISTA DE ASISTENCIA DIARIA GENERAL (VIGILANCIA)</span> <span>▼</span>
+        </div>
+        <div class="cargo-content table-wrap">
+            <table class="lista-diaria-tabla">
+                <thead>
+                    <tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th><th>EFEC</th><th>OBSERVACIONES</th></tr>
+                </thead>
+                <tbody id="tablaGeneralVig"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
@@ -148,8 +174,10 @@
     });
 
     async function actualizarTodo() {
-        const f = document.getElementById('fechaEscuela').value;
-        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
+        const fe = document.getElementById('fechaEscuela').value;
+        const fv = document.getElementById('fechaVig').value;
+        
+        const snap = await db.collection("asistencia_ebnlp_final").where("f", "in", [fe, fv]).get();
         const marcados = {}; 
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
 
@@ -171,12 +199,14 @@
         document.getElementById('barOtros').style.width = (c.Otros/total*100) + "%";
         document.getElementById('porcentajeDia').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
 
-        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], f, marcados);
-        dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, marcados, document.getElementById('filtroGrupo').value);
+        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], fe, marcados, null, "tablaGeneralEscuela");
+        dibujarSeccion("contVigilancia", ["Vigilante"], fv, marcados, document.getElementById('filtroGrupo').value, "tablaGeneralVig");
     }
 
-    function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null) {
+    function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null, tablaId) {
         const cont = document.getElementById(contId); cont.innerHTML = "";
+        const tablaG = document.getElementById(tablaId); tablaG.innerHTML = "";
+        
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
             if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
@@ -193,13 +223,14 @@
             const grid = document.createElement('div');
             grid.className = "grid-fichas";
 
-            let tablaHTML = `<table class="lista-diaria-tabla"><thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th></tr></thead><tbody>`;
-
             lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
                 const m = marcados[p.n];
                 const f = document.createElement('div'); f.className = "ficha";
                 
+                // --- Construcción Tabla General ---
+                let row = `<tr><td style="text-align:left">${p.n}</td>`;
                 if(!m) {
+                    row += `<td style="color:#999">PENDIENTE</td><td>-</td><td>-</td><td>0%</td><td>-</td></tr>`;
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
                         <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
@@ -208,22 +239,20 @@
                         <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>
                         <button class="btn-check" style="background:#e3f2fd" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
                         <button class="btn-check" style="background:#e8f5e9" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>`;
-                    
-                    tablaHTML += `<tr><td style="text-align:left">${p.n}</td><td style="color:#999">PENDIENTE</td><td>-</td><td>-</td></tr>`;
                 } else {
+                    let efec = (m.hE !== "---" && m.hS !== "---") ? "100%" : (m.hE !== "---" ? "50%" : "0%");
+                    row += `<td style="font-weight:bold">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td><td>${efec}</td><td>${m.obs || "-"}</td></tr>`;
+                    
                     f.style.borderColor = "var(--verde)";
                     f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
                         ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"].includes(m.e) ? 
                         `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
-                    
-                    tablaHTML += `<tr><td style="text-align:left; font-weight:bold;">${p.n}</td><td>${m.e}</td><td>${m.hE}</td><td>${m.hS}</td></tr>`;
                 }
                 grid.appendChild(f);
+                tablaG.innerHTML += row;
             });
 
-            tablaHTML += `</tbody></table>`;
             content.appendChild(grid);
-            content.innerHTML += `<div style="font-weight:bold; font-size:0.75rem; margin-top:15px; border-bottom:1px solid #ddd; padding-bottom:5px;">LISTA COMPLETA</div>` + tablaHTML;
             sec.appendChild(content); cont.appendChild(sec);
         });
     }
@@ -233,27 +262,17 @@
         const t = document.getElementById('turnoSeleccionado').value;
         const fechaAct = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
 
-        // --- Lógica de Alertas (30 días) ---
         if(e === "INASISTENCIA" || e === "P. PERSONAL") {
             const fechaLimite = new Date(fechaAct);
             fechaLimite.setDate(fechaLimite.getDate() - 30);
-            const rSnap = await db.collection("asistencia_ebnlp_final")
-                .where("n", "==", n)
-                .where("e", "==", e)
-                .where("f", ">=", fechaLimite.toISOString().split('T')[0])
-                .get();
-            
-            if(rSnap.size >= 3) {
-                alert(`⚠️ ALERTA: ${n} ya tiene ${rSnap.size} registros de ${e} en los últimos 30 días.`);
-            }
+            const rSnap = await db.collection("asistencia_ebnlp_final").where("n", "==", n).where("e", "==", e).where("f", ">=", fechaLimite.toISOString().split('T')[0]).get();
+            if(rSnap.size >= 3) alert(`⚠️ ALERTA: ${n} ya tiene ${rSnap.size} registros de ${e} en los últimos 30 días.`);
         }
 
-        // --- Lógica de Horarios Automáticos ---
         let hSugerida = "07:00";
         if (t === "MAÑANA") {
             if (p.c === "Docente") hSugerida = "07:00";
             else if (["Obrero", "Administrativo"].includes(p.c)) hSugerida = "06:45";
-            else if (p.c === "CNAE (Cocinera)") hSugerida = "07:00";
         } else {
             if (p.c === "Docente") hSugerida = "12:00";
             else if (p.c === "Obrero") hSugerida = "11:30";
@@ -267,7 +286,7 @@
 
         await db.collection("asistencia_ebnlp_final").add({ 
             n, e, f: fechaAct, c: p.c, gender: p.gender, hE, hS: "---", 
-            mes: fechaAct.substring(0,7), turno: t 
+            mes: fechaAct.substring(0,7), turno: t, obs: "" 
         });
         actualizarTodo();
     }
@@ -276,20 +295,26 @@
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         
-        // --- Sugerencia de Salida ---
-        let hSugerida = "12:00";
+        let hMinima = "12:00";
         if (t === "MAÑANA") {
-            if (["Obrero", "Administrativo"].includes(p.c)) hSugerida = "12:45";
-            else if (p.c === "CNAE (Cocinera)") hSugerida = "14:00";
-            else hSugerida = "12:00";
+            if (["Obrero", "Administrativo"].includes(p.c)) hMinima = "12:45";
+            else if (p.c === "CNAE (Cocinera)") hMinima = "14:00";
         } else {
-            if (p.c === "Docente" || p.c === "Obrero") hSugerida = "17:00";
-            else if (p.c === "Administrativo") hSugerida = "18:00";
+            if (p.c === "Docente" || p.c === "Obrero") hMinima = "17:00";
+            else if (p.c === "Administrativo") hMinima = "18:00";
         }
 
-        const hS = prompt("Confirmar Hora Salida:", hSugerida); if(!hS) return;
+        const hS = prompt("Confirmar Hora Salida:", hMinima); if(!hS) return;
+        
+        let obs = "";
+        // Lógica de salida antes de tiempo
+        if (hS < hMinima) {
+            obs = prompt("SALIDA ANTICIPADA DETECTADA. Indique el motivo:");
+            if (!obs) obs = "Salida antes de la hora estipulada.";
+        }
+
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
+        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, obs });
         actualizarTodo();
     }
 
@@ -340,4 +365,3 @@
 </script>
 </body>
 </html>
-
