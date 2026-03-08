@@ -87,7 +87,10 @@
 <div id="tabEscuela" class="tab-content">
     <div style="padding:10px; display:flex; gap:5px; background:white;">
         <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
+        <select id="turnoSeleccionado" onchange="actualizarTodo()">
+            <option value="MAÑANA">MAÑANA</option>
+            <option value="TARDE">TARDE</option>
+        </select>
     </div>
     <div id="contEscuela"></div>
 </div>
@@ -95,7 +98,10 @@
 <div id="tabVigilancia" class="tab-content hidden">
     <div style="padding:10px; background:white;">
         <input type="date" id="fechaVig" onchange="actualizarTodo()">
-        <select id="filtroGrupo" onchange="actualizarTodo()"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select>
+        <select id="filtroGrupo" onchange="actualizarTodo()">
+            <option value="GRUPO I">GRUPO I</option>
+            <option value="GRUPO II">GRUPO II</option>
+        </select>
     </div>
     <div id="contVigilancia"></div>
 </div>
@@ -112,15 +118,17 @@
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase;">
         <div style="display:flex; gap:5px;">
-            <select id="nCargo"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
+            <select id="nCargo">
+                <option value="Docente">Docente</option>
+                <option value="Obrero">Obrero</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+                <option value="Vigilante">Vigilante</option>
+            </select>
             <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
         </div>
         <select id="nGrupo" style="margin-top:8px;"><option value="-">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
         <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR</button>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <button onclick="respaldarJSON()" style="background:#8d4944; color:white; border:none; padding:8px; border-radius:5px; font-size:0.6rem;">📥 JSON</button>
-            <button onclick="exportarExcelNomina()" style="background:var(--verde); color:white; border:none; padding:8px; border-radius:5px; font-size:0.6rem;">📊 EXCEL</button>
-        </div>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
@@ -174,22 +182,17 @@
             if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
             if(lista.length === 0) return;
 
-            const presentes = lista.filter(p => marcados[p.n] && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(marcados[p.n].e)).length;
-            const porc = Math.round((presentes/lista.length)*100);
-
             const sec = document.createElement('div');
             sec.className = "cargo-section";
             sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>${cargo.toUpperCase()} (${lista.length}) - ${porc}%</span> <span>▼</span>
+                <span>${cargo.toUpperCase()} (${lista.length})</span> <span>▼</span>
             </div>`;
             
             const content = document.createElement('div');
             content.className = "cargo-content";
-            
             const grid = document.createElement('div');
             grid.className = "grid-fichas";
 
-            // Iniciamos la tabla que incluirá a TODOS
             let tablaHTML = `<table class="lista-diaria-tabla"><thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th></tr></thead><tbody>`;
 
             lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
@@ -197,31 +200,30 @@
                 const f = document.createElement('div'); f.className = "ficha";
                 
                 if(!m) {
-                    // Si no está marcado, mostramos botones y en la tabla como "PENDIENTE"
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                        <button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
                         <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
+                        <button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
                         <button class="btn-check" style="background:#f3e5f5" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
-                        <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
+                        <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>
+                        <button class="btn-check" style="background:#e3f2fd" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
+                        <button class="btn-check" style="background:#e8f5e9" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>`;
                     
                     tablaHTML += `<tr><td style="text-align:left">${p.n}</td><td style="color:#999">PENDIENTE</td><td>-</td><td>-</td></tr>`;
                 } else {
-                    // Si está marcado, mostramos estatus y en la tabla sus datos reales
                     f.style.borderColor = "var(--verde)";
                     f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
-                        ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(m.e) ? 
+                        ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"].includes(m.e) ? 
                         `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
                     
-                    let colorEstatus = m.e === "INASISTENCIA" ? "red" : (["ASISTENCIA","ACT. INST."].includes(m.e) ? "green" : "orange");
-                    tablaHTML += `<tr><td style="text-align:left; font-weight:bold;">${p.n}</td><td style="color:${colorEstatus}">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td></tr>`;
+                    tablaHTML += `<tr><td style="text-align:left; font-weight:bold;">${p.n}</td><td>${m.e}</td><td>${m.hE}</td><td>${m.hS}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
 
             tablaHTML += `</tbody></table>`;
             content.appendChild(grid);
-            content.innerHTML += `<div style="font-weight:bold; font-size:0.75rem; margin-top:15px; border-bottom:1px solid #ddd; padding-bottom:5px;">LISTA COMPLETA: ${cargo.toUpperCase()}</div>` + tablaHTML;
+            content.innerHTML += `<div style="font-weight:bold; font-size:0.75rem; margin-top:15px; border-bottom:1px solid #ddd; padding-bottom:5px;">LISTA COMPLETA</div>` + tablaHTML;
             sec.appendChild(content); cont.appendChild(sec);
         });
     }
@@ -229,17 +231,63 @@
     async function registrar(n, e) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
-        const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
-        let hE = "---";
-        if(!["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(e)) {
-            hE = prompt("Hora Entrada:", (t === "MAÑANA" ? "07:00" : "12:00")); if(!hE) return;
+        const fechaAct = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
+
+        // --- Lógica de Alertas (30 días) ---
+        if(e === "INASISTENCIA" || e === "P. PERSONAL") {
+            const fechaLimite = new Date(fechaAct);
+            fechaLimite.setDate(fechaLimite.getDate() - 30);
+            const rSnap = await db.collection("asistencia_ebnlp_final")
+                .where("n", "==", n)
+                .where("e", "==", e)
+                .where("f", ">=", fechaLimite.toISOString().split('T')[0])
+                .get();
+            
+            if(rSnap.size >= 3) {
+                alert(`⚠️ ALERTA: ${n} ya tiene ${rSnap.size} registros de ${e} en los últimos 30 días.`);
+            }
         }
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t });
+
+        // --- Lógica de Horarios Automáticos ---
+        let hSugerida = "07:00";
+        if (t === "MAÑANA") {
+            if (p.c === "Docente") hSugerida = "07:00";
+            else if (["Obrero", "Administrativo"].includes(p.c)) hSugerida = "06:45";
+            else if (p.c === "CNAE (Cocinera)") hSugerida = "07:00";
+        } else {
+            if (p.c === "Docente") hSugerida = "12:00";
+            else if (p.c === "Obrero") hSugerida = "11:30";
+            else if (p.c === "Administrativo") hSugerida = "12:00";
+        }
+
+        let hE = "---";
+        if(!["INASISTENCIA","VACACIONES","P. PERSONAL", "P. MÉDICO"].includes(e)) {
+            hE = prompt("Confirmar Hora Entrada:", hSugerida); if(!hE) return;
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({ 
+            n, e, f: fechaAct, c: p.c, gender: p.gender, hE, hS: "---", 
+            mes: fechaAct.substring(0,7), turno: t 
+        });
         actualizarTodo();
     }
 
     async function marcarSalida(n, f) {
-        const hS = prompt("Hora Salida:"); if(!hS) return;
+        const p = nomina.find(x => x.n === n);
+        const t = document.getElementById('turnoSeleccionado').value;
+        
+        // --- Sugerencia de Salida ---
+        let hSugerida = "12:00";
+        if (t === "MAÑANA") {
+            if (["Obrero", "Administrativo"].includes(p.c)) hSugerida = "12:45";
+            else if (p.c === "CNAE (Cocinera)") hSugerida = "14:00";
+            else hSugerida = "12:00";
+        } else {
+            if (p.c === "Docente" || p.c === "Obrero") hSugerida = "17:00";
+            else if (p.c === "Administrativo") hSugerida = "18:00";
+        }
+
+        const hS = prompt("Confirmar Hora Salida:", hSugerida); if(!hS) return;
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
         if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
         actualizarTodo();
@@ -251,23 +299,23 @@
         const docs = snap.docs.map(d => d.data());
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
+        
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
                     const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const pr = (aC / (c === "Vigilante" ? 15 : 20)).toFixed(2);
+                    const pr = (aC / 20).toFixed(2);
                     bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
                 }
             });
         });
+
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             const m = docs.filter(d => d.n === p.n);
-            if(m.length > 0) {
-                const r = (e) => m.filter(x => x.e === e).length;
-                const pr = ((r("ASISTENCIA")+r("ACT. INST.")+r("RETRASO")) / (p.c === "Vigilante" ? 15 : 20)).toFixed(2);
-                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${pr}</b></td></tr>`;
-            }
+            const r = (tipo) => m.filter(x => x.e === tipo).length;
+            const asisTotal = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
+            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisTotal}</b></td></tr>`;
         });
     }
 
@@ -284,14 +332,6 @@
         });
     }
 
-    function respaldarJSON() {
-        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(nomina, null, 2)], {type:"application/json"})); a.download="nomina.json"; a.click();
-    }
-
-    function exportarExcelNomina() {
-        const ws = XLSX.utils.json_to_sheet(nomina); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Nómina"); XLSX.writeFile(wb, "Nomina.xlsx");
-    }
-
     function verTab(id, btn) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -300,3 +340,4 @@
 </script>
 </body>
 </html>
+
