@@ -41,13 +41,14 @@
         
         /* Botones Especiales */
         .btn-excel { background: var(--excel); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 0.6rem; cursor: pointer; }
-        .btn-borrar-dia { background: var(--rojo); color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; font-size: 0.6rem; cursor: pointer; }
+        .btn-borrar-dia { background: var(--rojo); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; width: 100%; margin-top: 15px; }
 
         /* Tablas */
         .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
         th { background: #444; color: white; padding: 8px; border: 1px solid #ccc; }
         td { padding: 8px; border: 1px solid #eee; text-align: center; }
+        .row-total { background-color: #e2e2e2; font-weight: bold; border-top: 2px solid #999; }
         
         .st-asistencia { background-color: #d4edda !important; }
         .st-inasistencia { background-color: #f8d7da !important; }
@@ -78,10 +79,10 @@
 
 <div id="tabEscuela" class="tab-content">
     <div style="padding:10px; background:white; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
-        <input type="date" id="fechaEscuela" onchange="actualizarTodo()" style="width:140px; margin:0;">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="width:100px; margin:0;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
-        <button class="btn-borrar-dia" onclick="borrarTodoElDia('fechaEscuela')">🗑️ BORRAR DÍA</button>
+        <input type="date" id="fechaEscuela" onchange="actualizarTodo()" style="flex:1; margin:0;">
+        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="flex:1; margin:0;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
     </div>
+    
     <div id="contEscuela"></div>
     
     <div class="cargo-section">
@@ -96,24 +97,32 @@
             </table>
         </div>
     </div>
+    
+    <div style="padding: 0 10px;">
+        <button class="btn-borrar-dia" onclick="borrarTodoElDia('fechaEscuela')">🗑️ BORRAR TODA LA ASISTENCIA DEL DÍA (ESCUELA)</button>
+    </div>
 </div>
 
 <div id="tabVigilancia" class="tab-content hidden">
     <div style="padding:10px; background:white;">
         <div style="display:flex; gap:5px; margin-bottom:5px;">
             <input type="date" id="fechaVig" onchange="actualizarTodo()" style="margin:0;">
-            <button class="btn-borrar-dia" onclick="borrarTodoElDia('fechaVig')">🗑️ BORRAR DÍA</button>
+            <select id="filtroGrupo" onchange="actualizarTodo()" style="margin:0;"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select>
         </div>
         <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <select id="filtroGrupo" onchange="actualizarTodo()" style="margin:0;"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select>
-            <button class="btn-excel" onclick="exportarVigilancia()" style="flex:1;">📊 EXPORTAR EXCEL</button>
+            <select id="tipoDiaVig" onchange="actualizarTodo()" style="flex:2; margin:0;">
+                <option value="NORMAL">DÍA LABORAL (6PM - 6AM)</option>
+                <option value="ESPECIAL">FERIADO / FIN DE SEMANA</option>
+            </select>
+            <button class="btn-excel" onclick="exportarVigilancia()" style="flex:1; margin:0;">📊 EXCEL</button>
         </div>
-        <select id="tipoDiaVig" onchange="actualizarTodo()">
-            <option value="NORMAL">DÍA LABORAL (6PM - 6AM)</option>
-            <option value="ESPECIAL">FERIADO / FIN DE SEMANA</option>
-        </select>
     </div>
+    
     <div id="contVigilancia"></div>
+    
+    <div style="padding: 0 10px;">
+        <button class="btn-borrar-dia" onclick="borrarTodoElDia('fechaVig')">🗑️ BORRAR TODA LA ASISTENCIA DEL DÍA (VIGILANCIA)</button>
+    </div>
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
@@ -208,11 +217,22 @@
                 const m = marcados[p.n];
                 const f = document.createElement('div'); f.className = "ficha";
                 if(!m) {
-                    f.innerHTML = `<b>${p.n}</b><br><button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button><button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button><button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button><button class="btn-check" style="background:#f3e5f5" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>`;
+                    // LOS 7 ESTATUS COMPLETOS RESTAURADOS
+                    f.innerHTML = `<b>${p.n}</b><br>
+                    <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
+                    <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
+                    <button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
+                    <button class="btn-check" style="background:#f3e5f5" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
+                    <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>
+                    <button class="btn-check" style="background:#e3f2fd" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
+                    <button class="btn-check" style="background:#e8f5e9" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>`;
+                    
                     if(tablaG) tablaG.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>`;
                 } else {
                     f.style.borderColor = "var(--verde)";
-                    f.innerHTML = `<button class="btn-del" onclick="eliminarRegistro('${m.id}')">×</button><b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>${m.hS === "---" && !["INASISTENCIA","VACACIONES"].includes(m.e) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
+                    const noTime = ["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"];
+                    f.innerHTML = `<button class="btn-del" onclick="eliminarRegistro('${m.id}')">×</button><b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>${m.hS === "---" && !noTime.includes(m.e) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
+                    
                     if(tablaG) {
                         const cl = m.e === "ASISTENCIA" ? "st-asistencia" : (m.e === "INASISTENCIA" ? "st-inasistencia" : "");
                         tablaG.innerHTML += `<tr class="${cl}"><td style="text-align:left">${p.n}</td><td>${m.e}</td><td>${m.hE}</td><td>${m.hS}</td><td><button onclick="eliminarRegistro('${m.id}')" style="color:red; font-weight:bold; border:none; background:none; cursor:pointer;">BORRAR</button></td></tr>`;
@@ -232,8 +252,11 @@
         let hSug = (t === "MAÑANA") ? "07:00" : "12:00";
         if(p.c === "Vigilante") hSug = (document.getElementById('tipoDiaVig').value === "NORMAL") ? "18:00" : "06:00";
 
-        let hE = !["INASISTENCIA","VACACIONES"].includes(e) ? prompt("Hora de Entrada:", hSug) : "---";
+        // Si es inasistencia, vacaciones o permisos, no pedimos hora.
+        const noTime = ["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"];
+        let hE = !noTime.includes(e) ? prompt("Hora de Entrada:", hSug) : "---";
         if(hE === null) return;
+        
         await db.collection("asistencia_ebnlp_final").add({ n, e, f: fA, c: p.c, gender: p.gender, hE, hS: "---", mes: fA.substring(0,7), turno: t });
         actualizarTodo();
     }
@@ -255,7 +278,7 @@
         }
     }
 
-    // BORRAR TODO EL DÍA
+    // BORRAR TODO EL DÍA (AHORA ABAJO)
     async function borrarTodoElDia(idCampoFecha) {
         const fecha = document.getElementById(idCampoFecha).value;
         if(confirm(`¡ADVERTENCIA! Se borrará TODA la asistencia del día ${fecha}. ¿Continuar?`)) {
@@ -283,7 +306,7 @@
         XLSX.writeFile(wb, `Vigilancia_${fv}.xlsx`);
     }
 
-    // NÓMINA Y OTROS
+    // NÓMINA Y ESTADÍSTICA (RESTAURADO)
     async function generarEstadistica() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
@@ -291,23 +314,31 @@
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
 
+        // 1. CARGOS Y TOTALES RESTAURADOS
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
             let nC = 0, aC = 0;
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
                     const asis = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
+                    const prom = (asis / 20).toFixed(2);
                     nC += nT.length; aC += asis;
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${(asis/20).toFixed(2)}</td><td>${((asis/20/nT.length)*100).toFixed(1)}%</td></tr>`;
+                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT.length)*100).toFixed(1)}%</td></tr>`;
                 }
             });
+            // FILA DE TOTALES
+            if(nC > 0) {
+                const prT = (aC / 20).toFixed(2);
+                bEst.innerHTML += `<tr class="row-total"><td colspan="2">TOTAL ${c.toUpperCase()}</td><td>${nC}</td><td>${aC}</td><td>${prT}</td><td>${((prT/nC)*100).toFixed(1)}%</td></tr>`;
+            }
         });
 
+        // 2. CONSOLIDADO INDIVIDUAL RESTAURADO
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             const m = docs.filter(d => d.n === p.n);
             const r = (t) => m.filter(x => x.e === t).length;
             const asisT = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
-            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>0</td><td>0</td><td><b>${asisT}</b></td></tr>`;
+            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisT}</b></td></tr>`;
         });
     }
 
@@ -327,7 +358,7 @@
     function renderNomina() {
         const b = document.getElementById('bodyNomina'); b.innerHTML = "";
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; font-weight:bold; border:none; background:none;">ELIMINAR</button></td></tr>`;
+            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; font-weight:bold; border:none; background:none; cursor:pointer;">ELIMINAR</button></td></tr>`;
         });
     }
 
