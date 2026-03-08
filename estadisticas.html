@@ -81,7 +81,40 @@
             alert("Perfil actualizado correctamente");
         };
 
-        // --- DIRECCIÓN (ESTADÍSTICAS Y REPORTES) ---
+        // --- LÓGICA DE PDF INDIVIDUAL (COMPARTIDA) ---
+        window.descargarListaIndividual = (datos) => {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF();
+            const activos = (datos.alumnos || []).filter(a => !a.retirado);
+            
+            const hembras = activos.filter(a => a.genero === 'F').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            const varones = activos.filter(a => a.genero === 'M').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            
+            const filas = [];
+            hembras.forEach((a, i) => filas.push([i+1, a.nombre, "HEMBRA", calcularEdad(a.nacimiento) + " años"]));
+            varones.forEach((a, i) => filas.push([i+1, a.nombre, "VARÓN", calcularEdad(a.nacimiento) + " años"]));
+
+            docPDF.setFontSize(16);
+            docPDF.setTextColor(0, 33, 71);
+            docPDF.text("EBN LUCILA PALACIOS", 105, 15, { align: "center" });
+            docPDF.setFontSize(12);
+            docPDF.text(`LISTADO DE ESTUDIANTES - ${datos.grado}° "${datos.seccion}"`, 105, 22, { align: "center" });
+
+            docPDF.autoTable({
+                head: [
+                    [{ content: `DOCENTE: ${datos.docente} | TURNO: ${datos.turno}`, colSpan: 4, styles: { halign: 'center', fillColor: [0, 33, 71] } }],
+                    ['N°', 'NOMBRE COMPLETO', 'GÉNERO', 'EDAD']
+                ],
+                body: filas,
+                startY: 30,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 73, 94] }
+            });
+
+            docPDF.save(`Lista_${datos.grado}${datos.seccion}_${datos.docente}.pdf`);
+        };
+
+        // --- DIRECCIÓN ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -90,36 +123,32 @@
             let docentesData = [];
             snap.forEach(dSnap => {
                 const d = dSnap.data();
-                if(dSnap.id !== USUARIO_ADMIN && d.alumnos) docentesData.push(d);
+                if(dSnap.id !== USUARIO_ADMIN && d.alumnos) {
+                    d.idDocente = dSnap.id; // Guardar ID para el botón
+                    docentesData.push(d);
+                }
             });
 
             docentesData.sort((a, b) => {
-                const gA = parseInt(a.grado) || 0;
-                const gB = parseInt(b.grado) || 0;
-                if (gA !== gB) return gA - gB;
+                if (parseInt(a.grado) !== parseInt(b.grado)) return parseInt(a.grado) - parseInt(b.grado);
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
             let h = `<div class="btns-admin-row no-print">
-                        <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
-                        <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
+                        <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 CONSOLIDADO PDF</button>
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
                      <thead>
-                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
-                        <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">PROM. REAL</th><th rowspan="2">LISTA</th></tr>
+                        <tr><th>H</th><th>V</th><th>T</th><th>H</th><th>V</th></tr>
                      </thead><tbody>`;
             
-            let T = { mH:0, mV:0, mT:0, mI:0, mE:0, pH:0, pV:0, pT:0 };
+            let T = { mH:0, mV:0, mT:0, pH:0, pV:0, pT:0 };
 
             docentesData.forEach(d => {
-                const alms = d.alumnos || [];
-                const ac = alms.filter(a => !a.retirado);
+                const ac = (d.alumnos || []).filter(a => !a.retirado);
                 const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
                 
-                const mI = alms.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
-                const mE = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
-
                 let sH=0, sV=0, ds=0;
                 Object.keys(d.asistencias || {}).forEach(f => {
                     const fo = new Date(f + "T00:00:00");
@@ -127,13 +156,21 @@
                         ds++; ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
                     }
                 });
-                const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
-                T.mH+=mH; T.mV+=mV; T.mT+=mT; T.mI+=mI; T.mE+=mE; T.pH+=pH; T.pV+=pV; T.pT+=pT;
+                const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0;
+                T.mH+=mH; T.mV+=mV; T.mT+=mT; T.pH+=pH; T.pV+=pV;
 
-                h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion} (${d.turno || ''})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
+                // Serializar datos para el botón individual
+                const dString = JSON.stringify(d).replace(/"/g, '&quot;');
+
+                h += `<tr>
+                    <td style="text-align:left">${d.docente}</td>
+                    <td>${d.grado}${d.seccion}</td>
+                    <td>${mH}</td><td>${mV}</td><td>${mT}</td>
+                    <td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td>
+                    <td><button onclick='window.descargarListaIndividual(${dString})' style="background:none; border:none; cursor:pointer;">📄</button></td>
+                </tr>`;
             });
-            const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
-            h += `<tr class="fila-total"><td>ESCUELA</td><td>-</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.mI}</td><td>${T.mE}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
+            h += `</tbody></table>`;
             document.getElementById('adminOutput').innerHTML = h;
         };
 
@@ -141,47 +178,9 @@
             const doc = new jspdf.jsPDF('l');
             doc.text("EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL", 14, 15);
             doc.autoTable({ html: '#tablaAdminConsolidado', startY: 22, theme: 'grid', styles: {fontSize: 8} });
-            doc.save("Reporte_Direccion_Consolidado.pdf");
+            doc.save("Consolidado_Mensual.pdf");
         };
 
-        // --- NUEVA FUNCIÓN PDF: LISTADO POR GÉNERO Y GRADO ---
-        window.descargarListaEstudiantesPDF = async () => {
-            const { jsPDF } = window.jspdf;
-            const docPDF = new jsPDF();
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let docentesData = [];
-            snap.forEach(dSnap => { if(dSnap.id !== USUARIO_ADMIN) docentesData.push(dSnap.data()); });
-
-            docentesData.sort((a, b) => {
-                if (parseInt(a.grado) !== parseInt(b.grado)) return parseInt(a.grado) - parseInt(b.grado);
-                return (a.seccion || "").localeCompare(b.seccion || "");
-            });
-
-            docPDF.setFontSize(16);
-            docPDF.text("LISTADO GENERAL DE ESTUDIANTES - LUCILA PALACIOS", 105, 15, { align: "center" });
-
-            let yPos = 25;
-            docentesData.forEach(d => {
-                const activos = (d.alumnos || []).filter(a => !a.retirado);
-                if (activos.length === 0) return;
-
-                const hembras = activos.filter(a => a.genero === 'F').sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                const varones = activos.filter(a => a.genero === 'M').sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                const filas = [];
-                hembras.forEach((a, i) => filas.push([i+1, a.nombre, "HEMBRA", calcularEdad(a.nacimiento)]));
-                varones.forEach((a, i) => filas.push([i+1, a.nombre, "VARÓN", calcularEdad(a.nacimiento)]));
-
-                docPDF.autoTable({
-                    head: [[{content: `GRADO: ${d.grado}${d.seccion} | DOCENTE: ${d.docente}`, colSpan: 4, styles: {fillColor:[0,33,71]}}], ['N°', 'NOMBRE', 'GÉNERO', 'EDAD']],
-                    body: filas, startY: yPos, theme: 'grid', styles: {fontSize: 8}, headStyles: {fillColor:[52,73,94]}, margin: {bottom: 10}
-                });
-                yPos = docPDF.lastAutoTable.finalY + 10;
-                if(yPos > 270) { docPDF.addPage(); yPos = 20; }
-            });
-            docPDF.save("Lista_Estudiantes_Lucila.pdf");
-        };
-
-        // --- NUEVA FUNCIÓN EXCEL: MATRÍCULA GENERAL ---
         window.exportarExcelGeneral = async () => {
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             const data = [["GRADO", "SECCIÓN", "TURNO", "DOCENTE", "ESTUDIANTE", "GÉNERO", "EDAD"]];
@@ -194,28 +193,26 @@
                 const sorted = [...alms.filter(a=>a.genero==='F').sort((a,b)=>a.nombre.localeCompare(b.nombre)), ...alms.filter(a=>a.genero==='M').sort((a,b)=>a.nombre.localeCompare(b.nombre))];
                 sorted.forEach(a => data.push([d.grado, d.seccion, d.turno, d.docente, a.nombre, a.genero==='F'?'HEMBRA':'VARÓN', calcularEdad(a.nacimiento)]));
             });
-
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, "Matrícula");
-            XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
+            XLSX.writeFile(wb, "Matricula_General_Lucila.xlsx");
         };
 
         // --- MANTENIMIENTO ---
         window.limpiarMovimientos = async () => {
-            if (confirm("¿Limpiar ingresos y egresos? Los niños volverán a estar activos.")) {
+            if (confirm("¿Limpiar ingresos y egresos?")) {
                 window.db.alumnos = window.db.alumnos.map(a => ({ ...a, retirado: false, fechaIngreso: null, fechaEgreso: null }));
                 await window.save(); window.render();
             }
         };
 
         window.borrarMatriculaTotal = async () => {
-            if (confirm("¡PELIGRO! Vas a borrar TODOS los niños.")) {
-                const pass = prompt("Escribe 'BORRAR' para confirmar:");
+            if (confirm("¡PELIGRO! Borrar toda la sección.")) {
+                const pass = prompt("Escribe 'BORRAR':");
                 if (pass === "BORRAR") {
                     window.db.alumnos = []; window.db.asistencias = {};
                     await window.save(); window.render();
-                    alert("Sección vaciada.");
                 }
             }
         };
@@ -227,8 +224,8 @@
             const esFeriado = window.db.feriados?.includes(fSel);
             const esFinde = (fObj.getDay() === 0 || fObj.getDay() === 6);
             
-            document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
-            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""} - ${window.db.turno || ""}`;
+            document.getElementById('docenteTxt').innerText = window.db.docente || "-";
+            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""}${window.db.seccion || ""} - ${window.db.turno || ""}`;
             
             document.getElementById('editDocente').value = window.db.docente || "";
             document.getElementById('editGrado').value = window.db.grado || "";
@@ -268,13 +265,15 @@
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
                     <h2>ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
-                    <p>Docente: ${window.db.docente} | Turno: ${window.db.turno}</p>
                     <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
                     <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>TOTAL: <b>${(pH+pV).toFixed(1)}</b></div></div>
                     <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody>
                     <tfoot><tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
-                    <div class="movimientos-reporte"><b>INGRESOS:</b> ${ingM.map(a=>a.nombre).join(', ') || '0'}<br><b>EGRESOS:</b> ${egrM.map(a=>a.nombre).join(', ') || '0'}</div>
-                    <button onclick="window.print()" class="btn-print no-print">IMPRIMIR REPORTE</button>
+                    <div class="movimientos-reporte"><b>INGRESOS:</b> ${ingM.length} | <b>EGRESOS:</b> ${egrM.length}</div>
+                    <div style="display:flex; gap:5px; margin-top:10px;" class="no-print">
+                        <button onclick="window.print()" class="btn-print" style="flex:1">IMPRIMIR REPORTE</button>
+                        <button onclick='window.descargarListaIndividual(window.db)' class="btn-print" style="flex:1; background:var(--exito)">📄 MI LISTA PDF</button>
+                    </div>
                 </div>`;
         };
 
@@ -315,10 +314,8 @@
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btns-admin-row { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .tabla-admin, .tabla-911 { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 5px; }
         .tabla-admin th, .tabla-admin td, .tabla-911 th, .tabla-911 td { border: 1px solid #ddd; padding: 5px; text-align: center; }
-        .fila-total { background: var(--azul); color: white; font-weight: bold; }
         .reporte-card { background: white; padding: 20px; border: 1px solid #ccc; text-align: center; border-radius: 10px; margin-top: 10px; }
         .circulo-eficiencia { width: 80px; height: 80px; border: 6px solid var(--azul); border-radius: 50%; margin: 10px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
         .grid-promedios { display: flex; justify-content: space-around; background: #f8f9fa; padding: 8px; margin: 10px 0; border-radius: 5px; font-size: 12px; }
@@ -327,6 +324,7 @@
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
         .btn-check { width: 40px; height: 35px; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
+        .btn-print { background: var(--azul); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
@@ -373,15 +371,14 @@
             <b>📊 DIRECCIÓN</b>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
                 <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
-                <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 LISTA PDF</button>
+                <button onclick="exportarExcelGeneral()" style="background:#1D6F42; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📗 EXCEL GENERAL</button>
             </div>
-            <button onclick="exportarExcelGeneral()" style="background:#1D6F42; color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:11px;">📗 EXCEL GENERAL</button>
             <div id="adminOutput" style="overflow-x:auto;"></div>
         </div>
 
         <div class="card no-print">
             <details>
-                <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil del Docente</summary>
+                <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil</summary>
                 <div style="padding-top:10px;">
                     <input type="text" id="editDocente" placeholder="Nombre completo">
                     <div style="display:flex; gap:4px;">
@@ -392,13 +389,13 @@
                         <option value="Mañana">Mañana</option>
                         <option value="Tarde">Tarde</option>
                     </select>
-                    <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px; font-weight:bold;">GUARDAR CAMBIOS</button>
+                    <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px; font-weight:bold;">GUARDAR</button>
                 </div>
             </details>
         </div>
 
         <div class="card no-print">
-            <h4 style="margin:0">Mantenimiento de Matrícula</h4>
+            <h4 style="margin:0">Mantenimiento</h4>
             <div style="display:flex; gap:5px; margin-top:5px;">
                 <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
                 <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
@@ -413,7 +410,7 @@
         </div>
 
         <div class="card no-print">
-            <h4 style="margin:0 0 5px 0">+ Inscribir Alumno</h4>
+            <h4 style="margin:0 0 5px 0">+ Inscripción</h4>
             <input type="text" id="nom" placeholder="Nombres">
             <div style="display:flex; gap:4px;">
                 <select id="gen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
