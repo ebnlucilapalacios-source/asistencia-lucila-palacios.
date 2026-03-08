@@ -3,137 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONTROL LUCILA PALACIOS v4.0</title>
+    <title>CONTROL LUCILA PALACIOS</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
         
-        /* Dashboard Estilo Imagen 2 */
-        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
-        .dash-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        .dash-card h4 { margin: 0 0 10px; font-size: 0.9rem; color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .dash-card .valor { font-size: 1.8rem; font-weight: bold; color: var(--azul); }
+        /* --- DASHBOARD ORIGINAL (5 COLUMNAS) --- */
+        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
+        .dash-card { background: white; padding: 8px; border-radius: 5px; text-align: center; border-top: 3px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
+        .dash-card .valor { font-size: 1.1rem; font-weight: bold; color: var(--azul); }
 
-        /* Navegación Estilo Imagen 1 */
-        .tabs { display: flex; background: white; padding: 10px; gap: 5px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.7rem; background: #eee; cursor: pointer; text-transform: uppercase; }
+        /* --- NAVEGACIÓN --- */
+        .tabs { display: flex; background: white; padding: 10px; gap: 4px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Secciones */
-        .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; }
-        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.85rem; }
-        .resumen-diario-btn { background: var(--naranja); color: white; margin: 10px; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; cursor: pointer; }
+        /* --- TABLAS Y SECCIONES --- */
+        .cargo-section { margin: 8px 10px; background: white; border-radius: 6px; border: 1px solid #ddd; overflow: hidden; }
+        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; }
         .cargo-content { display: none; padding: 10px; }
         .cargo-content.open { display: block; }
-        
-        /* Botones Acción */
-        .grid-buttons { display: flex; gap: 5px; margin: 10px; }
-        .btn-respaldo { flex: 1; background: #555; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .btn-restaurar { flex: 1; background: #800; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
-        /* Tabla Estadística Estilo Imagen 1 */
         .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        th { background: #444; color: white; padding: 10px; text-transform: uppercase; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
-        tr.total-row { background: #f0f4f8; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        th { background: #444; color: white; padding: 8px; }
+        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
         
-        .btn-check { width: 100%; padding: 8px; margin: 2px 0; border: none; border-radius: 4px; font-size: 0.6rem; font-weight: bold; cursor: pointer; }
+        /* --- BOTONES --- */
+        .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 4px; font-size: 0.55rem; font-weight: bold; cursor: pointer; }
+        .btn-respaldo { background: #444; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; flex: 1; margin: 5px; cursor: pointer; }
+        .btn-restaurar { background: #c0392b; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold; flex: 1; margin: 5px; cursor: pointer; }
+
         .hidden { display: none; }
+        input, select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<header><h4>SISTEMA DE CONTROL - LUCILA PALACIOS</h4></header>
+<header><h4>SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
 
 <div class="dashboard">
-    <div class="dash-card"><h4>Admin.</h4><div id="dAdm" class="valor">0</div></div>
+    <div class="dash-card"><h4>DOC</h4><div id="dDoc" class="valor">0</div></div>
+    <div class="dash-card"><h4>OBR</h4><div id="dObr" class="valor">0</div></div>
+    <div class="dash-card"><h4>ADM</h4><div id="dAdm" class="valor">0</div></div>
     <div class="dash-card"><h4>CNAE</h4><div id="dCnae" class="valor">0</div></div>
-    <div class="dash-card"><h4>Vigilancia</h4><div id="dVig" class="valor">0</div></div>
-    <div class="dash-card"><h4>Efectividad</h4><div id="porcEfect" class="valor" style="color:var(--verde)">0%</div></div>
+    <div class="dash-card"><h4>VIG</h4><div id="dVig" class="valor">0</div></div>
 </div>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">Escuela</button>
-    <button class="tab-btn" onclick="verTab('tabVigilancia', this)">Vigilancia</button>
-    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">Estadística</button>
-    <button class="tab-btn" onclick="verTab('tabNomina', this)">Nómina</button>
+    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">DIARIO</button>
+    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">MENSUAL</button>
+    <button class="tab-btn" onclick="verTab('tabNomina', this)">NÓMINA</button>
 </div>
 
 <div id="tabEscuela" class="tab-content">
-    <div style="padding:10px; display:flex; gap:5px; background:white;">
-        <input type="date" id="fechaEscuela" onchange="actualizarTodo()" style="flex:2; padding:8px;">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="flex:1;">
-            <option value="MAÑANA">MAÑANA</option>
-            <option value="TARDE">TARDE</option>
-        </select>
+    <div style="padding:10px; background:white;">
+        <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
+        <select id="turnoEscuela" onchange="actualizarTodo()"><option>MAÑANA</option><option>TARDE</option></select>
     </div>
     <div id="contEscuela"></div>
-    <div class="resumen-diario-btn" onclick="toggleResumen('resumenEscuela')">📋 VER RESUMEN DIARIO POR ESTATUS</div>
-    <div id="resumenEscuela" class="hidden"></div>
-</div>
-
-<div id="tabVigilancia" class="tab-content hidden">
-    <div style="padding:10px; background:white;">
-        <input type="date" id="fechaVig" onchange="actualizarTodo()" style="width:100%; padding:8px; margin-bottom:5px;">
-        <select id="filtroGrupo" onchange="actualizarTodo()" style="width:100%;">
-            <option value="GRUPO I">GRUPO I</option>
-            <option value="GRUPO II">GRUPO II</option>
-        </select>
-    </div>
-    <div id="contVigilancia"></div>
-    <div class="resumen-diario-btn" onclick="toggleResumen('resumenVig')">📋 VER RESUMEN DIARIO POR ESTATUS</div>
-    <div id="resumenVig" class="hidden"></div>
+    <button onclick="document.getElementById('resumenDiario').classList.toggle('hidden')" style="width:calc(100% - 20px); margin:10px; padding:10px; background:#666; color:white; border:none; border-radius:5px; font-weight:bold;">📋 VER RESUMEN (7 ESTATUS)</button>
+    <div id="resumenDiario" class="hidden"></div>
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
-    <div style="padding:15px; display:flex; gap:5px; background:white;">
-        <input type="month" id="mesReporte" style="flex:2;">
-        <button onclick="generarEstadistica()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">CALCULAR</button>
+    <div style="padding:15px; display:flex; gap:10px; background:white;">
+        <input type="month" id="mesReporte">
+        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold;">CALCULAR</button>
     </div>
     <div id="contEstadistica"></div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
-        <h3 style="margin-top:0;">Nuevo Personal</h3>
-        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase; width:100%; padding:10px; margin-bottom:10px;">
-        <select id="nCargo" style="width:100%; padding:10px; margin-bottom:10px;">
-            <option value="Docente">Docente</option>
-            <option value="Obrero">Obrero</option>
-            <option value="Administrativo">Administrativo</option>
-            <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
-            <option value="Vigilante">Vigilante</option>
-        </select>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <select id="nGen" style="flex:1; padding:10px;"><option value="F">F</option><option value="M">M</option></select>
-            <select id="nGrupo" style="flex:2; padding:10px;"><option value="-">Escuela</option><option value="GRUPO I">Vigilancia I</option><option value="GRUPO II">Vigilancia II</option></select>
+        <h3 style="margin:0 0 10px; font-size:1rem;">Nuevo Personal</h3>
+        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase;">
+        <div style="display:flex; gap:5px;">
+            <select id="nCargo" style="flex:2;"><option>Docente</option><option>Obrero</option><option>Administrativo</option><option>CNAE (Cocinera)</option><option>Vigilante</option></select>
+            <select id="nGen" style="flex:1;"><option value="F">F</option><option value="M">M</option></select>
         </div>
-        <button onclick="agregarNomina()" style="width:100%; background:var(--azul); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GUARDAR PERSONAL</button>
-        
-        <div class="grid-buttons">
-            <button class="btn-respaldo" onclick="respaldoJSON()">📥 RESPALDO JSON</button>
-            <button class="btn-restaurar" onclick="document.getElementById('fileInput').click()">📤 RESTAURAR</button>
-            <input type="file" id="fileInput" class="hidden" onchange="restaurarJSON(event)">
+        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin-top:10px;">GUARDAR</button>
+        <div style="display:flex; margin-top:10px;">
+            <button class="btn-respaldo" onclick="respaldoJSON()">📥 RESPALDO</button>
+            <button class="btn-restaurar" onclick="document.getElementById('fileIn').click()">📤 RESTAURAR</button>
         </div>
+        <input type="file" id="fileIn" class="hidden" onchange="restaurarJSON(event)">
     </div>
     <div id="contListaNomina"></div>
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
-    const firebaseConfig = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-        projectId: "control-de-asistencia-d585e",
-        storageBucket: "control-de-asistencia-d585e.appspot.com",
-        messagingSenderId: "368890880546",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", 
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com", 
+        projectId: "control-de-asistencia-d585e", 
+        storageBucket: "control-de-asistencia-d585e.appspot.com", 
+        messagingSenderId: "368890880546", 
+        appId: "1:368890880546:web:a97ab4372dea536217207b" 
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -142,7 +114,6 @@
     const COLORES = { "ASISTENCIA": "#d4edda", "ACT. INST.": "#d1ecf1", "RETRASO": "#fff3cd", "INASISTENCIA": "#f8d7da", "VACACIONES": "#e0f7fa", "P. PERSONAL": "#efebe9", "PENDIENTE": "#ffffff" };
 
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = []; snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
@@ -153,134 +124,114 @@
         const f = document.getElementById('fechaEscuela').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
         const marcados = {}; 
-        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0};
-
+        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
+        
         snap.forEach(doc => {
             const d = doc.data(); marcados[d.n + d.f] = d;
-            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
+            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) c[d.c]++;
         });
 
+        document.getElementById('dDoc').innerText = c.Docente;
+        document.getElementById('dObr').innerText = c.Obrero;
         document.getElementById('dAdm').innerText = c.Administrativo;
         document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
         document.getElementById('dVig').innerText = c.Vigilante;
-        document.getElementById('porcEfect').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
 
-        dibujarSeccion("contEscuela", "resumenEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], f, marcados);
-        dibujarSeccion("contVigilancia", "resumenVig", ["Vigilante"], document.getElementById('fechaVig').value, marcados, document.getElementById('filtroGrupo').value);
+        renderSecciones(f, marcados);
     }
 
-    function dibujarSeccion(contId, resId, cargos, fecha, marcados, grupo = null) {
-        const cont = document.getElementById(contId); cont.innerHTML = "";
-        const res = document.getElementById(resId); res.innerHTML = "";
-        let global = [];
+    function renderSecciones(fecha, marcados) {
+        const cont = document.getElementById('contEscuela'); cont.innerHTML = "";
+        const res = document.getElementById('resumenDiario'); res.innerHTML = "";
+        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+        let total = [];
 
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
-            if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
             if(lista.length === 0) return;
-            global = global.concat(lista);
+            total = total.concat(lista);
 
-            const div = document.createElement('div'); div.className = "cargo-section";
-            div.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()} (${lista.length})</span><span>▼</span></div>`;
-            const content = document.createElement('div'); content.className = "cargo-content";
-            const grid = document.createElement('div'); grid.style.display = "grid"; grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px,1fr))"; grid.style.gap = "8px";
-
-            lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            let html = `<div class="cargo-section"><div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()}</span><span>▼</span></div><div class="cargo-content">`;
+            lista.forEach(p => {
                 const m = marcados[p.n + fecha];
-                const f = document.createElement('div'); f.style.background="white"; f.style.padding="8px"; f.style.borderRadius="8px"; f.style.border="1px solid #ddd"; f.style.textAlign="center";
-                if(!m) {
-                    f.innerHTML = `<b style="font-size:0.7rem">${p.n}</b><br><button class="btn-check" style="background:#d4edda" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                    <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>`;
-                } else {
-                    f.innerHTML = `<b style="font-size:0.7rem">${p.n}</b><br><span style="color:green; font-weight:bold">✓ ${m.e}</span><br><small>${m.hE} / ${m.hS}</small>`;
-                }
-                grid.appendChild(f);
+                html += `<div style="padding:5px; border-bottom:1px solid #eee; font-size:0.75rem;">
+                    <b>${p.n}</b><br>
+                    ${!m ? `<button class="btn-check" style="background:var(--verde); color:white" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>` : `<span style="color:green">✓ ${m.e}</span>`}
+                </div>`;
             });
-            content.appendChild(grid); div.appendChild(content); cont.appendChild(div);
+            cont.innerHTML += html + `</div></div>`;
         });
 
-        // Tabla de Estatus (Desplegable)
-        if(global.length > 0) {
-            let t = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Estatus</th></tr></thead><tbody>`;
-            global.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-                const m = marcados[p.n + fecha]; let est = m ? m.e : "PENDIENTE";
-                t += `<tr style="background:${COLORES[est]}"><td>${p.n}</td><td style="font-weight:bold">${est}</td></tr>`;
-            });
-            res.innerHTML = t + "</tbody></table></div>";
-        }
-    }
-
-    async function registrar(n, e) {
-        const p = nomina.find(x => x.n === n);
-        const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
-        const hE = e === "ASISTENCIA" ? prompt("Hora Entrada:", "07:00") : "---";
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), motivoSalida: "N/A" });
-        actualizarTodo();
+        let tabla = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Estatus</th></tr></thead><tbody>`;
+        total.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            const m = marcados[p.n + fecha]; let e = m ? m.e : "PENDIENTE";
+            tabla += `<tr style="background:${COLORES[e]}"><td>${p.n}</td><td>${e}</td></tr>`;
+        });
+        res.innerHTML = tabla + "</tbody></table></div>";
     }
 
     async function generarEstadistica() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
         const docs = snap.docs.map(d => d.data());
-        const cont = document.getElementById('contEstadistica'); cont.innerHTML = "";
-
-        let html = `<div style="background:var(--naranja); color:white; padding:10px; font-weight:bold; text-align:center; margin:10px; border-radius:5px;">PROMEDIO REAL DISGREGADO (POR GÉNERO)</div>`;
-        html += `<div class="table-wrap"><table><thead><tr><th>Cargo</th><th>Gen</th><th>Nóm</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead><tbody>`;
-
+        const cont = document.getElementById('contEstadistica');
+        
+        let h = `<div class="table-wrap"><table><thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM</th></tr></thead><tbody>`;
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
-            let tCargoNom = 0, tCargoAsis = 0;
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
                     const asis = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const prom = (asis / 20).toFixed(2);
-                    tCargoNom += nT.length; tCargoAsis += asis;
-                    html += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT.length)*100).toFixed(1)}%</td></tr>`;
+                    h += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${(asis/20).toFixed(2)}</td></tr>`;
                 }
             });
-            if(tCargoNom > 0) html += `<tr class="total-row"><td>TOTAL ${c}</td><td>-</td><td>${tCargoNom}</td><td>${tCargoAsis}</td><td>${(tCargoAsis/20).toFixed(2)}</td><td>${((tCargoAsis/20/tCargoNom)*100).toFixed(1)}%</td></tr>`;
         });
-        cont.innerHTML = html + "</tbody></table></div>";
+        cont.innerHTML = h + "</tbody></table></div>";
     }
 
-    function toggleResumen(id) { document.getElementById(id).classList.toggle('hidden'); }
-    function verTab(id, btn) { document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); btn.classList.add('active'); }
-
-    // FUNCIONES RESPALDO
     function respaldoJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nomina));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "respaldo_nomina_" + new Date().toLocaleDateString() + ".json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        const blob = new Blob([JSON.stringify(nomina)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "respaldo.json"; a.click();
     }
 
-    function restaurarJSON(event) {
+    function restaurarJSON(e) {
         const reader = new FileReader();
-        reader.onload = async (e) => {
-            const importados = JSON.parse(e.target.result);
-            for (let p of importados) { await db.collection("nomina_institucional").add({ n: p.n, c: p.c, gender: p.gender, grupo: p.grupo }); }
-            alert("Nómina Restaurada");
+        reader.onload = async (ev) => {
+            const data = JSON.parse(ev.target.result);
+            for(let p of data) { await db.collection("nomina_institucional").add(p); }
+            alert("Restaurado");
         };
-        reader.readAsText(event.target.files[0]);
+        reader.readAsText(e.target.files[0]);
     }
 
-    function agregarNomina() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
+    async function registrar(n, e) {
+        const p = nomina.find(x => x.n === n);
+        const f = document.getElementById('fechaEscuela').value;
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE: "07:00", hS: "---", mes: f.substring(0,7) });
+        actualizarTodo();
+    }
+
+    function verTab(id, b) { 
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden')); 
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); 
+        document.getElementById(id).classList.remove('hidden'); b.classList.add('active'); 
     }
 
     function renderNomina() {
         const cont = document.getElementById('contListaNomina');
-        let h = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Gen</th><th>Acción</th></tr></thead><tbody>`;
+        let h = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>X</th></tr></thead><tbody>`;
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            h += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; background:none; border:none; font-weight:bold;">❌</button></td></tr>`;
+            h += `<tr><td>${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; border:none; background:none;">❌</button></td></tr>`;
         });
         cont.innerHTML = h + "</tbody></table></div>";
     }
+
+    function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
+        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value });
+        document.getElementById('nNombre').value = "";
+    }
 </script>
 </body>
-</html>
+                                                                                                                                                                                               </html>
+    
