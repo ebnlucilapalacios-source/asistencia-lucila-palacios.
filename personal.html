@@ -132,11 +132,26 @@
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
-    <div style="padding:15px; display:flex; gap:10px; background:white;"><input type="month" id="mesReporte"><button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold;">CALCULAR</button></div>
+    <div style="padding:15px; display:flex; gap:10px; background:white; flex-wrap: wrap;">
+        <input type="month" id="mesReporte" style="flex: 1;">
+        <input type="number" id="diasHabiles" value="20" placeholder="Días Hábiles" style="width: 100px; flex: none;" title="Días Hábiles">
+        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 100px;">CALCULAR</button>
+        <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 120px;">EXPORTAR EXCEL</button>
+    </div>
     <div class="seccion-titulo">PROMEDIO POR GÉNERO</div>
-    <div class="table-wrap"><table><thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
+    <div class="table-wrap">
+        <table id="tablaEst1">
+            <thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead>
+            <tbody id="bodyEstadistica"></tbody>
+        </table>
+    </div>
     <div class="seccion-titulo">CONSOLIDADO INDIVIDUAL</div>
-    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
+    <div class="table-wrap">
+        <table id="tablaEst2">
+            <thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr></thead>
+            <tbody id="bodyIndividual"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
@@ -150,7 +165,10 @@
             <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
         </div>
         <select id="nGrupo" style="margin-top:8px;"><option value="-">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
-        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR</button>
+        <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; flex:1; border-radius:5px; font-weight:bold;">GUARDAR</button>
+            <button onclick="respaldarJSON()" style="background:var(--naranja); color:white; border:none; padding:12px; flex:1; border-radius:5px; font-weight:bold;">RESPALDO JSON</button>
+        </div>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
@@ -261,6 +279,14 @@
         const tipoVig = document.getElementById('tipoDiaVig').value;
         const fechaAct = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
 
+        // --- Nuevo: Pedir observación para Permiso Médico o Actividad Institucional ---
+        let obsFinal = "";
+        if (e === "P. MÉDICO" || e === "ACT. INST.") {
+            let m = prompt(`Por favor, indique el motivo o lugar para ${e}:`);
+            if (m === null) return; // Si el usuario cancela, detenemos el proceso
+            obsFinal = m;
+        }
+
         let hSug = "07:00";
         if(p.c === "Vigilante") {
             if(tipoVig === "NORMAL") {
@@ -278,7 +304,7 @@
             hE = prompt("Confirmar Entrada:", hSug); if(!hE) return;
         }
 
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f: fechaAct, c: p.c, gender: p.gender, hE, hS: "---", mes: fechaAct.substring(0,7), turno: t, obs: "" });
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f: fechaAct, c: p.c, gender: p.gender, hE, hS: "---", mes: fechaAct.substring(0,7), turno: t, obs: obsFinal });
         actualizarTodo();
     }
 
@@ -297,11 +323,11 @@
 
         const hS = prompt("Confirmar Salida:", hMin); if(!hS) return;
         let obs = "";
-        // Lógica de salida antes de tiempo (Para vigilantes nocturnos, el hS < hMin es complejo por el cambio de día, simplificado a prompt)
+        
         if(hS < hMin && docData.turno !== "NOCTURNO") {
              obs = prompt("SALIDA ANTICIPADA. Motivo:");
         } else if (docData.turno === "NOCTURNO" && hS > "00:00" && hS < "06:00") {
-             // Es salida a tiempo en la mañana siguiente
+             
         } else if (docData.turno === "NOCTURNO" && hS > "18:00" && hS < "23:59") {
              obs = prompt("SALIDA ANTICIPADA (Antes de amanecer). Motivo:");
         }
@@ -310,29 +336,86 @@
         actualizarTodo();
     }
 
-    // ESTADISTICA Y NOMINA PERMANECEN IGUALES
     async function generarEstadistica() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
+        
+        // --- Nuevo: Obtener días hábiles introducidos por el usuario ---
+        const diasHabiles = parseInt(document.getElementById('diasHabiles').value) || 20;
+        
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
         const docs = snap.docs.map(d => d.data());
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
+        
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
+            // --- Nuevo: Acumuladores para totalizar por cargo ---
+            let totalNominaCargo = 0;
+            let totalAsisCargo = 0;
+
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
                     const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const pr = (aC / 20).toFixed(2);
+                    const pr = (aC / diasHabiles).toFixed(2); // Se usan los días hábiles dinámicos
+                    
+                    totalNominaCargo += nT.length;
+                    totalAsisCargo += aC;
+                    
                     bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
                 }
             });
+            
+            // --- Nuevo: Imprimir fila de total si el cargo tiene personal ---
+            if(totalNominaCargo > 0) {
+                const prTotal = (totalAsisCargo / diasHabiles).toFixed(2);
+                bEst.innerHTML += `<tr style="background:#e9ecef; font-weight:bold;"><td colspan="2">TOTAL ${c.toUpperCase()}</td><td>${totalNominaCargo}</td><td>${totalAsisCargo}</td><td>${prTotal}</td><td>${((prTotal/totalNominaCargo)*100).toFixed(1)}%</td></tr>`;
+            }
         });
+
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             const m = docs.filter(d => d.n === p.n);
             const r = (tipo) => m.filter(x => x.e === tipo).length;
             const asisT = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
             bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisT}</b></td></tr>`;
         });
+    }
+
+    // --- Nueva Función: Exportar a Excel ---
+    function exportarExcel() {
+        let tabla1 = document.getElementById('tablaEst1').outerHTML;
+        let tabla2 = document.getElementById('tablaEst2').outerHTML;
+        
+        let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"></head>
+            <body>
+                <h3>PROMEDIO POR GÉNERO Y CARGO</h3>
+                ${tabla1}
+                <br><br>
+                <h3>CONSOLIDADO INDIVIDUAL</h3>
+                ${tabla2}
+            </body>
+            </html>
+        `;
+
+        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Reporte_Estadistico.xls';
+        a.click();
+    }
+
+    // --- Nueva Función: Respaldar JSON ---
+    function respaldarJSON() {
+        if(nomina.length === 0) {
+            alert("No hay datos de nómina para respaldar.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nomina, null, 2));
+        const a = document.createElement('a');
+        a.href = dataStr;
+        a.download = "respaldo_nomina_lucila_palacios.json";
+        a.click();
     }
 
     function agregarNomina() {
