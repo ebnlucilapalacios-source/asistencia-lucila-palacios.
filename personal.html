@@ -7,6 +7,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
@@ -136,7 +137,7 @@
         <input type="month" id="mesReporte" style="flex: 1;">
         <input type="number" id="diasHabiles" value="20" placeholder="Días Hábiles" style="width: 100px; flex: none;" title="Días Hábiles">
         <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 100px;">CALCULAR</button>
-        <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 120px;">EXPORTAR EXCEL</button>
+        <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 120px;">EXPORTAR TODO (EXCEL)</button>
     </div>
     <div class="seccion-titulo">PROMEDIO POR GÉNERO</div>
     <div class="table-wrap">
@@ -145,7 +146,14 @@
             <tbody id="bodyEstadistica"></tbody>
         </table>
     </div>
-    <div class="seccion-titulo">CONSOLIDADO INDIVIDUAL</div>
+    
+    <div class="seccion-titulo" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>CONSOLIDADO INDIVIDUAL</span>
+        <div style="display:flex; gap:5px;">
+            <button onclick="exportarExcelIndividual()" style="background:var(--verde); color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; font-weight:bold; font-size:0.6rem;">EXCEL</button>
+            <button onclick="exportarPDFIndividual()" style="background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; font-weight:bold; font-size:0.6rem;">PDF</button>
+        </div>
+    </div>
     <div class="table-wrap">
         <table id="tablaEst2">
             <thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr></thead>
@@ -279,163 +287,36 @@
         const tipoVig = document.getElementById('tipoDiaVig').value;
         const fechaAct = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
 
-        // --- Nuevo: Pedir observación para Permiso Médico o Actividad Institucional ---
+        // --- NUEVA LÓGICA: Validación de 30 días consecutivos para P. PERSONAL e INASISTENCIA ---
+        if (e === "P. PERSONAL" || e === "INASISTENCIA") {
+            let fechaObj = new Date(fechaAct);
+            fechaObj.setDate(fechaObj.getDate() - 30);
+            let limiteFecha = fechaObj.toISOString().split('T')[0];
+
+            // Traer registros de este usuario
+            let snapUser = await db.collection("asistencia_ebnlp_final").where("n", "==", n).get();
+            let count = 0;
+            snapUser.forEach(doc => {
+                let data = doc.data();
+                // Filtrar localmente en el rango de los últimos 30 días
+                if(data.e === e && data.f >= limiteFecha && data.f <= fechaAct) {
+                    count++;
+                }
+            });
+
+            if(count >= 3) {
+                alert(`⚠️ LÍMITE ALCANZADO:\nEl empleado(a) ${n} ya posee ${count} registros de ${e} en los últimos 30 días.\nNo se permite registrar más.`);
+                return; // Detiene la ejecución, no se guarda.
+            }
+        }
+
         let obsFinal = "";
         if (e === "P. MÉDICO" || e === "ACT. INST.") {
             let m = prompt(`Por favor, indique el motivo o lugar para ${e}:`);
-            if (m === null) return; // Si el usuario cancela, detenemos el proceso
+            if (m === null) return; 
             obsFinal = m;
         }
 
         let hSug = "07:00";
         if(p.c === "Vigilante") {
-            if(tipoVig === "NORMAL") {
-                t = "NOCTURNO"; hSug = "18:00";
-            } else {
-                t = prompt("DÍA ESPECIAL: ¿Turno DIURNO o NOCTURNO?", "DIURNO").toUpperCase();
-                hSug = (t === "DIURNO") ? "06:00" : "18:00";
-            }
-        } else {
-            hSug = (t === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "06:45" : "07:00") : (p.c === "Obrero" ? "11:30" : "12:00");
-        }
-
-        let hE = "---";
-        if(!["INASISTENCIA","VACACIONES","P. PERSONAL", "P. MÉDICO"].includes(e)) {
-            hE = prompt("Confirmar Entrada:", hSug); if(!hE) return;
-        }
-
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f: fechaAct, c: p.c, gender: p.gender, hE, hS: "---", mes: fechaAct.substring(0,7), turno: t, obs: obsFinal });
-        actualizarTodo();
-    }
-
-    async function marcarSalida(n, f) {
-        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(q.empty) return;
-        const docData = q.docs[0].data();
-        const p = nomina.find(x => x.n === n);
-        
-        let hMin = "12:00";
-        if(p.c === "Vigilante") {
-            hMin = (docData.turno === "DIURNO") ? "18:00" : "06:00";
-        } else {
-            hMin = (docData.turno === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "12:45" : (p.c === "CNAE (Cocinera)" ? "14:00" : "12:00")) : (p.c === "Administrativo" ? "18:00" : "17:00");
-        }
-
-        const hS = prompt("Confirmar Salida:", hMin); if(!hS) return;
-        let obs = "";
-        
-        if(hS < hMin && docData.turno !== "NOCTURNO") {
-             obs = prompt("SALIDA ANTICIPADA. Motivo:");
-        } else if (docData.turno === "NOCTURNO" && hS > "00:00" && hS < "06:00") {
-             
-        } else if (docData.turno === "NOCTURNO" && hS > "18:00" && hS < "23:59") {
-             obs = prompt("SALIDA ANTICIPADA (Antes de amanecer). Motivo:");
-        }
-
-        await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, obs: obs || "" });
-        actualizarTodo();
-    }
-
-    async function generarEstadistica() {
-        const mes = document.getElementById('mesReporte').value; if(!mes) return;
-        
-        // --- Nuevo: Obtener días hábiles introducidos por el usuario ---
-        const diasHabiles = parseInt(document.getElementById('diasHabiles').value) || 20;
-        
-        const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
-        const docs = snap.docs.map(d => d.data());
-        const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
-        const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
-        
-        ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
-            // --- Nuevo: Acumuladores para totalizar por cargo ---
-            let totalNominaCargo = 0;
-            let totalAsisCargo = 0;
-
-            ["F","M"].forEach(g => {
-                const nT = nomina.filter(x => x.c === c && x.gender === g);
-                if(nT.length > 0) {
-                    const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const pr = (aC / diasHabiles).toFixed(2); // Se usan los días hábiles dinámicos
-                    
-                    totalNominaCargo += nT.length;
-                    totalAsisCargo += aC;
-                    
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
-                }
-            });
-            
-            // --- Nuevo: Imprimir fila de total si el cargo tiene personal ---
-            if(totalNominaCargo > 0) {
-                const prTotal = (totalAsisCargo / diasHabiles).toFixed(2);
-                bEst.innerHTML += `<tr style="background:#e9ecef; font-weight:bold;"><td colspan="2">TOTAL ${c.toUpperCase()}</td><td>${totalNominaCargo}</td><td>${totalAsisCargo}</td><td>${prTotal}</td><td>${((prTotal/totalNominaCargo)*100).toFixed(1)}%</td></tr>`;
-            }
-        });
-
-        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            const m = docs.filter(d => d.n === p.n);
-            const r = (tipo) => m.filter(x => x.e === tipo).length;
-            const asisT = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
-            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisT}</b></td></tr>`;
-        });
-    }
-
-    // --- Nueva Función: Exportar a Excel ---
-    function exportarExcel() {
-        let tabla1 = document.getElementById('tablaEst1').outerHTML;
-        let tabla2 = document.getElementById('tablaEst2').outerHTML;
-        
-        let html = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"></head>
-            <body>
-                <h3>PROMEDIO POR GÉNERO Y CARGO</h3>
-                ${tabla1}
-                <br><br>
-                <h3>CONSOLIDADO INDIVIDUAL</h3>
-                ${tabla2}
-            </body>
-            </html>
-        `;
-
-        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
-        let a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'Reporte_Estadistico.xls';
-        a.click();
-    }
-
-    // --- Nueva Función: Respaldar JSON ---
-    function respaldarJSON() {
-        if(nomina.length === 0) {
-            alert("No hay datos de nómina para respaldar.");
-            return;
-        }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nomina, null, 2));
-        const a = document.createElement('a');
-        a.href = dataStr;
-        a.download = "respaldo_nomina_lucila_palacios.json";
-        a.click();
-    }
-
-    function agregarNomina() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
-    }
-
-    function renderNomina() {
-        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red;border:none;background:none;font-weight:bold;">X</button></td></tr>`;
-        });
-    }
-
-    function verTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
-    }
-</script>
-</body>
-</html>
+            if(t
