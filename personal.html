@@ -3,55 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA CONTROL - LUCILA PALACIOS</title>
+    <title>CONTROL LUCILA PALACIOS v3.0</title>
     
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; color: #333; }
         header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
         
+        /* Dashboard */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
         .dash-card { background: white; padding: 8px; border-radius: 5px; text-align: center; border-top: 3px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
         .dash-card .valor { font-size: 1.1rem; font-weight: bold; color: var(--azul); }
 
-        .efectividad-container { background: white; margin: 0 10px 10px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
-        .barra-progreso { height: 22px; background: #eee; border-radius: 11px; overflow: hidden; display: flex; margin-top: 8px; }
-        .segmento { height: 100%; transition: width 0.5s ease; }
-
+        /* Navegación */
         .tabs { display: flex; background: white; padding: 10px; gap: 4px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #ddd; }
-        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; color: #555; }
+        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; transition: 0.3s; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
+        /* Secciones y Fichas */
         .cargo-section { margin: 8px 10px; background: white; border-radius: 6px; border: 1px solid #ddd; overflow: hidden; }
-        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; align-items: center; }
+        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; }
         .cargo-content { display: none; padding: 10px; }
         .cargo-content.open { display: block; }
-
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
         .ficha { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; }
         
-        .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 4px; font-size: 0.55rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        /* Botones */
+        .btn-check { width: 100%; padding: 8px; margin: 3px 0; border: none; border-radius: 4px; font-size: 0.6rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-asis { background: #d4edda; color: #155724; }
+        .btn-ina { background: #f8d7da; color: #721c24; }
+        .btn-per { background: #efebe9; color: #4e342e; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
 
+        /* Tablas */
         .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
-        th { background: #444; color: white; padding: 8px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        th { background: #333; color: white; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
         
-        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; font-size: 0.8rem; margin-bottom: 8px; }
+        .seccion-titulo { background: var(--naranja); color: white; padding: 10px; margin: 20px 10px 5px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 0.85rem; }
         .hidden { display: none; }
-        .seccion-titulo { background: var(--naranja); color: white; padding: 10px; margin: 15px 10px 5px; border-radius: 5px; font-weight: bold; font-size: 0.75rem; text-align: center; }
     </style>
 </head>
 <body>
 
-<header><h4 style="margin:0;">SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
+<header><h4>SISTEMA DE CONTROL - LUCILA PALACIOS</h4></header>
 
 <div class="dashboard">
     <div class="dash-card"><h4>DOC</h4><div id="dDoc" class="valor">0</div></div>
@@ -59,18 +60,6 @@
     <div class="dash-card"><h4>ADM</h4><div id="dAdm" class="valor">0</div></div>
     <div class="dash-card"><h4>CNAE</h4><div id="dCnae" class="valor">0</div></div>
     <div class="dash-card"><h4>VIG</h4><div id="dVig" class="valor">0</div></div>
-</div>
-
-<div class="efectividad-container">
-    <div style="font-size: 0.75rem; font-weight: bold; color: var(--azul); display: flex; justify-content: space-between;">
-        <span>EFECTIVIDAD DEL DÍA</span>
-        <span id="porcentajeDia">0%</span>
-    </div>
-    <div class="barra-progreso">
-        <div id="barAsis" class="segmento" style="background: var(--verde); width: 0%;"></div>
-        <div id="barIna" class="segmento" style="background: var(--rojo); width: 0%;"></div>
-        <div id="barOtros" class="segmento" style="background: var(--naranja); width: 0%;"></div>
-    </div>
 </div>
 
 <div class="tabs">
@@ -83,7 +72,10 @@
 <div id="tabEscuela" class="tab-content">
     <div style="padding:10px; display:flex; gap:5px; background:white;">
         <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
+        <select id="turnoSeleccionado" onchange="actualizarTodo()">
+            <option value="MAÑANA">TURNO MAÑANA</option>
+            <option value="TARDE">TURNO TARDE</option>
+        </select>
     </div>
     <div id="contEscuela"></div>
 </div>
@@ -91,47 +83,71 @@
 <div id="tabVigilancia" class="tab-content hidden">
     <div style="padding:10px; background:white;">
         <input type="date" id="fechaVig" onchange="actualizarTodo()">
-        <select id="filtroGrupo" onchange="actualizarTodo()"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select>
+        <select id="filtroGrupo" onchange="actualizarTodo()">
+            <option value="GRUPO I">GRUPO I</option>
+            <option value="GRUPO II">GRUPO II</option>
+        </select>
     </div>
     <div id="contVigilancia"></div>
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
-    <div style="padding:15px; display:flex; gap:10px; background:white;"><input type="month" id="mesReporte"><button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold;">CALCULAR</button></div>
-    <div class="seccion-titulo">PROMEDIO POR GÉNERO</div>
-    <div class="table-wrap"><table><thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
-    <div class="seccion-titulo">CONSOLIDADO INDIVIDUAL</div>
-    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Asis</th><th style="color:red">S.A.</th><th>Ina</th><th>Per</th><th>Vac</th><th>Prom</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
+    <div style="padding:15px; display:flex; gap:10px; background:white;">
+        <input type="month" id="mesReporte">
+        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold;">GENERAR REPORTE</button>
+    </div>
+    <div class="seccion-titulo">CONSOLIDADO MENSUAL INDIVIDUAL</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Asis</th>
+                    <th style="color:red">S.A.</th>
+                    <th>Ina</th>
+                    <th>Per</th>
+                    <th>Prom</th>
+                </tr>
+            </thead>
+            <tbody id="bodyIndividual"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase;">
-        <div style="display:flex; gap:5px;">
-            <select id="nCargo">
-                <option value="Docente">Docente</option>
-                <option value="Obrero">Obrero</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
-                <option value="Vigilante">Vigilante</option>
-            </select>
-            <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
-        </div>
-        <select id="nGrupo" style="margin-top:8px;"><option value="-">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
-        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR PERSONAL</button>
+        <select id="nCargo">
+            <option value="Docente">Docente</option>
+            <option value="Obrero">Obrero</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+            <option value="Vigilante">Vigilante</option>
+        </select>
+        <select id="nGen"><option value="F">Femenino</option><option value="M">Masculino</option></select>
+        <select id="nGrupo"><option value="-">Personal Escuela</option><option value="GRUPO I">Vigilancia G-I</option><option value="GRUPO II">Vigilancia G-II</option></select>
+        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin-top:10px;">REGISTRAR EN NÓMINA</button>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
-    const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
+    // --- CONFIGURACIÓN DE FIREBASE (DEBES COMPLETAR ESTO) ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        storageBucket: "control-de-asistencia-d585e.appspot.com",
+        messagingSenderId: "368890880546",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let nomina = [];
     
-    // CONFIGURACIÓN DE HORARIOS SEGÚN CARGO Y TURNO
+    // --- LÓGICA DE HORARIOS SOLICITADA ---
     const HORARIOS = {
         "MAÑANA": {
             "Docente": { entrada: "07:00", salida: "12:00" },
@@ -149,71 +165,67 @@
         }
     };
 
-    // Inicialización de Fechas
+    // Colores por Estatus (7 categorías)
+    const COLORES_ESTATUS = {
+        "ASISTENCIA": "#d4edda",   // Verde
+        "ACT. INST.": "#d1ecf1",   // Azul
+        "RETRASO": "#fff3cd",      // Amarillo
+        "INASISTENCIA": "#f8d7da", // Rojo
+        "VACACIONES": "#e0f7fa",   // Cian
+        "P. PERSONAL": "#efebe9",  // Marrón/Gris
+        "PENDIENTE": "#ffffff"     // Blanco
+    };
+
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
-    // Carga de Nómina en Tiempo Real
+    // Carga de Datos
     db.collection("nomina_institucional").onSnapshot(snap => {
-        nomina = []; snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
-        renderNomina(); actualizarTodo();
+        nomina = []; 
+        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
+        renderNomina(); 
+        actualizarTodo();
     });
 
-    // Función de Actualización Global
     async function actualizarTodo() {
         const f = document.getElementById('fechaEscuela').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
         const marcados = {}; 
-        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
+        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
 
         snap.forEach(doc => {
-            const d = doc.data(); marcados[d.n + d.f] = d;
-            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
-            else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+            const d = doc.data(); 
+            marcados[d.n + d.f] = d;
+            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) c[d.c]++;
         });
 
-        document.getElementById('dDoc').innerText = c.Docente;
-        document.getElementById('dObr').innerText = c.Obrero;
-        document.getElementById('dAdm').innerText = c.Administrativo;
-        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
-        document.getElementById('dVig').innerText = c.Vigilante;
-
-        const total = c.Asis + c.Ina + c.Otros || 1;
-        document.getElementById('barAsis').style.width = (c.Asis/total*100) + "%";
-        document.getElementById('barIna').style.width = (c.Ina/total*100) + "%";
-        document.getElementById('barOtros').style.width = (c.Otros/total*100) + "%";
-        document.getElementById('porcentajeDia').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
+        // Actualizar Dashboard
+        for(let cargo in c) {
+            let id = cargo === "CNAE (Cocinera)" ? "dCnae" : (cargo === "Docente" ? "dDoc" : (cargo === "Obrero" ? "dObr" : (cargo === "Administrativo" ? "dAdm" : "dVig")));
+            if(document.getElementById(id)) document.getElementById(id).innerText = c[cargo];
+        }
 
         dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], f, marcados);
         dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, marcados, document.getElementById('filtroGrupo').value);
     }
 
-    // Dibuja Acordeones y Tabla General con Colores por Estatus
     function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null) {
-        const cont = document.getElementById(contId); cont.innerHTML = "";
-        let personalParaListaGeneral = [];
-
-        const coloresEstatus = {
-            "ASISTENCIA": "#d4edda", "ACT. INST.": "#d1ecf1", "RETRASO": "#fff3cd",
-            "INASISTENCIA": "#f8d7da", "VACACIONES": "#e0f7fa", "P. PERSONAL": "#efebe9", "PENDIENTE": "#ffffff"
-        };
+        const cont = document.getElementById(contId); 
+        cont.innerHTML = "";
+        let listaGlobalDiaria = [];
 
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
             if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
             if(lista.length === 0) return;
-            personalParaListaGeneral = personalParaListaGeneral.concat(lista);
-
-            const sec = document.createElement('div');
-            sec.className = "cargo-section";
-            sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>${cargo.toUpperCase()} (${lista.length})</span> <span>▼</span>
-            </div>`;
             
-            const content = document.createElement('div');
-            content.className = "cargo-content";
-            const grid = document.createElement('div');
-            grid.className = "grid-fichas";
+            listaGlobalDiaria = listaGlobalDiaria.concat(lista);
+
+            const div = document.createElement('div'); div.className = "cargo-section";
+            div.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()}</span><span>▼</span></div>`;
+            
+            const content = document.createElement('div'); content.className = "cargo-content";
+            const grid = document.createElement('div'); grid.className = "grid-fichas";
 
             lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
                 const m = marcados[p.n + fecha];
@@ -221,108 +233,147 @@
                 if(!m) {
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                        <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
-                        <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
+                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
+                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
                 } else {
                     f.style.borderColor = "var(--azul)";
                     f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
                         <small>${m.hE} / ${m.hS}</small><br>
-                        ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(m.e) ? 
-                        `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : ""}`;
+                        ${m.hS === "---" && !["INASISTENCIA", "P. PERSONAL"].includes(m.e) ? 
+                        `<button class="btn-check btn-salida" onclick="marcarSalida('${p.n}','${fecha}')">SALIDA</button>` : ""}`;
                 }
                 grid.appendChild(f);
             });
-            content.appendChild(grid); sec.appendChild(content); cont.appendChild(sec);
+            content.appendChild(grid); div.appendChild(content); cont.appendChild(div);
         });
 
-        // TABLA GENERAL AL FINAL
-        if(personalParaListaGeneral.length > 0) {
-            const titulo = document.createElement('div'); titulo.className = "seccion-titulo"; titulo.innerText = "RESUMEN DE ASISTENCIA DIARIA";
-            cont.appendChild(titulo);
+        // --- TABLA GENERAL UNIFICADA DEBAJO ---
+        if(listaGlobalDiaria.length > 0) {
+            const h = document.createElement('div'); h.className = "seccion-titulo"; h.innerText = "TABLA DE CONTROL DIARIO";
+            cont.appendChild(h);
             const wrap = document.createElement('div'); wrap.className = "table-wrap";
-            let tablaHTML = `<table><thead><tr><th>NOMBRE</th><th>CARGO</th><th>ESTATUS</th><th>H.E. / H.S.</th><th>OBSERVACIÓN</th></tr></thead><tbody>`;
-            personalParaListaGeneral.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            let tablaHTML = `<table><thead><tr><th>PERSONAL</th><th>ESTATUS</th><th>ENTRADA/SALIDA</th><th>OBS</th></tr></thead><tbody>`;
+            
+            listaGlobalDiaria.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
                 const m = marcados[p.n + fecha];
                 let est = m ? m.e : "PENDIENTE";
-                let color = coloresEstatus[est] || "#fff";
-                let hE = m ? m.hE : "-"; let hS = m ? m.hS : "-";
-                let obs = (m && m.motivoSalida && m.motivoSalida !== "N/A") ? `<span style="color:red; font-weight:bold">S.A: ${m.motivoSalida}</span>` : "-";
-                tablaHTML += `<tr style="background:${color}; border-bottom:1px solid #ccc">
-                    <td style="text-align:left; font-weight:bold; padding:10px;">${p.n}</td>
-                    <td style="font-size:0.5rem">${p.c.toUpperCase()}</td>
-                    <td>${est}</td><td>${hE} / ${hS}</td><td style="font-size:0.55rem">${obs}</td></tr>`;
+                let obs = (m && m.motivoSalida && m.motivoSalida !== "N/A") ? `<span style="color:red">S.A: ${m.motivoSalida}</span>` : "-";
+                
+                tablaHTML += `<tr style="background:${COLORES_ESTATUS[est]}">
+                    <td style="text-align:left; font-weight:bold;">${p.n}</td>
+                    <td style="font-weight:bold;">${est}</td>
+                    <td>${m ? m.hE + ' / ' + m.hS : '-'}</td>
+                    <td style="font-size:0.55rem">${obs}</td>
+                </tr>`;
             });
-            tablaHTML += `</tbody></table>`; wrap.innerHTML = tablaHTML; cont.appendChild(wrap);
+            tablaHTML += "</tbody></table>";
+            wrap.innerHTML = tablaHTML;
+            cont.appendChild(wrap);
         }
     }
 
-    // Registro de Asistencia con Lógica de 30 días y Horarios Sugeridos
     async function registrar(n, e) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
         
-        let hE = "---";
-        if(!["INASISTENCIA","VACACIONES","P. PERSONAL"].includes(e)) {
-            hE = prompt(`Confirmar hora entrada para ${p.c}:`, HORARIOS[t][p.c].entrada);
-            if(!hE) return;
-        }
-
-        // Lógica de Alerta: Máximo 3 registros en 30 días
+        // 1. Lógica de 30 días para Inasistencias o Permisos
         if(e === "INASISTENCIA" || e === "P. PERSONAL") {
             const f30 = new Date(f); f30.setDate(f30.getDate() - 30);
-            const fIso = f30.toISOString().split('T')[0];
-            const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f",">=",fIso).where("e","==",e).get();
-            if(snap.size >= 3) alert(`⚠️ ALERTA: ${n} ya posee ${snap.size} registros de ${e} en los últimos 30 días.`);
+            const snap = await db.collection("asistencia_ebnlp_final")
+                .where("n", "==", n)
+                .where("f", ">=", f30.toISOString().split('T')[0])
+                .where("e", "==", e).get();
+            if(snap.size >= 3) alert(`⚠️ ATENCIÓN: ${n} ya posee ${snap.size} registros de ${e} en los últimos 30 días.`);
         }
 
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t, motivoSalida: "N/A" });
+        let hE = "---";
+        if(e === "ASISTENCIA") {
+            hE = prompt("Confirmar Hora de Entrada:", HORARIOS[t][p.c].entrada) || HORARIOS[t][p.c].entrada;
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({
+            n, e, f, c: p.c, gender: p.gender, hE, hS: "---", 
+            mes: f.substring(0,7), motivoSalida: "N/A"
+        });
         actualizarTodo();
     }
 
-    // Salida con Validación de Hora Programada
     async function marcarSalida(n, f) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         const prog = HORARIOS[t][p.c].salida;
-        const hS = prompt(`Hora Salida para ${p.n} (Programada ${prog}):`, prog); if(!hS) return;
+        const hS = prompt(`Hora Salida para ${n} (Sugerida ${prog}):`, prog);
+        if(!hS) return;
 
         let motivo = "N/A";
-        const [hR, mR] = hS.split(':').map(Number); const [hP, mP] = prog.split(':').map(Number);
+        // Comparación de minutos para detectar salida anticipada
+        const [hR, mR] = hS.split(':').map(Number);
+        const [hP, mP] = prog.split(':').map(Number);
         if((hR*60+mR) < (hP*60+mP)) {
-            motivo = prompt("⚠️ SALIDA ANTICIPADA detectada. Ingrese el motivo obligatoriamente:");
-            if(!motivo) return alert("No se puede registrar la salida sin un motivo.");
+            motivo = prompt("⚠️ SALIDA ANTICIPADA detectada. Ingrese el motivo:");
+            if(!motivo) { alert("Error: Debe indicar un motivo para salir antes."); return; }
         }
 
-        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, motivoSalida: motivo });
-        actualizarTodo();
+        const q = await db.collection("asistencia_ebnlp_final").where("n", "==", n).where("f", "==", f).get();
+        if(!q.empty) {
+            await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, motivoSalida: motivo });
+            actualizarTodo();
+        }
     }
 
-    // Generar Estadísticas Mensuales
     async function generarEstadistica() {
-        const mes = document.getElementById('mesReporte').value; if(!mes) return alert("Seleccione un mes");
-        const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
+        const mes = document.getElementById('mesReporte').value;
+        if(!mes) return alert("Seleccione un mes");
+        
+        const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const docs = snap.docs.map(d => d.data());
-        const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
-
-        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-        cargos.forEach(c => {
-            ["F","M"].forEach(g => {
-                const nT = nomina.filter(x => x.c === c && x.gender === g);
-                if(nT.length > 0) {
-                    const asis = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const prom = (asis / 20).toFixed(2);
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT.length)*100).toFixed(1)}%</td></tr>`;
-                }
-            });
-        });
 
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             const m = docs.filter(d => d.n === p.n);
             if(m.length > 0) {
                 const count = (e) => m.filter(x => x.e === e).length;
-                const asis = count("ASISTENCIA") + count("ACT. INST.") + count("RETRASO");
+                const asis = m.filter(x => ["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(x.e)).length;
                 const sa = m.filter(x => x.motivoSalida && x.motivoSalida !== "N/A").length;
-                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${asis}</td><td style="color:red; font-weight:bold">${sa}</td><td>${count("INASISTENCIA")}</td><td>${count("P. PERSONAL")}</td><td>${count("VACACIONES")}</td><td><b>${(asis/20).toFixed(2)}</b></td></tr
+                bInd.innerHTML += `<tr>
+                    <td style="text-align:left">${p.n}</td>
+                    <td>${asis}</td>
+                    <td style="color:red; font-weight:bold;">${sa}</td>
+                    <td>${count("INASISTENCIA")}</td>
+                    <td>${count("P. PERSONAL")}</td>
+                    <td><b>${(asis/20).toFixed(2)}</b></td>
+                </tr>`;
+            }
+        });
+    }
+
+    function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase();
+        if(!n) return alert("Ingrese el nombre");
+        db.collection("nomina_institucional").add({
+            n, 
+            c: document.getElementById('nCargo').value, 
+            gender: document.getElementById('nGen').value, 
+            grupo: document.getElementById('nGrupo').value
+        });
+        document.getElementById('nNombre').value = "";
+    }
+
+    function renderNomina() {
+        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
+        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="if(confirm('¿Eliminar?')) db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">X ELIMINAR</button></td></tr>`;
+        });
+    }
+
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden'); 
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>
+
