@@ -80,36 +80,60 @@
             alert("Perfil actualizado correctamente");
         };
 
-        // --- DIRECCIÓN ---
+        // --- DIRECCIÓN (ORDENADO 1-6 Y SECCIONES A-Z) ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            
+            let docentesData = [];
+            snap.forEach(dSnap => {
+                const d = dSnap.data();
+                if(dSnap.id !== USUARIO_ADMIN && d.alumnos) docentesData.push(d);
+            });
+
+            // Lógica de ordenamiento Grado/Sección
+            docentesData.sort((a, b) => {
+                const gA = parseInt(a.grado) || 0;
+                const gB = parseInt(b.grado) || 0;
+                if (gA !== gB) return gA - gB;
+                return (a.seccion || "").localeCompare(b.seccion || "");
+            });
+
             let h = `<div class="btns-admin-row no-print">
                         <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
                         <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
-                     <thead><tr><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
-                     <tr><th>H</th><th>V</th><th>T</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>`;
-            let T = { mH:0, mV:0, mT:0, pH:0, pV:0, pT:0 };
-            snap.forEach(dSnap => {
-                const d = dSnap.data(); if(dSnap.id === USUARIO_ADMIN || !d.alumnos) return;
-                const ac = d.alumnos.filter(a => !a.retirado);
+                     <thead>
+                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
+                        <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                     </thead><tbody>`;
+            
+            let T = { mH:0, mV:0, mT:0, mI:0, mE:0, pH:0, pV:0, pT:0 };
+
+            docentesData.forEach(d => {
+                const alms = d.alumnos || [];
+                const ac = alms.filter(a => !a.retirado);
                 const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
+                
+                const mI = alms.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
+                const mE = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
+
                 let sH=0, sV=0, ds=0;
-                Object.keys(d.asistencias).forEach(f => {
+                Object.keys(d.asistencias || {}).forEach(f => {
                     const fo = new Date(f + "T00:00:00");
                     if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
                         ds++; ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
                     }
                 });
                 const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
-                T.mH+=mH; T.mV+=mV; T.mT+=mT; T.pH+=pH; T.pV+=pV; T.pT+=pT;
-                h += `<tr><td>${d.grado}${d.seccion} (${d.turno || 'S/T'})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
+                T.mH+=mH; T.mV+=mV; T.mT+=mT; T.mI+=mI; T.mE+=mE; T.pH+=pH; T.pV+=pV; T.pT+=pT;
+
+                h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion} (${d.turno || ''})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
             });
             const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
-            h += `<tr class="fila-total"><td>ESCUELA</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
+            h += `<tr class="fila-total"><td>ESCUELA</td><td>-</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.mI}</td><td>${T.mE}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
             document.getElementById('adminOutput').innerHTML = h;
         };
 
@@ -139,7 +163,7 @@
             }
         };
 
-        // --- RENDER ---
+        // --- RENDER (TAL CUAL EL ORIGINAL) ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const fObj = new Date(fSel + "T00:00:00");
@@ -149,7 +173,6 @@
             document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
             document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""} - ${window.db.turno || ""}`;
             
-            // Cargar datos en los inputs de edición por si el docente quiere cambiar algo
             document.getElementById('editDocente').value = window.db.docente || "";
             document.getElementById('editGrado').value = window.db.grado || "";
             document.getElementById('editSeccion').value = window.db.seccion || "";
@@ -171,7 +194,7 @@
                 });
             }
 
-            // Estadísticas
+            // Estadísticas (Tal cual el original)
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -291,9 +314,9 @@
 
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
-            <b>DIRECCIÓN</b>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">CONSOLIDADO ESTADÍSTICO</button>
-            <div id="adminOutput"></div>
+            <b>📊 DIRECCIÓN</b>
+            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">VER CONSOLIDADO</button>
+            <div id="adminOutput" style="overflow-x:auto;"></div>
         </div>
 
         <div class="card no-print">
@@ -325,7 +348,7 @@
         <div class="card no-print">
             <b>Docente:</b> <span id="docenteTxt"></span><br>
             <b>Sección:</b> <span id="gradoSeccionTxt"></span>
-            <input type="date" id="fechaSeleccionada" value="2026-03-05" onchange="window.render()" style="margin-top:10px;">
+            <input type="date" id="fechaSeleccionada" value="2026-03-08" onchange="window.render()" style="margin-top:10px;">
             <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
         </div>
 
