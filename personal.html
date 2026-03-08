@@ -10,35 +10,43 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --gris: #f4f4f4; }
+        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 15px; border-bottom: 5px solid var(--naranja); }
+        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
         
-        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 10px; }
-        .dash-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border-top: 4px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .dash-card h4 { margin: 0; font-size: 0.65rem; color: #555; }
-        .dash-card .valor { font-size: 1.2rem; font-weight: bold; color: var(--azul); }
+        /* Dashboard Contadores */
+        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
+        .dash-card { background: white; padding: 8px; border-radius: 5px; text-align: center; border-top: 3px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
+        .dash-card .valor { font-size: 1.1rem; font-weight: bold; color: var(--azul); }
 
-        .tabs { display: flex; background: white; padding: 10px; gap: 4px; position: sticky; top: 0; z-index: 100; }
-        .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; color: #555; }
+        /* Dashboard Efectividad */
+        .efectividad-container { background: white; margin: 0 10px 10px; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        .barra-progreso { height: 22px; background: #eee; border-radius: 11px; overflow: hidden; display: flex; margin-top: 8px; border: 1px solid #ccc; }
+        .segmento { height: 100%; transition: width 0.5s ease-in-out; }
+        .leyenda { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: bold; margin-top: 8px; }
+
+        .tabs { display: flex; background: white; padding: 10px; gap: 4px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; color: #555; cursor: pointer; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* ESTILO ACORDEÓN (DESPLEGABLE) */
-        .cargo-section { margin: 5px 10px; background: white; border-radius: 5px; overflow: hidden; border: 1px solid #ddd; }
-        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; }
-        .cargo-content { display: none; padding: 10px; background: #f9f9f9; }
+        /* Acordeones */
+        .cargo-section { margin: 8px 10px; background: white; border-radius: 6px; border: 1px solid #ddd; overflow: hidden; }
+        .cargo-title { background: #444; color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.8rem; align-items: center; }
+        .cargo-content { display: none; padding: 10px; background: #fdfdfd; }
         .cargo-content.open { display: block; }
 
         .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
         .ficha { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        .btn-check { width: 100%; padding: 7px; margin: 2px 0; border: none; border-radius: 4px; font-size: 0.6rem; font-weight: bold; cursor: pointer; }
+        .btn-check { width: 100%; padding: 7px; margin: 3px 0; border: none; border-radius: 4px; font-size: 0.65rem; font-weight: bold; cursor: pointer; }
         .btn-asis { background: #d4edda; color: #155724; }
+        .btn-ina { background: #f8d7da; color: #721c24; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
         
         .hidden { display: none; }
-        .seccion-titulo { background: var(--naranja); color: white; padding: 12px; margin: 15px 10px 5px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
-        .table-wrap { overflow-x: auto; background: white; margin: 0 10px 20px; border-radius: 8px; border: 1px solid #ddd; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; font-size: 0.8rem; }
+        .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
         th { background: #444; color: white; padding: 10px 5px; }
         td { padding: 8px 5px; border-bottom: 1px solid #eee; text-align: center; }
@@ -46,7 +54,7 @@
 </head>
 <body>
 
-<header><h3 style="margin:0;">SISTEMA CONTROL - LUCILA PALACIOS</h3></header>
+<header><h4 style="margin:0;">SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
 
 <div class="dashboard">
     <div class="dash-card"><h4>DOC</h4><div id="dDoc" class="valor">0</div></div>
@@ -54,6 +62,23 @@
     <div class="dash-card"><h4>ADM</h4><div id="dAdm" class="valor">0</div></div>
     <div class="dash-card"><h4>CNAE</h4><div id="dCnae" class="valor">0</div></div>
     <div class="dash-card"><h4>VIG</h4><div id="dVig" class="valor">0</div></div>
+</div>
+
+<div class="efectividad-container">
+    <div style="font-size: 0.75rem; font-weight: bold; color: var(--azul); display: flex; justify-content: space-between;">
+        <span>EFECTIVIDAD DIARIA</span>
+        <span id="porcentajeDia">0%</span>
+    </div>
+    <div class="barra-progreso">
+        <div id="barAsis" class="segmento" style="background: var(--verde); width: 0%;"></div>
+        <div id="barIna" class="segmento" style="background: var(--rojo); width: 0%;"></div>
+        <div id="barOtros" class="segmento" style="background: var(--naranja); width: 0%;"></div>
+    </div>
+    <div class="leyenda">
+        <span style="color: var(--verde)">PRESENTE: <span id="txtAsis">0</span></span>
+        <span style="color: var(--rojo)">FALTA: <span id="txtIna">0</span></span>
+        <span style="color: var(--naranja)">OTROS: <span id="txtOtros">0</span></span>
+    </div>
 </div>
 
 <div class="tabs">
@@ -64,38 +89,77 @@
 </div>
 
 <div id="tabEscuela" class="tab-content">
-    <div style="padding:10px; display:flex; gap:5px;"><input type="date" id="fechaEscuela" onchange="actualizarTodo()"><select id="turnoSeleccionado" onchange="actualizarTodo()"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select></div>
+    <div style="padding:10px; display:flex; gap:5px; background:white; margin-bottom:5px;">
+        <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
+        <select id="turnoSeleccionado" onchange="actualizarTodo()">
+            <option value="MAÑANA">MAÑANA</option>
+            <option value="TARDE">TARDE</option>
+        </select>
+    </div>
     <div id="contEscuela"></div>
 </div>
 
 <div id="tabVigilancia" class="tab-content hidden">
-    <div style="padding:10px;"><input type="date" id="fechaVig" onchange="actualizarTodo()"><select id="filtroGrupo" onchange="actualizarTodo()"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select></div>
+    <div style="padding:10px; background:white; margin-bottom:5px;">
+        <input type="date" id="fechaVig" onchange="actualizarTodo()">
+        <select id="filtroGrupo" onchange="actualizarTodo()" style="margin-top:5px;">
+            <option value="GRUPO I">GRUPO I</option>
+            <option value="GRUPO II">GRUPO II</option>
+        </select>
+    </div>
     <div id="contVigilancia"></div>
 </div>
 
 <div id="tabEstadistica" class="tab-content hidden">
-    <div style="padding:15px; display:flex; gap:10px;"><input type="month" id="mesReporte"><button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px;">CALCULAR</button></div>
-    <div id="bodyEstadisticaCont"></div> </div>
+    <div style="padding:15px; display:flex; gap:10px; background:white;">
+        <input type="month" id="mesReporte">
+        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold;">CALCULAR</button>
+    </div>
+    <div class="table-wrap">
+        <table id="tablaEst">
+            <thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead>
+            <tbody id="bodyEstadistica"></tbody>
+        </table>
+    </div>
+</div>
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
-        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; padding:10px; margin-bottom:10px; text-transform:uppercase;">
-        <select id="nCargo" style="width:100%; padding:10px; margin-bottom:10px;"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
-        <button onclick="agregarNomina()" style="width:100%; padding:12px; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR</button>
+        <h4 style="margin:0 0 10px 0;">Nuevo Personal</h4>
+        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="text-transform:uppercase; margin-bottom:8px;">
+        <div style="display:flex; gap:5px; margin-bottom:8px;">
+            <select id="nCargo">
+                <option value="Docente">Docente</option>
+                <option value="Obrero">Obrero</option>
+                <option value="Administrativo">Administrativo</option>
+                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+                <option value="Vigilante">Vigilante</option>
+            </select>
+            <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
+        </div>
+        <select id="nGrupo" style="margin-bottom:10px;">
+            <option value="-">Escuela</option>
+            <option value="GRUPO I">Vig I</option>
+            <option value="GRUPO II">Vig II</option>
+        </select>
+        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
+    <div class="table-wrap">
+        <table><thead><tr><th>Nombre</th><th>Cargo</th><th>Grupo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table>
+    </div>
 </div>
 
 <script>
-    // Configuración Firebase (Mantén la tuya)
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let nomina = [];
 
+    let nomina = [];
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
+    // Cargar Nómina
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
@@ -104,15 +168,41 @@
     });
 
     async function actualizarTodo() {
-        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], document.getElementById('fechaEscuela').value);
-        dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, document.getElementById('filtroGrupo').value);
+        const f = document.getElementById('fechaEscuela').value;
+        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
+        const marcados = {}; 
+        let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
+
+        snap.forEach(doc => {
+            const d = doc.data(); marcados[d.n] = d;
+            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) {
+                c[d.c]++; c.Asis++;
+            } else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+        });
+
+        // Actualizar Contadores Azules
+        document.getElementById('dDoc').innerText = c.Docente;
+        document.getElementById('dObr').innerText = c.Obrero;
+        document.getElementById('dAdm').innerText = c.Administrativo;
+        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
+        document.getElementById('dVig').innerText = c.Vigilante;
+
+        // Actualizar Dashboard Efectividad
+        const totalAsis = c.Asis + c.Ina + c.Otros || 1;
+        document.getElementById('barAsis').style.width = (c.Asis/totalAsis*100) + "%";
+        document.getElementById('barIna').style.width = (c.Ina/totalAsis*100) + "%";
+        document.getElementById('barOtros').style.width = (c.Otros/totalAsis*100) + "%";
+        document.getElementById('txtAsis').innerText = c.Asis;
+        document.getElementById('txtIna').innerText = c.Ina;
+        document.getElementById('txtOtros').innerText = c.Otros;
+        document.getElementById('porcentajeDia').innerText = Math.round((c.Asis/nomina.length)*100 || 0) + "%";
+
+        dibujarFichas("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], f, marcados);
+        dibujarFichas("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, marcados, document.getElementById('filtroGrupo').value);
     }
 
-    async function dibujarSeccion(contId, cargos, fecha, grupo = null) {
-        const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
-        const marcados = {}; snap.forEach(d => marcados[d.data().n] = d.data());
+    function dibujarFichas(contId, cargos, fecha, marcados, grupo = null) {
         const cont = document.getElementById(contId); cont.innerHTML = "";
-
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
             if(cargo === "Vigilante") lista = lista.filter(p => p.grupo === grupo);
@@ -120,43 +210,72 @@
 
             const sec = document.createElement('div');
             sec.className = "cargo-section";
-            // LÓGICA DE DESPLIEGUE (ACORDEÓN)
             sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')">
                 <span>${cargo.toUpperCase()} (${lista.length})</span> <span>▼</span>
             </div>`;
             
             const content = document.createElement('div');
-            content.className = "cargo-content"; // Cerrado por defecto
-            
+            content.className = "cargo-content";
             const grid = document.createElement('div');
             grid.className = "grid-fichas";
 
             lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
                 const m = marcados[p.n];
-                const f = document.createElement('div');
-                f.className = "ficha";
+                const f = document.createElement('div'); f.className = "ficha";
                 if(!m) {
                     f.innerHTML = `<b>${p.n}</b><br>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
-                        <button class="btn-check" style="background:#f8d7da" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>`;
+                        <button class="btn-check" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
+                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>`;
                 } else {
                     f.style.borderColor = "var(--verde)";
-                    f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde)">✓ ${m.e}</span><br>
-                        ${(m.hS === "---" && !["INASISTENCIA"].includes(m.e)) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}','${m.turno}','${p.c}')">SALIDA</button>` : `<small>${m.hE}/${m.hS}</small>`}`;
+                    f.innerHTML = `<b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
+                        ${m.hS === "---" ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
                 }
                 grid.appendChild(f);
             });
-
             content.appendChild(grid);
             sec.appendChild(content);
             cont.appendChild(sec);
         });
     }
 
-    // Funciones de registrar, marcarSalida, verTab, etc. (Igual a las anteriores)
-    function verTab(id, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); btn.classList.add('active'); }
-    
-    // (Asegúrate de copiar aquí el resto de las funciones: registrar, marcarSalida, agregarNomina, renderNomina)
+    async function registrar(n, e) {
+        const p = nomina.find(x => x.n === n);
+        const t = document.getElementById('turnoSeleccionado').value;
+        const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
+        const hE = prompt("Hora Entrada:", (t === "MAÑANA" ? "07:00" : "12:00"));
+        if(!hE) return;
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t });
+        actualizarTodo();
+    }
+
+    async function marcarSalida(n, f) {
+        const hS = prompt("Hora Salida:"); if(!hS) return;
+        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
+        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
+        actualizarTodo();
+    }
+
+    function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
+        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
+        document.getElementById('nNombre').value = "";
+    }
+
+    function renderNomina() {
+        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
+        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td>${p.grupo || '-'}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; background:none; border:none; font-weight:bold;">X</button></td></tr>`;
+        });
+    }
+
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        btn.classList.add('active');
+    }
 </script>
 </body>
 </html>
