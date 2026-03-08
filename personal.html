@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONTROL LUCILA PALACIOS - OFICIAL</title>
+    <title>SISTEMA CONTROL - LUCILA PALACIOS</title>
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 5px; border-bottom: 4px solid var(--naranja); }
+        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
         
-        /* Dashboard 5 Columnas Original */
+        /* Dashboard Original */
         .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; }
         .dash-card { background: white; padding: 8px; border-radius: 5px; text-align: center; border-top: 3px solid var(--azul); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .dash-card h4 { margin: 0; font-size: 0.55rem; color: #666; }
@@ -21,31 +21,31 @@
 
         /* Navegación */
         .tabs { display: flex; background: white; padding: 10px; gap: 4px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #ddd; }
-        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 10px 2px; border: none; border-radius: 5px; font-weight: bold; font-size: 0.65rem; background: #eee; cursor: pointer; color: #555; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Fichas de Marcaje */
+        /* Fichas de Personal */
         .cargo-section { margin: 8px 10px; background: white; border-radius: 6px; border: 1px solid #ddd; }
         .cargo-title { background: #444; color: white; padding: 10px; font-weight: bold; font-size: 0.75rem; }
-        .ficha-p { border-bottom: 1px solid #eee; padding: 10px; }
+        .ficha-p { border-bottom: 1px solid #eee; padding: 10px; background: #fff; }
         .cont-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; }
-        .btn-st { padding: 8px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 0.6rem; cursor: pointer; }
+        .btn-st { padding: 8px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 0.6rem; cursor: pointer; text-transform: uppercase; }
 
-        /* Tabla de Resumen Diaria */
-        .resumen-container { margin: 15px 10px; background: white; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; }
+        /* Tabla de Resumen Diaria (Debajo) */
+        .resumen-diario { margin: 15px 10px; background: white; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; }
         .resumen-header { background: var(--azul); color: white; padding: 10px; font-weight: bold; font-size: 0.8rem; text-align: center; }
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
-        th { background: #f4f4f4; color: #333; padding: 8px; border-bottom: 2px solid #ddd; }
-        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background: #f8f9fa; color: #333; padding: 8px; border-bottom: 2px solid #ddd; border-right: 1px solid #eee; }
+        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; border-right: 1px solid #eee; }
 
+        .obs-input { width: 100%; padding: 6px; margin-top: 5px; font-size: 0.7rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .hidden { display: none; }
-        .obs-input { width: 100%; padding: 5px; margin-top: 5px; font-size: 0.7rem; border: 1px solid #ccc; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<header><h4>SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
+<header><h4 style="margin:0;">SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
 
 <div class="dashboard">
     <div class="dash-card"><h4>DOC</h4><div id="dDoc" class="valor">0</div></div>
@@ -56,12 +56,12 @@
 </div>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="verTab('tabDiario', this)">ASISTENCIA</button>
+    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">ASISTENCIA</button>
     <button class="tab-btn" onclick="verTab('tabEstadistica', this)">ESTADÍSTICA</button>
     <button class="tab-btn" onclick="verTab('tabNomina', this)">NÓMINA</button>
 </div>
 
-<div id="tabDiario" class="tab-content">
+<div id="tabEscuela" class="tab-content">
     <div style="padding:10px; background:white; display:flex; gap:5px;">
         <input type="date" id="fechaControl" onchange="actualizarTodo()" style="flex:2; padding:8px;">
         <select id="turnoControl" onchange="actualizarTodo()" style="flex:1; padding:8px;"><option>MAÑANA</option><option>TARDE</option></select>
@@ -69,10 +69,23 @@
 
     <div id="listaPersonal"></div>
 
-    <div class="resumen-container">
+    <div class="resumen-diario">
         <div class="resumen-header">LISTA DE ASISTENCIA DIARIA</div>
-        <div class="table-wrap" id="tablaDiariaCont">
-            </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NOMBRE</th>
+                        <th>CARGO</th>
+                        <th>STATUS</th>
+                        <th>H.ENT</th>
+                        <th>H.SAL</th>
+                        <th>OBSERVACIONES</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaDiariaBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -87,18 +100,18 @@
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
         <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; padding:10px; margin-bottom:8px; text-transform:uppercase;">
-        <select id="nCargo" style="width:100%; padding:10px; margin-bottom:8px;"><option>Docente</option><option>Obrero</option><option>Administrativo</option><option>CNAE (Cocinera)</option><option>Vigilante</option></select>
-        <select id="nGen" style="width:100%; padding:10px; margin-bottom:8px;"><option value="F">F</option><option value="M">M</option></select>
-        <button onclick="agregarNomina()" style="width:100%; background:var(--azul); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
-        <div style="display:flex; margin-top:10px;"><button onclick="respaldoJSON()" style="flex:1; background:#444; color:white; border:none; padding:8px; border-radius:4px; margin-right:2px;">📥 RESPALDO</button><button onclick="document.getElementById('fileIn').click()" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:4px;">📤 RESTAURAR</button></div>
-        <input type="file" id="fileIn" class="hidden" onchange="restaurarJSON(event)">
+        <div style="display:flex; gap:5px;">
+            <select id="nCargo" style="flex:2; padding:10px;"><option>Docente</option><option>Obrero</option><option>Administrativo</option><option>CNAE (Cocinera)</option><option>Vigilante</option></select>
+            <select id="nGen" style="flex:1; padding:10px;"><option value="F">F</option><option value="M">M</option></select>
+        </div>
+        <button onclick="agregarNomina()" style="width:100%; background:var(--azul); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold; margin-top:10px;">GUARDAR PERSONAL</button>
     </div>
     <div id="contListaNomina"></div>
 </div>
 
 <script>
-    // FIREBASE
-    const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", storageBucket: "control-de-asistencia-d585e.appspot.com", messagingSenderId: "368890880546", appId: "1:368890880546:web:a97ab4372dea536217207b" };
+    // Configuración Firebase (Compat v10)
+    const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -119,68 +132,74 @@
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
         
         snap.forEach(doc => {
-            const d = doc.data(); marcados[d.n + d.f] = d;
+            const d = doc.data(); marcados[d.n] = d;
             if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) c[d.c]++;
         });
 
-        ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(cargo => {
-            const id = cargo === "CNAE (Cocinera)" ? "dCnae" : "d" + cargo.substring(0,3);
-            if(document.getElementById(id)) document.getElementById(id).innerText = c[cargo];
-        });
+        // Actualizar Dashboard
+        document.getElementById('dDoc').innerText = c.Docente;
+        document.getElementById('dObr').innerText = c.Obrero;
+        document.getElementById('dAdm').innerText = c.Administrativo;
+        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
+        document.getElementById('dVig').innerText = c.Vigilante;
 
-        renderDiario(f, marcados);
+        renderVistas(f, marcados);
     }
 
-    function renderDiario(fecha, marcados) {
+    function renderVistas(fecha, marcados) {
         const cont = document.getElementById('listaPersonal'); cont.innerHTML = "";
+        const tablaBody = document.getElementById('tablaDiariaBody'); tablaBody.innerHTML = "";
         const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
-        let totalHoy = [];
+        let personalFull = [];
 
         cargos.forEach(cargo => {
             let lista = nomina.filter(p => p.c === cargo);
             if(lista.length === 0) return;
-            totalHoy = totalHoy.concat(lista);
+            personalFull = personalFull.concat(lista);
 
             let html = `<div class="cargo-section"><div class="cargo-title">${cargo.toUpperCase()}</div>`;
             lista.forEach(p => {
-                const m = marcados[p.n + fecha];
+                const m = marcados[p.n];
                 html += `<div class="ficha-p">
                     <b>${p.n}</b>
                     ${!m ? `
-                        <input type="text" id="obs-${p.id}" class="obs-input" placeholder="Observaciones (opcional)">
+                        <input type="text" id="obs-${p.id}" class="obs-input" placeholder="Observaciones...">
                         <div class="cont-btns">
                             <button class="btn-st" style="background:var(--verde)" onclick="registrar('${p.id}','ASISTENCIA')">ASISTENCIA</button>
                             <button class="btn-st" style="background:var(--rojo)" onclick="registrar('${p.id}','INASISTENCIA')">INASISTENCIA</button>
-                            <button class="btn-st" style="background:#6d4c41" onclick="registrar('${p.id}','P. PERSONAL')">P. PERSONAL</button>
-                            <select style="font-size:0.6rem" onchange="registrar('${p.id}', this.value)">
+                            <button class="btn-st" style="background:#6d4c41" onclick="registrar('${p.id}','P. PERSONAL')">PERMISO</button>
+                            <select onchange="registrar('${p.id}', this.value)" style="font-size:0.6rem">
                                 <option value="">OTROS...</option>
                                 <option value="RETRASO">RETRASO</option>
                                 <option value="ACT. INST.">ACT. INST.</option>
                                 <option value="VACACIONES">VACACIONES</option>
                             </select>
                         </div>
-                    ` : `<br><span style="color:var(--verde); font-weight:bold">✓ ${m.e} (${m.hE})</span>`}
+                    ` : `<br><span style="color:var(--verde); font-weight:bold">✓ ${m.e} (${m.hE})</span>
+                         ${m.hS === "---" && !["INASISTENCIA","VACACIONES"].includes(m.e) ? 
+                         `<button onclick="marcarSalida('${m.n}','${fecha}')" style="font-size:0.6rem; margin-left:10px;">SALIDA</button>` : ""}`}
                 </div>`;
             });
             cont.innerHTML += html + `</div>`;
         });
 
-        // TABLA DIARIA DEBAJO (NOMBRE | CARGO | STATUS | OBSERVACIONES)
-        let tabla = `<table><thead><tr><th>NOMBRE</th><th>CARGO</th><th>STATUS</th><th>H.ENT</th><th>OBS</th></tr></thead><tbody>`;
-        totalHoy.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            const m = marcados[p.n + fecha];
+        // Llenar Tabla Diaria Detallada
+        personalFull.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            const m = marcados[p.n];
             let est = m ? m.e : "PENDIENTE";
+            let hE = m ? m.hE : "---";
+            let hS = m ? m.hS : "---";
             let obs = m ? (m.obs || "---") : "---";
-            let hor = m ? m.hE : "---";
-            tabla += `<tr style="background:${COLORES[est]}">
+            
+            tablaBody.innerHTML += `<tr style="background:${COLORES[est]}">
                 <td style="text-align:left">${p.n}</td>
                 <td>${p.c.substring(0,3)}</td>
                 <td style="font-weight:bold">${est}</td>
-                <td>${hor}</td>
-                <td>${obs}</td>
+                <td>${hE}</td>
+                <td>${hS}</td>
+                <td style="font-style:italic">${obs}</td>
             </tr>`;
         });
-        document.getElementById('tablaDiariaCont').innerHTML = tabla + `</tbody></table>`;
     }
 
     async function registrar(id, e) {
@@ -189,24 +208,33 @@
         const f = document.getElementById('fechaControl').value;
         const obs = document.getElementById('obs-'+id) ? document.getElementById('obs-'+id).value : "N/A";
         
-        // Lógica de Horarios: Si es asistencia, preguntar hora, si es falta/permiso poner ---
         let hE = "---";
         if(["ASISTENCIA", "RETRASO", "ACT. INST."].includes(e)) {
-            hE = prompt("Hora de entrada:", new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+            hE = prompt("Hora Entrada:", new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}));
+            if(!hE) return;
         }
 
         await db.collection("asistencia_ebnlp_final").add({
             n: p.n, e: e, f: f, c: p.c, gender: p.gender, 
-            hE: hE || "---", hS: "---", 
-            mes: f.substring(0,7), 
-            obs: obs || "N/A"
+            hE: hE, hS: "---", mes: f.substring(0,7), obs: obs || "---"
         });
         actualizarTodo();
     }
 
-    // FUNCIONES AUXILIARES
-    function verTab(id, b) { document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); b.classList.add('active'); }
-    
+    async function marcarSalida(n, f) {
+        const hS = prompt("Hora Salida:", new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}));
+        if(!hS) return;
+        const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
+        if(!q.empty) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS: hS });
+        actualizarTodo();
+    }
+
+    function verTab(id, b) { 
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.add('hidden')); 
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); 
+        document.getElementById(id).classList.remove('hidden'); b.classList.add('active'); 
+    }
+
     function agregarNomina() {
         const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
         db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value });
@@ -215,15 +243,12 @@
 
     function renderNomina() {
         const cont = document.getElementById('contListaNomina');
-        let h = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody>`;
+        let h = `<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>X</th></tr></thead><tbody>`;
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             h += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red; background:none; border:none; font-weight:bold;">❌</button></td></tr>`;
         });
         cont.innerHTML = h + "</tbody></table></div>";
     }
-
-    function respaldoJSON() { const blob = new Blob([JSON.stringify(nomina)], {type: "application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "respaldo_lucila.json"; a.click(); }
-    function restaurarJSON(e) { const reader = new FileReader(); reader.onload = async (ev) => { const data = JSON.parse(ev.target.result); for(let p of data) { await db.collection("nomina_institucional").add(p); } alert("Listo"); }; reader.readAsText(e.target.files[0]); }
 </script>
 </body>
 </html>
