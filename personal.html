@@ -118,19 +118,20 @@
             <select id="nGen" style="width:70px;"><option value="F">F</option><option value="M">M</option></select>
         </div>
         <select id="nGrupo" style="margin-top:8px;"><option value="-">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
-        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR</button>
+        <button onclick="agregarNomina()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold; margin:10px 0;">GUARDAR PERSONAL</button>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
 </div>
 
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let nomina = [];
     
-    // Configuración de Horarios
+    // CONFIGURACIÓN DE HORARIOS SEGÚN CARGO Y TURNO
     const HORARIOS = {
         "MAÑANA": {
             "Docente": { entrada: "07:00", salida: "12:00" },
@@ -148,14 +149,17 @@
         }
     };
 
+    // Inicialización de Fechas
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
+    // Carga de Nómina en Tiempo Real
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = []; snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
         renderNomina(); actualizarTodo();
     });
 
+    // Función de Actualización Global
     async function actualizarTodo() {
         const f = document.getElementById('fechaEscuela').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
@@ -184,6 +188,7 @@
         dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, marcados, document.getElementById('filtroGrupo').value);
     }
 
+    // Dibuja Acordeones y Tabla General con Colores por Estatus
     function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null) {
         const cont = document.getElementById(contId); cont.innerHTML = "";
         let personalParaListaGeneral = [];
@@ -230,8 +235,9 @@
             content.appendChild(grid); sec.appendChild(content); cont.appendChild(sec);
         });
 
+        // TABLA GENERAL AL FINAL
         if(personalParaListaGeneral.length > 0) {
-            const titulo = document.createElement('div'); titulo.className = "seccion-titulo"; titulo.innerText = "TABLA DE CONTROL DIARIO POR ESTATUS";
+            const titulo = document.createElement('div'); titulo.className = "seccion-titulo"; titulo.innerText = "RESUMEN DE ASISTENCIA DIARIA";
             cont.appendChild(titulo);
             const wrap = document.createElement('div'); wrap.className = "table-wrap";
             let tablaHTML = `<table><thead><tr><th>NOMBRE</th><th>CARGO</th><th>ESTATUS</th><th>H.E. / H.S.</th><th>OBSERVACIÓN</th></tr></thead><tbody>`;
@@ -240,9 +246,9 @@
                 let est = m ? m.e : "PENDIENTE";
                 let color = coloresEstatus[est] || "#fff";
                 let hE = m ? m.hE : "-"; let hS = m ? m.hS : "-";
-                let obs = (m && m.motivoSalida && m.motivoSalida !== "N/A") ? `<span style="color:red">S.A: ${m.motivoSalida}</span>` : "-";
+                let obs = (m && m.motivoSalida && m.motivoSalida !== "N/A") ? `<span style="color:red; font-weight:bold">S.A: ${m.motivoSalida}</span>` : "-";
                 tablaHTML += `<tr style="background:${color}; border-bottom:1px solid #ccc">
-                    <td style="text-align:left; font-weight:bold; padding:8px;">${p.n}</td>
+                    <td style="text-align:left; font-weight:bold; padding:10px;">${p.n}</td>
                     <td style="font-size:0.5rem">${p.c.toUpperCase()}</td>
                     <td>${est}</td><td>${hE} / ${hS}</td><td style="font-size:0.55rem">${obs}</td></tr>`;
             });
@@ -250,6 +256,7 @@
         }
     }
 
+    // Registro de Asistencia con Lógica de 30 días y Horarios Sugeridos
     async function registrar(n, e) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
@@ -261,27 +268,30 @@
             if(!hE) return;
         }
 
+        // Lógica de Alerta: Máximo 3 registros en 30 días
         if(e === "INASISTENCIA" || e === "P. PERSONAL") {
             const f30 = new Date(f); f30.setDate(f30.getDate() - 30);
-            const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f",">=",f30.toISOString().split('T')[0]).where("e","==",e).get();
-            if(snap.size >= 3) alert(`⚠️ ALERTA: ${n} ya posee ${snap.size} registros de ${e} en 30 días.`);
+            const fIso = f30.toISOString().split('T')[0];
+            const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f",">=",fIso).where("e","==",e).get();
+            if(snap.size >= 3) alert(`⚠️ ALERTA: ${n} ya posee ${snap.size} registros de ${e} en los últimos 30 días.`);
         }
 
         await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), turno: t, motivoSalida: "N/A" });
         actualizarTodo();
     }
 
+    // Salida con Validación de Hora Programada
     async function marcarSalida(n, f) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         const prog = HORARIOS[t][p.c].salida;
-        const hS = prompt(`Hora Salida (Programada ${prog}):`, prog); if(!hS) return;
+        const hS = prompt(`Hora Salida para ${p.n} (Programada ${prog}):`, prog); if(!hS) return;
 
         let motivo = "N/A";
         const [hR, mR] = hS.split(':').map(Number); const [hP, mP] = prog.split(':').map(Number);
         if((hR*60+mR) < (hP*60+mP)) {
-            motivo = prompt("⚠️ SALIDA ANTICIPADA detectada. Ingrese motivo:");
-            if(!motivo) return alert("Motivo obligatorio.");
+            motivo = prompt("⚠️ SALIDA ANTICIPADA detectada. Ingrese el motivo obligatoriamente:");
+            if(!motivo) return alert("No se puede registrar la salida sin un motivo.");
         }
 
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
@@ -289,14 +299,16 @@
         actualizarTodo();
     }
 
+    // Generar Estadísticas Mensuales
     async function generarEstadistica() {
-        const mes = document.getElementById('mesReporte').value; if(!mes) return;
+        const mes = document.getElementById('mesReporte').value; if(!mes) return alert("Seleccione un mes");
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
         const docs = snap.docs.map(d => d.data());
         const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
         const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
 
-        ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
+        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+        cargos.forEach(c => {
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
@@ -313,18 +325,4 @@
                 const count = (e) => m.filter(x => x.e === e).length;
                 const asis = count("ASISTENCIA") + count("ACT. INST.") + count("RETRASO");
                 const sa = m.filter(x => x.motivoSalida && x.motivoSalida !== "N/A").length;
-                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${asis}</td><td style="color:red; font-weight:bold">${sa}</td><td>${count("INASISTENCIA")}</td><td>${count("P. PERSONAL")}</td><td>${count("VACACIONES")}</td><td><b>${(asis/20).toFixed(2)}</b></td></tr>`;
-            }
-        });
-    }
-
-    function agregarNomina() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
-    }
-
-    function renderNomina() {
-        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td
+                bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${asis}</td><td style="color:red; font-weight:bold">${sa}</td><td>${count("INASISTENCIA")}</td><td>${count("P. PERSONAL")}</td><td>${count("VACACIONES")}</td><td><b>${(asis/20).toFixed(2)}</b></td></tr
