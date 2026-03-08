@@ -38,26 +38,22 @@
         .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 4px; font-size: 0.55rem; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-asis { background: #d4edda; color: #155724; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
-        .btn-del { position: absolute; top: 2px; right: 2px; background: none; border: none; color: #c0392b; font-weight: bold; cursor: pointer; font-size: 10px; }
-
-        .lista-diaria-tabla { width: 100%; border-collapse: collapse; font-size: 0.65rem; margin-top: 10px; background: #fff; }
-        .lista-diaria-tabla th { background: #f0f0f0; color: #333; padding: 6px; border: 1px solid #ccc; }
-        .lista-diaria-tabla td { padding: 6px; border: 1px solid #ccc; text-align: center; }
-
-        /* Colores de Estatus para la Tabla */
-        .st-asistencia { background-color: #d4edda; color: #155724; }
-        .st-inasistencia { background-color: #f8d7da; color: #721c24; }
-        .st-retraso { background-color: #fff3cd; color: #856404; }
-        .st-vacaciones { background-color: #f3e5f5; color: #4a148c; }
-        .st-personal { background-color: #efebe9; color: #3e2723; }
-        .st-medico { background-color: #e3f2fd; color: #0d47a1; }
-        .st-institucional { background-color: #e8f5e9; color: #1b5e20; }
+        .btn-del { position: absolute; top: 2px; right: 2px; background: none; border: none; color: #c0392b; font-weight: bold; cursor: pointer; font-size: 10px; z-index: 5; }
 
         .table-wrap { overflow-x: auto; background: white; margin: 10px; border-radius: 8px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
-        th { background: #444; color: white; padding: 8px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background: #444; color: white; padding: 8px; border: 1px solid #ccc; }
+        td { padding: 8px; border: 1px solid #eee; text-align: center; }
         
+        /* Colores de Estatus */
+        .st-asistencia { background-color: #d4edda !important; color: #155724; }
+        .st-inasistencia { background-color: #f8d7da !important; color: #721c24; }
+        .st-retraso { background-color: #fff3cd !important; color: #856404; }
+        .st-vacaciones { background-color: #f3e5f5 !important; color: #4a148c; }
+        .st-personal { background-color: #efebe9 !important; color: #3e2723; }
+        .st-medico { background-color: #e3f2fd !important; color: #0d47a1; }
+        .st-institucional { background-color: #e8f5e9 !important; color: #1b5e20; }
+
         input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; font-size: 0.8rem; margin-bottom: 8px; }
         .hidden { display: none; }
         .seccion-titulo { background: var(--naranja); color: white; padding: 10px; margin: 15px 10px 5px; border-radius: 5px; font-weight: bold; font-size: 0.75rem; text-align: center; }
@@ -102,10 +98,10 @@
     <div id="contEscuela"></div>
     <div class="cargo-section">
         <div class="cargo-title" style="background:var(--azul)" onclick="this.nextElementSibling.classList.toggle('open')">
-            <span>LISTA DE ASISTENCIA DIARIA GENERAL</span> <span>▼</span>
+            <span>LISTA DE ASISTENCIA DIARIA GENERAL (ESCUELA)</span> <span>▼</span>
         </div>
         <div class="cargo-content table-wrap">
-            <table class="lista-diaria-tabla">
+            <table>
                 <thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th><th>EFEC</th><th>OBSERVACIONES</th></tr></thead>
                 <tbody id="tablaGeneralEscuela"></tbody>
             </table>
@@ -121,10 +117,10 @@
     <div id="contVigilancia"></div>
     <div class="cargo-section">
         <div class="cargo-title" style="background:var(--azul)" onclick="this.nextElementSibling.classList.toggle('open')">
-            <span>LISTA GENERAL VIGILANCIA</span> <span>▼</span>
+            <span>LISTA GENERAL (VIGILANCIA)</span> <span>▼</span>
         </div>
         <div class="cargo-content table-wrap">
-            <table class="lista-diaria-tabla">
+            <table>
                 <thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th><th>EFEC</th><th>OBSERVACIONES</th></tr></thead>
                 <tbody id="tablaGeneralVig"></tbody>
             </table>
@@ -157,6 +153,7 @@
 </div>
 
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -165,14 +162,18 @@
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
+    // CARGA INICIAL
     db.collection("nomina_institucional").onSnapshot(snap => {
-        nomina = []; snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
-        renderNomina(); actualizarTodo();
-    });
+        nomina = []; 
+        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
+        renderNomina(); 
+        actualizarTodo();
+    }, err => console.error("Error Nomina:", err));
 
     async function actualizarTodo() {
         const fe = document.getElementById('fechaEscuela').value;
         const fv = document.getElementById('fechaVig').value;
+        
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "in", [fe, fv]).get();
         const marcados = {}; 
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
@@ -183,31 +184,26 @@
             else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
         });
 
-        document.getElementById('dDoc').innerText = c.Docente;
-        document.getElementById('dObr').innerText = c.Obrero;
-        document.getElementById('dAdm').innerText = c.Administrativo;
-        document.getElementById('dCnae').innerText = c["CNAE (Cocinera)"];
-        document.getElementById('dVig').innerText = c.Vigilante;
+        // Actualizar Dashboard
+        const updateVal = (id, val) => document.getElementById(id).innerText = val || 0;
+        updateVal('dDoc', c.Docente); updateVal('dObr', c.Obrero); updateVal('dAdm', c.Administrativo); 
+        updateVal('dCnae', c["CNAE (Cocinera)"]); updateVal('dVig', c.Vigilante);
 
+        // Barra de Progreso
         const total = c.Asis + c.Ina + c.Otros || 1;
         document.getElementById('barAsis').style.width = (c.Asis/total*100) + "%";
         document.getElementById('barIna').style.width = (c.Ina/total*100) + "%";
         document.getElementById('barOtros').style.width = (c.Otros/total*100) + "%";
         document.getElementById('porcentajeDia').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
 
+        // Dibujar secciones
         dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], fe, marcados, null, "tablaGeneralEscuela");
         dibujarSeccion("contVigilancia", ["Vigilante"], fv, marcados, document.getElementById('filtroGrupo').value, "tablaGeneralVig");
     }
 
-    function getEstiloEstatus(e) {
-        if(e === "ASISTENCIA") return "st-asistencia";
-        if(e === "INASISTENCIA") return "st-inasistencia";
-        if(e === "RETRASO") return "st-retraso";
-        if(e === "VACACIONES") return "st-vacaciones";
-        if(e === "P. PERSONAL") return "st-personal";
-        if(e === "P. MÉDICO") return "st-medico";
-        if(e === "ACT. INST.") return "st-institucional";
-        return "";
+    function getClase(e) {
+        const clases = { "ASISTENCIA": "st-asistencia", "INASISTENCIA": "st-inasistencia", "RETRASO": "st-retraso", "VACACIONES": "st-vacaciones", "P. PERSONAL": "st-personal", "P. MÉDICO": "st-medico", "ACT. INST.": "st-institucional" };
+        return clases[e] || "";
     }
 
     function dibujarSeccion(contId, cargos, fecha, marcados, grupo = null, tablaId) {
@@ -247,7 +243,7 @@
                         `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS}</small>`}`;
                     
                     let efec = (m.hE !== "---" && m.hS !== "---") ? "100%" : (m.hE !== "---" ? "50%" : "0%");
-                    tablaG.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td class="${getEstiloEstatus(m.e)}">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td><td>${efec}</td><td>${m.obs || "-"}</td></tr>`;
+                    tablaG.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td class="${getClase(m.e)}">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td><td>${efec}</td><td>${m.obs || "-"}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
@@ -256,7 +252,7 @@
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Deseas eliminar este registro de asistencia?")) {
+        if(confirm("¿Eliminar este registro de asistencia?")) {
             await db.collection("asistencia_ebnlp_final").doc(id).delete();
             actualizarTodo();
         }
@@ -306,4 +302,37 @@
                 if(nT.length > 0) {
                     const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
                     const pr = (aC / 20).toFixed(2);
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.
+                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
+                }
+            });
+        });
+        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            const m = docs.filter(d => d.n === p.n);
+            const r = (tipo) => m.filter(x => x.e === tipo).length;
+            const asisT = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
+            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisT}</b></td></tr>`;
+        });
+    }
+
+    function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
+        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
+        document.getElementById('nNombre').value = "";
+    }
+
+    function renderNomina() {
+        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
+        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
+            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red;border:none;background:none;font-weight:bold;">X</button></td></tr>`;
+        });
+    }
+
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
+    }
+</script>
+</body>
+</html>
+
