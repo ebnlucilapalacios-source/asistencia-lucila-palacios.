@@ -80,25 +80,49 @@
             alert("Perfil actualizado correctamente");
         };
 
-        // --- DIRECCIÓN ---
+        // --- DIRECCIÓN (CONSOLIDADO ORDENADO) ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            
+            let listaDocentes = [];
+            snap.forEach(dSnap => {
+                if(dSnap.id !== USUARIO_ADMIN) listaDocentes.push(dSnap.data());
+            });
+
+            // Ordenar por grado (1-6) y luego sección
+            listaDocentes.sort((a, b) => {
+                const gA = parseInt(a.grado) || 0;
+                const gB = parseInt(b.grado) || 0;
+                if (gA !== gB) return gA - gB;
+                return (a.seccion || "").localeCompare(b.seccion || "");
+            });
+
             let h = `<div class="btns-admin-row no-print">
                         <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
                         <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
-                     <thead><tr><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
-                     <tr><th>H</th><th>V</th><th>T</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>`;
+                     <thead>
+                        <tr>
+                            <th rowspan="2">DOCENTE RESPONSABLE</th>
+                            <th rowspan="2">G/S/T</th>
+                            <th colspan="3">MATRÍCULA</th>
+                            <th colspan="3">PROM. REAL</th>
+                            <th rowspan="2">% EFIC</th>
+                        </tr>
+                        <tr><th>H</th><th>V</th><th>T</th><th>H</th><th>V</th><th>T</th></tr>
+                     </thead><tbody>`;
+            
             let T = { mH:0, mV:0, mT:0, pH:0, pV:0, pT:0 };
-            snap.forEach(dSnap => {
-                const d = dSnap.data(); if(dSnap.id === USUARIO_ADMIN || !d.alumnos) return;
+
+            listaDocentes.forEach(d => {
+                if(!d.alumnos) return;
                 const ac = d.alumnos.filter(a => !a.retirado);
                 const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
                 let sH=0, sV=0, ds=0;
-                Object.keys(d.asistencias).forEach(f => {
+                Object.keys(d.asistencias || {}).forEach(f => {
                     const fo = new Date(f + "T00:00:00");
                     if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
                         ds++; ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
@@ -106,10 +130,18 @@
                 });
                 const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
                 T.mH+=mH; T.mV+=mV; T.mT+=mT; T.pH+=pH; T.pV+=pV; T.pT+=pT;
-                h += `<tr><td>${d.grado}${d.seccion} (${d.turno || 'S/T'})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
+                
+                h += `<tr>
+                        <td style="text-align:left;"><b>${d.docente}</b></td>
+                        <td>${d.grado}° "${d.seccion}"<br><small>${d.turno}</small></td>
+                        <td>${mH}</td><td>${mV}</td><td>${mT}</td>
+                        <td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td>
+                        <td>${ef}%</td>
+                      </tr>`;
             });
+
             const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
-            h += `<tr class="fila-total"><td>ESCUELA</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
+            h += `<tr class="fila-total"><td colspan="2">TOTAL ESCUELA</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
             document.getElementById('adminOutput').innerHTML = h;
         };
 
@@ -142,6 +174,7 @@
         // --- RENDER ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
+            if(!fSel) return;
             const fObj = new Date(fSel + "T00:00:00");
             const esFeriado = window.db.feriados?.includes(fSel);
             const esFinde = (fObj.getDay() === 0 || fObj.getDay() === 6);
@@ -149,12 +182,6 @@
             document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
             document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado || ""} ${window.db.seccion || ""} - ${window.db.turno || ""}`;
             
-            // Cargar datos en los inputs de edición por si el docente quiere cambiar algo
-            document.getElementById('editDocente').value = window.db.docente || "";
-            document.getElementById('editGrado').value = window.db.grado || "";
-            document.getElementById('editSeccion').value = window.db.seccion || "";
-            document.getElementById('editTurno').value = window.db.turno || "";
-
             document.getElementById('btnFeriado').innerText = esFeriado ? "✅ DÍA HÁBIL" : "🚩 MARCAR FERIADO";
 
             const lista = document.getElementById('listaAsistencia');
@@ -177,10 +204,10 @@
             Object.keys(window.db.asistencias).forEach(f => {
                 const d = new Date(f + "T00:00:00");
                 if(d.getMonth() === fObj.getMonth() && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(f)) {
-                    dsH++; activos.forEach(a => { if(window.db.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
+                    dsH++; activos.forEach(a => { if(window.db.asistencias[f] && window.db.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
                 }
             });
-            const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?((pH+pV)/activos.length*100).toFixed(0):0;
+            const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?(((pH+pV)/activos.length)*100).toFixed(0):0;
             const ingM = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === fObj.getMonth());
             const egrM = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === fObj.getMonth());
 
@@ -226,6 +253,12 @@
 
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
         window.logout = () => location.reload();
+
+        // Autocargar fecha de hoy
+        document.addEventListener('DOMContentLoaded', () => {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaSeleccionada').value = hoy;
+        });
     </script>
 
     <style>
@@ -250,7 +283,7 @@
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
+        @media print { .no-print { display: none !important; } .container { max-width: 100%; } .card { box-shadow: none; border: 1px solid #eee; } }
     </style>
 </head>
 <body>
@@ -268,8 +301,8 @@
         <h4>Registro</h4>
         <input type="text" id="regNombre" placeholder="Nombre del Docente">
         <div style="display:flex; gap:4px;">
-            <input type="text" id="regGrado" placeholder="Grado">
-            <input type="text" id="regSeccion" placeholder="Sec">
+            <input type="number" id="regGrado" placeholder="Grado (1-6)">
+            <input type="text" id="regSeccion" placeholder="Sec (A, B...)">
         </div>
         <select id="regTurno">
             <option value="Mañana">Mañana</option>
@@ -291,58 +324,4 @@
 
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
-            <b>DIRECCIÓN</b>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">CONSOLIDADO ESTADÍSTICO</button>
-            <div id="adminOutput"></div>
-        </div>
-
-        <div class="card no-print">
-            <details>
-                <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil del Docente</summary>
-                <div style="padding-top:10px;">
-                    <input type="text" id="editDocente" placeholder="Nombre completo">
-                    <div style="display:flex; gap:4px;">
-                        <input type="text" id="editGrado" placeholder="Grado">
-                        <input type="text" id="editSeccion" placeholder="Sección">
-                    </div>
-                    <select id="editTurno">
-                        <option value="Mañana">Mañana</option>
-                        <option value="Tarde">Tarde</option>
-                    </select>
-                    <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px; font-weight:bold;">GUARDAR CAMBIOS</button>
-                </div>
-            </details>
-        </div>
-
-        <div class="card no-print">
-            <h4 style="margin:0">Mantenimiento de Matrícula</h4>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
-                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
-            </div>
-        </div>
-
-        <div class="card no-print">
-            <b>Docente:</b> <span id="docenteTxt"></span><br>
-            <b>Sección:</b> <span id="gradoSeccionTxt"></span>
-            <input type="date" id="fechaSeleccionada" value="2026-03-05" onchange="window.render()" style="margin-top:10px;">
-            <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
-        </div>
-
-        <div class="card no-print">
-            <h4 style="margin:0 0 5px 0">+ Inscribir Alumno</h4>
-            <input type="text" id="nom" placeholder="Nombres">
-            <div style="display:flex; gap:4px;">
-                <select id="gen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
-                <input type="date" id="nac" style="width:60%">
-            </div>
-            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; padding:12px; border:none; width:100%; border-radius:6px; font-weight:bold; margin-top:5px;">AGREGAR</button>
-        </div>
-
-        <div class="card"><div id="listaAsistencia"></div></div>
-        <div id="reporteDocente"></div>
-    </div>
-</div>
-
-</body>
-</html>
+            <b>DIRECCIÓN</
