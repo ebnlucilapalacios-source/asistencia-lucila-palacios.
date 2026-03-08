@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBN LUCILA PALACIOS - INTEGRAL</title>
+    <title>SISTEMA EBN LUCILA PALACIOS - OFICIAL</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -83,7 +83,7 @@
             await window.save(); alert("Perfil actualizado");
         };
 
-        // --- DIRECCIÓN: CONSOLIDADO CON DETALLE DESPLEGABLE ---
+        // --- DIRECCIÓN: CONSOLIDADO ACTUALIZADO CON I/E Y ORDEN ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -92,17 +92,33 @@
             let docentes = [];
             snap.forEach(d => { if(d.id !== USUARIO_ADMIN) docentes.push({id: d.id, ...d.data()}); });
 
-            // Ordenar: 1A, 1B, 2A...
-            docentes.sort((a,b) => (parseInt(a.grado)||0) - (parseInt(b.grado)||0) || a.seccion.localeCompare(b.seccion));
+            // ORDENAMIENTO ESTRICTO: 1A, 1B, 2A, 2B...
+            docentes.sort((a,b) => {
+                const gA = parseInt(a.grado) || 0;
+                const gB = parseInt(b.grado) || 0;
+                if (gA !== gB) return gA - gB;
+                return (a.seccion || "").localeCompare(b.seccion || "");
+            });
 
             let h = `<div class="btns-admin-row no-print">
-                        <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 PDF</button>
+                        <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
                         <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
                      <thead>
-                        <tr><th rowspan="2">DOCENTE (Clic p/ver alumnos)</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV.</th><th colspan="3">PROM. REAL</th><th rowspan="2">%</th></tr>
-                        <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                        <tr>
+                            <th rowspan="2">DOCENTE (Ver Alumnos)</th>
+                            <th rowspan="2">G/S</th>
+                            <th colspan="3">MATRÍCULA</th>
+                            <th colspan="2">MOV. MES</th>
+                            <th colspan="3">PROM. REAL</th>
+                            <th rowspan="2">% EFIC</th>
+                        </tr>
+                        <tr>
+                            <th>H</th><th>V</th><th>T</th>
+                            <th>I</th><th>E</th>
+                            <th>H</th><th>V</th><th>T</th>
+                        </tr>
                      </thead><tbody>`;
             
             let T = { mH:0, mV:0, mT:0, mI:0, mE:0, pH:0, pV:0, pT:0 };
@@ -111,6 +127,8 @@
                 const alms = d.alumnos || [];
                 const ac = alms.filter(a => !a.retirado);
                 const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
+                
+                // Cálculo de Ingresos y Egresos del mes
                 const ingM = alms.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
                 const egrM = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
 
@@ -127,15 +145,18 @@
 
                 h += `<tr onclick="document.getElementById('det-${index}').toggleAttribute('hidden')" style="cursor:pointer">
                         <td style="text-align:left"><b>${d.docente}</b></td>
-                        <td>${d.grado}${d.seccion}</td>
+                        <td>${d.grado}°${d.seccion}</td>
                         <td>${mH}</td><td>${mV}</td><td>${mT}</td>
-                        <td style="color:green">${ingM}</td><td style="color:red">${egrM}</td>
+                        <td style="color:green; font-weight:bold">${ingM}</td>
+                        <td style="color:red; font-weight:bold">${egrM}</td>
                         <td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td>
-                        <td>${ef}%</td>
+                        <td><b>${ef}%</b></td>
                       </tr>
-                      <tr id="det-${index}" hidden class="no-print"><td colspan="11" style="background:#f9f9f9; text-align:left; padding:10px;">
-                        <small><b>ALUMNOS ACTIVOS:</b> ${ac.map(a => a.nombre).join(', ') || 'Ninguno'}</small>
-                      </td></tr>`;
+                      <tr id="det-${index}" hidden class="no-print">
+                        <td colspan="11" style="background:#f0f7ff; text-align:left; padding:8px; border:1px solid var(--azul);">
+                            <div style="font-size:11px;"><b>LISTA DE ALUMNOS:</b> ${ac.map(a => a.nombre).join(' | ') || 'No hay alumnos registrados'}</div>
+                        </td>
+                      </tr>`;
             });
             h += `<tr class="fila-total"><td colspan="2">TOTAL ESCUELA</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.mI}</td><td>${T.mE}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>---</td></tr></tbody></table>`;
             document.getElementById('adminOutput').innerHTML = h;
@@ -164,7 +185,7 @@
             const activos = (window.db.alumnos || []).filter(a => !a.retirado);
 
             if (esFeriado || esFinde) {
-                lista.innerHTML = `<div class="aviso-no">🚫 NO LABORABLE</div>`;
+                lista.innerHTML = `<div class="aviso-no">🚫 DÍA NO LABORABLE</div>`;
             } else {
                 activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const st = (window.db.asistencias[fSel] && window.db.asistencias[fSel][a.id]) || 0;
@@ -173,7 +194,7 @@
                 });
             }
 
-            // Estadística Individual
+            // Reporte Mensual Docente
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -187,7 +208,7 @@
 
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
-                    <h2>ESTADÍSTICA MENSUAL</h2>
+                    <h2 style="font-size:16px; margin:0;">ESTADÍSTICA DEL MES</h2>
                     <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
                     <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>TOTAL: <b>${(pH+pV).toFixed(1)}</b></div></div>
                     <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody>
@@ -210,7 +231,7 @@
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar?")){ 
+            if(confirm("¿Retirar alumno de la sección?")){ 
                 const a = window.db.alumnos.find(x=>x.id===id); 
                 if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); } 
             }
@@ -241,7 +262,7 @@
         .tabla-admin, .tabla-911 { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 5px; }
         .tabla-admin th, .tabla-admin td, .tabla-911 th, .tabla-911 td { border: 1px solid #ddd; padding: 5px; text-align: center; }
         .fila-total { background: var(--azul); color: white; font-weight: bold; }
-        .reporte-card { background: white; padding: 20px; border: 1px solid #ccc; text-align: center; border-radius: 10px; }
+        .reporte-card { background: white; padding: 15px; border: 1px solid #ccc; text-align: center; border-radius: 10px; }
         .circulo-eficiencia { width: 70px; height: 70px; border: 5px solid var(--azul); border-radius: 50%; margin: 10px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 18px; font-weight: bold; }
         .grid-promedios { display: flex; justify-content: space-around; background: #f8f9fa; padding: 8px; margin: 10px 0; border-radius: 5px; font-size: 11px; }
         .alumno-fila { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -267,7 +288,7 @@
     </div>
     <div id="registerForm" class="card" style="max-width:320px; margin:auto; display:none;">
         <h4>Nuevo Registro</h4>
-        <input type="text" id="regNombre" placeholder="Nombre completo">
+        <input type="text" id="regNombre" placeholder="Nombre Docente">
         <div style="display:flex; gap:4px;">
             <input type="number" id="regGrado" placeholder="Grado">
             <input type="text" id="regSeccion" placeholder="Sección">
@@ -276,7 +297,6 @@
             <option value="Mañana">Mañana</option>
             <option value="Tarde">Tarde</option>
         </select>
-        <hr>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Clave">
         <input type="password" id="regClaveInst" placeholder="Clave Institucional">
@@ -293,47 +313,9 @@
 
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
-            <b>📊 DIRECCIÓN</b>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">CONSOLIDADO ESCUELA</button>
+            <b>📊 DIRECCIÓN: CONSOLIDADO</b>
+            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">GENERAR REPORTE ESCUELA</button>
             <div id="adminOutput"></div>
         </div>
 
-        <div class="card no-print">
-            <details>
-                <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil</summary>
-                <div style="padding-top:10px;">
-                    <input type="text" id="editDocente" placeholder="Nombre">
-                    <div style="display:flex; gap:4px;">
-                        <input type="number" id="editGrado" placeholder="Grado">
-                        <input type="text" id="editSeccion" placeholder="Secc">
-                    </div>
-                    <select id="editTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
-                    <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px;">ACTUALIZAR</button>
-                </div>
-            </details>
-        </div>
-
-        <div class="card no-print">
-            <b>Docente:</b> <span id="docenteTxt"></span><br>
-            <b>Grado/Secc:</b> <span id="gradoSeccionTxt"></span>
-            <input type="date" id="fechaSeleccionada" onchange="window.render()" style="margin-top:10px;">
-            <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
-        </div>
-
-        <div class="card no-print">
-            <h4 style="margin:0">+ Inscribir Alumno</h4>
-            <input type="text" id="nom" placeholder="Nombres">
-            <div style="display:flex; gap:4px;">
-                <select id="gen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
-                <input type="date" id="nac" style="width:60%">
-            </div>
-            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; padding:12px; border:none; width:100%; border-radius:6px; font-weight:bold; margin-top:5px;">AGREGAR</button>
-        </div>
-
-        <div class="card"><div id="listaAsistencia"></div></div>
-        <div id="reporteDocente"></div>
-    </div>
-</div>
-
-</body>
-</html>
+        <div class="card 
