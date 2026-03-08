@@ -79,15 +79,15 @@
 <div id="tabEscuela" class="tab-content">
     <div style="padding:10px; background:white; display:flex; gap:5px;">
         <input type="date" id="fechaEscuela" onchange="actualizarTodo()" style="flex:1; margin:0;">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="flex:1; margin:0;"><option value="MAÑANA">TURNO MAÑANA</option><option value="TARDE">TURNO TARDE</option></select>
+        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="flex:1; margin:0;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
     </div>
     <div id="contEscuela"></div>
     <div class="cargo-section">
         <div class="cargo-title" style="background:var(--azul)" onclick="this.nextElementSibling.classList.toggle('open')">
-            <span>RESUMEN DIARIO (CON OBSERVACIONES)</span> <span>▼</span>
+            <span>RESUMEN DIARIO</span> <span>▼</span>
         </div>
         <div class="cargo-content open table-wrap">
-            <button class="btn-excel" onclick="exportarTabla('tableAsisEscuela', 'Reporte_Diario')">📊 EXCEL ASISTENCIA</button>
+            <button class="btn-excel" onclick="exportarTabla('tableAsisEscuela', 'Reporte_Diario')" style="margin-bottom:10px;">📊 EXCEL ASISTENCIA</button>
             <table id="tableAsisEscuela">
                 <thead><tr><th>NOMBRE</th><th>ESTATUS</th><th>H.E.</th><th>H.S.</th><th>OBSERVACIONES</th></tr></thead>
                 <tbody id="tablaGeneralEscuela"></tbody>
@@ -116,9 +116,9 @@
         </div>
         <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:12px; width:100%; border-radius:5px; font-weight:bold;">CALCULAR ESTADÍSTICAS</button>
     </div>
-    <div class="seccion-titulo">RESUMEN POR CARGOS</div>
+    <div class="seccion-titulo">ESTADÍSTICA CARGOS</div>
     <div class="table-wrap"><table id="tableEstCargos"><thead><tr><th>CARGO</th><th>GEN</th><th>NOM</th><th>ASIS</th><th>PROM</th><th>%</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
-    <div class="seccion-titulo">DETALLE INDIVIDUAL (ALERTA > 3 INASISTENCIAS)</div>
+    <div class="seccion-titulo">INDIVIDUAL (ALERTA >= 3 INASISTENCIAS)</div>
     <div class="table-wrap"><table id="tableEstIndiv"><thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Total</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
 </div>
 
@@ -153,22 +153,14 @@
     const db = firebase.firestore();
     let nomina = [];
 
-    // Matriz de Horarios según tu requerimiento
     const HORARIOS = {
-        "MAÑANA": {
-            "Docente": { e: "07:00", s: "12:00" },
-            "Obrero": { e: "06:45", s: "12:45" },
-            "Administrativo": { e: "06:45", s: "12:45" },
-            "CNAE (Cocinera)": { e: "07:00", s: "14:00" },
-            "Vigilante": { e: "18:00", s: "06:00" }
-        },
-        "TARDE": {
-            "Docente": { e: "12:00", s: "17:00" },
-            "Obrero": { e: "11:30", s: "17:00" },
-            "Administrativo": { e: "12:00", s: "18:00" },
-            "CNAE (Cocinera)": { e: "12:00", s: "18:00" },
-            "Vigilante": { e: "18:00", s: "06:00" }
-        }
+        "MAÑANA": { "Docente": "07:00", "Obrero": "06:45", "Administrativo": "06:45", "CNAE (Cocinera)": "07:00", "Vigilante": "18:00" },
+        "TARDE": { "Docente": "12:00", "Obrero": "11:30", "Administrativo": "12:00", "CNAE (Cocinera)": "12:00", "Vigilante": "18:00" }
+    };
+
+    const SALIDAS = {
+        "MAÑANA": { "Docente": "12:00", "Obrero": "12:45", "Administrativo": "12:45", "CNAE (Cocinera)": "14:00", "Vigilante": "06:00" },
+        "TARDE": { "Docente": "17:00", "Obrero": "17:00", "Administrativo": "18:00", "CNAE (Cocinera)": "18:00", "Vigilante": "06:00" }
     };
 
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
@@ -243,21 +235,10 @@
     }
 
     async function registrarPermiso(n) {
-        // Lógica de 3 permisos cada 30 días
-        const hoy = new Date();
-        const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
+        const hoy = new Date(); const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
         const f30 = hace30.toISOString().split('T')[0];
-
-        const snap = await db.collection("asistencia_ebnlp_final")
-            .where("n", "==", n)
-            .where("e", "==", "P. PERSONAL")
-            .where("f", ">=", f30)
-            .get();
-
-        if (snap.size >= 3) {
-            alert(`BLOQUEO: ${n} ya tiene ${snap.size} permisos en los últimos 30 días. NO PUEDE REGISTRAR MÁS.`);
-            return;
-        }
+        const snap = await db.collection("asistencia_ebnlp_final").where("n", "==", n).where("e", "==", "P. PERSONAL").where("f", ">=", f30).get();
+        if (snap.size >= 3) { alert(`BLOQUEO: ${n} ya tiene 3 permisos en los últimos 30 días.`); return; }
         registrar(n, 'P. PERSONAL');
     }
 
@@ -265,29 +246,31 @@
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         const f = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
+        const noT = ["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"];
         
-        // Carga automática de horario según matriz
-        const hor = HORARIOS[t][p.c] || {e:"---", s:"---"};
-        let hE = !["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"].includes(e) ? hor.e : "---";
-        let hS = "---";
-        
-        let obs = prompt("Observaciones adicionales:");
-        await db.collection("asistencia_ebnlp_final").add({ 
-            n, e, f, c: p.c, gender: p.gender, hE, hS, mes: f.substring(0,7), obs: obs || "", timestamp: new Date()
-        });
+        let hE = "---";
+        if(!noT.includes(e)) {
+            hE = prompt(`Hora de Entrada para ${n}:`, HORARIOS[t][p.c] || "07:00");
+            if(hE === null) return;
+        }
+
+        let obs = prompt("Observaciones:");
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, hE, hS: "---", mes: f.substring(0,7), obs: obs || "" });
         actualizarTodo();
     }
 
     async function marcarSalida(n, f) {
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
-        const hor = HORARIOS[t][p.c] || {s:"---"};
+        const sugerida = SALIDAS[t][p.c] || "12:00";
+        const hS = prompt(`Hora de Salida para ${n}:`, sugerida);
+        if(!hS) return;
         const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get();
-        if(q.docs.length > 0) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS: hor.s });
+        if(q.docs.length > 0) await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS });
         actualizarTodo();
     }
 
-    async function eliminarAsis(id) { if(confirm("¿Eliminar registro?")) { await db.collection("asistencia_ebnlp_final").doc(id).delete(); actualizarTodo(); } }
+    async function eliminarAsis(id) { if(confirm("¿Eliminar?")) { await db.collection("asistencia_ebnlp_final").doc(id).delete(); actualizarTodo(); } }
 
     async function borrarTodoElDia(idF) {
         const f = document.getElementById(idF).value;
@@ -315,49 +298,4 @@
                     const asis = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
                     nC += nT.length; aC += asis;
                     const prom = (asis / dh).toFixed(2);
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT.length)*100).toFixed(1)}%</td></tr>`;
-                }
-            });
-            if(nC > 0) bEst.innerHTML += `<tr class="row-total"><td colspan="2">TOTAL ${c.toUpperCase()}</td><td>${nC}</td><td>${aC}</td><td>${(aC/dh).toFixed(2)}</td><td>${(((aC/dh)/nC)*100).toFixed(1)}%</td></tr>`;
-        });
-
-        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            const m = docs.filter(d => d.n === p.n);
-            const r = (t) => m.filter(x => x.e === t).length;
-            const inas = r("INASISTENCIA");
-            const claseAlerta = inas >= 3 ? "alerta-falta" : "";
-            
-            bInd.innerHTML += `<tr class="${claseAlerta}"><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${inas}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${r("ASISTENCIA")+r("ACT. INST.")+r("RETRASO")}</b></td></tr>`;
-        });
-    }
-
-    function renderNomina() {
-        const b = document.getElementById('bodyNomina'); b.innerHTML = "";
-        nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-            b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td>${p.gender}</td><td><button class="btn-x-estetica" onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">X</button></td></tr>`;
-        });
-    }
-
-    function agregarNomina() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
-    }
-
-    function respaldarJSON() {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(nomina, null, 2)], {type: "application/json"}));
-        a.download = "nomina_seguridad.json"; a.click();
-    }
-
-    function exportarTabla(id, n) { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById(id)), n+".xlsx"); }
-
-    function verTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
-    }
-</script>
-</body>
-</html>
-
+                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>
