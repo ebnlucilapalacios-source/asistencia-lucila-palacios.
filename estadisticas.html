@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA EBN LUCILA PALACIOS - INTEGRAL</title>
+    <title>SISTEMA EBN LUCILA PALACIOS - INTEGRAL 2026</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -80,7 +81,7 @@
             alert("Perfil actualizado correctamente");
         };
 
-        // --- DIRECCIÓN (ORDENADO 1-6 Y SECCIONES A-Z) ---
+        // --- DIRECCIÓN (ESTADÍSTICAS Y REPORTES) ---
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -92,7 +93,6 @@
                 if(dSnap.id !== USUARIO_ADMIN && d.alumnos) docentesData.push(d);
             });
 
-            // Lógica de ordenamiento Grado/Sección
             docentesData.sort((a, b) => {
                 const gA = parseInt(a.grado) || 0;
                 const gB = parseInt(b.grado) || 0;
@@ -141,7 +141,64 @@
             const doc = new jspdf.jsPDF('l');
             doc.text("EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL", 14, 15);
             doc.autoTable({ html: '#tablaAdminConsolidado', startY: 22, theme: 'grid', styles: {fontSize: 8} });
-            doc.save("Reporte_Direccion.pdf");
+            doc.save("Reporte_Direccion_Consolidado.pdf");
+        };
+
+        // --- NUEVA FUNCIÓN PDF: LISTADO POR GÉNERO Y GRADO ---
+        window.descargarListaEstudiantesPDF = async () => {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF();
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            let docentesData = [];
+            snap.forEach(dSnap => { if(dSnap.id !== USUARIO_ADMIN) docentesData.push(dSnap.data()); });
+
+            docentesData.sort((a, b) => {
+                if (parseInt(a.grado) !== parseInt(b.grado)) return parseInt(a.grado) - parseInt(b.grado);
+                return (a.seccion || "").localeCompare(b.seccion || "");
+            });
+
+            docPDF.setFontSize(16);
+            docPDF.text("LISTADO GENERAL DE ESTUDIANTES - LUCILA PALACIOS", 105, 15, { align: "center" });
+
+            let yPos = 25;
+            docentesData.forEach(d => {
+                const activos = (d.alumnos || []).filter(a => !a.retirado);
+                if (activos.length === 0) return;
+
+                const hembras = activos.filter(a => a.genero === 'F').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                const varones = activos.filter(a => a.genero === 'M').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                const filas = [];
+                hembras.forEach((a, i) => filas.push([i+1, a.nombre, "HEMBRA", calcularEdad(a.nacimiento)]));
+                varones.forEach((a, i) => filas.push([i+1, a.nombre, "VARÓN", calcularEdad(a.nacimiento)]));
+
+                docPDF.autoTable({
+                    head: [[{content: `GRADO: ${d.grado}${d.seccion} | DOCENTE: ${d.docente}`, colSpan: 4, styles: {fillColor:[0,33,71]}}], ['N°', 'NOMBRE', 'GÉNERO', 'EDAD']],
+                    body: filas, startY: yPos, theme: 'grid', styles: {fontSize: 8}, headStyles: {fillColor:[52,73,94]}, margin: {bottom: 10}
+                });
+                yPos = docPDF.lastAutoTable.finalY + 10;
+                if(yPos > 270) { docPDF.addPage(); yPos = 20; }
+            });
+            docPDF.save("Lista_Estudiantes_Lucila.pdf");
+        };
+
+        // --- NUEVA FUNCIÓN EXCEL: MATRÍCULA GENERAL ---
+        window.exportarExcelGeneral = async () => {
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            const data = [["GRADO", "SECCIÓN", "TURNO", "DOCENTE", "ESTUDIANTE", "GÉNERO", "EDAD"]];
+            let list = [];
+            snap.forEach(s => { if(s.id !== USUARIO_ADMIN) list.push(s.data()); });
+            list.sort((a,b)=> (parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
+
+            list.forEach(d => {
+                const alms = (d.alumnos || []).filter(a => !a.retirado);
+                const sorted = [...alms.filter(a=>a.genero==='F').sort((a,b)=>a.nombre.localeCompare(b.nombre)), ...alms.filter(a=>a.genero==='M').sort((a,b)=>a.nombre.localeCompare(b.nombre))];
+                sorted.forEach(a => data.push([d.grado, d.seccion, d.turno, d.docente, a.nombre, a.genero==='F'?'HEMBRA':'VARÓN', calcularEdad(a.nacimiento)]));
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Matrícula");
+            XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
         // --- MANTENIMIENTO ---
@@ -163,7 +220,7 @@
             }
         };
 
-        // --- RENDER (TAL CUAL EL ORIGINAL) ---
+        // --- RENDER ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const fObj = new Date(fSel + "T00:00:00");
@@ -194,7 +251,6 @@
                 });
             }
 
-            // Estadísticas (Tal cual el original)
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -315,7 +371,11 @@
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
             <b>📊 DIRECCIÓN</b>
-            <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer;">VER CONSOLIDADO</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+                <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
+                <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 LISTA PDF</button>
+            </div>
+            <button onclick="exportarExcelGeneral()" style="background:#1D6F42; color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:11px;">📗 EXCEL GENERAL</button>
             <div id="adminOutput" style="overflow-x:auto;"></div>
         </div>
 
@@ -369,4 +429,3 @@
 
 </body>
 </html>
-
