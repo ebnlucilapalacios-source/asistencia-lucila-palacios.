@@ -2,282 +2,285 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA CONTROL TOTAL - LUCILA PALACIOS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONTROL LUCILA PALACIOS</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --gris: #f4f4f4; --rojo: #d32f2f; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 5px; border-bottom: 4px solid var(--naranja); }
-        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; background: #fff; }
-        .dash-card { border: 1px solid #ddd; padding: 5px; border-radius: 4px; text-align: center; border-bottom: 3px solid var(--azul); }
-        .dash-card h4 { margin: 0; font-size: 0.6rem; color: #666; }
-        .dash-card .valor { font-size: 0.9rem; font-weight: bold; color: var(--azul); }
-        .tabs { display: flex; gap: 2px; padding: 5px; background: #fff; position: sticky; top: 0; z-index: 100; }
-        .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 4px; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.65rem; text-transform: uppercase; }
+        body { font-family: sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
+        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
+        .tabs { display: flex; background: #fff; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #ccc; }
+        .tab-btn { flex: 1; padding: 15px 5px; border: none; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.7rem; }
         .tab-btn.active { background: var(--naranja); color: white; }
+        .hidden { display: none; }
         .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; }
-        .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
-        .cargo-content { display: none; padding: 10px; }
-        .cargo-content.open { display: block; }
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 8px; }
-        .ficha { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; }
-        .btn-check { width: 100%; padding: 5px; margin: 2px 0; border: none; border-radius: 3px; cursor: pointer; font-size: 0.6rem; font-weight: bold; }
+        .cargo-title { background: var(--azul); color: white; padding: 10px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px; }
+        .ficha { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 3px; cursor: pointer; font-size: 0.65rem; font-weight: bold; }
         .btn-asis { background: #d4edda; color: #155724; }
-        .btn-act { background: #d1ecf1; color: #0c5460; }
-        .btn-ret { background: #fff3cd; color: #856404; }
         .btn-ina { background: #f8d7da; color: #721c24; }
-        .btn-vac { background: #d1e7ff; color: #004085; }
-        .btn-med { background: #e2e3e5; color: #383d41; }
         .btn-per { background: #f3e5f5; color: #4a148c; }
         .btn-salida { background: var(--azul); color: white; margin-top: 5px; }
-        .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
-        .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
-        th { background: #444; color: white; padding: 8px; }
-        td { padding: 8px; border-bottom: 1px solid #eee; text-align: center; }
-        .hidden { display: none; }
-        .btn-limpiar { background: var(--rojo); color: white; border: none; padding: 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; background: white; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        input, select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
-<header><h4>SISTEMA CONTROL - LUCILA PALACIOS</h4></header>
-
-<div class="dashboard">
-    <div class="dash-card"><h4>ADMIN.</h4><div id="dAdm" class="valor">0</div></div>
-    <div class="dash-card"><h4>CNAE</h4><div id="dCnae" class="valor">0</div></div>
-    <div class="dash-card"><h4>VIGILANCIA</h4><div id="dVig" class="valor">0</div></div>
-    <div class="dash-card"><h4>EFECTIVIDAD</h4><div id="dEfec" class="valor">0%</div></div>
-</div>
+<header>SISTEMA DE ASISTENCIA - E.B.N. LUCILA PALACIOS</header>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">Escuela</button>
-    <button class="tab-btn" onclick="verTab('tabVigilancia', this)">Vigilancia</button>
-    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">Estadística</button>
-    <button class="tab-btn" onclick="verTab('tabNomina', this)">Nómina</button>
+    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">DIARIO</button>
+    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">ESTADÍSTICA</button>
+    <button class="tab-btn" onclick="verTab('tabNomina', this)">NÓMINA/RESPALDO</button>
 </div>
 
 <div id="tabEscuela" class="tab-content">
-    <div style="padding:10px; display:flex; gap:5px; align-items: center; background: white;">
+    <div style="padding:10px; display:flex; gap:5px; flex-wrap: wrap; background: #fff;">
         <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
-        <button class="btn-limpiar" onclick="limpiarDia('fechaEscuela')">LIMPIAR DÍA</button>
-        <select id="turnoSeleccionado" style="flex:1; padding:5px;"><option value="MAÑANA">MAÑANA</option><option value="TARDE">TARDE</option></select>
+        <select id="turnoSeleccionado" onchange="actualizarTodo()">
+            <option value="MAÑANA">TURNO MAÑANA</option>
+            <option value="TARDE">TURNO TARDE</option>
+        </select>
+        <button onclick="limpiarDia()" style="background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:4px;">Limpiar Día</button>
     </div>
-    <div id="contEscuela"></div>
-    <div class="sub-t">LISTA DIARIA / NOVEDADES</div>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Nombre</th><th>Estatus</th><th>E/S</th><th>Obs. Entrada/Just.</th><th>Obs. Salida</th></tr></thead>
-            <tbody id="resumenEscuela"></tbody>
+    <div id="contEscuela">Cargando datos...</div>
+</div>
+
+<div id="tabEstadistica" class="tab-content hidden">
+    <div style="padding:15px; background:white; display:flex; gap:10px;">
+        <input type="month" id="mesReporte">
+        <button onclick="generarReportes()" style="background:var(--azul); color:white; border:none; padding:10px;">Calcular</button>
+        <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px;">Excel</button>
+    </div>
+    <div style="overflow-x:auto;">
+        <table id="tablaIndFinal">
+            <thead>
+                <tr style="background:#eee">
+                    <th>NOMBRE</th><th>ASIS</th><th>ACT</th><th>RET</th><th>INA</th><th>VAC</th><th>P.M</th><th>P.P</th><th>S.ANT</th>
+                </tr>
+            </thead>
+            <tbody id="bodyIndividual"></tbody>
         </table>
     </div>
 </div>
 
-<div id="tabVigilancia" class="tab-content hidden">
-    <div style="padding:10px; display:flex; gap:5px; align-items: center; background: white;">
-        <input type="date" id="fechaVig" onchange="actualizarTodo()">
-        <button class="btn-limpiar" onclick="limpiarDia('fechaVig')">LIMPIAR DÍA</button>
-        <select id="filtroGrupo" onchange="actualizarTodo()" style="flex:1; padding:6px;"><option value="GRUPO I">GRUPO I</option><option value="GRUPO II">GRUPO II</option></select>
-    </div>
-    <div id="contVigilancia"></div>
-</div>
-
-<div id="tabEstadistica" class="tab-content hidden">
-    <div style="padding:15px; background:white; margin:10px; border-radius:8px; display:flex; gap:10px;">
-        <input type="month" id="mesReporte" style="flex:2; padding:10px; border:1px solid #ccc;">
-        <button onclick="generarReportes()" style="flex:1; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">CALCULAR</button>
-        <button onclick="exportarEstadistica()" style="flex:1; background:var(--verde); color:white; border:none; border-radius:5px; font-weight:bold;">EXCEL</button>
-    </div>
-    <div class="sub-t">PROMEDIO REAL DISGREGADO</div>
-    <div class="table-wrap"><table id="tablaEstFinal"><thead><tr><th>CARGO</th><th>GEN</th><th>NÓM</th><th>ASIS</th><th>PROM</th><th>% EFEC</th></tr></thead><tbody id="bodyEstadistica"></tbody></table></div>
-    <div class="sub-t">CONSOLIDADO INDIVIDUAL (HISTORIAL 30 DÍAS)</div>
-    <div class="table-wrap"><table id="tablaIndFinal"><thead><tr><th>NOMBRE</th><th>ASIS</th><th>ACT</th><th>RET</th><th>INA</th><th>VAC</th><th>P.M</th><th>P.P</th><th>S.ANT</th></tr></thead><tbody id="bodyIndividual"></tbody></table></div>
-</div>
-
 <div id="tabNomina" class="tab-content hidden">
-    <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
-        <h4 style="margin:0 0 10px 0;">Nuevo Personal</h4>
-        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="width:100%; padding:10px; margin-bottom:5px; text-transform:uppercase;">
-        <div style="display:flex; gap:5px;">
-            <select id="nCargo" style="flex:1; padding:8px;"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
-            <select id="nGen" style="padding:8px;"><option value="F">F</option><option value="M">M</option></select>
-            <select id="nGrupo" style="flex:1; padding:8px;"><option value="General">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
-        </div>
-        <button onclick="agregarNomina()" style="width:100%; padding:12px; margin-top:8px; background:var(--naranja); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR</button>
+    <div style="padding:15px; background:white; margin:10px; border: 1px solid #ccc;">
+        <h3>Agregar Personal</h3>
+        <input type="text" id="nNombre" placeholder="Nombre Completo" style="width:90%; margin-bottom:10px;"><br>
+        <select id="nCargo">
+            <option value="Docente">Docente</option>
+            <option value="Obrero">Obrero</option>
+            <option value="Administrativo">Administrativo</option>
+            <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
+            <option value="Vigilante">Vigilante</option>
+        </select>
+        <select id="nGen"><option value="F">F</option><option value="M">M</option></select>
+        <button onclick="agregarNomina()" style="background:var(--verde); color:white; border:none; padding:10px;">Guardar</button>
+        <hr>
+        <button onclick="descargarRespaldo()">📥 Descargar Respaldo JSON</button>
     </div>
-    <div style="padding:10px; display:flex; gap:5px;">
-        <button onclick="descargarNominaRespaldo()" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:5px; font-size:0.7rem;">📥 RESPALDO JSON</button>
-        <button onclick="document.getElementById('fileRestaurar').click()" style="flex:1; padding:10px; background:var(--rojo); color:white; border:none; border-radius:5px; font-size:0.7rem;">📤 RESTAURAR</button>
-        <input type="file" id="fileRestaurar" hidden accept=".json" onchange="importarNominaJSON(this)">
-    </div>
-    <div class="table-wrap"><table><thead style="background:var(--azul); color:white;"><tr><th>Nombre</th><th>Cargo</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table></div>
+    <div id="bodyNomina" style="padding:10px;"></div>
 </div>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
+    // CONFIGURACIÓN DE FIREBASE
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", 
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com", 
+        projectId: "control-de-asistencia-d585e", 
+        storageBucket: "control-de-asistencia-d585e.appspot.com",
+        appId: "1:368890880546:web:a97ab4372dea536217207b" 
+    };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
     let nomina = [];
-    document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
-    document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
+    // Cargar fecha hoy
+    document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
+
+    // Escuchar cambios en Nómina
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = [];
-        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
-        nomina.sort((a,b) => a.n.localeCompare(b.n));
-        renderNomina(); actualizarTodo();
+        let htmlNom = "<table>";
+        snap.forEach(doc => {
+            let d = doc.data(); d.id = doc.id;
+            nomina.push(d);
+            htmlNom += `<tr><td>${d.n}</td><td>${d.c}</td><td><button onclick="borrarPersona('${d.id}')">❌</button></td></tr>`;
+        });
+        document.getElementById('bodyNomina').innerHTML = htmlNom + "</table>";
+        actualizarTodo();
     });
 
     async function actualizarTodo() {
-        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], document.getElementById('fechaEscuela').value, "resumenEscuela");
-        dibujarSeccion("contVigilancia", ["Vigilante"], document.getElementById('fechaVig').value, null, document.getElementById('filtroGrupo').value);
-    }
-
-    async function dibujarSeccion(contId, cargos, fecha, resId = null, grupo = null) {
+        const fecha = document.getElementById('fechaEscuela').value;
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", fecha).get();
-        const marcados = {}; const resBody = resId ? document.getElementById(resId) : null;
-        if(resBody) resBody.innerHTML = "";
-        
-        snap.forEach(d => { let data = d.data(); data.docId = d.id; marcados[data.n] = data; });
-        const cont = document.getElementById(contId); cont.innerHTML = "";
+        const marcados = {};
+        snap.forEach(d => marcados[d.data().n] = { ...d.data(), docId: d.id });
+
+        const cargos = ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"];
+        let html = "";
 
         cargos.forEach(cargo => {
-            let list = nomina.filter(p => p.c === cargo);
-            if(cargo === "Vigilante") list = list.filter(p => p.grupo === grupo);
+            const list = nomina.filter(p => p.c === cargo);
             if(list.length === 0) return;
-            const sec = document.createElement('div'); sec.className = "cargo-section";
-            sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()}</span> <span>▼</span></div>`;
-            const content = document.createElement('div'); content.className = "cargo-content";
-            const grid = document.createElement('div'); grid.className = "grid-fichas";
 
+            html += `<div class="cargo-section">
+                <div class="cargo-title">${cargo.toUpperCase()}</div>
+                <div class="grid-fichas">`;
+            
             list.forEach(p => {
-                const m = marcados[p.n]; const f = document.createElement('div'); f.className = "ficha";
+                const m = marcados[p.n];
+                html += `<div class="ficha"><b>${p.n}</b><br>`;
                 if(!m) {
-                    f.innerHTML = `<b>${p.n}</b><br>
-                        <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA','${fecha}')">ASISTENCIA</button>
-                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.','${fecha}')">ACT. INST.</button>
-                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO','${fecha}')">RETRASO</button>
-                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA','${fecha}')">INASISTENCIA</button>
-                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES','${fecha}')">VACACIONES</button>
-                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO','${fecha}')">P. MÉDICO</button>
-                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL','${fecha}')">P. PERSONAL</button>`;
+                    html += `
+                        <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA')">ASISTENCIA</button>
+                        <button class="btn-check btn-asis" style="background:#d1ecf1" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>
+                        <button class="btn-check btn-asis" style="background:#fff3cd" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
+                        <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA')">INASISTENCIA</button>
+                        <button class="btn-check btn-asis" style="background:#d1e7ff" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
+                        <button class="btn-check btn-asis" style="background:#e2e3e5" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
+                        <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>`;
                 } else {
-                    f.innerHTML = `<b>${p.n}</b><br><b style="color:green">✓ ${m.e}</b><br>
-                        <small>E: ${m.hE} | S: ${m.hS}</small><br>
-                        ${m.hS === "---" && ["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.docId}','${m.n}','${p.c}')">MARCAR SALIDA</button>` : ''}
-                        <button onclick="borrar('${m.n}','${fecha}')" style="border:none; color:red; font-size:9px; cursor:pointer; background:none; margin-top:5px;">[BORRAR]</button>`;
-                    if(resBody) resBody.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||"-"}</td><td>${m.obs_salida||"-"}</td></tr>`;
+                    html += `<b style="color:green">✓ ${m.e}</b><br><small>E: ${m.hE} | S: ${m.hS}</small><br>`;
+                    if(m.hS === "---" && ["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e)) {
+                        html += `<button class="btn-check btn-salida" onclick="marcarSalida('${m.docId}','${p.n}','${p.c}')">SALIDA</button>`;
+                    }
+                    html += `<button onclick="borrarRegistro('${m.docId}')" style="border:none; color:red; background:none; font-size:10px; cursor:pointer;">[BORRAR]</button>`;
                 }
-                grid.appendChild(f);
+                html += `</div>`;
             });
-            content.appendChild(grid); sec.appendChild(content); cont.appendChild(sec);
+            html += `</div></div>`;
         });
+        document.getElementById('contEscuela').innerHTML = html;
     }
 
-    async function registrar(n, e, f) {
-        const p = nomina.find(x => x.n === n);
+    async function registrar(nombre, estatus) {
+        const p = nomina.find(x => x.n === nombre);
+        const fecha = document.getElementById('fechaEscuela').value;
         const turno = document.getElementById('turnoSeleccionado').value;
         let hE = "---", obs = "";
-        let limite, sug;
 
-        // Horarios de Entrada establecidos por el usuario
-        if (turno === "MAÑANA") {
-            if (p.c === "Docente") { sug = "07:00"; limite = "07:00"; }
-            else { sug = "06:45"; limite = "06:45"; } // Obreros y Administrativos
-        } else {
-            if (p.c === "Obrero") { sug = "11:30"; limite = "11:30"; }
-            else { sug = "12:00"; limite = "12:00"; } // Docentes y Administrativos
-        }
-
-        // Lógica 3 registros en 30 días
-        if (e === "P. PERSONAL" || e === "INASISTENCIA") {
-            const fActual = new Date(f);
-            const fInicio = new Date(); fInicio.setDate(fActual.getDate() - 30);
-            const fStr = fInicio.toISOString().split('T')[0];
-            const hist = await db.collection("asistencia_ebnlp_final").where("n", "==", n).where("f", ">=", fStr).where("f", "<=", f).get();
-            let cont = 0; hist.forEach(d => { if(d.data().e === e) cont++; });
-            if (cont >= 3) { if(!confirm(`⚠️ ${n} ya acumuló ${cont} ${e} en 30 días. ¿Proceder?`)) return; }
-        }
-
-        if(["ASISTENCIA","RETRASO","ACT. INST."].includes(e)) {
-            hE = prompt(`Hora Entrada para ${n}:`, sug); if(!hE) return;
-            if(hE > limite && e === "ASISTENCIA") {
-                if(confirm("Fuera de horario. ¿Cambiar a RETRASO?")){ e = "RETRASO"; obs = prompt("Motivo:"); }
+        // Lógica de 30 días para Permisos/Inasistencias
+        if(estatus === "P. PERSONAL" || estatus === "INASISTENCIA") {
+            const hist = await db.collection("asistencia_ebnlp_final").where("n", "==", nombre).get();
+            let cont = 0;
+            hist.forEach(d => {
+                if(d.data().e === estatus) {
+                    // Verificar si está en el rango de los últimos 30 días
+                    let diff = (new Date(fecha) - new Date(d.data().f)) / (1000 * 60 * 60 * 24);
+                    if(diff >= 0 && diff <= 30) cont++;
+                }
+            });
+            if(cont >= 3) {
+                if(!confirm(`⚠️ ${nombre} ya tiene ${cont} registros de ${estatus} en 30 días. ¿Continuar?`)) return;
             }
-        } else { obs = prompt(`Justificación para ${e}:`); if(!obs && (e === "P. PERSONAL" || e === "INASISTENCIA")) return alert("Indique motivo."); }
+        }
 
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE, hS: "---", obs: obs || "", obs_salida: "", turno });
+        if(["ASISTENCIA","RETRASO","ACT. INST."].includes(estatus)) {
+            let sug = (turno === "MAÑANA") ? (p.c === "Docente" ? "07:00" : "06:45") : (p.c === "Obrero" ? "11:30" : "12:00");
+            hE = prompt("Hora de entrada:", sug);
+            if(!hE) return;
+            if(hE > sug && estatus === "ASISTENCIA") {
+                if(confirm("Sobrepasa el límite. ¿Cambiar a RETRASO?")) { estatus = "RETRASO"; obs = prompt("Motivo:"); }
+            }
+        } else {
+            obs = prompt("Observación/Justificativo:");
+            if(!obs && (estatus === "P. PERSONAL" || estatus === "INASISTENCIA")) return alert("Motivo obligatorio.");
+        }
+
+        await db.collection("asistencia_ebnlp_final").add({
+            n: nombre, e: estatus, f: fecha, c: p.c, mes: fecha.substring(0,7),
+            hE, hS: "---", obs: obs || "", obs_salida: "", turno
+        });
         actualizarTodo();
     }
 
     async function marcarSalida(docId, nombre, cargo) {
         const turno = document.getElementById('turnoSeleccionado').value;
         let limiteS;
-        
-        // Horarios de Salida establecidos por el usuario
-        if (cargo === "Vigilante") { limiteS = "06:00"; }
-        else if (turno === "MAÑANA") {
-            if (cargo === "Docente") limiteS = "12:00";
-            else if (cargo === "CNAE (Cocinera)") limiteS = "14:00"; // 2 PM
-            else limiteS = "12:45"; // Admin y Obreros
+        if(cargo === "Vigilante") limiteS = "06:00";
+        else if(turno === "MAÑANA") {
+            if(cargo === "Docente") limiteS = "12:00";
+            else if(cargo === "CNAE (Cocinera)") limiteS = "14:00";
+            else limiteS = "12:45";
         } else {
-            if (cargo === "Docente") limiteS = "17:00"; // 5 PM
-            else if (cargo === "Obrero") limiteS = "17:30"; // 5:30 PM
-            else limiteS = "18:00"; // Admin 6 PM
+            if(cargo === "Docente") limiteS = "17:00";
+            else if(cargo === "Obrero") limiteS = "17:30";
+            else limiteS = "18:00";
         }
-        
-        let hS = prompt(`Hora Salida para ${nombre}:`, new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}));
+
+        let hS = prompt("Hora de salida:", new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}));
         if(!hS) return;
-        let motivo = "";
+        let mot = "";
         if(hS < limiteS) {
-            motivo = prompt(`⚠️ SALIDA ANTICIPADA (${hS}). Motivo:`);
-            if(!motivo) return alert("Debe justificar la salida.");
+            mot = prompt("SALIDA ANTICIPADA. Motivo:");
+            if(!mot) return alert("Debe justificar la salida temprana.");
         }
-        await db.collection("asistencia_ebnlp_final").doc(docId).update({ hS, obs_salida: motivo || "Completa" });
+        await db.collection("asistencia_ebnlp_final").doc(docId).update({ hS, obs_salida: mot || "Completa" });
         actualizarTodo();
     }
 
     async function generarReportes() {
-        const mes = document.getElementById('mesReporte').value; if(!mes) return alert("Seleccione mes.");
+        const mes = document.getElementById('mesReporte').value;
+        if(!mes) return alert("Seleccione un mes");
         const snap = await db.collection("asistencia_ebnlp_final").where("mes", "==", mes).get();
         const data = []; snap.forEach(d => data.push(d.data()));
         
-        const bEst = document.getElementById('bodyEstadistica'); bEst.innerHTML = "";
-        ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
-            let nTot = 0, aTot = 0, pTot = 0;
-            ["F", "M"].forEach(g => {
-                const nT = nomina.filter(p => p.c === c && p.gender === g).length;
-                if (nT > 0) {
-                    const asis = data.filter(x => x.c === c && x.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(x.e)).length;
-                    const prom = (asis / (c === "Vigilante" ? 15 : 20)).toFixed(2);
-                    bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT}</td><td>${asis}</td><td>${prom}</td><td>${((prom/nT)*100).toFixed(1)}%</td></tr>`;
-                    nTot += nT; aTot += asis; pTot += parseFloat(prom);
-                }
-            });
-            if (nTot > 0) bEst.innerHTML += `<tr style="background:#eee; font-weight:bold"><td>TOTAL ${c}</td><td>-</td><td>${nTot}</td><td>${aTot}</td><td>${pTot.toFixed(2)}</td><td>${((pTot/nTot)*100).toFixed(1)}%</td></tr>`;
-        });
-
-        const bInd = document.getElementById('bodyIndividual'); bInd.innerHTML = "";
+        let html = "";
         nomina.forEach(p => {
-            const r = data.filter(x => x.n === p.n); if(r.length === 0) return;
-            const asis = r.filter(x => x.e === "ASISTENCIA").length;
-            const act = r.filter(x => x.e === "ACT. INST.").length;
-            const ret = r.filter(x => x.e === "RETRASO").length;
-            const ina = r.filter(x => x.e === "INASISTENCIA").length;
-            const vac = r.filter(x => x.e === "VACACIONES").length;
-            const med = r.filter(x => x.e === "P. MÉDICO").length;
-            const per = r.filter(x => x.e === "P. PERSONAL").length;
-            const sAnt = r.filter(x => x.obs_salida && x.obs_salida !== "Completa").length;
-            
-            bInd.innerHTML += `<tr><td style="text-align:left"><b>${p.n}</b></td><td>${asis}</td><td>${act}</td><td>${ret}</td><td>${ina}</td><td>${vac}</td><td>${med}</td><td>${per}</td><td style="color:red">${sAnt}</td></tr>`;
+            const r = data.filter(x => x.n === p.n);
+            if(r.length === 0) return;
+            html += `<tr>
+                <td style="text-align:left">${p.n}</td>
+                <td>${r.filter(x=>x.e==="ASISTENCIA").length}</td>
+                <td>${r.filter(x=>x.e==="ACT. INST.").length}</td>
+                <td>${r.filter(x=>x.e==="RETRASO").length}</td>
+                <td>${r.filter(x=>x.e==="INASISTENCIA").length}</td>
+                <td>${r.filter(x=>x.e==="VACACIONES").length}</td>
+                <td>${r.filter(x=>x.e==="P. MÉDICO").length}</td>
+                <td>${r.filter(x=>x.e==="P. PERSONAL").length}</td>
+                <td style="color:red">${r.filter(x=>x.obs_salida && x.obs_salida!=="Completa").length}</td>
+            </tr>`;
         });
+        document.getElementById('bodyIndividual').innerHTML = html;
     }
 
-    // Funciones de utilidad (Borrar, Limpiar, Respaldo, Tabs) se mantienen igual que tu versión funcional
-    async function borrar(n, f) { if(confirm(`¿Borrar registro de ${n}?`)) { const q = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get(); const batch = db.batch(); q.forEach(d => batch.delete(d.ref)); await batch.commit(); actualizarTodo(); } }
-    async function limpiarDia(idInput) { const f = document.getElementById(idInput).value; if(confirm(`¿Borrar todo el día ${f}?`)) { const q = await db.collection("asistencia_ebnlp_final").where("f","==",f).get(); const batch = db.batch(); q.forEach(d => batch.delete(d.ref)); await batch.commit(); actualizarTodo(); } }
-    function descargarNominaRespaldo() { const b = new Blob([JSON.stringify(nomina)], {type:"application/json"}); co
+    // Funciones Base
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        btn.classList.add('active');
+    }
+    async function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase();
+        if(!n) return;
+        await db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value });
+        document.getElementById('nNombre').value = "";
+    }
+    async function borrarPersona(id) { if(confirm("¿Eliminar de nómina?")) await db.collection("nomina_institucional").doc(id).delete(); }
+    async function borrarRegistro(id) { if(confirm("¿Borrar asistencia?")) { await db.collection("asistencia_ebnlp_final").doc(id).delete(); actualizarTodo(); } }
+    async function limpiarDia() {
+        const f = document.getElementById('fechaEscuela').value;
+        if(confirm("¿Borrar TODA la asistencia de este día?")) {
+            const q = await db.collection("asistencia_ebnlp_final").where("f","==",f).get();
+            const batch = db.batch(); q.forEach(d => batch.delete(d.ref));
+            await batch.commit(); actualizarTodo();
+        }
+    }
+    function descargarRespaldo() {
+        const blob = new Blob([JSON.stringify(nomina)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "respaldo_nomina.json"; a.click();
+    }
+</script>
+</body>
+</html>
