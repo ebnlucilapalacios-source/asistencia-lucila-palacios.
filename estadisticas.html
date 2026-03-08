@@ -102,7 +102,7 @@
                      </div>
                      <table class="tabla-admin" id="tablaAdminConsolidado">
                      <thead>
-                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th><th rowspan="2">LISTA</th></tr>
+                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th><th rowspan="2">LISTAS</th></tr>
                         <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
                      </thead><tbody>`;
             
@@ -133,7 +133,10 @@
                     <td>${mI}</td><td>${mE}</td>
                     <td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td>
                     <td>${ef}%</td>
-                    <td><button onclick='window.descargarListaIndividual(${dString})' style="background:none; border:none; cursor:pointer;">📄</button></td>
+                    <td>
+                        <button onclick='window.descargarListaIndividual(${dString})' style="background:none; border:none; cursor:pointer;" title="Descargar PDF">📄</button>
+                        <button onclick='window.exportarListaIndividualExcel(${dString})' style="background:none; border:none; cursor:pointer;" title="Descargar Excel Simple">📗</button>
+                    </td>
                 </tr>`;
             });
             const efG = T.mT>0?((T.pT/T.mT)*100).toFixed(1):0;
@@ -148,6 +151,7 @@
             doc.save("Consolidado_Direccion.pdf");
         };
 
+        // --- EXPORTAR LISTA INDIVIDUAL PDF ---
         window.descargarListaIndividual = (datos) => {
             const docPDF = new jspdf.jsPDF();
             const activos = (datos.alumnos || []).filter(a => !a.retirado);
@@ -159,9 +163,41 @@
 
             docPDF.text(`LISTADO: ${datos.grado}° "${datos.seccion}" - ${datos.docente}`, 14, 15);
             docPDF.autoTable({ head: [['N°', 'NOMBRE', 'GÉNERO', 'EDAD']], body: filas, startY: 20 });
-            docPDF.save(`Lista_${datos.grado}${datos.seccion}.pdf`);
+            docPDF.save(`Lista_${datos.grado}${datos.seccion}_PDF.pdf`);
         };
 
+        // --- NUEVA FUNCIÓN: EXPORTAR LISTA INDIVIDUAL EXCEL (SOLO NOMBRES) ---
+        window.exportarListaIndividualExcel = (datos) => {
+            const activos = (datos.alumnos || []).filter(a => !a.retirado);
+            // Ordenar por género y luego alfabéticamente
+            const hembras = activos.filter(a => a.genero === 'F').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            const varones = activos.filter(a => a.genero === 'M').sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+            // Crear el arreglo de datos para el Excel
+            const excelData = [
+                ["EBN LUCILA PALACIOS"],
+                [`GRADO: ${datos.grado}° | SECCIÓN: "${datos.seccion}"`],
+                [`DOCENTE: ${datos.docente} | TURNO: ${datos.turno}`],
+                [], // Fila vacía para separar
+                ["N°", "NOMBRE DEL ESTUDIANTE"] // Encabezados de la lista simple
+            ];
+
+            let contador = 1;
+            hembras.forEach(a => excelData.push([contador++, a.nombre]));
+            varones.forEach(a => excelData.push([contador++, a.nombre]));
+
+            // Crear libro de trabajo
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // Ajustar ancho de las columnas
+            ws['!cols'] = [{wch: 5}, {wch: 45}]; 
+
+            XLSX.utils.book_append_sheet(wb, ws, `Lista ${datos.grado}${datos.seccion}`);
+            XLSX.writeFile(wb, `Lista_${datos.grado}${datos.seccion}_${datos.docente}.xlsx`);
+        };
+
+        // --- EXPORTAR EXCEL MATRÍCULA GENERAL (DIRECCIÓN) ---
         window.exportarExcelGeneral = async () => {
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             const data = [["GRADO", "SECCIÓN", "DOCENTE", "ESTUDIANTE", "GÉNERO", "EDAD"]];
@@ -175,7 +211,7 @@
             });
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "Matrícula");
+            XLSX.utils.book_append_sheet(wb, ws, "Matrícula General");
             XLSX.writeFile(wb, "Matricula_General.xlsx");
         };
 
@@ -240,6 +276,7 @@
 
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
+            // PANEL DE ESTADÍSTICAS DEL DOCENTE ACTUALIZADO CON BOTÓN EXCEL
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
                     <h2>ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
@@ -249,8 +286,9 @@
                     <tfoot><tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
                     <div class="movimientos-reporte"><b>INGRESOS:</b> ${ingM.length} | <b>EGRESOS:</b> ${egrM.length}</div>
                     <div style="display:flex; gap:5px; margin-top:10px;" class="no-print">
-                        <button onclick="window.print()" class="btn-print" style="flex:1">IMPRIMIR</button>
-                        <button onclick='window.descargarListaIndividual(window.db)' class="btn-print" style="flex:1; background:var(--exito)">📄 MI LISTA</button>
+                        <button onclick="window.print()" class="btn-print" style="flex:1">🖨️ IMPRIMIR</button>
+                        <button onclick='window.descargarListaIndividual(window.db)' class="btn-print" style="flex:1; background:var(--exito)">📄 MI PDF</button>
+                        <button onclick='window.exportarListaIndividualExcel(window.db)' class="btn-print" style="flex:1; background:#1D6F42">📗 MI EXCEL</button>
                     </div>
                 </div>`;
         };
@@ -303,7 +341,7 @@
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
         .btn-check { width: 35px; height: 30px; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
-        .btn-print { background: var(--azul); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-print { background: var(--azul); color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 10px; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
