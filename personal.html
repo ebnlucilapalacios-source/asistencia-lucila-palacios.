@@ -10,13 +10,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --gris: #f4f4f4; --rojo: #c0392b; --purpura: #6a1b9a; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; }
-        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
+        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --gris: #f4f4f4; --rojo: #c0392b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; color: #333; }
+        header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         
-        /* Dashboard Compacto */
-        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .dash-card { border: 1px solid #eee; padding: 5px; border-radius: 4px; text-align: center; border-bottom: 3px solid var(--azul); }
+        /* Dashboard */
+        .dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; background: #fff; }
+        .dash-card { border: 1px solid #ddd; padding: 5px; border-radius: 4px; text-align: center; border-bottom: 3px solid var(--azul); }
         .dash-card h4 { margin: 0; font-size: 0.55rem; color: #666; text-transform: uppercase; }
         .dash-card .valor { font-size: 1.1rem; font-weight: bold; color: var(--azul); }
 
@@ -25,43 +25,40 @@
         .tab-btn { flex: 1; padding: 12px 2px; border: none; border-radius: 4px; font-weight: bold; background: #eee; cursor: pointer; font-size: 0.65rem; color: #555; }
         .tab-btn.active { background: var(--naranja); color: white; }
 
-        /* Secciones y Fichas */
-        .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; letter-spacing: 1px; }
-        .cargo-content { display: none; padding: 10px; background: #fdfdfd; }
+        /* Fichas y Secciones */
+        .cargo-section { margin: 10px; background: white; border-radius: 8px; border: 1px solid #ccc; overflow: hidden; }
+        .cargo-title { background: var(--azul); color: white; padding: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; font-size: 0.75rem; }
+        .cargo-content { display: none; padding: 10px; }
         .cargo-content.open { display: block; }
+        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 8px; }
+        .ficha { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: center; font-size: 0.7rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.3s; }
         
-        .grid-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-        .ficha { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; text-align: center; position: relative; transition: 0.2s; }
-        .ficha b { font-size: 0.75rem; display: block; margin-bottom: 8px; color: #333; min-height: 2.2em; line-height: 1.1; }
-        
-        /* Botones de Estatus */
+        /* Botones de Acción */
         .btn-check { width: 100%; padding: 6px; margin: 2px 0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
-        .btn-asis { background: #e8f5e9; color: #2e7d32; }
-        .btn-act { background: #e3f2fd; color: #1565c0; }
-        .btn-ret { background: #fff3e0; color: #ef6c00; }
-        .btn-ina { background: #ffebee; color: #c62828; }
-        .btn-vac { background: #f3e5f5; color: #7b1fa2; }
-        .btn-med { background: #e0f2f1; color: #00695c; }
-        .btn-per { background: #efebe9; color: #4e342e; }
-        .btn-salida { background: var(--azul); color: white; margin-top: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-asis { background: #d4edda; color: #155724; }
+        .btn-act { background: #d1ecf1; color: #0c5460; }
+        .btn-ret { background: #fff3cd; color: #856404; }
+        .btn-ina { background: #f8d7da; color: #721c24; }
+        .btn-vac { background: #d1e7ff; color: #004085; }
+        .btn-med { background: #e2e3e5; color: #383d41; }
+        .btn-per { background: #f3e5f5; color: #4a148c; }
+        .btn-salida { background: var(--azul); color: white; margin-top: 8px; }
 
         /* Tablas */
         .sub-t { background: var(--naranja); color: white; padding: 10px; margin: 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; text-align: center; }
         .table-wrap { overflow-x: auto; background: white; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
-        th { background: #444; color: white; padding: 10px; font-weight: 500; }
-        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; color: #444; }
+        th { background: #444; color: white; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
         
-        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.8rem; outline: none; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.85rem; width: 100%; box-sizing: border-box; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2 style="margin:0; font-size:1rem;">E.B.N. LUCILA PALACIOS</h2>
-    <small style="font-size:0.6rem; opacity:0.8;">CONTROL DE ASISTENCIA INTEGRAL</small>
+    <h4 style="margin:0;">SISTEMA CONTROL TOTAL - LUCILA PALACIOS</h4>
 </header>
 
 <div class="dashboard">
@@ -73,25 +70,25 @@
 </div>
 
 <div class="tabs">
-    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">🏫 ESCUELA</button>
-    <button class="tab-btn" onclick="verTab('tabVigilancia', this)">🛡️ VIGILANCIA</button>
-    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">📊 ESTADÍSTICA</button>
-    <button class="tab-btn" onclick="verTab('tabNomina', this)">👥 NÓMINA</button>
+    <button class="tab-btn active" onclick="verTab('tabEscuela', this)">ESCUELA</button>
+    <button class="tab-btn" onclick="verTab('tabVigilancia', this)">VIGILANCIA</button>
+    <button class="tab-btn" onclick="verTab('tabEstadistica', this)">ESTADÍSTICA</button>
+    <button class="tab-btn" onclick="verTab('tabNomina', this)">NÓMINA</button>
 </div>
 
 <div id="tabEscuela" class="tab-content">
-    <div style="padding:10px; display:flex; gap:5px; background:white; margin-bottom:5px;">
-        <input type="date" id="fechaEscuela" onchange="actualizarTodo()" style="flex:1">
-        <select id="turnoSeleccionado" onchange="actualizarTodo()" style="flex:1">
-            <option value="MAÑANA">MAÑANA</option>
-            <option value="TARDE">TARDE</option>
+    <div style="padding:10px; display:flex; gap:5px; background:white;">
+        <input type="date" id="fechaEscuela" onchange="actualizarTodo()">
+        <select id="turnoSeleccionado" onchange="actualizarTodo()">
+            <option value="MAÑANA">TURNO MAÑANA</option>
+            <option value="TARDE">TURNO TARDE</option>
         </select>
     </div>
     <div id="contEscuela"></div>
-    <div class="sub-t">RESUMEN DE ASISTENCIA DIARIA</div>
+    <div class="sub-t">RESUMEN DIARIO ESCUELA</div>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Nombre</th><th>Turno</th><th>Estado</th><th>Ent/Sal</th><th>Obs</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Turno</th><th>Estado</th><th>Ent/Sal</th><th>Obs/Motivo</th></tr></thead>
             <tbody id="resumenEscuela"></tbody>
         </table>
     </div>
@@ -99,10 +96,10 @@
 
 <div id="tabVigilancia" class="tab-content hidden">
     <div style="padding:10px; display:flex; gap:5px; background:white;">
-        <input type="date" id="fechaVig" onchange="actualizarTodo()" style="flex:1">
-        <select id="filtroGrupo" onchange="actualizarTodo()" style="flex:1">
-            <option value="GRUPO I">GRUPO I</option>
-            <option value="GRUPO II">GRUPO II</option>
+        <input type="date" id="fechaVig" onchange="actualizarTodo()">
+        <select id="filtroGrupo" onchange="actualizarTodo()">
+            <option value="GRUPO I">GRUPO I (Vigilancia)</option>
+            <option value="GRUPO II">GRUPO II (Vigilancia)</option>
         </select>
     </div>
     <div id="contVigilancia"></div>
@@ -110,10 +107,10 @@
 
 <div id="tabEstadistica" class="tab-content hidden">
     <div style="padding:15px; display:flex; gap:10px; background:white; margin:10px; border-radius:8px;">
-        <input type="month" id="mesReporte" style="flex:1">
-        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px 20px; border-radius:5px; font-weight:bold;">CALCULAR</button>
+        <input type="month" id="mesReporte">
+        <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; width:150px;">CALCULAR</button>
     </div>
-    <div class="sub-t">PROMEDIO MENSUAL DISGREGADO</div>
+    <div class="sub-t">PROMEDIO MENSUAL (ZONA EDUCATIVA)</div>
     <div class="table-wrap">
         <table id="tablaEstadistica">
             <thead><tr><th>CARGO</th><th>GEN</th><th>NOM</th><th>ASIS</th><th>PROM REAL</th><th>% EFEC</th></tr></thead>
@@ -124,40 +121,22 @@
 
 <div id="tabNomina" class="tab-content hidden">
     <div style="padding:15px; background:white; margin:10px; border-radius:8px; border:1px solid #ddd;">
-        <h4 style="margin:0 0 10px 0; color:var(--azul);">REGISTRO DE PERSONAL</h4>
-        <input type="text" id="nNombre" placeholder="APELLIDOS Y NOMBRES" style="width:100%; margin-bottom:10px; text-transform:uppercase;">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
-            <select id="nCargo">
-                <option value="Docente">Docente</option>
-                <option value="Obrero">Obrero</option>
-                <option value="Administrativo">Administrativo</option>
-                <option value="CNAE (Cocinera)">CNAE (Cocinera)</option>
-                <option value="Vigilante">Vigilante</option>
-            </select>
-            <select id="nGen"><option value="F">Femenino (F)</option><option value="M">Masculino (M)</option></select>
+        <h4 style="margin:0 0 10px 0;">AGREGAR PERSONAL</h4>
+        <input type="text" id="nNombre" placeholder="NOMBRE COMPLETO" style="margin-bottom:10px; text-transform:uppercase;">
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <select id="nCargo" style="flex:1;"><option value="Docente">Docente</option><option value="Obrero">Obrero</option><option value="Administrativo">Administrativo</option><option value="CNAE (Cocinera)">CNAE (Cocinera)</option><option value="Vigilante">Vigilante</option></select>
+            <select id="nGen" style="width:60px;"><option value="F">F</option><option value="M">M</option></select>
+            <select id="nGrupo" style="flex:1;"><option value="General">Escuela</option><option value="GRUPO I">Vig I</option><option value="GRUPO II">Vig II</option></select>
         </div>
-        <select id="nGrupo" style="width:100%; margin-bottom:10px;">
-            <option value="General">Escuela (Mañana/Tarde)</option>
-            <option value="GRUPO I">Vigilancia Grupo I</option>
-            <option value="GRUPO II">Vigilancia Grupo II</option>
-        </select>
-        <button onclick="agregarNomina()" style="width:100%; padding:12px; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">+ GUARDAR PERSONAL</button>
+        <button onclick="agregarNomina()" style="width:100%; padding:12px; background:var(--azul); color:white; border:none; border-radius:5px; font-weight:bold;">GUARDAR EN NÓMINA</button>
     </div>
-
-    <div style="padding:10px; display:flex; gap:5px;">
-        <button onclick="descargarNominaExcel()" style="flex:1; padding:10px; background:var(--verde); color:white; border:none; border-radius:5px; font-size:0.7rem;">RESPALDO NÓMINA</button>
-        <button onclick="descargarRespaldo()" style="flex:1; padding:10px; background:#444; color:white; border:none; border-radius:5px; font-size:0.7rem;">RESPALDO ASISTENCIA</button>
-    </div>
-
     <div class="table-wrap">
-        <table>
-            <thead><tr><th>Nombre</th><th>Cargo/Género</th><th>Acción</th></tr></thead>
-            <tbody id="bodyNomina"></tbody>
-        </table>
+        <table><thead><tr><th>Nombre</th><th>Cargo/Gén</th><th>Acción</th></tr></thead><tbody id="bodyNomina"></tbody></table>
     </div>
 </div>
 
 <script>
+    // Configuración Firebase
     const firebaseConfig = { apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg", authDomain: "control-de-asistencia-d585e.firebaseapp.com", projectId: "control-de-asistencia-d585e", appId: "1:368890880546:web:a97ab4372dea536217207b" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -166,7 +145,7 @@
     document.getElementById('fechaEscuela').value = new Date().toISOString().split('T')[0];
     document.getElementById('fechaVig').value = new Date().toISOString().split('T')[0];
 
-    // CARGA DE DATOS
+    // Escuchar cambios en Nómina
     db.collection("nomina_institucional").onSnapshot(snap => {
         nomina = [];
         snap.forEach(doc => { let d = doc.data(); d.id = doc.id; nomina.push(d); });
@@ -184,10 +163,7 @@
     async function actualizarDash(f) {
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "==", f).get();
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0};
-        snap.forEach(d => { 
-            const data = d.data();
-            if(!["INASISTENCIA","P. PERSONAL"].includes(data.e)) c[data.c]++; 
-        });
+        snap.forEach(d => { if(!["INASISTENCIA","P. PERSONAL"].includes(d.data().e)) c[d.data().c]++; });
         document.getElementById('dDoc').innerText = c.Docente;
         document.getElementById('dObr').innerText = c.Obrero;
         document.getElementById('dAdm').innerText = c.Administrativo;
@@ -213,7 +189,7 @@
             const sec = document.createElement('div');
             sec.className = "cargo-section";
             sec.innerHTML = `<div class="cargo-title" onclick="this.nextElementSibling.classList.toggle('open')"><span>${cargo.toUpperCase()} (${list.length})</span> <span>▼</span></div>`;
-            const content = document.createElement('div'); content.className = "cargo-content open"; // Abiertas por defecto
+            const content = document.createElement('div'); content.className = "cargo-content open";
             const grid = document.createElement('div'); grid.className = "grid-fichas";
 
             list.forEach(p => {
@@ -222,18 +198,18 @@
                 if(!m) {
                     f.innerHTML = `<b>${p.n}</b>
                         <button class="btn-check btn-asis" onclick="registrar('${p.n}','ASISTENCIA','${fecha}')">ASISTENCIA</button>
-                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.','${fecha}')">ACT. INST.</button>
-                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO','${fecha}')">RETRASO</button>
+                        <button class="btn-check btn-act" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>
+                        <button class="btn-check btn-ret" onclick="registrar('${p.n}','RETRASO')">RETRASO</button>
                         <button class="btn-check btn-ina" onclick="registrar('${p.n}','INASISTENCIA','${fecha}')">INASISTENCIA</button>
-                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES','${fecha}')">VACACIONES</button>
-                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO','${fecha}')">P. MÉDICO</button>
+                        <button class="btn-check btn-vac" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
+                        <button class="btn-check btn-med" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
                         <button class="btn-check btn-per" onclick="registrar('${p.n}','P. PERSONAL','${fecha}')">P. PERSONAL</button>`;
                 } else {
                     f.style.borderColor = "var(--verde)";
-                    f.innerHTML = `<b>${p.n}</b><b style="color:var(--verde); font-size:0.6rem;">✓ ${m.e}</b><br><small>${m.hE} - ${m.hS}</small>
+                    f.innerHTML = `<b>${p.n}</b><br><b style="color:var(--verde)">✓ ${m.e}</b><br><small>${m.hE} - ${m.hS}</small>
                         ${(m.hS === "---" && ["ASISTENCIA","RETRASO","ACT. INST."].includes(m.e)) ? `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}','${m.turno}','${p.c}')">SALIDA</button>` : ""}
-                        <br><button onclick="borrar('${m.n}','${fecha}')" style="background:none; border:none; color:red; font-size:10px; margin-top:5px; cursor:pointer;">ELIMINAR</button>`;
-                    if(resBody) resBody.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${m.turno||'VIG'}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""} ${m.motivoSalida ? '[S.A: '+m.motivoSalida+']' : ""}</td></tr>`;
+                        <br><button onclick="borrar('${m.n}','${fecha}')" style="background:none; border:none; color:red; font-size:9px; cursor:pointer;">Eliminar</button>`;
+                    if(resBody) resBody.innerHTML += `<tr><td>${p.n}</td><td>${m.turno}</td><td>${m.e}</td><td>${m.hE}/${m.hS}</td><td>${m.obs||""} ${m.motivoSalida ? '[S.Ant: '+m.motivoSalida+']' : ""}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
@@ -241,39 +217,43 @@
         });
     }
 
-    async function registrar(n, e, f) {
+    async function registrar(n, e, f = null) {
+        const fecha = f || (document.getElementById('tabEscuela').classList.contains('hidden') ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value);
         const p = nomina.find(x => x.n === n);
         const t = document.getElementById('turnoSeleccionado').value;
         let hE = "---", obs = "";
 
-        // ALERTA 3 FALTAS
+        // Lógica de Faltas (3 Faltas)
         if(e === "INASISTENCIA" || e === "P. PERSONAL") {
-            obs = prompt("Indique el motivo o justificación:");
-            if(!obs) return;
-            const mesActual = f.substring(0,7);
+            obs = prompt("Motivo de la falta:"); if(!obs) return;
+            const mesActual = fecha.substring(0,7);
             const snap = await db.collection("asistencia_ebnlp_final").where("n","==",n).where("mes","==",mesActual).where("e","==",e).get();
-            if(snap.size >= 2) alert("⚠️ ATENCIÓN: " + n + " ya tiene " + (snap.size + 1) + " registros de " + e + " este mes.");
+            if(snap.size >= 2) alert("⚠️ ATENCIÓN: " + n + " ya registra " + (snap.size + 1) + " eventos de " + e + " este mes.");
         } else {
-            hE = prompt("Hora Entrada (HH:MM):", (p.c === "Vigilante") ? "18:00" : (t === "MAÑANA" ? "07:00" : "12:00"));
-            if(!hE) return;
+            let sugE = (t === "MAÑANA") ? "07:00" : (p.c === "Obrero" ? "11:30" : "12:00");
+            if(p.c === "Vigilante") sugE = "18:00";
+            hE = prompt("Hora Entrada:", sugE); if(!hE) return;
         }
 
-        await db.collection("asistencia_ebnlp_final").add({ n, e, f, c: p.c, gender: p.gender, grupo: p.grupo, mes: f.substring(0,7), hE, hS: "---", obs: obs || "", turno: (p.c === "Vigilante" ? "VIG" : t) });
+        await db.collection("asistencia_ebnlp_final").add({ n, e, f: fecha, c: p.c, gender: p.gender, grupo: p.grupo, mes: fecha.substring(0,7), hE, hS: "---", obs, turno: (p.c === "Vigilante" ? "VIG" : t) });
         actualizarTodo();
     }
 
     async function marcarSalida(n, f, turno, cargo) {
-        const hS = prompt("Hora Salida (HH:MM):"); if(!hS) return;
-        let motivo = "";
+        const hS = prompt("Hora Salida:"); if(!hS) return;
+        let motivo = "", horaTope = "12:00";
         
-        // Control de Salida Anticipada
-        let horaTope = "12:00";
         if(cargo === "Vigilante") horaTope = "06:00";
-        else if(turno === "MAÑANA") horaTope = (cargo === "Docente") ? "12:00" : "12:45";
-        else if(turno === "TARDE") horaTope = (cargo === "Docente") ? "17:00" : "18:00";
+        else if(cargo === "CNAE (Cocinera)") horaTope = "14:00";
+        else if(turno === "MAÑANA") horaTope = (cargo === "Docente" ? "12:00" : "12:45");
+        else if(turno === "TARDE") {
+            if(cargo === "Obrero") horaTope = "17:30";
+            else if(cargo === "Docente") horaTope = "17:00";
+            else horaTope = "18:00";
+        }
 
         if(hS < horaTope) {
-            motivo = prompt("SALIDA ANTICIPADA detectada. Ingrese motivo:");
+            motivo = prompt("SALIDA ANTICIPADA (Oficial: "+horaTope+"). Indique motivo:");
             if(!motivo) { alert("Debe justificar la salida anticipada."); return; }
         }
 
@@ -302,36 +282,10 @@
     }
 
     function verTab(id, btn) { document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.remove('hidden'); btn.classList.add('active'); }
-    
-    function agregarNomina() { 
-        const n = document.getElementById('nNombre').value.toUpperCase(); 
-        if(!n) return; 
-        db.collection("nomina_institucional").add({ 
-            n, 
-            c: document.getElementById('nCargo').value, 
-            gender: document.getElementById('nGen').value, 
-            grupo: document.getElementById('nGrupo').value 
-        }); 
-        document.getElementById('nNombre').value = ""; 
-    }
+    function agregarNomina() { const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return; db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value }); document.getElementById('nNombre').value = ""; }
+    function renderNomina() { const b = document.getElementById('bodyNomina'); b.innerHTML = ""; nomina.forEach(p => b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c} (${p.gender})</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()">❌</button></td></tr>`); }
+    function borrar(n, f) { if(confirm("¿Borrar?")) { db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get().then(q => q.forEach(d => d.ref.delete())); } }
+</script>
+</body>
+</html>
 
-    function renderNomina() { 
-        const b = document.getElementById('bodyNomina'); b.innerHTML = ""; 
-        nomina.forEach(p => b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c} (${p.gender})</td><td><button onclick="if(confirm('¿Eliminar?')) db.collection('nomina_institucional').doc('${p.id}').delete()" style="background:none; border:none; cursor:pointer;">❌</button></td></tr>`); 
-    }
-
-    function borrar(n, f) { if(confirm("¿Borrar este registro?")) { db.collection("asistencia_ebnlp_final").where("n","==",n).where("f","==",f).get().then(q => q.forEach(d => d.ref.delete())); } }
-
-    function descargarNominaExcel() {
-        const ws = XLSX.utils.json_to_sheet(nomina.map(p => ({ "Nombre": p.n, "Cargo": p.c, "Genero": p.gender, "Grupo": p.grupo })));
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Nomina");
-        XLSX.writeFile(wb, "Nomina_Institucional.xlsx");
-    }
-
-    async function descargarRespaldo() {
-        const snap = await db.collection("asistencia_ebnlp_final").get();
-        const ws = XLSX.utils.json_to_sheet(snap.docs.map(d => d.data()));
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
-        XLSX.writeFile(wb, "Respaldo_Asistencia.xlsx");
-    }
-</
