@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA PALACIOS - ORDENADO</title>
+    <title>SISTEMA LUCILA PALACIOS - FORMATO OFICIAL</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -22,7 +25,6 @@
         const USUARIO_ADMIN = "admin_lucila";
 
         window.usuarioActual = null;
-        window.db = { docente: "", grado: "", seccion: "", alumnos: [] };
 
         window.login = async () => {
             const u = document.getElementById('user').value.toLowerCase().trim();
@@ -35,97 +37,118 @@
                     document.getElementById('loginSection').style.display = 'none';
                     document.getElementById('mainApp').style.display = 'block';
                     if (u === USUARIO_ADMIN) document.getElementById('panelDireccion').style.display = 'block';
-                    onSnapshot(docRef, (s) => { if(s.exists()) { window.db = s.data(); window.renderAlumnos(); } });
-                } else { alert("Acceso incorrecto"); }
+                    onSnapshot(docRef, (s) => { if(s.exists()) renderAlumnos(s.data().alumnos || []); });
+                } else { alert("Datos incorrectos"); }
             } catch(e) { alert("Error de conexión"); }
         };
 
-        window.renderAlumnos = () => {
+        function renderAlumnos(alms) {
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
-            (window.db.alumnos || []).forEach(a => {
+            alms.forEach(a => {
                 lista.innerHTML += `<div class="fila"><span><b>${a.n}</b></span> <button class="btn-p">P</button></div>`;
             });
-        };
+        }
 
-        // --- FUNCIÓN CON ORDENAMIENTO POR GRADO Y SECCIÓN ---
-        window.verConsolidado = async () => {
+        window.generarConsolidado = async () => {
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             let docentes = [];
             snap.forEach(d => { if(d.id !== USUARIO_ADMIN) docentes.push(d.data()); });
 
-            // Lógica de ordenamiento: Primero Grado (1-6) y luego Sección (A-Z)
+            // ORDENAR: Grado (1-6) y luego Sección (A-Z)
             docentes.sort((a, b) => {
-                const gradoA = parseInt(a.grado) || 0;
-                const gradoB = parseInt(b.grado) || 0;
-                if (gradoA !== gradoB) return gradoA - gradoB;
-                
-                const seccA = (a.seccion || "").toUpperCase();
-                const seccB = (b.seccion || "").toUpperCase();
-                return seccA.localeCompare(seccB);
+                const gA = parseInt(a.grado) || 0;
+                const gB = parseInt(b.grado) || 0;
+                if (gA !== gB) return gA - gB;
+                return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            let html = `
-                <table class="tabla">
-                    <thead>
-                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th></tr>
-                        <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th></tr>
-                    </thead>
-                    <tbody>`;
+            let html = `<table class="tabla" id="tablaConsolidado">
+                <thead>
+                    <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th></tr>
+                    <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th></tr>
+                </thead><tbody>`;
             
             docentes.forEach(d => {
                 const ac = (d.alumnos || []);
                 const h = ac.filter(al => al.g === "F").length;
                 const v = ac.filter(al => al.g === "M").length;
-                // Calculamos ingresos y egresos (si tienes esos campos)
-                const ing = ac.filter(al => al.tipoMov === "I").length;
-                const egr = ac.filter(al => al.retirado).length;
-
-                html += `
-                    <tr>
-                        <td style="text-align:left">${d.docente || d.id}</td>
-                        <td>${d.grado || ""}${d.seccion || ""}</td>
-                        <td>${h}</td><td>${v}</td><td>${ac.length}</td>
-                        <td style="color:green">${ing}</td><td style="color:red">${egr}</td>
-                    </tr>`;
+                html += `<tr>
+                    <td style="text-align:left">${d.docente || d.id}</td>
+                    <td>${d.grado}${d.seccion}</td>
+                    <td>${h}</td><td>${v}</td><td>${ac.length}</td>
+                    <td>0</td><td>0</td>
+                </tr>`;
             });
             document.getElementById('outputAdmin').innerHTML = html + "</tbody></table>";
+            document.getElementById('btnPDF').style.display = 'block';
+        };
+
+        window.descargarPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Encabezado
+            doc.setFontSize(14);
+            doc.text("E.B.N. LUCILA PALACIOS", 105, 15, { align: "center" });
+            doc.setFontSize(10);
+            doc.text("CONSOLIDADO MENSUAL DE MATRÍCULA Y ASISTENCIA", 105, 22, { align: "center" });
+            doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 105, 27, { align: "center" });
+            
+            doc.autoTable({
+                html: '#tablaConsolidado',
+                startY: 35,
+                styles: { fontSize: 7, halign: 'center' },
+                headStyles: { fillColor: [0, 33, 71] }
+            });
+
+            // Espacio para firmas
+            const finalY = doc.lastAutoTable.finalY + 30;
+            doc.setFontSize(9);
+            doc.line(20, finalY, 80, finalY); // Línea izquierda
+            doc.text("DOCENTE DE GUARDIA", 50, finalY + 5, { align: "center" });
+            
+            doc.line(130, finalY, 190, finalY); // Línea derecha
+            doc.text("DIRECTOR (A) / SELLO", 160, finalY + 5, { align: "center" });
+
+            doc.save(`Consolidado_Lucila_${new Date().toLocaleDateString()}.pdf`);
         };
     </script>
 
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f0f2f5; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; background: #f4f4f9; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         button { background: #002147; color: white; font-weight: bold; border: none; cursor: pointer; }
         .fila { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .btn-p { width: 45px; background: #28a745; margin: 0; }
-        .tabla { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
-        .tabla th, .tabla td { border: 1px solid #ccc; padding: 5px; text-align: center; }
-        .tabla th { background: #f8f9fa; }
+        .tabla { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 15px; }
+        .tabla th, .tabla td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+        .btn-pdf { background: #d32f2f; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
-    <div id="loginSection" style="max-width: 350px; margin: 40px auto; text-align: center;">
+    <div id="loginSection" style="max-width: 320px; margin: 50px auto; text-align: center;">
         <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
-        <h3>EBN LUCILA PALACIOS</h3>
+        <h3>SISTEMA LUCILA</h3>
         <div class="card">
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pass" placeholder="Contraseña">
-            <button onclick="login()">ENTRAR</button>
+            <button onclick="login()">INGRESAR</button>
         </div>
     </div>
 
-    <div id="mainApp" style="display:none; max-width: 500px; margin: auto;">
-        <div id="panelDireccion" class="card" style="display:none; border: 2px solid purple;">
-            <h4 style="color:purple; margin:0">📊 CONSOLIDADO (ORDENADO)</h4>
-            <button onclick="verConsolidado()" style="background:purple;">GENERAR REPORTE</button>
+    <div id="mainApp" style="display:none; max-width: 550px; margin: auto;">
+        <div id="panelDireccion" class="card" style="display:none; border: 2px solid #b71c1c;">
+            <h4 style="color:#b71c1c; margin:0">📊 CONTROL DIRECCIÓN</h4>
+            <button onclick="generarConsolidado()" style="background:#b71c1c;">VER TABLA GENERAL</button>
             <div id="outputAdmin" style="overflow-x: auto;"></div>
+            <button id="btnPDF" class="btn-pdf" onclick="descargarPDF()">📄 EXPORTAR PDF CON FIRMAS</button>
         </div>
 
         <div class="card">
-            <h4>Lista de Alumnos</h4>
+            <h4>Registro de Asistencia</h4>
             <div id="listaAsistencia"></div>
         </div>
     </div>
