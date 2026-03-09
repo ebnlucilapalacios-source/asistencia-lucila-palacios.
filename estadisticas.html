@@ -201,7 +201,7 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
-        // --- NUEVA FUNCIÓN: EXPORTAR SOLO NOMBRES (DOCENTE Y ADMIN) ---
+        // --- FUNCIÓN: EXPORTAR SOLO NOMBRES (DOCENTE Y ADMIN) ---
         window.exportarNombresBasico = async (formato, esAdmin) => {
             let listaDocentes = [];
 
@@ -210,10 +210,8 @@
                 snap.forEach(s => {
                     if (s.id !== USUARIO_ADMIN) listaDocentes.push(s.data());
                 });
-                // Ordenamos por grado y sección para la dirección
                 listaDocentes.sort((a,b) => (parseInt(a.grado) - parseInt(b.grado)) || (a.seccion || "").localeCompare(b.seccion || ""));
             } else {
-                // Si es un docente, solo exportamos su salón
                 if (!window.db || !window.db.alumnos || window.db.alumnos.length === 0) return alert("No hay datos de alumnos cargados.");
                 listaDocentes.push(window.db);
             }
@@ -224,13 +222,11 @@
                     const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
                     if (activos.length === 0) return;
                     
-                    // Agregamos el encabezado solicitado
                     dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
                     dataExcel.push(["N°", "NOMBRE DEL ESTUDIANTE"]);
                     
-                    // Listamos solo los nombres
                     activos.forEach((a, i) => dataExcel.push([i + 1, a.nombre]));
-                    dataExcel.push([]); // Espacio separador entre grados
+                    dataExcel.push([]); 
                 });
 
                 if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
@@ -269,7 +265,7 @@
                         margin: {bottom: 10}
                     });
                     yPos = docPDF.lastAutoTable.finalY + 10;
-                    if(yPos > 270) { docPDF.addPage(); yPos = 20; } // Salto de página
+                    if(yPos > 270) { docPDF.addPage(); yPos = 20; } 
                 });
                 
                 if(!hayDatos) return alert("No hay alumnos activos para exportar.");
@@ -481,26 +477,10 @@
         </div>
 
         <div class="card no-print">
-            <h4 style="margin:0">Mantenimiento de Matrícula</h4>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
-                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
-            </div>
-        </div>
-
-        <div class="card no-print">
             <b>Docente:</b> <span id="docenteTxt"></span><br>
             <b>Sección:</b> <span id="gradoSeccionTxt"></span>
             <input type="date" id="fechaSeleccionada" value="2026-03-08" onchange="window.render()" style="margin-top:10px;">
             <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
-        </div>
-
-        <div class="card no-print">
-            <h4 style="margin:0 0 5px 0">📥 Exportar Lista (Solo Nombres)</h4>
-            <div style="display:flex; gap:5px;">
-                <button onclick="exportarNombresBasico('excel', false)" style="flex:1; background:#1D6F42; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO EXCEL</button>
-                <button onclick="exportarNombresBasico('pdf', false)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO PDF</button>
-            </div>
         </div>
 
         <div class="card no-print">
@@ -515,6 +495,23 @@
 
         <div class="card"><div id="listaAsistencia"></div></div>
         <div id="reporteDocente"></div>
+
+        <div class="card no-print" style="margin-top: 10px;">
+            <h4 style="margin:0 0 5px 0">📥 Exportar Lista (Solo Nombres)</h4>
+            <div style="display:flex; gap:5px;">
+                <button onclick="exportarNombresBasico('excel', false)" style="flex:1; background:#1D6F42; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO EXCEL</button>
+                <button onclick="exportarNombresBasico('pdf', false)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO PDF</button>
+            </div>
+        </div>
+
+        <div class="card no-print">
+            <h4 style="margin:0">Mantenimiento de Matrícula</h4>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
+                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
