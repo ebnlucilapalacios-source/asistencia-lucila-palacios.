@@ -355,4 +355,157 @@
                     <button onclick="window.print()" style="flex:1; background:var(--azul); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">🖨️ IMPRIMIR</button>
                     <button onclick="window.exportarMiExcel()" style="flex:1; background:#1D6F42; color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">📗 MI LISTA EXCEL</button>
                 </div>
-     
+            </div>`;
+    }
+
+    // Consolidado Individual
+    window.generarConsolidadoIndividual = (fechaActual, activos) => {
+        const mesRef = new Date(fechaActual + "T00:00:00").getMonth();
+        
+        let h = `
+            <div class="card no-print" style="margin-top:15px; border-top:4px solid var(--azul);">
+                <h4 style="margin-top:0; color:var(--azul);">📊 HISTORIAL INDIVIDUAL (MES)</h4>
+                <table class="tabla-911">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Estudiante</th>
+                            <th title="Presente">P</th>
+                            <th title="Justificado">J</th>
+                            <th title="Falta">F</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        activos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            let p=0, j=0, f=0, totalDias=0;
+            
+            Object.keys(dbLocal.asistencias).forEach(fecha => {
+                const d = new Date(fecha + "T00:00:00");
+                if(d.getMonth() === mesRef && d.getDay() !== 0 && d.getDay() !== 6 && !dbLocal.feriados?.includes(fecha)) {
+                    totalDias++;
+                    const st = dbLocal.asistencias[fecha][a.id] || 0; // 0 es Falta por defecto
+                    if(st === 1) p++;
+                    else if(st === 2) j++;
+                    else f++;
+                }
+            });
+
+            const porc = totalDias > 0 ? ((p / totalDias) * 100).toFixed(0) : 0;
+            const colorPorc = porc < 75 && totalDias > 0 ? 'var(--rojo)' : 'var(--exito)';
+
+            h += `
+                <tr>
+                    <td style="text-align:left; font-size:11px;">${a.nombre}</td>
+                    <td style="color:var(--exito); font-weight:bold;">${p}</td>
+                    <td style="color:var(--morado);">${j}</td>
+                    <td style="color:var(--rojo);">${f}</td>
+                    <td style="font-weight:bold; color:${colorPorc}">${totalDias > 0 ? porc+'%' : '-'}</td>
+                </tr>`;
+        });
+
+        h += `</tbody></table></div>`;
+        document.getElementById('consolidadoIndividualArea').innerHTML = h;
+    };
+
+    // Herramientas de Mantenimiento
+    window.limpiarMovimientos = async () => {
+        if(confirm("¿Desea reiniciar el conteo de ingresos y egresos? (Recomendado al iniciar un nuevo mes o lapso)")) {
+            dbLocal.alumnos = dbLocal.alumnos.map(a => ({ ...a, retirado: false, fechaIngreso: null, fechaEgreso: null }));
+            await saveCloud();
+            alert("Movimientos limpiados.");
+        }
+    };
+
+    window.borrarMatriculaTotal = async () => {
+        if(confirm("¡ADVERTENCIA! ¿Está seguro de querer borrar a todos los estudiantes de esta sección?")) {
+            if(prompt("Escriba la palabra BORRAR para confirmar:") === "BORRAR") {
+                dbLocal.alumnos = []; 
+                dbLocal.asistencias = {}; 
+                await saveCloud();
+                alert("Sección vaciada.");
+            }
+        }
+    };
+
+    // PANEL DE DIRECCIÓN
+    window.consolidadoMensual = async () => {
+        const fSel = document.getElementById('fechaSeleccionada').value;
+        const mesRef = new Date(fSel + "T00:00:00").getMonth();
+        const snap = await getDocs(collection(dbCloud, "docentes_db"));
+        let docs = [];
+        snap.forEach(s => { if(s.id !== USUARIO_ADMIN) docs.push(s.data()); });
+        docs.sort((a,b) => (parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
+
+        let h = `<table class="tabla-admin" id="tablaDireccion"><thead>
+            <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th></tr>
+            <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>`;
+        
+        let Totales = { mH:0, mV:0, mT:0, mI:0, mE:0, pH:0, pV:0, pT:0 };
+
+        docs.forEach(d => {
+            const ac = d.alumnos.filter(a => !a.retirado);
+            const mH = ac.filter(a=>a.genero==='F').length;
+            const mV = ac.filter(a=>a.genero==='M').length;
+            const mT = mH + mV;
+            const mI = d.alumnos.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
+            const mE = d.alumnos.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
+            
+            let sH=0, sV=0, ds=0;
+            Object.keys(d.asistencias || {}).forEach(f => {
+                const fo = new Date(f+"T00:00:00");
+                if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
+                    ds++; 
+                    ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
+                }
+            });
+            const pH = ds>0 ? sH/ds : 0;
+            const pV = ds>0 ? sV/ds : 0;
+            const pT = pH + pV;
+
+            Totales.mH+=mH; Totales.mV+=mV; Totales.mT+=mT; Totales.mI+=mI; Totales.mE+=mE; Totales.pH+=pH; Totales.pV+=pV; Totales.pT+=pT;
+
+            h += `<tr><td>${d.docente}</td><td>${d.grado}${d.seccion}</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td></tr>`;
+        });
+        
+        // Fila de Totales de la Escuela
+        h += `<tr style="background:#333; color:white; font-weight:bold;"><td>TOTAL ESCUELA</td><td>-</td><td>${Totales.mH}</td><td>${Totales.mV}</td><td>${Totales.mT}</td><td>${Totales.mI}</td><td>${Totales.mE}</td><td>${Totales.pH.toFixed(1)}</td><td>${Totales.pV.toFixed(1)}</td><td>${Totales.pT.toFixed(1)}</td></tr>`;
+
+        h += `</tbody></table><button onclick="window.exportarExcelDireccion()" class="btn-principal" style="background:#1D6F42; margin-top:10px;">📊 DESCARGAR EXCEL DIRECCIÓN</button>`;
+        document.getElementById('adminOutput').innerHTML = h;
+    };
+
+    window.exportarExcelDireccion = () => {
+        const wb = XLSX.utils.table_to_book(document.getElementById("tablaDireccion"), { sheet: "Consolidado Institucional" });
+        XLSX.writeFile(wb, "Consolidado_Direccion_Lucila_Palacios.xlsx");
+    };
+
+    window.exportarMiExcel = () => {
+        const activos = dbLocal.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+        const data = [["EBN LUCILA PALACIOS"], [`DOCENTE: ${dbLocal.docente} | GRADO/SECCIÓN: ${dbLocal.grado}"${dbLocal.seccion}"`], [], ["N°", "NOMBRES Y APELLIDOS DEL ESTUDIANTE"]];
+        activos.forEach((a, i) => data.push([i+1, a.nombre]));
+        
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = [{wch: 5}, {wch: 45}]; // Ajustar tamaño de columnas
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Lista de Estudiantes");
+        XLSX.writeFile(wb, `Lista_Estudiantes_${dbLocal.grado}${dbLocal.seccion}.xlsx`);
+    };
+
+    async function saveCloud() { 
+        await setDoc(doc(dbCloud, "docentes_db", usuarioActual), dbLocal); 
+    }
+
+    // Inicialización de la Aplicación
+    window.onload = () => {
+        // Poner la fecha de hoy por defecto
+        document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
+        // Ocultar pantalla de carga y mostrar login
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('authSection').style.display = 'block';
+    };
+
+</script>
+</body>
+</html>
