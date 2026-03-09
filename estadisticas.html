@@ -358,24 +358,28 @@
             </div>`;
     }
 
-    // Consolidado Individual
+    // Consolidado Individual (Oculto en un <details> con botón PDF)
     window.generarConsolidadoIndividual = (fechaActual, activos) => {
         const mesRef = new Date(fechaActual + "T00:00:00").getMonth();
         
         let h = `
             <div class="card no-print" style="margin-top:15px; border-top:4px solid var(--azul);">
-                <h4 style="margin-top:0; color:var(--azul);">📊 HISTORIAL INDIVIDUAL (MES)</h4>
-                <table class="tabla-911">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;">Estudiante</th>
-                            <th title="Presente">P</th>
-                            <th title="Justificado">J</th>
-                            <th title="Falta">F</th>
-                            <th>%</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+                <details>
+                    <summary style="font-weight:bold; cursor:pointer; color:var(--azul); font-size:14px; text-align:center;">
+                        👀 VER HISTORIAL INDIVIDUAL DEL MES
+                    </summary>
+                    <div style="margin-top:15px;">
+                        <table class="tabla-911">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;">Estudiante</th>
+                                    <th title="Presente">P</th>
+                                    <th title="Justificado">J</th>
+                                    <th title="Falta">F</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
 
         activos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
             let p=0, j=0, f=0, totalDias=0;
@@ -384,7 +388,7 @@
                 const d = new Date(fecha + "T00:00:00");
                 if(d.getMonth() === mesRef && d.getDay() !== 0 && d.getDay() !== 6 && !dbLocal.feriados?.includes(fecha)) {
                     totalDias++;
-                    const st = dbLocal.asistencias[fecha][a.id] || 0; // 0 es Falta por defecto
+                    const st = dbLocal.asistencias[fecha][a.id] || 0; 
                     if(st === 1) p++;
                     else if(st === 2) j++;
                     else f++;
@@ -404,8 +408,71 @@
                 </tr>`;
         });
 
-        h += `</tbody></table></div>`;
+        h += `          </tbody>
+                    </table>
+                    <button onclick="window.exportarIndividualPDF()" class="btn-principal" style="background:var(--rojo); margin-top:15px; display:flex; justify-content:center; align-items:center; gap:10px;">
+                        📄 DESCARGAR PDF INDIVIDUAL
+                    </button>
+                </div>
+            </details>
+        </div>`;
+        
         document.getElementById('consolidadoIndividualArea').innerHTML = h;
+    };
+
+    // NUEVA FUNCIÓN: Exportar el Historial Individual a PDF
+    window.exportarIndividualPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const fSel = document.getElementById('fechaSeleccionada').value;
+        const mesRef = new Date(fSel + "T00:00:00").getMonth();
+        const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const mesActual = nombresMeses[mesRef];
+
+        // Encabezado del PDF
+        doc.setFontSize(14);
+        doc.setTextColor(0, 33, 71); // var(--azul)
+        doc.text("EBN LUCILA PALACIOS", 14, 20);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`Docente: ${dbLocal.docente}`, 14, 28);
+        doc.text(`Grado y Sección: ${dbLocal.grado}"${dbLocal.seccion}" - Turno: ${dbLocal.turno}`, 14, 34);
+        doc.text(`Reporte de Asistencia Individual - Mes: ${mesActual}`, 14, 40);
+
+        const activos = dbLocal.alumnos.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
+        const bodyData = [];
+
+        // Extraer la data
+        activos.forEach(a => {
+            let p=0, j=0, f=0, totalDias=0;
+            Object.keys(dbLocal.asistencias).forEach(fecha => {
+                const d = new Date(fecha + "T00:00:00");
+                if(d.getMonth() === mesRef && d.getDay() !== 0 && d.getDay() !== 6 && !dbLocal.feriados?.includes(fecha)) {
+                    totalDias++;
+                    const st = dbLocal.asistencias[fecha][a.id] || 0;
+                    if(st === 1) p++;
+                    else if(st === 2) j++;
+                    else f++;
+                }
+            });
+            const porc = totalDias > 0 ? ((p / totalDias) * 100).toFixed(0) + '%' : '-';
+            bodyData.push([a.nombre, p, j, f, porc]);
+        });
+
+        // Crear la tabla en el PDF
+        doc.autoTable({
+            startY: 46,
+            head: [['Nombres y Apellidos del Estudiante', 'Presente (P)', 'Justificado (J)', 'Falta (F)', '% Asistencia']],
+            body: bodyData,
+            headStyles: { fillColor: [0, 33, 71] }, // Azul Institucional
+            styles: { fontSize: 10, halign: 'center' },
+            columnStyles: { 0: { halign: 'left' } } // Alinear los nombres a la izquierda
+        });
+
+        // Guardar Archivo
+        doc.save(`Asistencia_Individual_${dbLocal.grado}${dbLocal.seccion}_${mesActual}.pdf`);
     };
 
     // Herramientas de Mantenimiento
