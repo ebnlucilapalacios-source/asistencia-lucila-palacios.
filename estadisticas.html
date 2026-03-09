@@ -88,9 +88,16 @@
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
             let docentesData = [];
+            let totalMañana = 0;
+            let totalTarde = 0;
+
             snap.forEach(dSnap => {
                 const d = dSnap.data();
-                if(dSnap.id !== USUARIO_ADMIN && d.alumnos) docentesData.push(d);
+                if(dSnap.id !== USUARIO_ADMIN) {
+                    docentesData.push(d);
+                    if(d.turno === "Mañana") totalMañana++;
+                    if(d.turno === "Tarde") totalTarde++;
+                }
             });
 
             docentesData.sort((a, b) => {
@@ -100,15 +107,22 @@
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            let h = `<div class="btns-admin-row no-print">
-                        <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
-                        <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
-                     </div>
-                     <table class="tabla-admin" id="tablaAdminConsolidado">
-                     <thead>
-                        <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
-                        <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
-                     </thead><tbody>`;
+            // Resumen de estructura para dirección
+            let h = `
+                <div class="resumen-direccion">
+                    <div class="resumen-item"><strong>TOTAL DOCENTES:</strong> ${docentesData.length}</div>
+                    <div class="resumen-item"><strong>TURNO MAÑANA:</strong> ${totalMañana} Secciones</div>
+                    <div class="resumen-item"><strong>TURNO TARDE:</strong> ${totalTarde} Secciones</div>
+                </div>
+                <div class="btns-admin-row no-print">
+                    <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
+                    <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
+                </div>
+                <table class="tabla-admin" id="tablaAdminConsolidado">
+                <thead>
+                    <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
+                    <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                </thead><tbody>`;
             
             let T = { mH:0, mV:0, mT:0, mI:0, mE:0, pH:0, pV:0, pT:0 };
 
@@ -385,6 +399,11 @@
         header { background: var(--azul); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f39c12; }
         .container { max-width: 480px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        /* Estilos específicos para el resumen de dirección */
+        .resumen-direccion { background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+        .resumen-item { font-size: 13px; color: var(--azul); }
+        
         .btns-admin-row { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
