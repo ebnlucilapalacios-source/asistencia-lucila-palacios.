@@ -11,7 +11,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // Se agregó deleteDoc a la importación para poder cambiar el nombre de usuario
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -82,6 +83,46 @@
         };
 
         // --- DIRECCIÓN (ESTADÍSTICAS Y REPORTES) ---
+        
+        // NUEVA FUNCIÓN: Cambiar Credenciales del Docente
+        window.cambiarCredencialesDocente = async () => {
+            const oldU = document.getElementById('adminOldUser').value.toLowerCase().trim();
+            const newU = document.getElementById('adminNewUser').value.toLowerCase().trim();
+            const newP = document.getElementById('adminNewPass').value;
+
+            if(!oldU) return alert("Debe ingresar el usuario actual del docente.");
+            if(oldU === USUARIO_ADMIN) return alert("No puede modificar al administrador por esta vía.");
+            if(!newU && !newP) return alert("Debe ingresar un nuevo usuario o una nueva contraseña.");
+
+            const oldRef = doc(dbCloud, "docentes_db", oldU);
+            const snap = await getDoc(oldRef);
+
+            if(!snap.exists()) return alert("El usuario actual no existe en la base de datos.");
+
+            const data = snap.data();
+            if(newP) data.pass = newP; // Actualizar contraseña si se ingresó
+
+            if(newU && newU !== oldU) {
+                // Si cambia el usuario, verificamos que el nuevo no exista
+                const newSnap = await getDoc(doc(dbCloud, "docentes_db", newU));
+                if(newSnap.exists()) return alert("El nuevo nombre de usuario ya está en uso.");
+                
+                // Creamos el nuevo documento y borramos el viejo
+                await setDoc(doc(dbCloud, "docentes_db", newU), data);
+                await deleteDoc(oldRef);
+                alert("Usuario y contraseña actualizados correctamente.");
+            } else {
+                // Si solo cambia la contraseña, actualizamos el mismo documento
+                await setDoc(oldRef, data);
+                alert("Contraseña actualizada correctamente.");
+            }
+            
+            // Limpiar campos
+            document.getElementById('adminOldUser').value = "";
+            document.getElementById('adminNewUser').value = "";
+            document.getElementById('adminNewPass').value = "";
+        };
+
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -187,7 +228,6 @@
             const alms = d.alumnos || [];
             const activos = alms.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
 
-            // Calcular cuántos días se ha pasado asistencia en este mes (Días hábiles laborados)
             let diasHabiles = 0;
             let diasList = [];
             Object.keys(d.asistencias || {}).forEach(f => {
@@ -198,6 +238,7 @@
                 }
             });
 
+            // Agregada la columna de JUSTIFICATIVOS
             let h = `<table class="tabla-admin" id="tablaConsolidadoInd">
                  <thead>
                     <tr>
@@ -208,22 +249,29 @@
                         <th>DÍAS HÁBILES</th>
                         <th>ASISTENCIAS</th>
                         <th>INASISTENCIAS</th>
+                        <th>JUSTIFICATIVOS</th>
                         <th>% ASIST.</th>
                     </tr>
                  </thead><tbody>`;
 
             if (activos.length === 0) {
-                h += `<tr><td colspan="8">No hay alumnos registrados en esta sección.</td></tr>`;
+                h += `<tr><td colspan="9">No hay alumnos registrados en esta sección.</td></tr>`;
             } else {
                 activos.forEach((a, index) => {
                     let asis = 0;
+                    let just = 0; // Nueva variable para contar justificados
+                    
                     diasList.forEach(f => {
-                        if (d.asistencias[f] && d.asistencias[f][a.id] === 1) {
-                            asis++;
+                        if (d.asistencias[f]) {
+                            if (d.asistencias[f][a.id] === 1) asis++;
+                            if (d.asistencias[f][a.id] === 2) just++; // Sumar si es estado 2 (Justificado)
                         }
                     });
                     
-                    let inas = diasHabiles - asis; 
+                    // Calculamos las inasistencias reales (días hábiles - asistencias - justificativos)
+                    let inas = diasHabiles - asis - just; 
+                    if (inas < 0) inas = 0;
+                    
                     let porc = diasHabiles > 0 ? ((asis / diasHabiles) * 100).toFixed(1) : 0;
                     let genero = a.genero === 'F' ? 'H' : 'V';
                     let edad = calcularEdad(a.nacimiento);
@@ -236,6 +284,7 @@
                         <td>${diasHabiles}</td>
                         <td style="color:var(--exito); font-weight:bold;">${asis}</td>
                         <td style="color:var(--rojo); font-weight:bold;">${inas}</td>
+                        <td style="color:var(--morado); font-weight:bold;">${just}</td>
                         <td>${porc}%</td>
                     </tr>`;
                 });
@@ -247,7 +296,7 @@
 
         window.exportarConsolidadoIndPDF = () => {
             const { jsPDF } = window.jspdf;
-            const docPDF = new jsPDF('p'); // Formato vertical para lista de estudiantes
+            const docPDF = new jsPDF('p'); 
             docPDF.setFontSize(14);
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesObj = new Date(fSel + "T00:00:00");
@@ -262,7 +311,7 @@
                 html: '#tablaConsolidadoInd', 
                 startY: 28, 
                 theme: 'grid', 
-                styles: {fontSize: 9}, 
+                styles: {fontSize: 8}, // Reducido ligeramente para acomodar la nueva columna
                 headStyles: {fillColor:[0,33,71]} 
             });
             docPDF.save(`Consolidado_Alumnos_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
@@ -471,7 +520,6 @@
                     <button onclick="window.print()" class="btn-print no-print">IMPRIMIR REPORTE</button>
                 </div>`;
                 
-            // Actualizar consolidado individual si está abierto al cambiar de fecha
             if(document.getElementById('panelConsolidadoInd') && document.getElementById('panelConsolidadoInd').style.display === 'block') {
                 window.generarConsolidadoIndividual();
             }
@@ -586,6 +634,16 @@
                 <button onclick="exportarNombresBasico('pdf', true)" style="background:#c0392b; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 NOMBRES PDF</button>
             </div>
             
+            <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px;">
+                <b style="color: var(--azul);">🔐 Cambiar Credenciales de Docente</b>
+                <input type="text" id="adminOldUser" placeholder="Usuario actual del docente" style="margin-top:8px;">
+                <div style="display:flex; gap:4px;">
+                    <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
+                    <input type="password" id="adminNewPass" placeholder="Nueva contraseña (Opcional)">
+                </div>
+                <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">ACTUALIZAR CREDENCIALES</button>
+            </div>
+
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
 
