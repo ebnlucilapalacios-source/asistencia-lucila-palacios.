@@ -88,15 +88,16 @@
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
             let docentesData = [];
-            let totalMañana = 0;
-            let totalTarde = 0;
+            let listMañana = [];
+            let listTarde = [];
 
             snap.forEach(dSnap => {
                 const d = dSnap.data();
                 if(dSnap.id !== USUARIO_ADMIN) {
                     docentesData.push(d);
-                    if(d.turno === "Mañana") totalMañana++;
-                    if(d.turno === "Tarde") totalTarde++;
+                    const docInfo = `<b>${d.grado}${d.seccion}</b>: ${d.docente}`;
+                    if(d.turno === "Mañana") listMañana.push(docInfo);
+                    if(d.turno === "Tarde") listTarde.push(docInfo);
                 }
             });
 
@@ -107,12 +108,21 @@
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            // Resumen de estructura para dirección
+            // Resumen detallado con nombres de docentes
             let h = `
                 <div class="resumen-direccion">
-                    <div class="resumen-item"><strong>TOTAL DOCENTES:</strong> ${docentesData.length}</div>
-                    <div class="resumen-item"><strong>TURNO MAÑANA:</strong> ${totalMañana} Secciones</div>
-                    <div class="resumen-item"><strong>TURNO TARDE:</strong> ${totalTarde} Secciones</div>
+                    <div style="text-align:center; font-size:14px; color:var(--azul);"><strong>TOTAL DOCENTES REGISTRADOS: ${docentesData.length}</strong></div>
+                    <hr style="border-top:1px solid #3498db; margin:8px 0;">
+                    <div style="display:flex; gap:10px; font-size:12px;">
+                        <div style="flex:1;">
+                            <strong style="color:#e67e22;">☀️ TURNO MAÑANA (${listMañana.length})</strong><br>
+                            <div style="margin-top:5px; line-height:1.4;">${listMañana.join('<br>') || 'Ninguno'}</div>
+                        </div>
+                        <div style="flex:1; border-left:1px solid #ccc; padding-left:10px;">
+                            <strong style="color:#2c3e50;">🌙 TURNO TARDE (${listTarde.length})</strong><br>
+                            <div style="margin-top:5px; line-height:1.4;">${listTarde.join('<br>') || 'Ninguno'}</div>
+                        </div>
+                    </div>
                 </div>
                 <div class="btns-admin-row no-print">
                     <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
@@ -158,7 +168,73 @@
             doc.save("Reporte_Direccion_Consolidado.pdf");
         };
 
-        // --- FUNCIÓN PDF: LISTADO POR GÉNERO Y GRADO ---
+        // --- CONSOLIDADO INDIVIDUAL DEL DOCENTE ---
+        window.toggleConsolidadoInd = () => {
+            const panel = document.getElementById('panelConsolidadoInd');
+            if(panel.style.display === 'none') {
+                panel.style.display = 'block';
+                window.generarConsolidadoIndividual();
+            } else {
+                panel.style.display = 'none';
+            }
+        };
+
+        window.generarConsolidadoIndividual = () => {
+            const fSel = document.getElementById('fechaSeleccionada').value;
+            const mesRef = new Date(fSel + "T00:00:00").getMonth();
+            const d = window.db;
+
+            const alms = d.alumnos || [];
+            const ac = alms.filter(a => !a.retirado);
+            const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
+            
+            const mI = alms.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
+            const mE = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
+
+            let sH=0, sV=0, ds=0;
+            Object.keys(d.asistencias || {}).forEach(f => {
+                const fo = new Date(f + "T00:00:00");
+                if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
+                    ds++; ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
+                }
+            });
+            const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
+
+            let h = `<table class="tabla-admin" id="tablaConsolidadoInd">
+                 <thead>
+                    <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
+                    <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                 </thead><tbody>
+                 <tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion} (${d.turno || ''})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>
+                 </tbody></table>`;
+                 
+            document.getElementById('salidaConsolidadoInd').innerHTML = h;
+        };
+
+        window.exportarConsolidadoIndPDF = () => {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF('l'); 
+            docPDF.setFontSize(14);
+            const fSel = document.getElementById('fechaSeleccionada').value;
+            const mesObj = new Date(fSel + "T00:00:00");
+            const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+            const mesStr = meses[mesObj.getMonth()] + " " + mesObj.getFullYear();
+            
+            docPDF.text("EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL", 14, 15);
+            docPDF.setFontSize(10);
+            docPDF.text(`MES: ${mesStr} | DOCENTE: ${window.db.docente || ''} | SECCIÓN: ${window.db.grado || ''}${window.db.seccion || ''}`, 14, 22);
+            
+            docPDF.autoTable({ 
+                html: '#tablaConsolidadoInd', 
+                startY: 28, 
+                theme: 'grid', 
+                styles: {fontSize: 8}, 
+                headStyles: {fillColor:[0,33,71]} 
+            });
+            docPDF.save(`Consolidado_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
+        };
+
+        // --- FUNCIONES DE EXPORTAR GENERALES ---
         window.descargarListaEstudiantesPDF = async () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF();
@@ -195,7 +271,6 @@
             docPDF.save("Lista_Estudiantes_Lucila.pdf");
         };
 
-        // --- FUNCIÓN EXCEL: MATRÍCULA GENERAL ---
         window.exportarExcelGeneral = async () => {
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             const data = [["GRADO", "SECCIÓN", "TURNO", "DOCENTE", "ESTUDIANTE", "GÉNERO", "EDAD"]];
@@ -215,7 +290,6 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
-        // --- FUNCIÓN: EXPORTAR SOLO NOMBRES (DOCENTE Y ADMIN) ---
         window.exportarNombresBasico = async (formato, esAdmin) => {
             let listaDocentes = [];
 
@@ -362,6 +436,11 @@
                     <div class="movimientos-reporte"><b>INGRESOS:</b> ${ingM.map(a=>a.nombre).join(', ') || '0'}<br><b>EGRESOS:</b> ${egrM.map(a=>a.nombre).join(', ') || '0'}</div>
                     <button onclick="window.print()" class="btn-print no-print">IMPRIMIR REPORTE</button>
                 </div>`;
+                
+            // Actualizar consolidado individual si está abierto al cambiar de fecha
+            if(document.getElementById('panelConsolidadoInd') && document.getElementById('panelConsolidadoInd').style.display === 'block') {
+                window.generarConsolidadoIndividual();
+            }
         };
 
         window.marcar = (id) => {
@@ -400,15 +479,14 @@
         .container { max-width: 480px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
-        /* Estilos específicos para el resumen de dirección */
-        .resumen-direccion { background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
-        .resumen-item { font-size: 13px; color: var(--azul); }
+        .resumen-direccion { background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
         
         .btns-admin-row { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .tabla-admin, .tabla-911 { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 5px; }
         .tabla-admin th, .tabla-admin td, .tabla-911 th, .tabla-911 td { border: 1px solid #ddd; padding: 5px; text-align: center; }
+        .tabla-admin th { background: var(--azul); color: white; }
         .fila-total { background: var(--azul); color: white; font-weight: bold; }
         .reporte-card { background: white; padding: 20px; border: 1px solid #ccc; text-align: center; border-radius: 10px; margin-top: 10px; }
         .circulo-eficiencia { width: 80px; height: 80px; border: 6px solid var(--azul); border-radius: 50%; margin: 10px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
@@ -514,6 +592,19 @@
 
         <div class="card"><div id="listaAsistencia"></div></div>
         <div id="reporteDocente"></div>
+
+        <div class="card no-print" style="margin-top: 10px;">
+            <button onclick="toggleConsolidadoInd()" style="width:100%; background:var(--morado); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                📈 CONSOLIDADO INDIVIDUAL MENSUAL
+            </button>
+            <div id="panelConsolidadoInd" style="display:none; margin-top:10px; background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                <p style="font-size:12px; margin-top:0;">Resumen del mes según la fecha seleccionada arriba.</p>
+                <button onclick="exportarConsolidadoIndPDF()" style="background:#e74c3c; color:white; padding:8px; border:none; border-radius:5px; width:100%; font-weight:bold; cursor:pointer; font-size:11px;">
+                    📄 EXPORTAR PDF (CONSOLIDADO)
+                </button>
+                <div id="salidaConsolidadoInd" style="overflow-x:auto; margin-top:10px;"></div>
+            </div>
+        </div>
 
         <div class="card no-print" style="margin-top: 10px;">
             <h4 style="margin:0 0 5px 0">📥 Exportar Lista (Solo Nombres)</h4>
