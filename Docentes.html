@@ -168,7 +168,7 @@
             doc.save("Reporte_Direccion_Consolidado.pdf");
         };
 
-        // --- CONSOLIDADO INDIVIDUAL DEL DOCENTE ---
+        // --- CONSOLIDADO INDIVIDUAL DEL DOCENTE (ALUMNOS) ---
         window.toggleConsolidadoInd = () => {
             const panel = document.getElementById('panelConsolidadoInd');
             if(panel.style.display === 'none') {
@@ -185,53 +185,87 @@
             const d = window.db;
 
             const alms = d.alumnos || [];
-            const ac = alms.filter(a => !a.retirado);
-            const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
-            
-            const mI = alms.filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
-            const mE = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
+            const activos = alms.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
 
-            let sH=0, sV=0, ds=0;
+            // Calcular cuántos días se ha pasado asistencia en este mes (Días hábiles laborados)
+            let diasHabiles = 0;
+            let diasList = [];
             Object.keys(d.asistencias || {}).forEach(f => {
                 const fo = new Date(f + "T00:00:00");
-                if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
-                    ds++; ac.forEach(a => { if(d.asistencias[f][a.id] === 1) a.genero === 'F' ? sH++ : sV++; });
+                if(fo.getMonth() === mesRef && fo.getDay() !== 0 && fo.getDay() !== 6 && !d.feriados?.includes(f)) {
+                    diasHabiles++;
+                    diasList.push(f);
                 }
             });
-            const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
 
             let h = `<table class="tabla-admin" id="tablaConsolidadoInd">
                  <thead>
-                    <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
-                    <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
-                 </thead><tbody>
-                 <tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion} (${d.turno || ''})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>
-                 </tbody></table>`;
-                 
+                    <tr>
+                        <th>N°</th>
+                        <th>NOMBRES Y APELLIDOS</th>
+                        <th>GÉNERO</th>
+                        <th>EDAD</th>
+                        <th>DÍAS HÁBILES</th>
+                        <th>ASISTENCIAS</th>
+                        <th>INASISTENCIAS</th>
+                        <th>% ASIST.</th>
+                    </tr>
+                 </thead><tbody>`;
+
+            if (activos.length === 0) {
+                h += `<tr><td colspan="8">No hay alumnos registrados en esta sección.</td></tr>`;
+            } else {
+                activos.forEach((a, index) => {
+                    let asis = 0;
+                    diasList.forEach(f => {
+                        if (d.asistencias[f] && d.asistencias[f][a.id] === 1) {
+                            asis++;
+                        }
+                    });
+                    
+                    let inas = diasHabiles - asis; 
+                    let porc = diasHabiles > 0 ? ((asis / diasHabiles) * 100).toFixed(1) : 0;
+                    let genero = a.genero === 'F' ? 'H' : 'V';
+                    let edad = calcularEdad(a.nacimiento);
+
+                    h += `<tr>
+                        <td>${index + 1}</td>
+                        <td style="text-align:left">${a.nombre}</td>
+                        <td>${genero}</td>
+                        <td>${edad}</td>
+                        <td>${diasHabiles}</td>
+                        <td style="color:var(--exito); font-weight:bold;">${asis}</td>
+                        <td style="color:var(--rojo); font-weight:bold;">${inas}</td>
+                        <td>${porc}%</td>
+                    </tr>`;
+                });
+            }
+
+            h += `</tbody></table>`;
             document.getElementById('salidaConsolidadoInd').innerHTML = h;
         };
 
         window.exportarConsolidadoIndPDF = () => {
             const { jsPDF } = window.jspdf;
-            const docPDF = new jsPDF('l'); 
+            const docPDF = new jsPDF('p'); // Formato vertical para lista de estudiantes
             docPDF.setFontSize(14);
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesObj = new Date(fSel + "T00:00:00");
             const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
             const mesStr = meses[mesObj.getMonth()] + " " + mesObj.getFullYear();
             
-            docPDF.text("EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL", 14, 15);
+            docPDF.text("EBN LUCILA PALACIOS - CONSOLIDADO DE ASISTENCIA POR ESTUDIANTE", 105, 15, { align: "center" });
             docPDF.setFontSize(10);
-            docPDF.text(`MES: ${mesStr} | DOCENTE: ${window.db.docente || ''} | SECCIÓN: ${window.db.grado || ''}${window.db.seccion || ''}`, 14, 22);
+            docPDF.text(`MES: ${mesStr} | DOCENTE: ${window.db.docente || ''} | GRADO Y SECCIÓN: ${window.db.grado || ''}${window.db.seccion || ''} | TURNO: ${window.db.turno || ''}`, 14, 22);
             
             docPDF.autoTable({ 
                 html: '#tablaConsolidadoInd', 
                 startY: 28, 
                 theme: 'grid', 
-                styles: {fontSize: 8}, 
+                styles: {fontSize: 9}, 
                 headStyles: {fillColor:[0,33,71]} 
             });
-            docPDF.save(`Consolidado_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
+            docPDF.save(`Consolidado_Alumnos_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
         };
 
         // --- FUNCIONES DE EXPORTAR GENERALES ---
@@ -595,12 +629,12 @@
 
         <div class="card no-print" style="margin-top: 10px;">
             <button onclick="toggleConsolidadoInd()" style="width:100%; background:var(--morado); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                📈 CONSOLIDADO INDIVIDUAL MENSUAL
+                📈 CONSOLIDADO DE ALUMNOS (MENSUAL)
             </button>
             <div id="panelConsolidadoInd" style="display:none; margin-top:10px; background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #ccc;">
-                <p style="font-size:12px; margin-top:0;">Resumen del mes según la fecha seleccionada arriba.</p>
+                <p style="font-size:12px; margin-top:0;">Resumen del mes por estudiante según la fecha seleccionada arriba.</p>
                 <button onclick="exportarConsolidadoIndPDF()" style="background:#e74c3c; color:white; padding:8px; border:none; border-radius:5px; width:100%; font-weight:bold; cursor:pointer; font-size:11px;">
-                    📄 EXPORTAR PDF (CONSOLIDADO)
+                    📄 EXPORTAR PDF (CONSOLIDADO ALUMNOS)
                 </button>
                 <div id="salidaConsolidadoInd" style="overflow-x:auto; margin-top:10px;"></div>
             </div>
