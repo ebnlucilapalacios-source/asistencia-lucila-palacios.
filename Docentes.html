@@ -52,21 +52,21 @@
             } else alert("Acceso denegado");
         };
 
-        // --- PANEL DIRECCIÓN (RECUPERADO) ---
+        // --- PANEL DIRECCIÓN ---
         window.cambiarCredencialesDocente = async () => {
             const oldU = document.getElementById('adminOldUser').value.toLowerCase().trim();
             const newU = document.getElementById('adminNewUser').value.toLowerCase().trim();
             const newP = document.getElementById('adminNewPass').value;
-            if(!oldU) return alert("Ingrese usuario actual");
+            if(!oldU) return alert("Ingrese el usuario a modificar");
             const snap = await getDoc(doc(dbCloud, "docentes_db", oldU));
-            if(!snap.exists()) return alert("Usuario no existe");
+            if(!snap.exists()) return alert("El usuario no existe");
             const data = snap.data();
             if(newP) data.pass = newP;
             if(newU && newU !== oldU) {
                 await setDoc(doc(dbCloud, "docentes_db", newU), data);
                 await deleteDoc(doc(dbCloud, "docentes_db", oldU));
             } else { await setDoc(doc(dbCloud, "docentes_db", oldU), data); }
-            alert("Credenciales actualizadas");
+            alert("Usuario/Clave actualizados con éxito");
         };
 
         window.consolidadoMensual = async () => {
@@ -76,7 +76,11 @@
             let list = []; snap.forEach(d => { if(d.id !== USUARIO_ADMIN) list.push(d.data()); });
             list.sort((a,b) => (parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
 
-            let h = `<table class="tabla-admin"><thead><tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM</th><th rowspan="2">%</th></tr><tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>`;
+            let h = `<table class="tabla-admin">
+                <thead>
+                    <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
+                    <tr><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>H</th><th>V</th><th>T</th></tr>
+                </thead><tbody>`;
             list.forEach(d => {
                 const ac = (d.alumnos||[]).filter(a=>!a.retirado);
                 const mH=ac.filter(a=>a.genero==='F').length, mV=ac.filter(a=>a.genero==='M').length, mT=ac.length;
@@ -89,8 +93,8 @@
                         ds++; ac.forEach(a => { if(d.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
                     }
                 });
-                const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0;
-                h += `<tr><td>${d.docente}</td><td>${d.grado}${d.seccion}</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${(pH+pV).toFixed(1)}</td><td>${(mT>0?((pH+pV)/mT*100):0).toFixed(0)}%</td></tr>`;
+                const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV;
+                h += `<tr><td>${d.docente}</td><td>${d.grado}${d.seccion}</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${(mT>0?(pT/mT*100):0).toFixed(1)}%</td></tr>`;
             });
             document.getElementById('adminOutput').innerHTML = h + "</tbody></table>";
         };
@@ -99,37 +103,38 @@
         window.exportarNombresBasico = async (esAdmin) => {
             const { jsPDF } = window.jspdf; const docPDF = new jsPDF();
             let docs = [];
-            if(esAdmin){ const s=await getDocs(collection(dbCloud,"docentes_db")); s.forEach(d=>{if(d.id!==USUARIO_ADMIN) docs.push(d.data())}); }
-            else { docs.push(window.db); }
+            if(esAdmin){ 
+                const s=await getDocs(collection(dbCloud,"docentes_db")); 
+                s.forEach(d=>{if(d.id!==USUARIO_ADMIN) docs.push(d.data())}); 
+            } else { docs.push(window.db); }
             docs.sort((a,b)=>(parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
 
             const membrete = (d) => {
                 d.setFontSize(10); d.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, {align:"center"});
                 d.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, {align:"center"});
-                d.setFont("helvetica","bold"); d.text("E.B.N. LUCILA PALACIOS", 105, 25, {align:"center"});
+                d.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, {align:"center"});
+                d.setFont("helvetica","bold"); d.text("E.B.N. LUCILA PALACIOS", 105, 28, {align:"center"});
             };
 
-            let y = 35; membrete(docPDF); docPDF.setFontSize(14); docPDF.text("LISTA DE ESTUDIANTES", 105, 32, {align:"center"});
+            let y = 40; membrete(docPDF); docPDF.setFontSize(14); docPDF.text("LISTA DE ESTUDIANTES", 105, 36, {align:"center"});
             docs.forEach(d => {
                 const ac = (d.alumnos||[]).filter(a=>!a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                docPDF.autoTable({ head: [[{content:`${d.grado}${d.seccion} - ${d.docente}`, colSpan:2}]], body: ac.map((a,i)=>[i+1, a.nombre]), startY: y+5, theme:'grid' });
+                docPDF.autoTable({ 
+                    head: [[{content:`${d.grado}${d.seccion} - ${d.docente}`, colSpan:2, styles:{fillColor:[0,33,71]}}], ['N°', 'NOMBRE']], 
+                    body: ac.map((a,i)=>[i+1, a.nombre]), startY: y, theme:'grid' 
+                });
                 y = docPDF.lastAutoTable.finalY + 10;
-                if(y>250){ docPDF.addPage(); membrete(docPDF); y=30; }
+                if(y>260){ docPDF.addPage(); membrete(docPDF); y=40; }
             });
             docPDF.save("Lista_Estudiantes.pdf");
         };
 
         // --- MANTENIMIENTO ---
         window.limpiarMovimientos = async () => {
-            if(confirm("¿Limpiar? Se eliminarán egresos y se resetearán ingresos.")){
+            if(confirm("¿Limpiar historial de movimientos? Los alumnos retirados se eliminarán definitivamente.")){
                 window.db.alumnos = window.db.alumnos.filter(a=>!a.retirado).map(a=>({...a, fechaIngreso:null, fechaEgreso:null}));
                 await window.save(); window.render();
-            }
-        };
-
-        window.borrarMatriculaTotal = async () => {
-            if(confirm("¿Borrar todo?") && prompt("Escribe 'BORRAR'")==="BORRAR"){
-                window.db.alumnos=[]; window.db.asistencias={}; await window.save(); window.render();
+                alert("Movimientos limpiados.");
             }
         };
 
@@ -139,10 +144,10 @@
             const fObj = new Date(fSel + "T00:00:00");
             const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
             
-            document.getElementById('docenteTxt').innerText = window.db.docente;
+            document.getElementById('docenteTxt').innerText = window.db.docente || "-";
             document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado}${window.db.seccion}`;
             
-            // Lista Asistencia
+            // Asistencia
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
             activos.forEach(a => {
@@ -156,7 +161,7 @@
                 </div>`;
             });
 
-            // Estadística
+            // Lógica Estadística
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -165,42 +170,44 @@
                     dsH++; activos.forEach(a => { if(window.db.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
                 }
             });
-            const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?(((pH+pV)/activos.length)*100).toFixed(0):0;
+            const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?(((pH+pV)/activos.length)*100).toFixed(1):0;
             const ingM = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === fObj.getMonth());
             const egrM = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === fObj.getMonth());
 
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e} años</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
             document.getElementById('reporteDocente').innerHTML = `
-                <div class="reporte-print-area">
+                <div class="print-container">
                     <div class="membrete-oficial">
                         <p>REPÚBLICA BOLIVARIANA DE VENEZUELA</p>
                         <p>MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN</p>
                         <p>ESTADO BOLÍVAR - MUNICIPIO CARONÍ</p>
                         <h3>E.B.N. LUCILA PALACIOS</h3>
                     </div>
-                    <h3>REPORTE ESTADÍSTICO - ${fObj.toLocaleString('es-ES', {month:'long'}).toUpperCase()}</h3>
+                    <h3>REPORTE MENSUAL: ${fObj.toLocaleString('es-ES', {month:'long'}).toUpperCase()} 2026</h3>
                     <p><b>Docente:</b> ${window.db.docente} | <b>Grado/Secc:</b> ${window.db.grado}${window.db.seccion}</p>
                     
-                    <div class="stats-row">
-                        <div class="ef-box"><b>${ef}%</b><br><small>EFICIENCIA</small></div>
-                        <div class="prom-box">
-                            H: ${pH.toFixed(1)} | V: ${pV.toFixed(1)}<br>
-                            <b>Promedio Real: ${(pH+pV).toFixed(1)}</b>
+                    <div class="stats-box">
+                        <div class="ef-circulo"><b>${ef}%</b><br><small>EFIC.</small></div>
+                        <div class="prom-datos">
+                            Hembras: ${pH.toFixed(1)} | Varones: ${pV.toFixed(1)}<br>
+                            <b>Promedio Real Total: ${(pH+pV).toFixed(1)}</b>
                         </div>
                     </div>
 
+                    <h4>DISTRIBUCIÓN POR EDADES</h4>
                     <table class="tabla-reporte">
                         <thead><tr><th>EDAD</th><th>H</th><th>V</th><th>T</th></tr></thead>
                         <tbody>${tEd}</tbody>
+                        <tr style="background:#eee"><td><b>TOTAL</b></td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr>
                     </table>
 
-                    <div class="mov-box">
+                    <div class="mov-section">
                         <b>INGRESOS:</b> ${ingM.length > 0 ? ingM.map(a=>a.nombre).join(', ') : 'Ninguno'}<br>
                         <b>EGRESOS:</b> ${egrM.length > 0 ? egrM.map(a=>a.nombre).join(', ') : 'Ninguno'}
                     </div>
                 </div>
-                <button onclick="window.print()" class="btn-azul no-print">🖨️ IMPRIMIR REPORTE</button>
+                <button onclick="window.print()" class="btn-azul no-print">🖨️ IMPRIMIR REPORTE ESTADÍSTICO</button>
             `;
         };
 
@@ -219,7 +226,14 @@
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar?")){ const a=window.db.alumnos.find(x=>x.id===id); if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); } }
+            if(confirm("¿Retirar estudiante?")){ const a=window.db.alumnos.find(x=>x.id===id); if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); } }
+        };
+
+        window.actualizarPerfil = async () => {
+            window.db.docente = document.getElementById('eDoc').value.toUpperCase();
+            window.db.grado = document.getElementById('eGra').value;
+            window.db.seccion = document.getElementById('eSec').value.toUpperCase();
+            await window.save(); alert("Perfil actualizado");
         };
 
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
@@ -228,89 +242,94 @@
 
     <style>
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; }
-        body { font-family: sans-serif; background: #f4f4f4; margin: 0; }
-        header { background: var(--azul); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
+        header { background: var(--azul); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #f39c12; }
         .container { max-width: 500px; margin: auto; padding: 10px; }
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
         /* TABLAS DIRECCION */
-        .tabla-admin { width: 100%; border-collapse: collapse; font-size: 9px; }
-        .tabla-admin th, .tabla-admin td { border: 1px solid #ddd; padding: 3px; text-align: center; }
+        .tabla-admin { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .tabla-admin th, .tabla-admin td { border: 1px solid #ddd; padding: 4px; text-align: center; }
         .tabla-admin th { background: var(--azul); color: white; }
 
-        /* REPORTE Y MEMBRETE */
-        .membrete-oficial { display: none; text-align: center; line-height: 1.2; margin-bottom: 10px; }
-        .membrete-oficial p { margin: 0; font-size: 11px; }
-        .reporte-print-area { text-align: center; border: 1px solid #eee; padding: 10px; border-radius: 5px; }
-        .stats-row { display: flex; justify-content: space-around; align-items: center; margin: 10px 0; }
-        .ef-box { border: 3px solid var(--azul); width: 60px; height: 60px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; font-size: 14px; }
+        /* REPORTE PRINT */
+        .membrete-oficial { display: none; text-align: center; line-height: 1.2; margin-bottom: 15px; }
+        .membrete-oficial p { margin: 2px; font-size: 11px; }
+        .stats-box { display: flex; align-items: center; justify-content: space-around; margin: 15px 0; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
+        .ef-circulo { border: 4px solid var(--azul); width: 65px; height: 65px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 14px; }
+        .prom-datos { text-align: left; font-size: 12px; }
         .tabla-reporte { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        .tabla-reporte th, .tabla-reporte td { border: 1px solid #ccc; padding: 5px; }
-        .mov-box { text-align: left; font-size: 10px; background: #fafafa; padding: 10px; margin-top: 10px; border-radius: 4px; border: 1px solid #eee; }
+        .tabla-reporte th, .tabla-reporte td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+        .mov-section { text-align: left; font-size: 11px; background: #f9f9f9; padding: 10px; margin-top: 10px; border-left: 4px solid var(--azul); }
 
-        /* UI ASISTENCIA */
+        /* INTERFAZ */
         .alumno-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
         .bola-gen { width: 12px; height: 12px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
         .btn-check { width: 35px; height: 35px; border: none; color: white; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .btn-azul { background: var(--azul); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-rojo { background: var(--rojo); color: white; border: none; padding: 5px; border-radius: 4px; }
-        input, select { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-azul { background: var(--azul); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
 
         @media print {
             .no-print, header, .card:not(#card-reporte), #lista-card { display: none !important; }
             .membrete-oficial { display: block !important; }
             body { background: white; }
-            .container { max-width: 100%; }
+            .container { max-width: 100%; width: 100%; }
+            .card { box-shadow: none; border: none; }
         }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="text-align:center; padding: 50px 20px;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-    <h2>EBN LUCILA PALACIOS</h2>
-    <div class="card" style="max-width:300px; margin:auto">
+<div id="authSection" style="text-align:center; padding: 60px 20px;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
+    <h2 style="color:var(--azul)">E.B.N. LUCILA PALACIOS</h2>
+    <div class="card" style="max-width:320px; margin:auto">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Clave">
-        <button onclick="login()" class="btn-azul">ENTRAR</button>
+        <button onclick="login()" class="btn-azul">ACCEDER AL SISTEMA</button>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
     <header class="no-print">
-        <b>SISTEMA LUCILA 2026</b>
-        <button onclick="logout()" class="btn-rojo">SALIR</button>
+        <b>SISTEMA INTEGRAL 2026</b>
+        <button onclick="logout()" style="background:var(--rojo); color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">SALIR</button>
     </header>
 
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border: 2px solid var(--morado);">
-            <b>📊 PANEL DIRECCIÓN</b>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:10px;">
-                <button onclick="consolidadoMensual()" class="btn-azul" style="background:var(--morado)">CONSOLIDADO</button>
-                <button onclick="exportarNombresBasico(true)" class="btn-azul" style="background:var(--exito)">LISTA PDF</button>
+            <b style="color:var(--morado)">📊 PANEL DE DIRECCIÓN</b>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+                <button onclick="consolidadoMensual()" class="btn-azul" style="background:var(--morado)">VER CONSOLIDADO</button>
+                <button onclick="exportarNombresBasico(true)" class="btn-azul" style="background:var(--exito)">LISTA GENERAL PDF</button>
             </div>
-            <div id="adminOutput" style="overflow-x:auto; margin-top:10px;"></div>
-            
+            <div id="adminOutput" style="overflow-x:auto; margin-top:12px;"></div>
             <hr>
-            <small>Gestión de Cuentas:</small>
-            <input type="text" id="adminOldUser" placeholder="Usuario Actual">
-            <input type="text" id="adminNewUser" placeholder="Nuevo Usuario (Opcional)">
-            <input type="password" id="adminNewPass" placeholder="Nueva Clave (Opcional)">
-            <button onclick="cambiarCredencialesDocente()" class="btn-azul">ACTUALIZAR DOCENTE</button>
+            <small><b>Modificar Cuenta de Docente:</b></small>
+            <input type="text" id="adminOldUser" placeholder="Usuario actual">
+            <input type="text" id="adminNewUser" placeholder="Nuevo usuario">
+            <input type="password" id="adminNewPass" placeholder="Nueva clave">
+            <button onclick="cambiarCredencialesDocente()" class="btn-azul">GUARDAR CAMBIOS</button>
         </div>
 
         <div class="card no-print">
-            <b>Docente:</b> <span id="docenteTxt"></span> | <b>Sección:</b> <span id="gradoSeccionTxt"></span>
-            <input type="date" id="fechaSeleccionada" value="2026-03-11" onchange="window.render()">
+            <details>
+                <summary>👤 <b>Perfil:</b> <span id="docenteTxt"></span> (<span id="gradoSeccionTxt"></span>)</summary>
+                <input type="text" id="eDoc" placeholder="Nombre completo">
+                <input type="text" id="eGra" placeholder="Grado">
+                <input type="text" id="eSec" placeholder="Sección">
+                <button onclick="actualizarPerfil()" class="btn-azul" style="background:var(--morado)">ACTUALIZAR DATOS</button>
+            </details>
+            <input type="date" id="fechaSeleccionada" value="2026-03-11" onchange="window.render()" style="margin-top:10px; border:2px solid var(--azul)">
         </div>
 
         <div class="card no-print">
-            <b>+ Inscribir Estudiante</b>
-            <input type="text" id="nom" placeholder="Nombres y Apellidos">
+            <b>+ Inscribir Nuevo Estudiante</b>
+            <input type="text" id="nom" placeholder="Apellidos y Nombres">
             <select id="gen"><option value="F">Hembra</option><option value="M">Varón</option></select>
             <input type="date" id="nac">
-            <button onclick="agregarAlumno()" class="btn-azul" style="background:var(--exito)">AGREGAR</button>
+            <button onclick="agregarAlumno()" class="btn-azul" style="background:var(--exito)">REGISTRAR INGRESO</button>
         </div>
 
         <div class="card" id="lista-card">
@@ -322,12 +341,11 @@
         </div>
 
         <div class="card no-print">
-            <b>Mantenimiento</b>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:5px;">
-                <button onclick="limpiarMovimientos()" class="btn-azul" style="background:#f39c12; font-size:10px;">LIMPIAR MOVIMIENTOS</button>
-                <button onclick="borrarMatriculaTotal()" class="btn-azul" style="background:var(--rojo); font-size:10px;">VACIAR SECCIÓN</button>
+            <b>Herramientas de Limpieza</b>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+                <button onclick="limpiarMovimientos()" class="btn-azul" style="background:#f39c12; font-size:11px;">LIMPIAR MOVIMIENTOS</button>
+                <button onclick="exportarNombresBasico(false)" class="btn-azul" style="font-size:11px;">DESCARGAR LISTA PDF</button>
             </div>
-            <button onclick="exportarNombresBasico(false)" class="btn-azul" style="margin-top:5px;">📄 DESCARGAR LISTA ESTUDIANTES PDF</button>
         </div>
     </div>
 </div>
