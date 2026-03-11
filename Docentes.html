@@ -287,12 +287,12 @@
         window.exportarConsolidadoIndPDF = () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF('p'); 
+            docPDF.setFontSize(14);
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesObj = new Date(fSel + "T00:00:00");
             const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
             const mesStr = meses[mesObj.getMonth()] + " " + mesObj.getFullYear();
             
-            docPDF.setFontSize(14);
             docPDF.text("EBN LUCILA PALACIOS - CONSOLIDADO DE ASISTENCIA POR ESTUDIANTE", 105, 15, { align: "center" });
             docPDF.setFontSize(10);
             docPDF.text(`MES: ${mesStr} | DOCENTE: ${window.db.docente || ''} | GRADO Y SECCIÓN: ${window.db.grado || ''}${window.db.seccion || ''} | TURNO: ${window.db.turno || ''}`, 14, 22);
@@ -320,23 +320,17 @@
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            // MEMBRETE COMPLETO AÑADIDO
-            docPDF.setFont("helvetica", "normal");
+            // Se agrega el Membrete
             docPDF.setFontSize(10);
-            docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
-            docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
-            docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
-            
-            docPDF.setFont("helvetica", "bold");
-            docPDF.setFontSize(12);
-            docPDF.text("E.B.N. LUCILA PALACIOS", 105, 28, { align: "center" });
-            
+            docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 15, { align: "center" });
+            docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 20, { align: "center" });
+            docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 25, { align: "center" });
+            docPDF.text("E.B.N. LUCILA PALACIOS", 105, 30, { align: "center" });
+
             docPDF.setFontSize(14);
-            docPDF.text("LISTADO GENERAL DE ESTUDIANTES", 105, 36, { align: "center" });
-            docPDF.setFont("helvetica", "normal");
+            docPDF.text("LISTADO GENERAL DE ESTUDIANTES", 105, 40, { align: "center" });
 
-            let yPos = 42; // Nueva posición Y por el membrete
-
+            let yPos = 50;
             docentesData.forEach(d => {
                 const activos = (d.alumnos || []).filter(a => !a.retirado);
                 if (activos.length === 0) return;
@@ -414,22 +408,18 @@
                 const { jsPDF } = window.jspdf;
                 const docPDF = new jsPDF();
                 
-                // MEMBRETE COMPLETO AÑADIDO
-                docPDF.setFont("helvetica", "normal");
+                // Membrete Completo
                 docPDF.setFontSize(10);
-                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
-                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
-                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
-                
-                docPDF.setFont("helvetica", "bold");
-                docPDF.setFontSize(12);
-                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 28, { align: "center" });
-                
-                docPDF.setFontSize(14);
-                docPDF.text("LISTA DE ESTUDIANTES (NOMBRES)", 105, 36, { align: "center" });
-                docPDF.setFont("helvetica", "normal");
+                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 15, { align: "center" });
+                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 20, { align: "center" });
+                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 25, { align: "center" });
+                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 30, { align: "center" });
 
-                let yPos = 42; // Nueva posición Y por el membrete
+                // Título sin la palabra "(Nombres)"
+                docPDF.setFontSize(14);
+                docPDF.text("LISTA DE ESTUDIANTES", 105, 40, { align: "center" });
+
+                let yPos = 50;
                 let hayDatos = false;
                 
                 listaDocentes.forEach(d => {
@@ -462,9 +452,15 @@
 
         // --- MANTENIMIENTO ---
         window.limpiarMovimientos = async () => {
-            if (confirm("¿Limpiar ingresos y egresos? Los niños volverán a estar activos.")) {
-                window.db.alumnos = window.db.alumnos.map(a => ({ ...a, retirado: false, fechaIngreso: null, fechaEgreso: null }));
-                await window.save(); window.render();
+            if (confirm("¿Limpiar movimientos de ingresos y egresos? Los estudiantes que hayan sido retirados se eliminarán de forma permanente y se borrará el historial de ingresos para comenzar un nuevo mes limpios.")) {
+                // Conservamos solo a los que NO están retirados, y a los activos les borramos el historial de ingreso y egreso
+                window.db.alumnos = window.db.alumnos
+                    .filter(a => !a.retirado)
+                    .map(a => ({ ...a, fechaIngreso: null, fechaEgreso: null }));
+                
+                await window.save(); 
+                window.render();
+                alert("Movimientos limpiados exitosamente. La matrícula ha sido purgada.");
             }
         };
 
@@ -477,6 +473,20 @@
                     alert("Sección vaciada.");
                 }
             }
+        };
+
+        // --- FUNCION PARA IMPRIMIR REPORTE INDIVIDUAL (SIN LISTA DE ALUMNOS) ---
+        window.imprimirReporteDocente = () => {
+            // Ocultamos la tarjeta de lista de asistencia temporalmente antes de mandar a imprimir
+            const cardLista = document.getElementById('cardAsistencia');
+            if(cardLista) cardLista.classList.add('no-print');
+            
+            window.print();
+            
+            // La restauramos un segundo después para que siga visible en pantalla
+            setTimeout(() => {
+                if(cardLista) cardLista.classList.remove('no-print');
+            }, 1000);
         };
 
         // --- NUEVAS FUNCIONES PARA EDITAR ALUMNO ---
@@ -540,6 +550,7 @@
                 activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const st = (window.db.asistencias[fSel] && window.db.asistencias[fSel][a.id]) || 0;
                     let c = "#ccc", t = "F"; if(st===1){c="var(--exito)"; t="P";} if(st===2){c="var(--morado)"; t="J";}
+                    // Se agregó el botón de Lápiz (Editar) justo antes de la X (Eliminar)
                     lista.innerHTML += `<div class="alumno-fila">
                         <div class="bola-gen ${a.genero}"></div>
                         <div style="flex-grow:1">${a.nombre}</div>
@@ -564,8 +575,15 @@
 
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
+            // Se agregó un DIV de membrete que solo es visible en impresión
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
+                    <div class="membrete-print" style="display:none; text-align:center; line-height:1.2; font-size:12px; margin-bottom:15px;">
+                        <strong>REPÚBLICA BOLIVARIANA DE VENEZUELA<br>
+                        MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN<br>
+                        ESTADO BOLÍVAR - MUNICIPIO CARONÍ<br>
+                        E.B.N. LUCILA PALACIOS</strong>
+                    </div>
                     <h2>ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
                     <p>Docente: ${window.db.docente} | Turno: ${window.db.turno}</p>
                     <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
@@ -573,7 +591,7 @@
                     <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody>
                     <tfoot><tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
                     <div class="movimientos-reporte"><b>INGRESOS:</b> ${ingM.map(a=>a.nombre).join(', ') || '0'}<br><b>EGRESOS:</b> ${egrM.map(a=>a.nombre).join(', ') || '0'}</div>
-                    <button onclick="window.print()" class="btn-print no-print">IMPRIMIR REPORTE</button>
+                    <button onclick="imprimirReporteDocente()" class="btn-print no-print">IMPRIMIR REPORTE</button>
                 </div>`;
                 
             if(document.getElementById('panelConsolidadoInd') && document.getElementById('panelConsolidadoInd').style.display === 'block') {
@@ -636,7 +654,13 @@
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        @media print { .no-print { display: none !important; } .container { max-width: 100%; } }
+        
+        /* Modificado: Nuevas clases para impresión del Reporte Individual */
+        @media print { 
+            .no-print { display: none !important; } 
+            .container { max-width: 100%; } 
+            .membrete-print { display: block !important; }
+        }
     </style>
 </head>
 <body>
@@ -738,7 +762,7 @@
             <button onclick="agregarAlumno()" style="background:var(--exito); color:white; padding:12px; border:none; width:100%; border-radius:6px; font-weight:bold; margin-top:5px;">AGREGAR</button>
         </div>
 
-        <div class="card"><div id="listaAsistencia"></div></div>
+        <div class="card" id="cardAsistencia"><div id="listaAsistencia"></div></div>
         <div id="reporteDocente"></div>
 
         <div class="card no-print" style="margin-top: 10px;">
@@ -803,3 +827,4 @@
 
 </body>
 </html>
+
