@@ -287,12 +287,12 @@
         window.exportarConsolidadoIndPDF = () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF('p'); 
-            docPDF.setFontSize(14);
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesObj = new Date(fSel + "T00:00:00");
             const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
             const mesStr = meses[mesObj.getMonth()] + " " + mesObj.getFullYear();
             
+            docPDF.setFontSize(14);
             docPDF.text("EBN LUCILA PALACIOS - CONSOLIDADO DE ASISTENCIA POR ESTUDIANTE", 105, 15, { align: "center" });
             docPDF.setFontSize(10);
             docPDF.text(`MES: ${mesStr} | DOCENTE: ${window.db.docente || ''} | GRADO Y SECCIÓN: ${window.db.grado || ''}${window.db.seccion || ''} | TURNO: ${window.db.turno || ''}`, 14, 22);
@@ -320,10 +320,23 @@
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            docPDF.setFontSize(16);
-            docPDF.text("LISTADO GENERAL DE ESTUDIANTES - LUCILA PALACIOS", 105, 15, { align: "center" });
+            // MEMBRETE COMPLETO AÑADIDO
+            docPDF.setFont("helvetica", "normal");
+            docPDF.setFontSize(10);
+            docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
+            docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
+            docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
+            
+            docPDF.setFont("helvetica", "bold");
+            docPDF.setFontSize(12);
+            docPDF.text("E.B.N. LUCILA PALACIOS", 105, 28, { align: "center" });
+            
+            docPDF.setFontSize(14);
+            docPDF.text("LISTADO GENERAL DE ESTUDIANTES", 105, 36, { align: "center" });
+            docPDF.setFont("helvetica", "normal");
 
-            let yPos = 25;
+            let yPos = 42; // Nueva posición Y por el membrete
+
             docentesData.forEach(d => {
                 const activos = (d.alumnos || []).filter(a => !a.retirado);
                 if (activos.length === 0) return;
@@ -400,10 +413,23 @@
             else if (formato === 'pdf') {
                 const { jsPDF } = window.jspdf;
                 const docPDF = new jsPDF();
+                
+                // MEMBRETE COMPLETO AÑADIDO
+                docPDF.setFont("helvetica", "normal");
+                docPDF.setFontSize(10);
+                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
+                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
+                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
+                
+                docPDF.setFont("helvetica", "bold");
+                docPDF.setFontSize(12);
+                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 28, { align: "center" });
+                
                 docPDF.setFontSize(14);
-                docPDF.text("LISTA DE ESTUDIANTES (NOMBRES) - LUCILA PALACIOS", 105, 15, { align: "center" });
+                docPDF.text("LISTA DE ESTUDIANTES (NOMBRES)", 105, 36, { align: "center" });
+                docPDF.setFont("helvetica", "normal");
 
-                let yPos = 25;
+                let yPos = 42; // Nueva posición Y por el membrete
                 let hayDatos = false;
                 
                 listaDocentes.forEach(d => {
@@ -514,7 +540,6 @@
                 activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const st = (window.db.asistencias[fSel] && window.db.asistencias[fSel][a.id]) || 0;
                     let c = "#ccc", t = "F"; if(st===1){c="var(--exito)"; t="P";} if(st===2){c="var(--morado)"; t="J";}
-                    // Se agregó el botón de Lápiz (Editar) justo antes de la X (Eliminar)
                     lista.innerHTML += `<div class="alumno-fila">
                         <div class="bola-gen ${a.genero}"></div>
                         <div style="flex-grow:1">${a.nombre}</div>
@@ -778,4 +803,3 @@
 
 </body>
 </html>
-
