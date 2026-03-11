@@ -338,4 +338,76 @@
 
 <div id="authSection" style="text-align:center; padding: 40px 20px;">
     <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-    <h2>EBN L
+    <h2>EBN LUCILA PALACIOS</h2>
+    <div id="loginForm" class="card" style="max-width:300px; margin:auto">
+        <input type="text" id="loginUser" placeholder="Usuario">
+        <input type="password" id="loginPass" placeholder="Clave">
+        <button onclick="login()" style="background:var(--azul); color:white; padding:12px; width:100%; border:none; border-radius:6px; font-weight:bold;">ENTRAR</button>
+        <p onclick="mostrarRegistro(true)" style="font-size:12px; color:var(--morado); cursor:pointer;">Registrar Nueva Cuenta</p>
+    </div>
+    <div id="registerForm" class="card" style="max-width:300px; margin:auto; display:none;">
+        <input type="text" id="regNombre" placeholder="Nombre Docente">
+        <input type="text" id="regGrado" placeholder="Grado">
+        <input type="text" id="regSeccion" placeholder="Sección">
+        <select id="regTurno"><option>Mañana</option><option>Tarde</option></select>
+        <input type="text" id="regUser" placeholder="Usuario">
+        <input type="password" id="regPass" placeholder="Clave">
+        <input type="password" id="regClaveInst" placeholder="Clave Institucional">
+        <button onclick="registrarCuenta()" style="background:var(--exito); color:white; padding:12px; width:100%; border:none; border-radius:6px;">REGISTRAR</button>
+        <p onclick="mostrarRegistro(false)" style="font-size:12px; cursor:pointer;">Volver</p>
+    </div>
+</div>
+
+<div id="appContent" style="display:none;">
+    <header><b>SISTEMA LUCILA 2026</b> <button onclick="logout()" style="background:var(--rojo); color:white; border:none; padding:5px; border-radius:4px;">SALIR</button></header>
+    <div class="container">
+        
+        <div id="adminPanel" class="card" style="display:none; border:2px solid var(--morado);">
+            <b>📊 PANEL DIRECCIÓN</b>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:5px;">
+                <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:6px;">CONSOLIDADO</button>
+                <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:6px;">LISTA PDF</button>
+            </div>
+            <div id="adminOutput" style="overflow-x:auto; margin-top:10px;"></div>
+        </div>
+
+        <div class="card">
+            <b>Docente:</b> <span id="docenteTxt"></span> | <b>Sección:</b> <span id="gradoSeccionTxt"></span>
+            <input type="date" id="fechaSeleccionada" value="2026-03-11" onchange="window.render()">
+        </div>
+
+        <div class="card">
+            <h4>+ Inscribir Alumno</h4>
+            <input type="text" id="nom" placeholder="Nombres y Apellidos">
+            <select id="gen"><option value="F">Hembra</option><option value="M">Varón</option></select>
+            <input type="date" id="nac">
+            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; padding:10px; border:none; width:100%; border-radius:6px; font-weight:bold;">AGREGAR</button>
+        </div>
+
+        <div class="card"><div id="listaAsistencia"></div></div>
+
+        <div class="card">
+            <h4 style="margin:0">Mantenimiento</h4>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
+                <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
+            </div>
+            <button onclick="exportarNombresBasico('pdf', false)" style="width:100%; background:var(--azul); color:white; border:none; padding:8px; border-radius:5px; margin-top:5px; font-size:11px;">📄 DESCARGAR LISTA NOMBRES PDF</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalEditarAlumno" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+    <div class="card" style="width:90%; max-width:400px;">
+        <h4>✏️ Editar Estudiante</h4>
+        <input type="hidden" id="editAlumId">
+        <input type="text" id="editAlumNom">
+        <select id="editAlumGen"><option value="F">Hembra</option><option value="M">Varón</option></select>
+        <input type="date" id="editAlumNac">
+        <button onclick="guardarEdicionAlumno()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; width:100%;">GUARDAR</button>
+        <button onclick="document.getElementById('modalEditarAlumno').style.display='none'" style="background:none; color:var(--rojo); width:100%; margin-top:5px; border:none;">Cancelar</button>
+    </div>
+</div>
+
+</body>
+</html>
