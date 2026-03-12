@@ -58,19 +58,34 @@
             alert("Cuenta creada."); window.mostrarRegistro(false);
         };
 
-        window.login = async () => {
-            const u = document.getElementById('loginUser').value.toLowerCase().trim();
-            const p = document.getElementById('loginPass').value;
-            const snap = await getDoc(doc(dbCloud, "docentes_db", u));
-            if (snap.exists() && snap.data().pass === p) {
-                window.usuarioActual = u;
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
-                if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
-                onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { window.db = s.data(); window.render(); });
-            } else alert("Acceso denegado");
-        };
+        window.login = async () => 
+   const u = document.getElementById('loginUser').value.toLowerCase().trim();
+    const p = document.getElementById('loginPass').value;
+    const snap = await getDoc(doc(dbCloud, "docentes_db", u));
+    
+    if (snap.exists() && snap.data().pass === p) {
+        window.usuarioActual = u;
+        
+        // --- NUEVA LÓGICA: ESTABLECER FECHA ACTUAL AL ENTRAR ---
+        const hoy = new Date();
+        const año = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
+        // ------------------------------------------------------
 
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
+        onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
+            window.db = s.data(); 
+            window.render(); 
+        });
+    } else {
+        alert("Acceso denegado");
+    }
+};
+        
         // --- ACTUALIZAR PERFIL ---
         window.actualizarPerfil = async () => {
             window.db.docente = document.getElementById('editDocente').value.toUpperCase();
@@ -370,43 +385,84 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
-        window.exportarNombresBasico = async (formato, esAdmin) => {
-            let listaDocentes = [];
+               window.exportarNombresBasico = async (formato, esAdmin) => {
+    let listaDocentes = [];
 
-            if (esAdmin) {
-                const snap = await getDocs(collection(dbCloud, "docentes_db"));
-                snap.forEach(s => {
-                    if (s.id !== USUARIO_ADMIN) listaDocentes.push(s.data());
-                });
-                listaDocentes.sort((a,b) => (parseInt(a.grado) - parseInt(b.grado)) || (a.seccion || "").localeCompare(b.seccion || ""));
-            } else {
-                if (!window.db || !window.db.alumnos || window.db.alumnos.length === 0) return alert("No hay datos de alumnos cargados.");
-                listaDocentes.push(window.db);
-            }
+    if (esAdmin) {
+        const snap = await getDocs(collection(dbCloud, "docentes_db"));
+        snap.forEach(s => {
+            if (s.id !== USUARIO_ADMIN) listaDocentes.push(s.data());
+        });
+        listaDocentes.sort((a,b) => (parseInt(a.grado) - parseInt(b.grado)) || (a.seccion || "").localeCompare(b.seccion || ""));
+    } else {
+        if (!window.db || !window.db.alumnos || window.db.alumnos.length === 0) return alert("No hay datos de alumnos cargados.");
+        listaDocentes.push(window.db);
+    }
 
-            if (formato === 'excel') {
-                const dataExcel = [];
-                listaDocentes.forEach(d => {
-                    const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                    if (activos.length === 0) return;
-                    
-                    dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
-                    dataExcel.push(["N°", "NOMBRE DEL ESTUDIANTE"]);
-                    
-                    activos.forEach((a, i) => dataExcel.push([i + 1, a.nombre]));
-                    dataExcel.push([]); 
-                });
+    if (formato === 'excel') {
+        // ... (Tu código de Excel se mantiene igual para no alterar funciones)
+        const dataExcel = [];
+        listaDocentes.forEach(d => {
+            const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            if (activos.length === 0) return;
+            dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
+            dataExcel.push(["N°", "NOMBRE DEL ESTUDIANTE"]);
+            activos.forEach((a, i) => dataExcel.push([i + 1, a.nombre]));
+            dataExcel.push([]); 
+        });
+        if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataExcel);
+        XLSX.utils.book_append_sheet(wb, ws, "Nombres");
+        XLSX.writeFile(wb, esAdmin ? "Lista_Nombres_General.xlsx" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.xlsx`);
+    } 
+    else if (formato === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const docPDF = new jsPDF();
+        
+        // --- MEMBRETE COMPLETO ---
+        docPDF.setFontSize(10);
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
+        docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
+        docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
+        docPDF.text("E.B.N. LUCILA PALACIOS", 105, 27, { align: "center" });
 
-                if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
+        // --- TÍTULO CORREGIDO (Sin la palabra nombres) ---
+        docPDF.setFontSize(14);
+        docPDF.text("LISTA DE ESTUDIANTES", 105, 38, { align: "center" });
 
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.aoa_to_sheet(dataExcel);
-                XLSX.utils.book_append_sheet(wb, ws, "Nombres");
-                XLSX.writeFile(wb, esAdmin ? "Lista_Nombres_General.xlsx" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.xlsx`);
-            } 
-            else if (formato === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const docPDF = new jsPDF();
+        let yPos = 45;
+        let hayDatos = false;
+        
+        listaDocentes.forEach(d => {
+            const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            if (activos.length === 0) return;
+            hayDatos = true;
+
+            const filas = activos.map((a, i) => [i + 1, a.nombre]);
+
+            docPDF.autoTable({
+                head: [
+                    [{content: `GRADO: ${d.grado || ''} ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`, colSpan: 2, styles: {fillColor:[0,33,71], halign: 'center'}}], 
+                    ['N°', 'NOMBRE DEL ESTUDIANTE']
+                ],
+                body: filas, 
+                startY: yPos, 
+                theme: 'grid', 
+                styles: {fontSize: 10}, 
+                headStyles: {fillColor:[52,73,94]}, 
+                margin: {bottom: 15}
+            });
+            yPos = docPDF.lastAutoTable.finalY + 10;
+            if(yPos > 270) { docPDF.addPage(); yPos = 20; } 
+        });
+        
+        if(!hayDatos) return alert("No hay alumnos activos para exportar.");
+        docPDF.save(esAdmin ? "Lista_Nombres_General.pdf" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.pdf`);
+    }
+};
+        
                 
                 // Membrete Completo
                 docPDF.setFontSize(10);
