@@ -191,7 +191,6 @@
                 const mE = alms.filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
 
                 let sH=0, sV=0, ds=0;
-                // Exclusión de feriados comprobada:
                 Object.keys(d.asistencias || {}).forEach(f => {
                     const fo = new Date(f + "T00:00:00");
                     if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
@@ -215,7 +214,7 @@
             doc.save("Reporte_Direccion_Consolidado.pdf");
         };
 
-        // --- CONSOLIDADO INDIVIDUAL DEL DOCENTE (ALUMNOS) ---
+        // --- CONSOLIDADO INDIVIDUAL DEL DOCENTE ---
         window.toggleConsolidadoInd = () => {
             const panel = document.getElementById('panelConsolidadoInd');
             if(panel.style.display === 'none') {
@@ -236,7 +235,6 @@
 
             let diasHabiles = 0;
             let diasList = [];
-            // Validación de Días Hábiles: Resta automáticamente los feriados
             Object.keys(d.asistencias || {}).forEach(f => {
                 const fo = new Date(f + "T00:00:00");
                 if(fo.getMonth() === mesRef && fo.getDay() !== 0 && fo.getDay() !== 6 && !d.feriados?.includes(f)) {
@@ -267,17 +265,14 @@
                 activos.forEach((a, index) => {
                     let asis = 0;
                     let just = 0; 
-                    
                     diasList.forEach(f => {
                         if (d.asistencias[f]) {
                             if (d.asistencias[f][a.id] === 1) asis++;
                             if (d.asistencias[f][a.id] === 2) just++; 
                         }
                     });
-                    
                     let inas = diasHabiles - asis - just; 
                     if (inas < 0) inas = 0;
-                    
                     let porc = diasHabiles > 0 ? ((asis / diasHabiles) * 100).toFixed(1) : 0;
                     let genero = a.genero === 'F' ? 'H' : 'V';
                     let edad = calcularEdad(a.nacimiento);
@@ -304,7 +299,7 @@
 
         window.exportarConsolidadoIndPDF = () => {
             const { jsPDF } = window.jspdf;
-            const docPDF = new jsPDF('l'); // Modificado a Landscape por la nueva columna
+            const docPDF = new jsPDF('l'); 
             docPDF.setFontSize(14);
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesObj = new Date(fSel + "T00:00:00");
@@ -325,7 +320,7 @@
             docPDF.save(`Consolidado_Alumnos_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
         };
 
-        // --- FUNCIONES DE EXPORTAR GENERALES ---
+        // --- FUNCIONES DE EXPORTAR LISTAS ---
         window.descargarListaEstudiantesPDF = async () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF();
@@ -387,6 +382,7 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
+        // --- ACTUALIZACIÓN SOLICITADA: LISTA DE ESTUDIANTES (SIN NOMBRES EN TÍTULO Y CON COLUMNA CÉDULA) ---
         window.exportarNombresBasico = async (formato, esAdmin) => {
             let listaDocentes = [];
 
@@ -408,14 +404,14 @@
                     if (activos.length === 0) return;
                     dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
                     dataExcel.push(["N°", "CÉDULA", "NOMBRE DEL ESTUDIANTE"]);
-                    activos.forEach((a, i) => dataExcel.push([i + 1, a.cedula || '', a.nombre]));
+                    activos.forEach((a, i) => dataExcel.push([i + 1, a.cedula || 'S/C', a.nombre]));
                     dataExcel.push([]); 
                 });
                 if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(dataExcel);
                 XLSX.utils.book_append_sheet(wb, ws, "Nombres");
-                XLSX.writeFile(wb, esAdmin ? "Lista_Nombres_General.xlsx" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.xlsx`);
+                XLSX.writeFile(wb, esAdmin ? "Lista_Estudiantes_General.xlsx" : `Lista_Estudiantes_${window.db.grado}${window.db.seccion}.xlsx`);
             } 
             else if (formato === 'pdf') {
                 const { jsPDF } = window.jspdf;
@@ -458,13 +454,11 @@
                 });
                 
                 if(!hayDatos) return alert("No hay alumnos activos para exportar.");
-                docPDF.save(esAdmin ? "Lista_Nombres_General.pdf" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.pdf`);
+                docPDF.save(esAdmin ? "Lista_Estudiantes_General.pdf" : `Lista_Estudiantes_${window.db.grado}${window.db.seccion}.pdf`);
             }
         };
 
         // --- MANTENIMIENTO ---
-        
-        // Función Backup JSON 
         window.exportarBackupJSON = () => {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.db));
             const downloadAnchorElem = document.createElement('a');
@@ -477,19 +471,15 @@
         };
 
         window.limpiarMovimientos = async () => {
-            if (confirm("¿Limpiar movimientos de ingresos y egresos? Los estudiantes que hayan sido retirados se eliminarán de forma permanente y se borrará el historial de ingresos para comenzar un nuevo mes limpios.")) {
-                window.db.alumnos = window.db.alumnos
-                    .filter(a => !a.retirado)
-                    .map(a => ({ ...a, fechaIngreso: null, fechaEgreso: null }));
-                
-                await window.save(); 
-                window.render();
-                alert("Movimientos limpiados exitosamente. La matrícula ha sido purgada.");
+            if (confirm("¿Limpiar movimientos?")) {
+                window.db.alumnos = window.db.alumnos.filter(a => !a.retirado).map(a => ({ ...a, fechaIngreso: null, fechaEgreso: null }));
+                await window.save(); window.render();
+                alert("Movimientos limpiados.");
             }
         };
 
         window.borrarMatriculaTotal = async () => {
-            if (confirm("¡PELIGRO! Vas a borrar TODOS los niños. Asegúrate de haber descargado el Backup JSON antes.")) {
+            if (confirm("¡PELIGRO! Vas a borrar TODOS los niños.")) {
                 const pass = prompt("Escribe 'BORRAR' para confirmar:");
                 if (pass === "BORRAR") {
                     window.db.alumnos = []; window.db.asistencias = {};
@@ -502,19 +492,15 @@
         window.imprimirReporteDocente = () => {
             const cardLista = document.getElementById('cardAsistencia');
             if(cardLista) cardLista.classList.add('no-print');
-            
             window.print();
-            
-            setTimeout(() => {
-                if(cardLista) cardLista.classList.remove('no-print');
-            }, 1000);
+            setTimeout(() => { if(cardLista) cardLista.classList.remove('no-print'); }, 1000);
         };
 
         window.abrirEdicionAlumno = (id) => {
             const a = window.db.alumnos.find(x => x.id === id);
             if (!a) return;
             document.getElementById('editAlumId').value = a.id;
-            document.getElementById('editAlumCed').value = a.cedula || ""; // Cargar cédula
+            document.getElementById('editAlumCed').value = a.cedula || ""; 
             document.getElementById('editAlumNom').value = a.nombre;
             document.getElementById('editAlumGen').value = a.genero;
             document.getElementById('editAlumNac').value = a.nacimiento;
@@ -532,13 +518,6 @@
             const g = document.getElementById('editAlumGen').value;
             const nac = document.getElementById('editAlumNac').value;
             
-            if(!n || !nac) return alert("El nombre y la fecha de nacimiento son obligatorios.");
-
-            // Validar si la cédula fue editada y ya la tiene otro alumno
-            if (ced && window.db.alumnos.find(x => x.cedula === ced && x.id !== id && !x.retirado)) {
-                return alert("Atención: Ya existe otro estudiante activo con esta misma Cédula.");
-            }
-
             const idx = window.db.alumnos.findIndex(x => x.id === id);
             if (idx > -1) {
                 window.db.alumnos[idx].cedula = ced;
@@ -551,7 +530,6 @@
             }
         };
 
-        // --- RENDER ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const fObj = new Date(fSel + "T00:00:00");
@@ -627,17 +605,9 @@
 
         window.marcar = (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
-            
-            // Validación de Fecha Futura
-            const hoy = new Date();
-            hoy.setHours(0,0,0,0);
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
             const fechaSel = new Date(f + "T00:00:00");
-            
-            if (fechaSel > hoy) {
-                alert("⚠️ Acción bloqueada: No se puede marcar asistencia en una fecha futura.");
-                return;
-            }
-
+            if (fechaSel > hoy) return alert("⚠️ No se puede marcar asistencia en fecha futura.");
             if(!window.db.asistencias[f]) window.db.asistencias[f]={};
             window.db.asistencias[f][id] = (window.db.asistencias[f][id]+1)%3 || 1;
             window.save();
@@ -647,28 +617,10 @@
             const c = document.getElementById('ced').value.trim().toUpperCase();
             const n = document.getElementById('nom').value.toUpperCase();
             const na = document.getElementById('nac').value;
-            
             if(!n || !na) return;
-            
-            // Validación de Duplicado de Cédula
-            if (c && window.db.alumnos.find(a => a.cedula === c && !a.retirado)) {
-                return alert("⚠️ Error: Ya existe un estudiante activo registrado con esta Cédula / C.E.");
-            }
-
-            window.db.alumnos.push({ 
-                id: Date.now(), 
-                cedula: c, 
-                nombre: n, 
-                genero: document.getElementById('gen').value, 
-                nacimiento: na, 
-                retirado: false, 
-                fechaIngreso: document.getElementById('fechaSeleccionada').value 
-            });
-            await window.save(); 
-            
-            // Limpiar campos
-            document.getElementById('ced').value="";
-            document.getElementById('nom').value="";
+            if (c && window.db.alumnos.find(a => a.cedula === c && !a.retirado)) return alert("⚠️ Cédula duplicada.");
+            window.db.alumnos.push({ id: Date.now(), cedula: c, nombre: n, genero: document.getElementById('gen').value, nacimiento: na, retirado: false, fechaIngreso: document.getElementById('fechaSeleccionada').value });
+            await window.save(); document.getElementById('ced').value=""; document.getElementById('nom').value="";
         };
 
         window.retirarAlumno = async (id) => {
@@ -692,9 +644,7 @@
         header { background: var(--azul); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f39c12; }
         .container { max-width: 480px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        
         .resumen-direccion { background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-        
         .btns-admin-row { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -712,12 +662,7 @@
         .btn-x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; }
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        
-        @media print { 
-            .no-print { display: none !important; } 
-            .container { max-width: 100%; } 
-            .membrete-print { display: block !important; }
-        }
+        @media print { .no-print { display: none !important; } .container { max-width: 100%; } .membrete-print { display: block !important; } }
     </style>
 </head>
 <body>
@@ -738,10 +683,7 @@
             <input type="text" id="regGrado" placeholder="Grado">
             <input type="text" id="regSeccion" placeholder="Sec">
         </div>
-        <select id="regTurno">
-            <option value="Mañana">Mañana</option>
-            <option value="Tarde">Tarde</option>
-        </select>
+        <select id="regTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Contraseña">
         <input type="password" id="regClaveInst" placeholder="Clave Institucional">
@@ -767,20 +709,19 @@
             <button onclick="exportarExcelGeneral()" style="background:#1D6F42; color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:11px;">📗 MATRÍCULA EXCEL GENERAL</button>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
-                <button onclick="exportarNombresBasico('excel', true)" style="background:#27ae60; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📥 NOMBRES EXCEL</button>
-                <button onclick="exportarNombresBasico('pdf', true)" style="background:#c0392b; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 NOMBRES PDF</button>
+                <button onclick="exportarNombresBasico('excel', true)" style="background:#27ae60; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📥 ESTUDIANTES EXCEL</button>
+                <button onclick="exportarNombresBasico('pdf', true)" style="background:#c0392b; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 ESTUDIANTES PDF</button>
             </div>
             
             <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px;">
                 <b style="color: var(--azul);">🔐 Cambiar Credenciales de Docente</b>
                 <input type="text" id="adminOldUser" placeholder="Usuario actual del docente" style="margin-top:8px;">
                 <div style="display:flex; gap:4px;">
-                    <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
-                    <input type="password" id="adminNewPass" placeholder="Nueva contraseña (Opcional)">
+                    <input type="text" id="adminNewUser" placeholder="Nuevo usuario">
+                    <input type="password" id="adminNewPass" placeholder="Nueva clave">
                 </div>
                 <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">ACTUALIZAR CREDENCIALES</button>
             </div>
-
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
 
@@ -789,14 +730,8 @@
                 <summary style="cursor:pointer; color:var(--azul); font-weight:bold;">⚙️ Editar Perfil del Docente</summary>
                 <div style="padding-top:10px;">
                     <input type="text" id="editDocente" placeholder="Nombre completo">
-                    <div style="display:flex; gap:4px;">
-                        <input type="text" id="editGrado" placeholder="Grado">
-                        <input type="text" id="editSeccion" placeholder="Sección">
-                    </div>
-                    <select id="editTurno">
-                        <option value="Mañana">Mañana</option>
-                        <option value="Tarde">Tarde</option>
-                    </select>
+                    <div style="display:flex; gap:4px;"><input type="text" id="editGrado" placeholder="Grado"><input type="text" id="editSeccion" placeholder="Sec"></div>
+                    <select id="editTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
                     <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:8px; width:100%; border-radius:5px; margin-top:5px; font-weight:bold;">GUARDAR CAMBIOS</button>
                 </div>
             </details>
@@ -805,7 +740,7 @@
         <div class="card no-print">
             <b>Docente:</b> <span id="docenteTxt"></span><br>
             <b>Sección:</b> <span id="gradoSeccionTxt"></span>
-            <input type="date" id="fechaSeleccionada" value="2026-03-08" onchange="window.render()" style="margin-top:10px;">
+            <input type="date" id="fechaSeleccionada" onchange="window.render()" style="margin-top:10px;">
             <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:6px; font-size:10px; margin-top:5px; font-weight:bold;"></button>
         </div>
 
@@ -824,20 +759,15 @@
         <div id="reporteDocente"></div>
 
         <div class="card no-print" style="margin-top: 10px;">
-            <button onclick="toggleConsolidadoInd()" style="width:100%; background:var(--morado); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                📈 CONSOLIDADO DE ALUMNOS (MENSUAL)
-            </button>
+            <button onclick="toggleConsolidadoInd()" style="width:100%; background:var(--morado); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">📈 CONSOLIDADO DE ALUMNOS (MENSUAL)</button>
             <div id="panelConsolidadoInd" style="display:none; margin-top:10px; background:#f8f9fa; padding:10px; border-radius:8px; border:1px solid #ccc;">
-                <p style="font-size:12px; margin-top:0;">Resumen del mes por estudiante según la fecha seleccionada arriba.</p>
-                <button onclick="exportarConsolidadoIndPDF()" style="background:#e74c3c; color:white; padding:8px; border:none; border-radius:5px; width:100%; font-weight:bold; cursor:pointer; font-size:11px;">
-                    📄 EXPORTAR PDF (CONSOLIDADO ALUMNOS)
-                </button>
+                <button onclick="exportarConsolidadoIndPDF()" style="background:#e74c3c; color:white; padding:8px; border:none; border-radius:5px; width:100%; font-weight:bold; cursor:pointer; font-size:11px;">📄 EXPORTAR PDF (CONSOLIDADO ALUMNOS)</button>
                 <div id="salidaConsolidadoInd" style="overflow-x:auto; margin-top:10px;"></div>
             </div>
         </div>
 
         <div class="card no-print" style="margin-top: 10px;">
-            <h4 style="margin:0 0 5px 0">📥 Exportar Lista (Solo Nombres)</h4>
+            <h4 style="margin:0 0 5px 0">📥 Exportar Lista de Estudiantes</h4>
             <div style="display:flex; gap:5px;">
                 <button onclick="exportarNombresBasico('excel', false)" style="flex:1; background:#1D6F42; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO EXCEL</button>
                 <button onclick="exportarNombresBasico('pdf', false)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:11px; font-weight:bold; cursor:pointer;">FORMATO PDF</button>
@@ -846,9 +776,7 @@
 
         <div class="card no-print">
             <h4 style="margin:0">Mantenimiento de Matrícula</h4>
-            <button onclick="exportarBackupJSON()" style="width:100%; background:#34495e; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold; margin-top:10px; margin-bottom: 5px; cursor:pointer;">
-                💾 EXPORTAR BACKUP JSON (RESPALDO)
-            </button>
+            <button onclick="exportarBackupJSON()" style="width:100%; background:#34495e; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold; margin-top:10px; margin-bottom: 5px; cursor:pointer;">💾 EXPORTAR BACKUP JSON (RESPALDO)</button>
             <div style="display:flex; gap:5px; margin-top:5px;">
                 <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">LIMPIAR MOVIMIENTOS</button>
                 <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">VACIAR SECCIÓN</button>
@@ -862,30 +790,15 @@
     <div class="card" style="width:90%; max-width:400px;">
         <h4 style="margin-top:0; color:var(--azul);">✏️ Editar Datos del Estudiante</h4>
         <input type="hidden" id="editAlumId">
-        
-        <label style="font-size:12px; font-weight:bold;">Cédula / C.E (Opcional):</label>
-        <input type="text" id="editAlumCed" placeholder="Cédula">
-
-        <label style="font-size:12px; font-weight:bold;">Nombres:</label>
-        <input type="text" id="editAlumNom" placeholder="Nombres">
-        
+        <label style="font-size:12px; font-weight:bold;">Cédula / C.E:</label><input type="text" id="editAlumCed">
+        <label style="font-size:12px; font-weight:bold;">Nombres:</label><input type="text" id="editAlumNom">
         <div style="display:flex; gap:4px; margin-top:5px;">
-            <div style="width:40%">
-                <label style="font-size:12px; font-weight:bold;">Género:</label>
-                <select id="editAlumGen">
-                    <option value="F">Hembra</option>
-                    <option value="M">Varón</option>
-                </select>
-            </div>
-            <div style="width:60%">
-                <label style="font-size:12px; font-weight:bold;">Nacimiento:</label>
-                <input type="date" id="editAlumNac">
-            </div>
+            <div style="width:40%"><label style="font-size:12px; font-weight:bold;">Género:</label><select id="editAlumGen"><option value="F">Hembra</option><option value="M">Varón</option></select></div>
+            <div style="width:60%"><label style="font-size:12px; font-weight:bold;">Nacimiento:</label><input type="date" id="editAlumNac"></div>
         </div>
-        
         <div style="display:flex; gap:5px; margin-top:15px;">
-            <button onclick="guardarEdicionAlumno()" style="flex:1; background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">GUARDAR</button>
-            <button onclick="cerrarEdicionAlumno()" style="flex:1; background:var(--rojo); color:white; padding:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">CANCELAR</button>
+            <button onclick="guardarEdicionAlumno()" style="flex:1; background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; font-weight:bold;">GUARDAR</button>
+            <button onclick="cerrarEdicionAlumno()" style="flex:1; background:var(--rojo); color:white; padding:10px; border:none; border-radius:6px; font-weight:bold;">CANCELAR</button>
         </div>
     </div>
 </div>
