@@ -58,33 +58,34 @@
             alert("Cuenta creada."); window.mostrarRegistro(false);
         };
 
-        window.login = async () => 
-   const u = document.getElementById('loginUser').value.toLowerCase().trim();
-    const p = document.getElementById('loginPass').value;
-    const snap = await getDoc(doc(dbCloud, "docentes_db", u));
-    
-    if (snap.exists() && snap.data().pass === p) {
-        window.usuarioActual = u;
-        
-        // --- NUEVA LÓGICA: ESTABLECER FECHA ACTUAL AL ENTRAR ---
-        const hoy = new Date();
-        const año = hoy.getFullYear();
-        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-        const dia = String(hoy.getDate()).padStart(2, '0');
-        document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
-        // ------------------------------------------------------
+        // CORRECCIÓN: Se agregó la llave "{" que faltaba al inicio de la función
+        window.login = async () => {
+            const u = document.getElementById('loginUser').value.toLowerCase().trim();
+            const p = document.getElementById('loginPass').value;
+            const snap = await getDoc(doc(dbCloud, "docentes_db", u));
+            
+            if (snap.exists() && snap.data().pass === p) {
+                window.usuarioActual = u;
+                
+                // --- NUEVA LÓGICA: ESTABLECER FECHA ACTUAL AL ENTRAR ---
+                const hoy = new Date();
+                const año = hoy.getFullYear();
+                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                const dia = String(hoy.getDate()).padStart(2, '0');
+                document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
+                // ------------------------------------------------------
 
-        document.getElementById('authSection').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-        if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
-        onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
-            window.db = s.data(); 
-            window.render(); 
-        });
-    } else {
-        alert("Acceso denegado");
-    }
-};
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
+                onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
+                    window.db = s.data(); 
+                    window.render(); 
+                });
+            } else {
+                alert("Acceso denegado");
+            }
+        };
         
         // --- ACTUALIZAR PERFIL ---
         window.actualizarPerfil = async () => {
@@ -335,7 +336,6 @@
                 return (a.seccion || "").localeCompare(b.seccion || "");
             });
 
-            // Se agrega el Membrete
             docPDF.setFontSize(10);
             docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 15, { align: "center" });
             docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 20, { align: "center" });
@@ -385,97 +385,53 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
-               window.exportarNombresBasico = async (formato, esAdmin) => {
-    let listaDocentes = [];
+        // CORRECCIÓN: Se limpió la función de fragmentos sueltos y repeticiones.
+        window.exportarNombresBasico = async (formato, esAdmin) => {
+            let listaDocentes = [];
 
-    if (esAdmin) {
-        const snap = await getDocs(collection(dbCloud, "docentes_db"));
-        snap.forEach(s => {
-            if (s.id !== USUARIO_ADMIN) listaDocentes.push(s.data());
-        });
-        listaDocentes.sort((a,b) => (parseInt(a.grado) - parseInt(b.grado)) || (a.seccion || "").localeCompare(b.seccion || ""));
-    } else {
-        if (!window.db || !window.db.alumnos || window.db.alumnos.length === 0) return alert("No hay datos de alumnos cargados.");
-        listaDocentes.push(window.db);
-    }
+            if (esAdmin) {
+                const snap = await getDocs(collection(dbCloud, "docentes_db"));
+                snap.forEach(s => {
+                    if (s.id !== USUARIO_ADMIN) listaDocentes.push(s.data());
+                });
+                listaDocentes.sort((a,b) => (parseInt(a.grado) - parseInt(b.grado)) || (a.seccion || "").localeCompare(b.seccion || ""));
+            } else {
+                if (!window.db || !window.db.alumnos || window.db.alumnos.length === 0) return alert("No hay datos de alumnos cargados.");
+                listaDocentes.push(window.db);
+            }
 
-    if (formato === 'excel') {
-        // ... (Tu código de Excel se mantiene igual para no alterar funciones)
-        const dataExcel = [];
-        listaDocentes.forEach(d => {
-            const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-            if (activos.length === 0) return;
-            dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
-            dataExcel.push(["N°", "NOMBRE DEL ESTUDIANTE"]);
-            activos.forEach((a, i) => dataExcel.push([i + 1, a.nombre]));
-            dataExcel.push([]); 
-        });
-        if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(dataExcel);
-        XLSX.utils.book_append_sheet(wb, ws, "Nombres");
-        XLSX.writeFile(wb, esAdmin ? "Lista_Nombres_General.xlsx" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.xlsx`);
-    } 
-    else if (formato === 'pdf') {
-        const { jsPDF } = window.jspdf;
-        const docPDF = new jsPDF();
-        
-        // --- MEMBRETE COMPLETO ---
-        docPDF.setFontSize(10);
-        docPDF.setFont("helvetica", "bold");
-        docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
-        docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
-        docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
-        docPDF.text("E.B.N. LUCILA PALACIOS", 105, 27, { align: "center" });
-
-        // --- TÍTULO CORREGIDO (Sin la palabra nombres) ---
-        docPDF.setFontSize(14);
-        docPDF.text("LISTA DE ESTUDIANTES", 105, 38, { align: "center" });
-
-        let yPos = 45;
-        let hayDatos = false;
-        
-        listaDocentes.forEach(d => {
-            const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-            if (activos.length === 0) return;
-            hayDatos = true;
-
-            const filas = activos.map((a, i) => [i + 1, a.nombre]);
-
-            docPDF.autoTable({
-                head: [
-                    [{content: `GRADO: ${d.grado || ''} ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`, colSpan: 2, styles: {fillColor:[0,33,71], halign: 'center'}}], 
-                    ['N°', 'NOMBRE DEL ESTUDIANTE']
-                ],
-                body: filas, 
-                startY: yPos, 
-                theme: 'grid', 
-                styles: {fontSize: 10}, 
-                headStyles: {fillColor:[52,73,94]}, 
-                margin: {bottom: 15}
-            });
-            yPos = docPDF.lastAutoTable.finalY + 10;
-            if(yPos > 270) { docPDF.addPage(); yPos = 20; } 
-        });
-        
-        if(!hayDatos) return alert("No hay alumnos activos para exportar.");
-        docPDF.save(esAdmin ? "Lista_Nombres_General.pdf" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.pdf`);
-    }
-};
-        
+            if (formato === 'excel') {
+                const dataExcel = [];
+                listaDocentes.forEach(d => {
+                    const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                    if (activos.length === 0) return;
+                    dataExcel.push([`GRADO: ${d.grado || ''} | SECCIÓN: ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`]);
+                    dataExcel.push(["N°", "NOMBRE DEL ESTUDIANTE"]);
+                    activos.forEach((a, i) => dataExcel.push([i + 1, a.nombre]));
+                    dataExcel.push([]); 
+                });
+                if(dataExcel.length === 0) return alert("No hay alumnos activos para exportar.");
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(dataExcel);
+                XLSX.utils.book_append_sheet(wb, ws, "Nombres");
+                XLSX.writeFile(wb, esAdmin ? "Lista_Nombres_General.xlsx" : `Lista_Nombres_${window.db.grado}${window.db.seccion}.xlsx`);
+            } 
+            else if (formato === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const docPDF = new jsPDF();
                 
-                // Membrete Completo
+                // --- MEMBRETE COMPLETO ---
                 docPDF.setFontSize(10);
-                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 15, { align: "center" });
-                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 20, { align: "center" });
-                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 25, { align: "center" });
-                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 30, { align: "center" });
+                docPDF.setFont("helvetica", "bold");
+                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
+                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
+                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
+                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 27, { align: "center" });
 
-                // Título sin la palabra "(Nombres)"
                 docPDF.setFontSize(14);
-                docPDF.text("LISTA DE ESTUDIANTES", 105, 40, { align: "center" });
+                docPDF.text("LISTA DE ESTUDIANTES", 105, 38, { align: "center" });
 
-                let yPos = 50;
+                let yPos = 45;
                 let hayDatos = false;
                 
                 listaDocentes.forEach(d => {
@@ -495,7 +451,7 @@
                         theme: 'grid', 
                         styles: {fontSize: 10}, 
                         headStyles: {fillColor:[52,73,94]}, 
-                        margin: {bottom: 10}
+                        margin: {bottom: 15}
                     });
                     yPos = docPDF.lastAutoTable.finalY + 10;
                     if(yPos > 270) { docPDF.addPage(); yPos = 20; } 
@@ -509,7 +465,6 @@
         // --- MANTENIMIENTO ---
         window.limpiarMovimientos = async () => {
             if (confirm("¿Limpiar movimientos de ingresos y egresos? Los estudiantes que hayan sido retirados se eliminarán de forma permanente y se borrará el historial de ingresos para comenzar un nuevo mes limpios.")) {
-                // Conservamos solo a los que NO están retirados, y a los activos les borramos el historial de ingreso y egreso
                 window.db.alumnos = window.db.alumnos
                     .filter(a => !a.retirado)
                     .map(a => ({ ...a, fechaIngreso: null, fechaEgreso: null }));
@@ -531,21 +486,17 @@
             }
         };
 
-        // --- FUNCION PARA IMPRIMIR REPORTE INDIVIDUAL (SIN LISTA DE ALUMNOS) ---
         window.imprimirReporteDocente = () => {
-            // Ocultamos la tarjeta de lista de asistencia temporalmente antes de mandar a imprimir
             const cardLista = document.getElementById('cardAsistencia');
             if(cardLista) cardLista.classList.add('no-print');
             
             window.print();
             
-            // La restauramos un segundo después para que siga visible en pantalla
             setTimeout(() => {
                 if(cardLista) cardLista.classList.remove('no-print');
             }, 1000);
         };
 
-        // --- NUEVAS FUNCIONES PARA EDITAR ALUMNO ---
         window.abrirEdicionAlumno = (id) => {
             const a = window.db.alumnos.find(x => x.id === id);
             if (!a) return;
@@ -606,7 +557,6 @@
                 activos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
                     const st = (window.db.asistencias[fSel] && window.db.asistencias[fSel][a.id]) || 0;
                     let c = "#ccc", t = "F"; if(st===1){c="var(--exito)"; t="P";} if(st===2){c="var(--morado)"; t="J";}
-                    // Se agregó el botón de Lápiz (Editar) justo antes de la X (Eliminar)
                     lista.innerHTML += `<div class="alumno-fila">
                         <div class="bola-gen ${a.genero}"></div>
                         <div style="flex-grow:1">${a.nombre}</div>
@@ -631,7 +581,6 @@
 
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
-            // Se agregó un DIV de membrete que solo es visible en impresión
             document.getElementById('reporteDocente').innerHTML = `
                 <div class="reporte-card">
                     <div class="membrete-print" style="display:none; text-align:center; line-height:1.2; font-size:12px; margin-bottom:15px;">
@@ -711,7 +660,6 @@
         .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         
-        /* Modificado: Nuevas clases para impresión del Reporte Individual */
         @media print { 
             .no-print { display: none !important; } 
             .container { max-width: 100%; } 
@@ -722,7 +670,7 @@
 <body>
 
 <div id="authSection" style="text-align:center; padding: 40px 20px;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90" alt="Logo">
     <h2>EBN LUCILA PALACIOS</h2>
     <div id="loginForm" class="card" style="max-width:320px; margin:auto">
         <input type="text" id="loginUser" placeholder="Usuario">
@@ -882,4 +830,4 @@
 </div>
 
 </body>
-</html>revisar
+</html>
