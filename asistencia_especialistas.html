@@ -2,219 +2,252 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGA Móvil - Lucila Palacios</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia Especialistas - EBN Lucila Palacios</title>
     
     <style>
-        :root { 
-            --blue-lp: #003399; 
-            --gold-lp: #ffcc00; 
-            --bg: #f4f7fa;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background-color: var(--bg); 
-            margin: 0; 
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Contenedor adaptado a pantallas pequeñas */
-        .mobile-card { 
-            width: 100%; 
-            max-width: 450px; 
-            background: white; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
-            overflow: hidden;
-            border-top: 10px solid var(--blue-lp);
-        }
-
-        .header { 
-            text-align: center; 
-            padding: 20px 15px; 
-            background: #fff;
-        }
-
-        .logo { width: 80px; height: auto; margin-bottom: 10px; }
-
-        h1 { font-size: 1.4rem; margin: 0; color: var(--blue-lp); }
-        p { font-size: 0.9rem; color: #666; margin: 5px 0 0; }
-
-        .content { padding: 20px; }
-
-        .form-group { margin-bottom: 20px; }
-
-        label { 
-            display: block; 
-            font-weight: 600; 
-            margin-bottom: 8px; 
-            color: #333;
-            font-size: 1rem;
-        }
-
-        /* Inputs grandes para dedos (fácil de tocar) */
-        select, input { 
-            width: 100%; 
-            padding: 14px; 
-            border: 2px solid #ddd; 
-            border-radius: 12px; 
-            font-size: 16px; /* Evita que el iPhone haga zoom automático */
-            background-color: #fff;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--blue-lp);
-            outline: none;
-        }
-
-        /* Botones táctiles potentes */
-        .btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 12px;
-            transition: transform 0.1s, opacity 0.3s;
-        }
-
-        .btn:active { transform: scale(0.98); }
-
-        .btn-save { background-color: var(--blue-lp); color: white; }
-        .btn-pdf { background-color: #333; color: white; }
-
-        .footer-info {
-            text-align: center;
-            font-size: 0.8rem;
-            color: #999;
-            margin-top: 10px;
-            padding-bottom: 20px;
-        }
-
-        /* Estilo para el campo de matrícula variable */
-        .variable-badge {
-            background: #fff3cd;
-            color: #856404;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            margin-top: 5px;
-            display: inline-block;
-        }
+        :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --gris: #bdc3c7; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 50px; }
+        header { background: var(--morado); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
+        .container { max-width: 500px; margin: auto; padding: 10px; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        input, select, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
+        button { border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        
+        .btn-primario { background: var(--morado); color: white; }
+        .btn-guardar { background: var(--azul); color: white; font-size: 16px; padding: 15px; }
+        
+        .alumno-fila { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .info-alumno { flex-grow: 1; font-size: 14px; }
+        .btn-check { width: 45px; height: 40px; border-radius: 8px; color: white; font-weight: bold; margin-left: 10px; }
+        
+        .estado-1 { background: var(--exito); } /* Presente */
+        .estado-0 { background: var(--rojo); }   /* Ausente */
+        .estado-2 { background: var(--morado); } /* Justificado */
+        
+        #pantalla-app { display: none; }
+        .resumen-clase { background: #e8f4fd; border: 1px solid #3498db; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;}
     </style>
 </head>
 <body>
 
-<div class="mobile-card">
-    <div class="header">
-        <img src="421692.png" alt="Logo LP" class="logo">
-        <h1>E.B.N. Lucila Palacios</h1>
-        <p>Control de Especialistas</p>
+    <header>
+        <h2 style="margin:0;">📚 ÁREAS DE FORMACIÓN</h2>
+        <small>Control de Asistencia para Especialistas</small>
+    </header>
+
+    <div class="container">
+        <div id="pantalla-login" class="card">
+            <h3>Bienvenido, Especialista</h3>
+            <label>Seleccione su Perfil:</label>
+            <select id="select-perfil">
+                <option value="">-- Elija su nombre --</option>
+                <optgroup label="Inglés">
+                    <option value="Yubiry Martinez_Inglés">Yubiry Martinez (Mañana)</option>
+                    <option value="Justina Fernandez_Inglés">Justina Fernandez (Tarde)</option>
+                </optgroup>
+                <optgroup label="Cultura">
+                    <option value="Gaudy Rodriguez_Cultura">Gaudy Rodriguez (Mañana)</option>
+                    <option value="Shijan Brito_Cultura">Shijan Brito (Tarde)</option>
+                </optgroup>
+                <optgroup label="Computación">
+                    <option value="Magloris Fernandez_Computación">Magloris Fernandez (Mañana)</option>
+                    </optgroup>
+                <optgroup label="Educación Física">
+                    <option value="Angel Figuera_Ed. Física">Angel Figuera (Mañana)</option>
+                    <option value="Francelis Montaño_Ed. Física">Francelis Montaño (Mañana)</option>
+                    <option value="Leosmary Loroño_Ed. Física">Leosmary Loroño (Tarde)</option>
+                </optgroup>
+            </select>
+            <button class="btn-primario" onclick="entrarSistema()">INGRESAR AL SISTEMA</button>
+        </div>
+
+        <div id="pantalla-app">
+            <div class="card">
+                <div class="resumen-clase">
+                    <b>Especialista:</b> <span id="txt-nombre"></span><br>
+                    <b>Área:</b> <span id="txt-area"></span>
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1">
+                        <label>Fecha:</label>
+                        <input type="date" id="fecha-clase">
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <div style="flex:1">
+                        <label>Grado:</label>
+                        <select id="select-grado">
+                            <option value="1">1° Grado</option><option value="2">2° Grado</option>
+                            <option value="3">3° Grado</option><option value="4">4° Grado</option>
+                            <option value="5">5° Grado</option><option value="6">6° Grado</option>
+                        </select>
+                    </div>
+                    <div style="flex:1">
+                        <label>Sección:</label>
+                        <select id="select-seccion">
+                            <option value="A">A</option><option value="B">B</option>
+                            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn-primario" onclick="buscarAlumnos()" style="margin-top:15px;">🔍 BUSCAR LISTA DE ESTUDIANTES</button>
+            </div>
+
+            <div class="card" id="card-lista" style="display:none;">
+                <h3 style="margin-top:0; border-bottom:2px solid var(--morado); padding-bottom:5px;">Estudiantes</h3>
+                <p style="font-size:12px; color:#666;">Toque el botón derecho para cambiar: <b>P</b>(Presente) <b>I</b>(Inasistente) <b>J</b>(Justificado).</p>
+                <div id="contenedor-alumnos"></div>
+                <button class="btn-guardar" onclick="guardarAsistenciaEspecialista()" style="margin-top:20px;">💾 GUARDAR ASISTENCIA</button>
+            </div>
+        </div>
     </div>
 
-    <div class="content">
-        <div class="form-group">
-            <label>Especialista</label>
-            <select id="esp">
-                <option value="Ingles">Inglés (15 M / 10 T)</option>
-                <option value="Cultura">Cultura (Todos)</option>
-                <option value="RPA">RPA (Grupos)</option>
-                <option value="Deporte I">Deporte I (1-3)</option>
-                <option value="Deporte II">Deporte II (4-6)</option>
-                <option value="Aula">Aula Integrada</option>
-            </select>
-        </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        <div class="form-group">
-            <label>Turno</label>
-            <select id="turno">
-                <option value="Mañana">Mañana</option>
-                <option value="Tarde">Tarde</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Grado / Sección</label>
-            <input type="text" id="grado_sec" placeholder="Ej: 5to C">
-        </div>
-
-        <div class="form-group">
-            <label>Matrícula Real (Hoy)</label>
-            <input type="number" id="mat" placeholder="¿Cuántos asistieron?">
-            <div class="variable-badge">Matrícula dinámica (2-6 grado)</div>
-        </div>
-
-        <div class="form-group">
-            <label>Tiempo</label>
-            <select id="min">
-                <option value="45">45 Minutos</option>
-                <option value="90">90 Minutos</option>
-                <option value="0">Inasistencia</option>
-            </select>
-        </div>
-
-        <button class="btn btn-save" onclick="guardar()">GUARDAR REGISTRO</button>
-        <button class="btn btn-pdf" onclick="descargarPDF()">PDF REPORTE</button>
-    </div>
-    
-    <div class="footer-info">
-        E.B.N. Lucila Palacios • San Félix • 1972
-    </div>
-</div>
-
-<script>
-    // Configuración de Firebase
-    const firebaseConfig = { apiKey: "TU_API_KEY", projectId: "TU_PROYECTO", appId: "TU_APP_ID" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    async function guardar() {
-        const mat = parseInt(document.getElementById('mat').value);
-        if (!mat) { alert("Ingresa la asistencia real"); return; }
-
-        const data = {
-            esp: document.getElementById('esp').value,
-            turno: document.getElementById('turno').value,
-            clase: document.getElementById('grado_sec').value,
-            asistencia: mat,
-            tiempo: parseInt(document.getElementById('min').value),
-            fecha: new Date().toLocaleDateString(),
-            impacto: mat * parseInt(document.getElementById('min').value)
+        // Tu configuración exacta
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
         };
 
-        try {
-            await db.collection("asistencias_lp").add(data);
-            alert("¡Guardado correctamente!");
-            document.getElementById('mat').value = "";
-        } catch(e) { alert("Error al guardar"); }
-    }
+        const app = initializeApp(firebaseConfig);
+        const dbCloud = getFirestore(app);
 
-    function descargarPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text("Reporte Lucila Palacios", 105, 20, {align: "center"});
-        doc.autoTable({
-            startY: 30,
-            head: [['Docente', 'Turno', 'Alumnos', 'Impacto']],
-            body: [[document.getElementById('esp').value, document.getElementById('turno').value, 'Variable', 'Real']],
-            headStyles: { fillColor: [0, 51, 153] }
-        });
-        doc.save("Asistencia_LP_Movil.pdf");
-    }
-</script>
+        // Variables Globales
+        window.especialistaActual = "";
+        window.areaActual = "";
+        window.alumnosClase = [];
+        window.asistenciaActual = {}; // { idAlumno: estado (1, 0, 2) }
 
+        // Inicializar fecha de hoy
+        document.getElementById('fecha-clase').value = new Date().toISOString().split('T')[0];
+
+        window.entrarSistema = () => {
+            const perfil = document.getElementById('select-perfil').value;
+            if(!perfil) return alert("Por favor seleccione su perfil.");
+            
+            const [nombre, area] = perfil.split('_');
+            window.especialistaActual = nombre;
+            window.areaActual = area;
+            
+            document.getElementById('txt-nombre').innerText = nombre;
+            document.getElementById('txt-area').innerText = area;
+            
+            document.getElementById('pantalla-login').style.display = 'none';
+            document.getElementById('pantalla-app').style.display = 'block';
+        };
+
+        window.buscarAlumnos = async () => {
+            const grado = document.getElementById('select-grado').value;
+            const seccion = document.getElementById('select-seccion').value;
+            const contenedor = document.getElementById('contenedor-alumnos');
+            
+            contenedor.innerHTML = "<p>Buscando en la base de datos...</p>";
+            document.getElementById('card-lista').style.display = 'block';
+
+            try {
+                // Buscamos en la base de datos de los docentes de aula
+                const snap = await getDocs(collection(dbCloud, "docentes_db"));
+                let docenteEncontrado = null;
+
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(data.grado === grado && data.seccion === seccion) {
+                        docenteEncontrado = data;
+                    }
+                });
+
+                if(!docenteEncontrado || !docenteEncontrado.alumnos || docenteEncontrado.alumnos.length === 0) {
+                    contenedor.innerHTML = `<p style="color:red;">No se encontraron estudiantes para ${grado}° "${seccion}". Revise si la maestra de aula ya los registró.</p>`;
+                    return;
+                }
+
+                // Filtrar solo activos y ordenar alfabéticamente
+                window.alumnosClase = docenteEncontrado.alumnos.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
+                window.asistenciaActual = {};
+                
+                renderizarLista();
+
+            } catch (error) {
+                console.error(error);
+                contenedor.innerHTML = "<p>Error de conexión.</p>";
+            }
+        };
+
+        window.renderizarLista = () => {
+            const contenedor = document.getElementById('contenedor-alumnos');
+            contenedor.innerHTML = "";
+
+            window.alumnosClase.forEach(a => {
+                // Por defecto todos presentes (1)
+                if(window.asistenciaActual[a.id] === undefined) window.asistenciaActual[a.id] = 1; 
+                
+                const estado = window.asistenciaActual[a.id];
+                let claseBtn = estado === 1 ? 'estado-1' : (estado === 0 ? 'estado-0' : 'estado-2');
+                let textoBtn = estado === 1 ? 'P' : (estado === 0 ? 'I' : 'J');
+
+                contenedor.innerHTML += `
+                    <div class="alumno-fila">
+                        <div class="info-alumno">
+                            <strong>${a.nombre}</strong><br>
+                            <small style="color:#7f8c8d;">C.E: ${a.cedula || 'S/C'} | Gen: ${a.genero}</small>
+                        </div>
+                        <button onclick="cambiarEstado(${a.id})" class="btn-check ${claseBtn}">${textoBtn}</button>
+                    </div>
+                `;
+            });
+        };
+
+        window.cambiarEstado = (idAlumno) => {
+            // Ciclo: 1 (Presente) -> 0 (Inasistente) -> 2 (Justificado) -> 1
+            const estadoActual = window.asistenciaActual[idAlumno];
+            if(estadoActual === 1) window.asistenciaActual[idAlumno] = 0;
+            else if(estadoActual === 0) window.asistenciaActual[idAlumno] = 2;
+            else window.asistenciaActual[idAlumno] = 1;
+            
+            renderizarLista();
+        };
+
+        window.guardarAsistenciaEspecialista = async () => {
+            const fecha = document.getElementById('fecha-clase').value;
+            const grado = document.getElementById('select-grado').value;
+            const seccion = document.getElementById('select-seccion').value;
+            
+            // Creamos un ID único para este registro: Especialista_Fecha_Grado_Seccion
+            const idRegistro = `${window.especialistaActual.replace(/\s+/g, '')}_${fecha}_${grado}${seccion}`;
+
+            const datosGuardar = {
+                especialista: window.especialistaActual,
+                area: window.areaActual,
+                fecha: fecha,
+                grado: grado,
+                seccion: seccion,
+                asistencias: window.asistenciaActual, // Guarda los IDs y su estado (0,1,2)
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                // Se guarda en una colección separada para no dañar los datos de la maestra
+                await setDoc(doc(dbCloud, "asistencia_especialistas", idRegistro), datosGuardar);
+                alert(`✅ Asistencia guardada exitosamente para ${grado}° "${seccion}".`);
+                
+                // Limpiar pantalla para la siguiente clase
+                document.getElementById('card-lista').style.display = 'none';
+            } catch (error) {
+                console.error(error);
+                alert("❌ Ocurrió un error al guardar. Verifique su conexión.");
+            }
+        };
+    </script>
 </body>
 </html>
