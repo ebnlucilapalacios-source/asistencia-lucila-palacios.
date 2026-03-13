@@ -53,7 +53,7 @@
                 </optgroup>
                 <optgroup label="Computación">
                     <option value="Magloris Fernandez_Computación">Magloris Fernandez (Mañana)</option>
-                    </optgroup>
+                </optgroup>
                 <optgroup label="Educación Física">
                     <option value="Angel Figuera_Ed. Física">Angel Figuera (Mañana)</option>
                     <option value="Francelis Montaño_Ed. Física">Francelis Montaño (Mañana)</option>
@@ -111,7 +111,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Tu configuración exacta
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -123,13 +122,11 @@
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
 
-        // Variables Globales
         window.especialistaActual = "";
         window.areaActual = "";
         window.alumnosClase = [];
-        window.asistenciaActual = {}; // { idAlumno: estado (1, 0, 2) }
+        window.asistenciaActual = {};
 
-        // Inicializar fecha de hoy
         document.getElementById('fecha-clase').value = new Date().toISOString().split('T')[0];
 
         window.entrarSistema = () => {
@@ -148,39 +145,52 @@
         };
 
         window.buscarAlumnos = async () => {
-            const grado = document.getElementById('select-grado').value;
-            const seccion = document.getElementById('select-seccion').value;
+            const gradoBuscado = document.getElementById('select-grado').value;
+            const seccionBuscada = document.getElementById('select-seccion').value;
             const contenedor = document.getElementById('contenedor-alumnos');
             
             contenedor.innerHTML = "<p>Buscando en la base de datos...</p>";
             document.getElementById('card-lista').style.display = 'block';
 
             try {
-                // Buscamos en la base de datos de los docentes de aula
                 const snap = await getDocs(collection(dbCloud, "docentes_db"));
                 let docenteEncontrado = null;
+                let gradosDisponibles = []; // Para ayudar a diagnosticar
 
                 snap.forEach(docSnap => {
                     const data = docSnap.data();
-                    if(data.grado === grado && data.seccion === seccion) {
-                        docenteEncontrado = data;
+                    // Evitamos al admin y revisamos que tenga datos de grado y sección
+                    if(docSnap.id !== "admin_lucila" && data.grado && data.seccion) {
+                        const gDb = String(data.grado).trim().toUpperCase();
+                        const sDb = String(data.seccion).trim().toUpperCase();
+                        
+                        // Guardamos lo que encontramos para mostrarlo si hay error
+                        gradosDisponibles.push(`${gDb} "${sDb}"`);
+
+                        // Búsqueda inteligente: si "1ro" incluye "1" y la sección es "A"
+                        if(gDb.includes(gradoBuscado) && sDb === seccionBuscada) {
+                            docenteEncontrado = data;
+                        }
                     }
                 });
 
                 if(!docenteEncontrado || !docenteEncontrado.alumnos || docenteEncontrado.alumnos.length === 0) {
-                    contenedor.innerHTML = `<p style="color:red;">No se encontraron estudiantes para ${grado}° "${seccion}". Revise si la maestra de aula ya los registró.</p>`;
+                    let sugerencia = gradosDisponibles.length > 0 
+                        ? `<br><br><small style="color:#555;"><b>Las secciones registradas actualmente son:</b><br>${gradosDisponibles.join('<br>')}</small>` 
+                        : `<br><small style="color:#555;">No hay ninguna maestra con estudiantes registrados aún.</small>`;
+                    
+                    contenedor.innerHTML = `<p style="color:var(--rojo); font-weight:bold;">No se encontraron estudiantes para ${gradoBuscado}° "${seccionBuscada}".</p>${sugerencia}`;
                     return;
                 }
 
-                // Filtrar solo activos y ordenar alfabéticamente
                 window.alumnosClase = docenteEncontrado.alumnos.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
                 window.asistenciaActual = {};
                 
-                renderizarLista();
+                window.renderizarLista();
 
             } catch (error) {
                 console.error(error);
-                contenedor.innerHTML = "<p>Error de conexión.</p>";
+                contenedor.innerHTML = "<p>Error de conexión con la base de datos.</p>";
             }
         };
 
@@ -189,7 +199,6 @@
             contenedor.innerHTML = "";
 
             window.alumnosClase.forEach(a => {
-                // Por defecto todos presentes (1)
                 if(window.asistenciaActual[a.id] === undefined) window.asistenciaActual[a.id] = 1; 
                 
                 const estado = window.asistenciaActual[a.id];
@@ -202,20 +211,19 @@
                             <strong>${a.nombre}</strong><br>
                             <small style="color:#7f8c8d;">C.E: ${a.cedula || 'S/C'} | Gen: ${a.genero}</small>
                         </div>
-                        <button onclick="cambiarEstado(${a.id})" class="btn-check ${claseBtn}">${textoBtn}</button>
+                        <button onclick="window.cambiarEstado(${a.id})" class="btn-check ${claseBtn}">${textoBtn}</button>
                     </div>
                 `;
             });
         };
 
         window.cambiarEstado = (idAlumno) => {
-            // Ciclo: 1 (Presente) -> 0 (Inasistente) -> 2 (Justificado) -> 1
             const estadoActual = window.asistenciaActual[idAlumno];
             if(estadoActual === 1) window.asistenciaActual[idAlumno] = 0;
             else if(estadoActual === 0) window.asistenciaActual[idAlumno] = 2;
             else window.asistenciaActual[idAlumno] = 1;
             
-            renderizarLista();
+            window.renderizarLista();
         };
 
         window.guardarAsistenciaEspecialista = async () => {
@@ -223,7 +231,6 @@
             const grado = document.getElementById('select-grado').value;
             const seccion = document.getElementById('select-seccion').value;
             
-            // Creamos un ID único para este registro: Especialista_Fecha_Grado_Seccion
             const idRegistro = `${window.especialistaActual.replace(/\s+/g, '')}_${fecha}_${grado}${seccion}`;
 
             const datosGuardar = {
@@ -232,16 +239,13 @@
                 fecha: fecha,
                 grado: grado,
                 seccion: seccion,
-                asistencias: window.asistenciaActual, // Guarda los IDs y su estado (0,1,2)
+                asistencias: window.asistenciaActual,
                 timestamp: new Date().toISOString()
             };
 
             try {
-                // Se guarda en una colección separada para no dañar los datos de la maestra
                 await setDoc(doc(dbCloud, "asistencia_especialistas", idRegistro), datosGuardar);
                 alert(`✅ Asistencia guardada exitosamente para ${grado}° "${seccion}".`);
-                
-                // Limpiar pantalla para la siguiente clase
                 document.getElementById('card-lista').style.display = 'none';
             } catch (error) {
                 console.error(error);
