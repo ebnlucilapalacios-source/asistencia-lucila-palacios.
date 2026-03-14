@@ -3,135 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Administrativo Especialistas - EBN Lucila Palacios</title>
+    <title>Sistema Integral Especialistas - Lucila Palacios</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { --azul: #002147; --oro: #f39c12; --exito: #27ae60; --error: #c0392b; --morado: #8e44ad; --fondo: #f4f7f6; --admin: #2c3e50; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
+        :root { --azul: #002147; --oro: #f39c12; --exito: #27ae60; --error: #c0392b; --admin: #2c3e50; --fondo: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--fondo); margin: 0; color: #333; }
         
         /* Login */
-        .login-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--azul); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .login-box { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--azul); display:flex; align-items:center; justify-content:center; z-index:1000; }
+        .login-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        /* Layout */
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
+        /* UI */
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--oro); }
         .container { max-width: 1000px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #ddd; }
         
-        /* Navegación */
-        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding: 5px; background: #fff; border-radius: 10px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #eee; cursor: pointer; font-weight: bold; white-space: nowrap; font-size: 11px; }
+        /* Tabs */
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #ddd; cursor: pointer; font-weight: bold; white-space: nowrap; }
         .tab-btn.active { background: var(--azul); color: white; }
-        .tab-admin { background: var(--admin); color: white; }
+        .btn-admin { background: var(--admin); color: white; }
 
         /* Tablas */
         .table-wrapper { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; color: var(--azul); }
-        tr:nth-child(even) { background: #f9f9f9; }
-        .total-row { background: #e8f4fd !important; font-weight: bold; }
-
-        /* Inputs y Botones */
+        .fila-alerta { background: #fff5f5; border-left: 4px solid var(--error); }
+        
+        /* Inputs */
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn-primario { background: var(--azul); color: white; font-weight: bold; border: none; cursor: pointer; }
-        .btn-exito { background: var(--exito); color: white; border: none; cursor: pointer; }
-        .btn-error { background: var(--error); color: white; border: none; cursor: pointer; }
-
-        #app-content { display: none; }
-        .badge-genero { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: white; }
+        .btn-save { background: var(--exito); color: white; font-weight: bold; border: none; cursor: pointer; font-size: 16px; }
+        
+        .genero-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: white; margin-left: 5px; }
         .bg-v { background: #3498db; } .bg-h { background: #e91e63; }
+
+        #app-content, .sec { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="login-overlay">
-        <div class="login-box">
-            <h2 style="color:var(--azul); margin-bottom:5px;">SISTEMA EBN</h2>
-            <p style="margin-top:0; font-size:13px; color:gray;">Control de Especialistas</p>
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <h2 style="color:var(--azul)">SISTEMA EBN</h2>
+            <p>Acceso Especialistas / Dirección</p>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pass" placeholder="Contraseña">
-            <button class="btn-primario" onclick="intentarLogin()">INGRESAR AL PANEL</button>
-            <p id="login-err" style="color:red; font-size:12px; display:none; margin-top:10px;">Usuario o clave inválida</p>
+            <button onclick="iniciarSesion()" style="background:var(--azul); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; width:100%;">ENTRAR</button>
+            <p id="err" style="color:red; display:none; font-size:12px; margin-top:10px;">Credenciales incorrectas</p>
         </div>
     </div>
 
     <div id="app-content">
         <header>
-            <h3 id="display-area" style="margin:0;">CARGANDO...</h3>
-            <div id="display-nombre" style="font-size: 13px; opacity: 0.9;"></div>
+            <h3 id="txt-area" style="margin:0;">CARGANDO...</h3>
+            <div id="txt-nombre" style="font-size:13px; opacity:0.8;"></div>
         </header>
 
         <div class="container">
-            <div id="nav-container" class="nav-tabs">
-                <button id="btn-tab-asis" class="tab-btn active" onclick="verTab('asis')">📝 ASISTENCIA</button>
-                <button id="btn-tab-stats" class="tab-btn" onclick="verTab('stats')">📊 ESTADÍSTICA</button>
-                <button id="btn-tab-admin" class="tab-btn tab-admin" onclick="verTab('admin')" style="display:none;">🔑 DIRECCIÓN</button>
-                <button class="tab-btn" onclick="location.reload()" style="background:var(--error); color:white">SALIR</button>
+            <div class="nav-tabs">
+                <button class="tab-btn active" id="t-asis" onclick="verTab('asis')">📝 ASISTENCIA</button>
+                <button class="tab-btn" id="t-stats" onclick="verTab('stats')">📊 ESTADÍSTICA</button>
+                <button class="tab-btn btn-admin" id="t-admin" onclick="verTab('admin')" style="display:none;">🔑 DIRECCIÓN</button>
+                <button class="tab-btn" onclick="location.reload()" style="background:var(--error); color:white;">SALIR</button>
             </div>
 
-            <div id="sec-asis" class="tab-sec">
+            <div id="sec-asis" class="sec" style="display:block;">
                 <div class="card">
-                    <label>Fecha y Sección:</label>
-                    <input type="date" id="input-fecha">
+                    <label>Fecha:</label>
+                    <input type="date" id="fecha-asistencia">
                     <div style="display:flex; gap:10px;">
-                        <select id="input-grado">
+                        <select id="sel-grado">
                             <option value="1">1° Grado</option><option value="2">2° Grado</option>
                             <option value="3">3° Grado</option><option value="4">4° Grado</option>
                             <option value="5">5° Grado</option><option value="6">6° Grado</option>
                         </select>
-                        <select id="input-seccion">
+                        <select id="sel-seccion">
                             <option value="A">A</option><option value="B">B</option><option value="C">C</option>
                             <option value="D">D</option><option value="E">E</option>
                         </select>
                     </div>
-                    <button class="btn-primario" onclick="cargarSeccion()">🔍 BUSCAR ESTUDIANTES</button>
+                    <button class="btn-save" style="background:var(--azul)" onclick="cargarAlumnos()">🔍 CARGAR LISTA</button>
                 </div>
 
-                <div id="card-lista" class="card" style="display:none;">
-                    <h4 id="txt-seccion" style="margin-top:0; color:var(--azul)"></h4>
-                    <div id="lista-alumnos"></div>
-                    <button class="btn-exito" onclick="guardarAsistencia()" style="margin-top:20px; font-size:16px;">💾 GUARDAR ASISTENCIA</button>
+                <div id="div-lista" class="card" style="display:none;">
+                    <h4 id="info-grupo" style="color:var(--azul); margin:0 0 15px 0;"></h4>
+                    <div id="contenedor-alumnos"></div>
+                    <button class="btn-save" onclick="enviarAsistencia()">💾 GUARDAR ASISTENCIA</button>
                 </div>
             </div>
 
-            <div id="sec-stats" class="tab-sec" style="display:none;">
+            <div id="sec-stats" class="sec">
                 <div class="card">
                     <h4>Generar Reporte Mensual</h4>
-                    <input type="month" id="mes-stats">
-                    <button class="btn-primario" onclick="generarEstadistica()">📈 VER RESULTADOS</button>
+                    <input type="month" id="mes-busqueda">
+                    <button class="btn-save" style="background:var(--azul)" onclick="procesarEstadistica()">📈 VER INFORME</button>
                 </div>
-                <div id="resultado-reporte"></div>
+                <div id="reporte-final"></div>
             </div>
 
-            <div id="sec-admin" class="tab-sec" style="display:none;">
+            <div id="sec-admin" class="sec">
                 <div class="card">
-                    <h3 style="color:var(--admin); margin-top:0;">Gestión de Usuarios Especialistas</h3>
-                    <p style="font-size:12px; color:gray;">Aquí puede cambiar contraseñas o agregar nuevos perfiles.</p>
+                    <h3>Panel de Control de Usuarios</h3>
                     <div class="table-wrapper">
-                        <table id="tabla-usuarios">
+                        <table>
                             <thead>
-                                <tr>
-                                    <th>Usuario</th><th>Nombre</th><th>Área</th><th>Nueva Clave</th><th>Acción</th>
-                                </tr>
+                                <tr><th>Usuario</th><th>Nombre</th><th>Área</th><th>Acciones</th></tr>
                             </thead>
-                            <tbody id="tbody-usuarios"></tbody>
+                            <tbody id="tbody-users"></tbody>
                         </table>
                     </div>
-                    <div style="margin-top:20px; padding:15px; border:1px dashed #ccc;">
-                        <h4>Añadir Nuevo Especialista</h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                            <input type="text" id="new-user" placeholder="Usuario (Ej: deporte2)">
-                            <input type="password" id="new-pass" placeholder="Contraseña">
-                            <input type="text" id="new-name" placeholder="Nombre Completo">
-                            <input type="text" id="new-area" placeholder="Área (Ej: Inglés)">
-                        </div>
-                        <button class="btn-exito" onclick="crearUsuario()">➕ CREAR USUARIO</button>
-                    </div>
+                    <button class="btn-save" onclick="abrirModalUsuario()" style="margin-top:15px;">➕ NUEVO ESPECIALISTA</button>
                 </div>
             </div>
         </div>
@@ -152,226 +136,208 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let userSession = null;
-    let listadoAlumnos = [];
-    let estadosAsis = {};
+    let sesion = null;
+    let alumnosHoy = [];
+    let estados = {}; // { idEstudiante: estado } 1=P, 0=I, 2=J
 
-    // 1. LOGIN CON FIREBASE
-    window.intentarLogin = async () => {
+    // --- LOGIN ---
+    window.iniciarSesion = async () => {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
 
-        // Caso Especial: Director (Admin)
         if(u === "director_lucila" && p === "admin2024") {
-            accederSistema({id: u, nombre: "Dirección", area: "Administración", rol: "admin"});
-            return;
-        }
-
-        const docRef = doc(db, "credenciales_especialistas", u);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists() && docSnap.data().pass === p) {
-            accederSistema({id: u, ...docSnap.data(), rol: "especialista"});
+            entrar({id: u, nombre: "Dirección General", area: "Dirección", rol: "admin"});
         } else {
-            document.getElementById('login-err').style.display = 'block';
+            const d = await getDoc(doc(db, "credenciales_especialistas", u));
+            if(d.exists() && d.data().pass === p) entrar({id: u, ...d.data(), rol: "esp"});
+            else document.getElementById('err').style.display = 'block';
         }
     };
 
-    function accederSistema(data) {
-        userSession = data;
+    function entrar(data) {
+        sesion = data;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
-        document.getElementById('display-area').innerText = userSession.area.toUpperCase();
-        document.getElementById('display-nombre').innerText = `Especialista: ${userSession.nombre}`;
-        
-        if(userSession.rol === "admin") {
-            document.getElementById('btn-tab-admin').style.display = 'block';
-            cargarUsuariosAdmin();
+        document.getElementById('txt-area').innerText = sesion.area.toUpperCase();
+        document.getElementById('txt-nombre').innerText = sesion.nombre;
+        if(sesion.rol === 'admin') {
+            document.getElementById('t-admin').style.display = 'block';
+            cargarListaUsuarios();
         }
-        document.getElementById('input-fecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha-asistencia').value = new Date().toISOString().split('T')[0];
     }
 
     window.verTab = (t) => {
-        document.querySelectorAll('.tab-sec').forEach(s => s.style.display = 'none');
+        document.querySelectorAll('.sec').forEach(s => s.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-'+t).style.display = 'block';
-        document.getElementById('btn-tab-'+t).classList.add('active');
+        document.getElementById('t-'+t).classList.add('active');
     };
 
-    // 2. LÓGICA DE ASISTENCIA
-    window.cargarSeccion = async () => {
-        const g = document.getElementById('input-grado').value;
-        const s = document.getElementById('input-seccion').value;
-        const cont = document.getElementById('lista-alumnos');
-        cont.innerHTML = "Buscando alumnos...";
-        document.getElementById('card-lista').style.display = 'block';
+    // --- ASISTENCIA REAL ---
+    window.cargarAlumnos = async () => {
+        const g = document.getElementById('sel-grado').value;
+        const s = document.getElementById('sel-seccion').value;
+        const cont = document.getElementById('contenedor-alumnos');
+        cont.innerHTML = "Buscando alumnos de las maestras...";
+        document.getElementById('div-lista').style.display = 'block';
 
         const snap = await getDocs(collection(db, "docentes_db"));
         let found = false;
 
-        snap.forEach(d => {
-            const data = d.data();
+        snap.forEach(doc => {
+            const data = doc.data();
             if(String(data.grado).includes(g) && String(data.seccion).toUpperCase() === s) {
                 found = true;
-                listadoAlumnos = data.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                document.getElementById('txt-seccion').innerText = `Lista: ${g}° "${s}"`;
-                renderAlumnos();
+                alumnosHoy = data.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                renderizarLista(g, s);
             }
         });
-
-        if(!found) cont.innerHTML = "❌ No se encontraron datos para esta sección.";
+        if(!found) cont.innerHTML = "⚠️ No hay alumnos cargados para esta sección en el sistema de maestras.";
     };
 
-    function renderAlumnos() {
-        const cont = document.getElementById('lista-alumnos');
+    function renderizarLista(g, s) {
+        document.getElementById('info-grupo').innerText = `${g}° Grado - Sección "${s}"`;
+        const cont = document.getElementById('contenedor-alumnos');
         cont.innerHTML = "";
-        listadoAlumnos.forEach(a => {
-            if(estadosAsis[a.id] === undefined) estadosAsis[a.id] = 1;
-            const st = estadosAsis[a.id];
-            const color = st === 1 ? 'var(--exito)' : (st === 0 ? 'var(--error)' : 'var(--morado)');
-            const letra = st === 1 ? 'P' : (st === 0 ? 'I' : 'J');
-            const genCol = a.genero.toLowerCase().startsWith('v') ? 'bg-v' : 'bg-h';
+        
+        alumnosHoy.forEach(a => {
+            if(!estados[a.id]) estados[a.id] = 1;
+            const label = estados[a.id] === 1 ? 'P' : (estados[a.id] === 0 ? 'I' : 'J');
+            const color = estados[a.id] === 1 ? 'var(--exito)' : (estados[a.id] === 0 ? 'var(--error)' : 'var(--morado)');
+            const genClase = a.genero.toLowerCase().startsWith('v') ? 'bg-v' : 'bg-h';
 
             cont.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
-                    <div style="font-size:13px;">
-                        <b>${a.nombre}</b><br>
-                        <span class="badge-genero ${genCol}">${a.genero}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee;">
+                    <div>
+                        <span style="font-size:13px; font-weight:bold;">${a.nombre}</span><br>
+                        <span class="genero-badge ${genClase}">${a.genero}</span>
                     </div>
-                    <button onclick="switchAsis(${a.id})" style="width:45px; background:${color}; color:white; border:none; border-radius:8px; padding:10px;">${letra}</button>
+                    <button onclick="cambiarEstado(${a.id})" style="width:50px; background:${color}; color:white; border:none; border-radius:8px; padding:10px; font-weight:bold;">${label}</button>
                 </div>`;
         });
     }
 
-    window.switchAsis = (id) => {
-        const cur = estadosAsis[id];
-        estadosAsis[id] = cur === 1 ? 0 : (cur === 0 ? 2 : 1);
-        renderAlumnos();
+    window.cambiarEstado = (id) => {
+        estados[id] = estados[id] === 1 ? 0 : (estados[id] === 0 ? 2 : 1);
+        renderizarLista(document.getElementById('sel-grado').value, document.getElementById('sel-seccion').value);
     };
 
-    window.guardarAsistencia = async () => {
-        const f = document.getElementById('input-fecha').value;
-        const g = document.getElementById('input-grado').value;
-        const s = document.getElementById('input-seccion').value;
-        if(!f) return alert("Seleccione la fecha");
+    window.enviarAsistencia = async () => {
+        const f = document.getElementById('fecha-asistencia').value;
+        const g = document.getElementById('sel-grado').value;
+        const s = document.getElementById('sel-seccion').value;
+        if(!f) return alert("Seleccione fecha");
 
         let mv=0, mh=0, av=0, ah=0;
-        listadoAlumnos.forEach(a => {
+        alumnosHoy.forEach(a => {
             const isV = a.genero.toLowerCase().startsWith('v');
             if(isV) mv++; else mh++;
-            if(estadosAsis[a.id] === 1) { if(isV) av++; else ah++; }
+            if(estados[a.id] === 1) { if(isV) av++; else ah++; }
         });
 
-        const idRef = `${userSession.id}_${f}_${g}${s}`;
-        await setDoc(doc(db, "asistencia_especialistas", idRef), {
-            espId: userSession.id,
-            espNom: userSession.nombre,
-            area: userSession.area,
+        await setDoc(doc(db, "asistencia_especialistas", `${sesion.id}_${f}_${g}${s}`), {
+            espId: sesion.id, espNom: sesion.nombre, area: sesion.area,
             fecha: f, grado: g, seccion: s,
-            mv, mh, av, ah,
-            total_m: listadoAlumnos.length,
-            total_a: (av+ah)
+            mv, mh, av, ah, total_m: (mv+mh), total_a: (av+ah),
+            timestamp: new Date().toISOString()
         });
 
-        alert("✅ Asistencia guardada.");
-        document.getElementById('card-lista').style.display = 'none';
+        alert("✅ Asistencia guardada correctamente");
+        document.getElementById('div-lista').style.display = 'none';
     };
 
-    // 3. ESTADÍSTICA CONSOLIDADA Y DIRECCIÓN
-    window.generarEstadistica = async () => {
-        const mes = document.getElementById('mes-stats').value;
-        if(!mes) return alert("Elija mes");
-        const cont = document.getElementById('resultado-reporte');
-        cont.innerHTML = "Calculando...";
+    // --- ESTADÍSTICA Y AUDITORÍA ---
+    window.procesarEstadistica = async () => {
+        const mes = document.getElementById('mes-busqueda').value;
+        const cont = document.getElementById('reporte-final');
+        cont.innerHTML = "Calculando promedios reales...";
 
-        // Si es Admin busca todo, si es especialista busca solo lo suyo
-        let q;
-        if(userSession.rol === "admin") {
-            q = query(collection(db, "asistencia_especialistas"));
-        } else {
-            q = query(collection(db, "asistencia_especialistas"), where("espId", "==", userSession.id));
-        }
+        let q = query(collection(db, "asistencia_especialistas"));
+        if(sesion.rol !== 'admin') q = query(collection(db, "asistencia_especialistas"), where("espId", "==", sesion.id));
 
         const snap = await getDocs(q);
-        let data = [];
-        snap.forEach(d => { if(d.data().fecha.startsWith(mes)) data.push(d.data()); });
+        let registros = [];
+        snap.forEach(d => { if(d.data().fecha.startsWith(mes)) registros.push(d.data()); });
 
-        if(data.length === 0) { cont.innerHTML = "Sin datos para este mes."; return; }
+        if(registros.length === 0) { cont.innerHTML = "❌ Sin datos para este mes."; return; }
 
         let html = `<div class="card"><h3>CONSOLIDADO MENSUAL: ${mes}</h3>`;
         
-        // Tabla de Desglose
-        html += `<div class="table-wrapper"><table><thead>
-            <tr><th>Especialista</th><th>Sección</th><th>Matrícula (V/H)</th><th>Asistencia (V/H)</th><th>% Efic.</th></tr>
-            </thead><tbody>`;
+        // Alerta de Auditoría (Solo para Director)
+        if(sesion.rol === 'admin') {
+            const especialistas = await getDocs(collection(db, "credenciales_especialistas"));
+            especialistas.forEach(e => {
+                const count = registros.filter(r => r.espId === e.id).length;
+                if(count < 4) {
+                    html += `<div class="fila-alerta" style="padding:10px; margin-bottom:10px;">
+                        ⚠️ <b>${e.data().nombre} (${e.data().area})</b>: Muy poca actividad (${count} sesiones).
+                    </div>`;
+                }
+            });
+        }
 
-        let gMV=0, gMH=0, gAV=0, gAH=0;
+        html += `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Fecha</th><th>Especialista</th><th>Grado/Sec</th><th>Matrícula (V/H)</th><th>Asist. (V/H)</th><th>Prom. Real</th></tr>
+                    </thead>
+                    <tbody>`;
 
-        data.sort((a,b)=>a.espNom.localeCompare(b.espNom)).forEach(r => {
-            const ef = ((r.total_a / r.total_m) * 100).toFixed(1);
-            gMV+=r.mv; gMH+=r.mh; gAV+=r.av; gAH+=r.ah;
-            html += `<tr>
-                <td>${r.espNom}</td><td>${r.grado}°${r.seccion}</td>
-                <td>${r.mv}/${r.mh}</td><td>${r.av}/${r.ah}</td>
-                <td>${ef}%</td>
-            </tr>`;
+        registros.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(r => {
+            html += `
+                <tr>
+                    <td>${r.fecha.split('-')[2]}</td>
+                    <td>${r.espNom}</td>
+                    <td>${r.grado}° "${r.seccion}"</td>
+                    <td>${r.mv} / ${r.mh}</td>
+                    <td>${r.av} / ${r.ah}</td>
+                    <td style="background:#e8f4fd"><b>${r.total_a}</b></td>
+                </tr>`;
         });
 
-        const gEf = (((gAV+gAH)/(gMV+gMH))*100).toFixed(1);
-        html += `<tr class="total-row">
-            <td colspan="2">TOTAL GENERAL ATENDIDO</td>
-            <td>${gMV}V / ${gMH}H</td><td>${gAV}V / ${gAH}H</td>
-            <td>${gEf}%</td>
-        </tr></tbody></table></div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn-primario" onclick="window.print()">🖨️ IMPRIMIR REPORTE</button>
-        </div></div>`;
-
+        html += `</tbody></table></div></div>`;
         cont.innerHTML = html;
     };
 
-    // 4. GESTIÓN DE USUARIOS (SÓLO DIRECCIÓN)
-    async function cargarUsuariosAdmin() {
-        const tbody = document.getElementById('tbody-usuarios');
-        tbody.innerHTML = "Cargando...";
+    // --- PANEL DIRECCIÓN ---
+    async function cargarListaUsuarios() {
+        const tbody = document.getElementById('tbody-users');
         const snap = await getDocs(collection(db, "credenciales_especialistas"));
         tbody.innerHTML = "";
-
         snap.forEach(d => {
-            const user = d.data();
+            const u = d.data();
             tbody.innerHTML += `
                 <tr>
-                    <td>${d.id}</td>
-                    <td>${user.nombre}</td>
-                    <td>${user.area}</td>
-                    <td><input type="text" id="pass-${d.id}" placeholder="Nueva" style="padding:4px; margin:0;"></td>
-                    <td><button class="btn-exito" onclick="actualizarClave('${d.id}')" style="padding:4px; margin:0;">💾</button></td>
+                    <td>${d.id}</td><td>${u.nombre}</td><td>${u.area}</td>
+                    <td><button onclick="abrirEdicion('${d.id}')" style="background:var(--oro); color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">✏️ EDITAR</button></td>
                 </tr>`;
         });
     }
 
-    window.actualizarClave = async (uid) => {
-        const newP = document.getElementById(`pass-${uid}`).value;
-        if(!newP) return alert("Escriba la nueva clave");
-        
-        const docRef = doc(db, "credenciales_especialistas", uid);
-        const data = (await getDoc(docRef)).data();
-        await setDoc(docRef, { ...data, pass: newP });
-        alert("Clave actualizada");
-        cargarUsuariosAdmin();
+    window.abrirEdicion = async (id) => {
+        const d = await getDoc(doc(db, "credenciales_especialistas", id));
+        const n = prompt("Nuevo nombre:", d.data().nombre);
+        const a = prompt("Nueva área:", d.data().area);
+        const p = prompt("Nueva contraseña:", d.data().pass);
+        if(n && a && p) {
+            await setDoc(doc(db, "credenciales_especialistas", id), { nombre: n, area: a, pass: p });
+            alert("Actualizado");
+            cargarListaUsuarios();
+        }
     };
 
-    window.crearUsuario = async () => {
-        const u = document.getElementById('new-user').value;
-        const p = document.getElementById('new-pass').value;
-        const n = document.getElementById('new-name').value;
-        const a = document.getElementById('new-area').value;
-
-        if(!u || !p || !n || !a) return alert("Llene todos los campos");
-
-        await setDoc(doc(db, "credenciales_especialistas", u), { nombre: n, area: a, pass: p });
-        alert("Especialista creado");
-        cargarUsuariosAdmin();
+    window.abrirModalUsuario = async () => {
+        const id = prompt("Usuario ID (ej: musica1):");
+        const n = prompt("Nombre completo:");
+        const a = prompt("Área:");
+        const p = prompt("Contraseña:");
+        if(id && n && a && p) {
+            await setDoc(doc(db, "credenciales_especialistas", id), { nombre: n, area: a, pass: p });
+            alert("Creado");
+            cargarListaUsuarios();
+        }
     };
 
 </script>
