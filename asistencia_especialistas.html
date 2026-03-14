@@ -7,49 +7,32 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { 
-            --azul: #002147; 
-            --oro: #f3c612;  
-            --exito: #27ae60; 
-            --error: #c0392b; 
-            --fondo: #f4f7f6; 
-        }
-        
+        :root { --azul: #002147; --oro: #f3c612; --exito: #27ae60; --error: #c0392b; --fondo: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
         
-        /* LOGIN MEJORADO */
-        .login-screen { 
-            height: 100vh; display: flex; align-items: center; justify-content: center; 
-            background: linear-gradient(135deg, var(--azul) 0%, #00152e 100%);
-        }
-        .login-card { 
-            background: white; padding: 30px; border-radius: 20px; width: 340px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid var(--oro);
-        }
+        /* LOGIN */
+        .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--azul) 0%, #00152e 100%); }
+        .login-card { background: white; padding: 30px; border-radius: 20px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid var(--oro); }
         .logo-img { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--oro); margin-bottom: 15px; background: #fff; object-fit: cover; }
 
-        /* NAVEGACIÓN */
-        header { 
-            background: var(--azul); color: white; padding: 15px; text-align: center; 
-            border-bottom: 5px solid var(--oro); display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
+        /* APP */
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--oro); display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .logo-header { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--oro); background: white; }
-
+        .container { max-width: 900px; margin: auto; padding: 15px; }
         .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #eee; padding: 5px; border-radius: 10px; }
         .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; }
         .tab-btn.active { background: var(--oro); color: var(--azul); }
-
-        .container { max-width: 900px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; color: white; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; color: white; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-exito { background: var(--exito); }
-        
+        .btn-borrar { background: var(--error); padding: 5px 10px; font-size: 10px; width: auto; margin: 0; }
+
+        .item-gestion { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
         .fila-alumno { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
         .btn-asis { width: 45px; height: 45px; border-radius: 50%; border: none; color: white; font-weight: bold; cursor: pointer; }
 
@@ -65,7 +48,7 @@
             <p style="font-size:11px; color:#666; margin-bottom:20px; font-weight: bold;">SAN FÉLIX - 1972</p>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pass" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="iniciarSesion()">ENTRAR AL SISTEMA</button>
+            <button class="btn btn-azul" onclick="iniciarSesion()">ENTRAR AL PANEL</button>
         </div>
     </div>
 
@@ -90,23 +73,20 @@
                 <div class="card">
                     <input type="date" id="fecha-selector">
                     <div style="display:flex; gap:8px;">
-                        <select id="grado-sel" onchange="actualizarSecciones()">
+                        <select id="grado-sel" onchange="cambioGrado()">
                             <option value="">-- Grado --</option>
                             <option value="1">1°</option><option value="2">2°</option>
                             <option value="3">3°</option><option value="4">4°</option>
                             <option value="5">5°</option><option value="6">6°</option>
                             <option value="GE">Grupo Estable</option>
                         </select>
-                        <select id="secc-sel">
-                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
-                        </select>
+                        <select id="secc-sel"></select>
                     </div>
                     <button class="btn btn-azul" style="margin-top:10px;" onclick="cargarAlumnos()">🔍 CARGAR LISTA</button>
                 </div>
-
                 <div id="panel-lista" class="card" style="display:none;">
                     <div id="search-container" style="display:none; background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px;">
-                        <input type="text" id="input-busqueda" onkeyup="filtrarAlumnos()" placeholder="🔍 Buscar alumno en este grupo...">
+                        <input type="text" id="input-busqueda" onkeyup="filtrarAlumnos()" placeholder="🔍 Buscar alumno en el grupo...">
                     </div>
                     <div id="meta-text" style="color:var(--azul); font-weight:bold; margin-bottom:10px; font-size:13px;"></div>
                     <div id="render-alumnos"></div>
@@ -117,23 +97,32 @@
 
             <div id="sec-admin" class="sec">
                 <div class="card" style="border-left: 5px solid var(--azul);">
-                    <h4 style="margin:0 0 10px 0;">👤 REGISTRAR ESPECIALISTA</h4>
+                    <h4>👤 GESTIÓN DE ESPECIALISTAS</h4>
                     <input type="text" id="adm-nom" placeholder="Nombre Completo">
-                    <input type="text" id="adm-area" placeholder="Área (Música, Deporte, etc.)">
+                    <input type="text" id="adm-area" placeholder="Área">
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="adm-user" placeholder="Usuario">
                         <input type="text" id="adm-pass" placeholder="Clave">
                     </div>
-                    <button class="btn btn-azul" onclick="crearEspecialista()">GUARDAR USUARIO</button>
+                    <button class="btn btn-azul" onclick="crearEspecialista()">CREAR USUARIO</button>
+                    <div id="lista-esp-admin" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
                 </div>
 
                 <div class="card" style="border-left: 5px solid var(--oro);">
-                    <h4 style="margin:0 0 10px 0;">🏆 NUEVO GRUPO ESTABLE</h4>
+                    <h4>🏆 GRUPOS ESTABLES</h4>
                     <input type="text" id="ge-nom" placeholder="Nombre del Grupo">
-                    <input type="text" id="ge-obj" placeholder="Objetivo o Meta">
+                    <input type="text" id="ge-obj" placeholder="Meta Pedagógica">
                     <select id="ge-dueño"></select>
-                    <div id="ge-alumnos-check" style="max-height:200px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:8px; background: #fafafa;"></div>
-                    <button class="btn btn-azul" style="margin-top:10px;" onclick="guardarGrupoEstable()">CREAR GRUPO</button>
+                    <div id="ge-alumnos-check" style="max-height:180px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:10px; font-size:11px;"></div>
+                    <button class="btn btn-azul" onclick="guardarGrupoEstable()">CREAR GRUPO</button>
+                    <div id="lista-ge-admin" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+                </div>
+            </div>
+
+            <div id="sec-stats" class="sec">
+                <div class="card">
+                    <input type="month" id="mes-filtro">
+                    <button class="btn btn-azul">PRÓXIMAMENTE: DESCARGAR PDF</button>
                 </div>
             </div>
         </div>
@@ -141,7 +130,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, setDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -154,36 +143,34 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let sesionActual = null;
-    let listaAlumnos = [];
-    let estadosAsistencia = {};
+    let sesion = null;
+    let alumnosActuales = [];
+    let asistTemp = {};
 
     window.iniciarSesion = async () => {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
-
         if(u === "director" && p === "lucila2026") {
-            loguear({id:"admin", nombre:"Dirección", area:"Dirección", rol:"admin"});
+            entrar({id:"admin", nombre:"Dirección", area:"Dirección", rol:"admin"});
         } else {
             const d = await getDoc(doc(db, "credenciales_especialistas", u));
-            if(d.exists() && d.data().pass === p) loguear({id:u, ...d.data(), rol:"esp"});
-            else alert("Datos incorrectos");
+            if(d.exists() && d.data().pass === p) entrar({id:u, ...d.data(), rol:"esp"});
+            else alert("Acceso Incorrecto");
         }
     };
 
-    function loguear(data) {
-        sesionActual = data;
+    function entrar(data) {
+        sesion = data;
         document.getElementById('login-screen').style.display='none';
         document.getElementById('app-content').style.display='block';
-        document.getElementById('display-area').innerText = sesionActual.area;
-        document.getElementById('display-nombre').innerText = sesionActual.nombre;
+        document.getElementById('display-area').innerText = sesion.area;
+        document.getElementById('display-nombre').innerText = sesion.nombre;
         document.getElementById('fecha-selector').value = new Date().toISOString().split('T')[0];
-        
-        if(sesionActual.rol === 'admin') {
+        if(sesion.rol === 'admin') {
             document.getElementById('btn-admin').style.display='block';
-            cargarAdminData();
+            cargarAdmin();
         }
-        actualizarSecciones();
+        cambioGrado();
     }
 
     window.verTab = (t) => {
@@ -193,15 +180,14 @@
         document.getElementById('btn-'+t).classList.add('active');
     };
 
-    window.actualizarSecciones = async () => {
+    window.cambioGrado = async () => {
         const g = document.getElementById('grado-sel').value;
         const selS = document.getElementById('secc-sel');
+        selS.innerHTML = "";
         if(g === "GE") {
-            selS.innerHTML = "<option>Cargando...</option>";
             const snap = await getDocs(collection(db, "grupos_estables_db"));
-            selS.innerHTML = "";
             snap.forEach(d => {
-                if(sesionActual.rol === 'admin' || d.data().espId === sesionActual.id) {
+                if(sesion.rol === 'admin' || d.data().espId === sesion.id) {
                     selS.innerHTML += `<option value="${d.id}">${d.data().nom}</option>`;
                 }
             });
@@ -213,113 +199,108 @@
     window.cargarAlumnos = async () => {
         const g = document.getElementById('grado-sel').value;
         const s = document.getElementById('secc-sel').value;
-        if(!g || !s) return alert("Seleccione todos los datos");
-
+        if(!g || !s) return alert("Seleccione datos");
         document.getElementById('panel-lista').style.display='block';
-        document.getElementById('search-container').style.display = (g === "GE") ? 'block' : 'none';
-        const render = document.getElementById('render-alumnos');
-        render.innerHTML = "🔍 Buscando alumnos...";
-
-        listaAlumnos = [];
-        estadosAsistencia = {};
+        document.getElementById('search-container').style.display = (g==="GE") ? "block" : "none";
+        alumnosActuales = []; asistTemp = {};
 
         if(g === "GE") {
             const d = await getDoc(doc(db, "grupos_estables_db", s));
-            listaAlumnos = d.data().alumnos;
-            document.getElementById('meta-text').innerText = "🎯 PROPÓSITO: " + d.data().meta;
+            alumnosActuales = d.data().alumnos;
+            document.getElementById('meta-text').innerText = "Meta: " + d.data().meta;
         } else {
-            document.getElementById('meta-text').innerText = "";
             const snap = await getDocs(collection(db, "docentes_db"));
             snap.forEach(d => {
-                if(String(d.data().grado).includes(g) && d.data().seccion.toUpperCase() === s.toUpperCase()) {
-                    listaAlumnos = d.data().alumnos.filter(a => !a.retirado);
+                if(String(d.data().grado).includes(g) && d.data().seccion === s) {
+                    alumnosActuales = d.data().alumnos.filter(a => !a.retirado);
                 }
             });
         }
-        dibujarLista();
+        render();
     };
 
-    function dibujarLista() {
-        const render = document.getElementById('render-alumnos');
-        render.innerHTML = "";
-        if(listaAlumnos.length === 0) render.innerHTML = "No se encontraron alumnos.";
-        listaAlumnos.forEach(a => {
-            if(!estadosAsistencia[a.id]) estadosAsistencia[a.id] = 1;
-            const color = estadosAsistencia[a.id] === 1 ? 'var(--exito)' : 'var(--error)';
-            render.innerHTML += `
-                <div class="fila-alumno" data-n="${a.nombre.toLowerCase()}">
-                    <span>${a.nombre}</span>
-                    <button class="btn-asis" onclick="toggle(${a.id})" style="background:${color}">
-                        ${estadosAsistencia[a.id] === 1 ? 'P' : 'I'}
-                    </button>
-                </div>`;
+    function render() {
+        const c = document.getElementById('render-alumnos');
+        c.innerHTML = "";
+        alumnosActuales.forEach(a => {
+            if(!asistTemp[a.id]) asistTemp[a.id] = 1;
+            c.innerHTML += `<div class="fila-alumno" data-n="${a.nombre.toLowerCase()}">
+                <span>${a.nombre}</span>
+                <button class="btn-asis" onclick="toggle(${a.id})" style="background:${asistTemp[a.id]===1?'var(--exito)':'var(--error)'}">
+                    ${asistTemp[a.id]===1?'P':'I'}
+                </button>
+            </div>`;
         });
     }
 
-    window.toggle = (id) => {
-        estadosAsistencia[id] = estadosAsistencia[id] === 1 ? 0 : 1;
-        dibujarLista();
-    };
-
+    window.toggle = (id) => { asistTemp[id] = asistTemp[id] === 1 ? 0 : 1; render(); };
     window.filtrarAlumnos = () => {
         const v = document.getElementById('input-busqueda').value.toLowerCase();
-        document.querySelectorAll('.fila-alumno').forEach(f => {
-            f.style.display = f.dataset.n.includes(v) ? 'flex' : 'none';
-        });
+        document.querySelectorAll('.fila-alumno').forEach(f => f.style.display = f.dataset.n.includes(v) ? 'flex' : 'none');
     };
 
     window.guardarAsistencia = async () => {
         const f = document.getElementById('fecha-selector').value;
         const s = document.getElementById('secc-sel').value;
-        const idDoc = `${sesionActual.id}_${f}_${s}`.replace(/\s+/g, '');
-        
-        await setDoc(doc(db, "asistencia_especialistas", idDoc), {
-            especialista: sesionActual.nombre, area: sesionActual.area, 
-            fecha: f, seccion: s, asis: estadosAsistencia, 
-            obs: document.getElementById('obs-jornada').value
+        await setDoc(doc(db, "asistencia_especialistas", `${sesion.id}_${f}_${s}`), {
+            esp: sesion.nombre, area: sesion.area, fecha: f, seccion: s, data: asistTemp, obs: document.getElementById('obs-jornada').value
         });
-        alert("✅ Asistencia Guardada con éxito");
-        location.reload();
+        alert("¡Guardado!"); location.reload();
     };
 
-    // ADMIN FUNCTIONS
-    async function cargarAdminData() {
+    // --- DIRECCIÓN LÓGICA ---
+    async function cargarAdmin() {
+        const sE = await getDocs(collection(db, "credenciales_especialistas"));
+        const sG = await getDocs(collection(db, "grupos_estables_db"));
         const sA = await getDocs(collection(db, "docentes_db"));
-        const cont = document.getElementById('ge-alumnos-check');
-        cont.innerHTML = "";
+        
+        const selEsp = document.getElementById('ge-dueño');
+        const listEsp = document.getElementById('lista-esp-admin');
+        const listGE = document.getElementById('lista-ge-admin');
+        const checkAl = document.getElementById('ge-alumnos-check');
+
+        selEsp.innerHTML = ""; listEsp.innerHTML = "<strong>Usuarios:</strong>"; 
+        listGE.innerHTML = "<strong>Grupos Estables:</strong>"; checkAl.innerHTML = "";
+
+        sE.forEach(d => {
+            selEsp.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
+            listEsp.innerHTML += `<div class="item-gestion">${d.data().nombre} <button class="btn btn-borrar" onclick="borrarDoc('credenciales_especialistas','${d.id}')">Eliminar</button></div>`;
+        });
+
+        sG.forEach(d => {
+            listGE.innerHTML += `<div class="item-gestion">${d.data().nom} <button class="btn btn-borrar" onclick="borrarDoc('grupos_estables_db','${d.id}')">Eliminar</button></div>`;
+        });
+
         sA.forEach(d => {
             d.data().alumnos.forEach(a => {
-                cont.innerHTML += `<div><input type="checkbox" class="c-ge" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</div>`;
+                checkAl.innerHTML += `<div><input type="checkbox" class="c-ge" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</div>`;
             });
         });
-        const sE = await getDocs(collection(db, "credenciales_especialistas"));
-        const sel = document.getElementById('ge-dueño');
-        sel.innerHTML = "";
-        sE.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`; });
     }
 
+    window.borrarDoc = async (col, id) => {
+        if(confirm("¿Desea eliminar este registro permanentemente?")) {
+            await deleteDoc(doc(db, col, id));
+            cargarAdmin();
+        }
+    };
+
     window.crearEspecialista = async () => {
-        const id = document.getElementById('adm-user').value;
-        await setDoc(doc(db, "credenciales_especialistas", id), {
-            nombre: document.getElementById('adm-nom').value,
-            area: document.getElementById('adm-area').value,
-            pass: document.getElementById('adm-pass').value
+        const u = document.getElementById('adm-user').value;
+        await setDoc(doc(db, "credenciales_especialistas", u), {
+            nombre: document.getElementById('adm-nom').value, area: document.getElementById('adm-area').value, pass: document.getElementById('adm-pass').value
         });
-        alert("Usuario creado");
-        cargarAdminData();
+        alert("Especialista Creado"); cargarAdmin();
     };
 
     window.guardarGrupoEstable = async () => {
         const nom = document.getElementById('ge-nom').value;
-        const checks = document.querySelectorAll('.c-ge:checked');
-        let lista = [];
-        checks.forEach(c => lista.push({id: c.dataset.id, nombre: c.dataset.nom}));
+        const lista = [];
+        document.querySelectorAll('.c-ge:checked').forEach(c => lista.push({id: c.dataset.id, nombre: c.dataset.nom}));
         await setDoc(doc(db, "grupos_estables_db", nom.replace(/ /g, '_')), {
-            nom: nom, meta: document.getElementById('ge-obj').value,
-            espId: document.getElementById('ge-dueño').value, alumnos: lista
+            nom: nom, meta: document.getElementById('ge-obj').value, espId: document.getElementById('ge-dueño').value, alumnos: lista
         });
-        alert("Grupo Estable Creado");
-        location.reload();
+        alert("Grupo Creado"); cargarAdmin();
     };
 
 </script>
