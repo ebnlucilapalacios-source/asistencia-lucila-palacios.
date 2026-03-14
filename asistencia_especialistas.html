@@ -3,255 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistencia Especialistas - EBN Lucila Palacios</title>
+    <title>Especialistas - EBN Lucila Palacios</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
     <style>
-        :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --gris: #bdc3c7; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 50px; }
+        :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; --naranja: #e67e22; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 30px; }
         header { background: var(--morado); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
-        .container { max-width: 500px; margin: auto; padding: 10px; }
+        .container { max-width: 600px; margin: auto; padding: 10px; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
         input, select, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
         button { border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         
-        .btn-primario { background: var(--morado); color: white; }
-        .btn-guardar { background: var(--azul); color: white; font-size: 16px; padding: 15px; }
-        
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { background: #ddd; flex: 1; padding: 10px; border-radius: 6px; font-size: 12px; }
+        .tab-btn.active { background: var(--morado); color: white; }
+
         .alumno-fila { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .info-alumno { flex-grow: 1; font-size: 14px; }
-        .btn-check { width: 45px; height: 40px; border-radius: 8px; color: white; font-weight: bold; margin-left: 10px; }
+        .btn-check { width: 45px; height: 40px; border-radius: 8px; color: white; font-weight: bold; }
         
-        .estado-1 { background: var(--exito); } /* Presente */
-        .estado-0 { background: var(--rojo); }   /* Ausente */
-        .estado-2 { background: var(--morado); } /* Justificado */
+        .estado-1 { background: var(--exito); } 
+        .estado-0 { background: var(--rojo); }   
+        .estado-2 { background: var(--morado); } 
         
-        #pantalla-app { display: none; }
-        .resumen-clase { background: #e8f4fd; border: 1px solid #3498db; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;}
+        .stats-box { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; margin-top: 10px; }
+        .stat-card { background: #f8f9fa; padding: 10px; border-radius: 8px; border-top: 3px solid var(--morado); }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: var(--morado); color: white; }
+
+        #pantalla-app, #seccion-estadistica { display: none; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
 
-    <header>
-        <h2 style="margin:0;">📚 ÁREAS DE FORMACIÓN</h2>
-        <small>Control de Asistencia para Especialistas</small>
-    </header>
+<header>
+    <h2 style="margin:0;">SISTEMA ESPECIALISTAS</h2>
+    <div id="info-perfil-header" style="font-size: 12px; display:none;"></div>
+</header>
 
-    <div class="container">
-        <div id="pantalla-login" class="card">
-            <h3>Bienvenido, Especialista</h3>
-            <label>Seleccione su Perfil:</label>
-            <select id="select-perfil">
-                <option value="">-- Elija su nombre --</option>
-                <optgroup label="Inglés">
-                    <option value="Yubiry Martinez_Inglés">Yubiry Martinez (Mañana)</option>
-                    <option value="Justina Fernandez_Inglés">Justina Fernandez (Tarde)</option>
-                </optgroup>
-                <optgroup label="Cultura">
-                    <option value="Gaudy Rodriguez_Cultura">Gaudy Rodriguez (Mañana)</option>
-                    <option value="Shijan Brito_Cultura">Shijan Brito (Tarde)</option>
-                </optgroup>
-                <optgroup label="Computación">
-                    <option value="Magloris Fernandez_Computación">Magloris Fernandez (Mañana)</option>
-                </optgroup>
-                <optgroup label="Educación Física">
-                    <option value="Angel Figuera_Ed. Física">Angel Figuera (Mañana)</option>
-                    <option value="Francelis Montaño_Ed. Física">Francelis Montaño (Mañana)</option>
-                    <option value="Leosmary Loroño_Ed. Física">Leosmary Loroño (Tarde)</option>
-                </optgroup>
-            </select>
-            <button class="btn-primario" onclick="entrarSistema()">INGRESAR AL SISTEMA</button>
-        </div>
-
-        <div id="pantalla-app">
-            <div class="card">
-                <div class="resumen-clase">
-                    <b>Especialista:</b> <span id="txt-nombre"></span><br>
-                    <b>Área:</b> <span id="txt-area"></span>
-                </div>
-                
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1">
-                        <label>Fecha:</label>
-                        <input type="date" id="fecha-clase">
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <div style="flex:1">
-                        <label>Grado:</label>
-                        <select id="select-grado">
-                            <option value="1">1° Grado</option><option value="2">2° Grado</option>
-                            <option value="3">3° Grado</option><option value="4">4° Grado</option>
-                            <option value="5">5° Grado</option><option value="6">6° Grado</option>
-                        </select>
-                    </div>
-                    <div style="flex:1">
-                        <label>Sección:</label>
-                        <select id="select-seccion">
-                            <option value="A">A</option><option value="B">B</option>
-                            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <button class="btn-primario" onclick="buscarAlumnos()" style="margin-top:15px;">🔍 BUSCAR LISTA DE ESTUDIANTES</button>
-            </div>
-
-            <div class="card" id="card-lista" style="display:none;">
-                <h3 style="margin-top:0; border-bottom:2px solid var(--morado); padding-bottom:5px;">Estudiantes</h3>
-                <p style="font-size:12px; color:#666;">Toque el botón derecho para cambiar: <b>P</b>(Presente) <b>I</b>(Inasistente) <b>J</b>(Justificado).</p>
-                <div id="contenedor-alumnos"></div>
-                <button class="btn-guardar" onclick="guardarAsistenciaEspecialista()" style="margin-top:20px;">💾 GUARDAR ASISTENCIA</button>
-            </div>
-        </div>
+<div class="container">
+    <div id="pantalla-login" class="card">
+        <h3 style="text-align:center">Perfil del Especialista</h3>
+        <select id="select-perfil">
+            <option value="">-- Seleccione su nombre --</option>
+            <optgroup label="Educación Física">
+                <option value="Angel Figuera_Educación Física">Angel Figuera</option>
+                <option value="Francelis Montaño_Educación Física">Francelis Montaño</option>
+                <option value="Leosmary Loroño_Educación Física">Leosmary Loroño</option>
+            </optgroup>
+            <optgroup label="Otras Áreas">
+                <option value="Yubiry Martinez_Inglés">Yubiry Martinez</option>
+                <option value="Justina Fernandez_Inglés">Justina Fernandez</option>
+                <option value="Gaudy Rodriguez_Cultura">Gaudy Rodriguez</option>
+                <option value="Shijan Brito_Cultura">Shijan Brito</option>
+                <option value="Magloris Fernandez_Computación">Magloris Fernandez</option>
+            </optgroup>
+        </select>
+        <button style="background:var(--morado); color:white" onclick="iniciarSesion()">INGRESAR</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <div id="pantalla-app">
+        <div class="nav-tabs no-print">
+            <button id="btn-tab-asistencia" class="tab-btn active" onclick="cambiarTab('asistencia')">📝 ASISTENCIA</button>
+            <button id="btn-tab-stats" class="tab-btn" onclick="cambiarTab('stats')">📊 ESTADÍSTICA</button>
+            <button class="tab-btn" style="background:var(--rojo); color:white" onclick="location.reload()">SALIR</button>
+        </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-            projectId: "control-de-asistencia-d585e",
-            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-            appId: "1:368890880546:web:a97ab4372dea536217207b"
-        };
+        <div id="seccion-asistencia">
+            <div class="card no-print">
+                <input type="date" id="fecha-clase">
+                <div style="display:flex; gap:5px;">
+                    <select id="select-grado">
+                        <option value="1">1° Grado</option><option value="2">2° Grado</option>
+                        <option value="3">3° Grado</option><option value="4">4° Grado</option>
+                        <option value="5">5° Grado</option><option value="6">6° Grado</option>
+                    </select>
+                    <select id="select-seccion">
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        <option value="D">D</option><option value="E">E</option>
+                    </select>
+                </div>
+                <button style="background:var(--azul); color:white" onclick="cargarLista()">🔍 CARGAR LISTA</button>
+            </div>
 
-        const app = initializeApp(firebaseConfig);
-        const dbCloud = getFirestore(app);
+            <div id="lista-alumnos-card" class="card" style="display:none;">
+                <h3 id="titulo-lista" style="margin:0; font-size:16px; color:var(--morado)"></h3>
+                <div id="contenedor-alumnos"></div>
+                <button style="background:var(--exito); color:white; margin-top:20px; padding:15px" onclick="guardarAsistencia()">💾 GUARDAR ASISTENCIA DEL DÍA</button>
+            </div>
+        </div>
 
-        window.especialistaActual = "";
-        window.areaActual = "";
-        window.alumnosClase = [];
-        window.asistenciaActual = {};
+        <div id="seccion-estadistica">
+            <div class="card no-print">
+                <h4>Generar Reporte Mensual</h4>
+                <label>Seleccione el mes para el reporte:</label>
+                <input type="month" id="mes-reporte">
+                <button style="background:var(--naranja); color:white" onclick="generarEstadisticaMensual()">📈 VER ESTADÍSTICA</button>
+            </div>
 
-        document.getElementById('fecha-clase').value = new Date().toISOString().split('T')[0];
+            <div id="resultado-estadistica"></div>
+        </div>
+    </div>
+</div>
 
-        window.entrarSistema = () => {
-            const perfil = document.getElementById('select-perfil').value;
-            if(!perfil) return alert("Por favor seleccione su perfil.");
-            
-            const [nombre, area] = perfil.split('_');
-            window.especialistaActual = nombre;
-            window.areaActual = area;
-            
-            document.getElementById('txt-nombre').innerText = nombre;
-            document.getElementById('txt-area').innerText = area;
-            
-            document.getElementById('pantalla-login').style.display = 'none';
-            document.getElementById('pantalla-app').style.display = 'block';
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        window.buscarAlumnos = async () => {
-            const gradoBuscado = document.getElementById('select-grado').value;
-            const seccionBuscada = document.getElementById('select-seccion').value;
-            const contenedor = document.getElementById('contenedor-alumnos');
-            
-            contenedor.innerHTML = "<p>Buscando en la base de datos...</p>";
-            document.getElementById('card-lista').style.display = 'block';
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    };
 
-            try {
-                const snap = await getDocs(collection(dbCloud, "docentes_db"));
-                let docenteEncontrado = null;
-                let gradosDisponibles = []; // Para ayudar a diagnosticar
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    // Evitamos al admin y revisamos que tenga datos de grado y sección
-                    if(docSnap.id !== "admin_lucila" && data.grado && data.seccion) {
-                        const gDb = String(data.grado).trim().toUpperCase();
-                        const sDb = String(data.seccion).trim().toUpperCase();
-                        
-                        // Guardamos lo que encontramos para mostrarlo si hay error
-                        gradosDisponibles.push(`${gDb} "${sDb}"`);
+    let espNombre = "", espArea = "";
+    let listaActual = [];
+    let asistenciaHoy = {};
 
-                        // Búsqueda inteligente: si "1ro" incluye "1" y la sección es "A"
-                        if(gDb.includes(gradoBuscado) && sDb === seccionBuscada) {
-                            docenteEncontrado = data;
-                        }
-                    }
-                });
+    document.getElementById('fecha-clase').value = new Date().toISOString().split('T')[0];
+    document.getElementById('mes-reporte').value = new Date().toISOString().slice(0, 7);
 
-                if(!docenteEncontrado || !docenteEncontrado.alumnos || docenteEncontrado.alumnos.length === 0) {
-                    let sugerencia = gradosDisponibles.length > 0 
-                        ? `<br><br><small style="color:#555;"><b>Las secciones registradas actualmente son:</b><br>${gradosDisponibles.join('<br>')}</small>` 
-                        : `<br><small style="color:#555;">No hay ninguna maestra con estudiantes registrados aún.</small>`;
-                    
-                    contenedor.innerHTML = `<p style="color:var(--rojo); font-weight:bold;">No se encontraron estudiantes para ${gradoBuscado}° "${seccionBuscada}".</p>${sugerencia}`;
-                    return;
-                }
+    window.iniciarSesion = () => {
+        const val = document.getElementById('select-perfil').value;
+        if(!val) return alert("Selecciona un perfil");
+        [espNombre, espArea] = val.split('_');
+        document.getElementById('pantalla-login').style.display = 'none';
+        document.getElementById('pantalla-app').style.display = 'block';
+        document.getElementById('info-perfil-header').style.display = 'block';
+        document.getElementById('info-perfil-header').innerText = `${espNombre} | ${espArea}`;
+    };
 
-                window.alumnosClase = docenteEncontrado.alumnos.filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
-                window.asistenciaActual = {};
-                
-                window.renderizarLista();
+    window.cambiarTab = (tab) => {
+        document.getElementById('seccion-asistencia').style.display = tab === 'asistencia' ? 'block' : 'none';
+        document.getElementById('seccion-estadistica').style.display = tab === 'stats' ? 'block' : 'none';
+        document.getElementById('btn-tab-asistencia').classList.toggle('active', tab === 'asistencia');
+        document.getElementById('btn-tab-stats').classList.toggle('active', tab === 'stats');
+    };
 
-            } catch (error) {
-                console.error(error);
-                contenedor.innerHTML = "<p>Error de conexión con la base de datos.</p>";
+    window.cargarLista = async () => {
+        const grado = document.getElementById('select-grado').value;
+        const seccion = document.getElementById('select-seccion').value;
+        const contenedor = document.getElementById('contenedor-alumnos');
+        
+        contenedor.innerHTML = "Cargando estudiantes...";
+        document.getElementById('lista-alumnos-card').style.display = 'block';
+
+        const snap = await getDocs(collection(db, "docentes_db"));
+        let encontrada = false;
+
+        snap.forEach(d => {
+            const data = d.data();
+            if(String(data.grado).includes(grado) && String(data.seccion).toUpperCase() === seccion) {
+                encontrada = true;
+                listaActual = data.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                document.getElementById('titulo-lista').innerText = `Lista: ${grado}° "${seccion}"`;
+                renderAlumnos();
             }
-        };
+        });
 
-        window.renderizarLista = () => {
-            const contenedor = document.getElementById('contenedor-alumnos');
-            contenedor.innerHTML = "";
+        if(!encontrada) contenedor.innerHTML = "Sección no encontrada en la base de datos de las docentes.";
+    };
 
-            window.alumnosClase.forEach(a => {
-                if(window.asistenciaActual[a.id] === undefined) window.asistenciaActual[a.id] = 1; 
-                
-                const estado = window.asistenciaActual[a.id];
-                let claseBtn = estado === 1 ? 'estado-1' : (estado === 0 ? 'estado-0' : 'estado-2');
-                let textoBtn = estado === 1 ? 'P' : (estado === 0 ? 'I' : 'J');
-
-                contenedor.innerHTML += `
-                    <div class="alumno-fila">
-                        <div class="info-alumno">
-                            <strong>${a.nombre}</strong><br>
-                            <small style="color:#7f8c8d;">C.E: ${a.cedula || 'S/C'} | Gen: ${a.genero}</small>
-                        </div>
-                        <button onclick="window.cambiarEstado(${a.id})" class="btn-check ${claseBtn}">${textoBtn}</button>
-                    </div>
-                `;
-            });
-        };
-
-        window.cambiarEstado = (idAlumno) => {
-            const estadoActual = window.asistenciaActual[idAlumno];
-            if(estadoActual === 1) window.asistenciaActual[idAlumno] = 0;
-            else if(estadoActual === 0) window.asistenciaActual[idAlumno] = 2;
-            else window.asistenciaActual[idAlumno] = 1;
+    window.renderAlumnos = () => {
+        const contenedor = document.getElementById('contenedor-alumnos');
+        contenedor.innerHTML = "";
+        listaActual.forEach(a => {
+            if(asistenciaHoy[a.id] === undefined) asistenciaHoy[a.id] = 1;
+            const st = asistenciaHoy[a.id];
+            const color = st === 1 ? 'estado-1' : (st === 0 ? 'estado-0' : 'estado-2');
+            const letra = st === 1 ? 'P' : (st === 0 ? 'I' : 'J');
             
-            window.renderizarLista();
-        };
+            contenedor.innerHTML += `
+                <div class="alumno-fila">
+                    <div style="font-size:13px"><b>${a.nombre}</b></div>
+                    <button onclick="cambiarSt(${a.id})" class="btn-check ${color}">${letra}</button>
+                </div>`;
+        });
+    };
 
-        window.guardarAsistenciaEspecialista = async () => {
-            const fecha = document.getElementById('fecha-clase').value;
-            const grado = document.getElementById('select-grado').value;
-            const seccion = document.getElementById('select-seccion').value;
-            
-            const idRegistro = `${window.especialistaActual.replace(/\s+/g, '')}_${fecha}_${grado}${seccion}`;
+    window.cambiarSt = (id) => {
+        asistenciaHoy[id] = (asistenciaHoy[id] + 1) % 2 === 0 ? 0 : (asistenciaHoy[id] === 0 ? 2 : 1);
+        if(asistenciaHoy[id] === 3) asistenciaHoy[id] = 1; // Ajuste de ciclo simple
+        // Ciclo manual: 1 -> 0 -> 2 -> 1
+        let act = asistenciaHoy[id];
+        if(act === 1) asistenciaHoy[id] = 0;
+        else if(act === 0) asistenciaHoy[id] = 2;
+        else asistenciaHoy[id] = 1;
+        renderAlumnos();
+    };
 
-            const datosGuardar = {
-                especialista: window.especialistaActual,
-                area: window.areaActual,
-                fecha: fecha,
-                grado: grado,
-                seccion: seccion,
-                asistencias: window.asistenciaActual,
-                timestamp: new Date().toISOString()
-            };
+    window.guardarAsistencia = async () => {
+        const fecha = document.getElementById('fecha-clase').value;
+        const grado = document.getElementById('select-grado').value;
+        const seccion = document.getElementById('select-seccion').value;
+        const idDoc = `${espNombre.replace(/\s/g,'')}_${fecha}_${grado}${seccion}`;
 
-            try {
-                await setDoc(doc(dbCloud, "asistencia_especialistas", idRegistro), datosGuardar);
-                alert(`✅ Asistencia guardada exitosamente para ${grado}° "${seccion}".`);
-                document.getElementById('card-lista').style.display = 'none';
-            } catch (error) {
-                console.error(error);
-                alert("❌ Ocurrió un error al guardar. Verifique su conexión.");
-            }
-        };
-    </script>
+        await setDoc(doc(db, "asistencia_especialistas", idDoc), {
+            especialista: espNombre,
+            area: espArea,
+            fecha, grado, seccion,
+            asistencias: asistenciaHoy,
+            totalPresentes: Object.values(asistenciaHoy).filter(v => v === 1).length,
+            matricula: listaActual.length
+        });
+        alert("¡Asistencia guardada!");
+        document.getElementById('lista-alumnos-card').style.display = 'none';
+    };
+
+    window.generarEstadisticaMensual = async () => {
+        const mes = document.getElementById('mes-reporte').value; // Formato YYYY-MM
+        const salida = document.getElementById('resultado-estadistica');
+        salida.innerHTML = "Calculando promedios...";
+
+        const q = query(collection(db, "asistencia_especialistas"), where("especialista", "==", espNombre));
+        const snap = await getDocs(q);
+
+        let clasesMes = [];
+        snap.forEach(d => {
+            if(d.data().fecha.startsWith(mes)) clasesMes.push(d.data());
+        });
+
+        if(clasesMes.length === 0) {
+            salida.innerHTML = "No hay datos para este mes.";
+            return;
+        }
+
+        let totalP = 0, totalM = 0;
+        let tablaHtml = `
+            <div class="card">
+                <h3 style="text-align:center; color:var(--morado)">CONTROL ESTADÍSTICO MENSUAL</h3>
+                <p style="text-align:center; font-size:12px">${espArea} - ${mes}</p>
+                <table>
+                    <thead><tr><th>Fecha</th><th>Secc</th><th>Matr.</th><th>Asist.</th><th>% Efic.</th></tr></thead>
+                    <tbody>`;
+
+        clasesMes.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(c => {
+            const efic = ((c.totalPresentes / c.matricula) * 100).toFixed(1);
+            totalP += c.totalPresentes;
+            totalM += c.matricula;
+            tablaHtml += `<tr><td>${c.fecha.split('-')[2]}</td><td>${c.grado}${c.seccion}</td><td>${c.matricula}</td><td>${c.totalPresentes}</td><td>${efic}%</td></tr>`;
+        });
+
+        const eficGral = ((totalP / totalM) * 100).toFixed(1);
+        tablaHtml += `
+                    <tr style="background:#eee; font-weight:bold;">
+                        <td colspan="2">PROMEDIOS</td><td>${(totalM/clasesMes.length).toFixed(1)}</td><td>${(totalP/clasesMes.length).toFixed(1)}</td><td>${eficGral}%</td>
+                    </tr>
+                </tbody></table>
+                <div class="stats-box">
+                    <div class="stat-card"><small>Atenciones</small><br><b>${clasesMes.length}</b></div>
+                    <div class="stat-card"><small>Prom. Real</small><br><b>${(totalP/clasesMes.length).toFixed(1)}</b></div>
+                    <div class="stat-card"><small>Eficiencia</small><br><b>${eficGral}%</b></div>
+                </div>
+                <button onclick="window.print()" class="no-print" style="background:var(--azul); color:white; margin-top:15px">🖨️ IMPRIMIR REPORTE</button>
+            </div>`;
+        
+        salida.innerHTML = tablaHtml;
+    };
+</script>
+
 </body>
 </html>
