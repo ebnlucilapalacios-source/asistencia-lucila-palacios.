@@ -9,32 +9,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --exito: #27ae60; --error: #c0392b; --fondo: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
+        :root { 
+            --azul: #002147; 
+            --oro: #f3c612;  
+            --exito: #27ae60; 
+            --error: #c0392b; 
+            --fondo: #f4f7f6; 
+        }
         
-        /* LOGIN */
-        .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--azul) 0%, #00152e 100%); }
-        .login-card { background: white; padding: 30px; border-radius: 20px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid var(--oro); }
-        .logo-img { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--oro); margin-bottom: 15px; background: #fff; object-fit: cover; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--fondo); margin: 0; color: #333; }
+        
+        /* PANTALLA DE LOGIN INSTITUCIONAL */
+        .login-screen { 
+            height: 100vh; display: flex; align-items: center; justify-content: center; 
+            background: linear-gradient(135deg, var(--azul) 0%, #00152e 100%);
+        }
+        .login-card { 
+            background: white; padding: 30px; border-radius: 20px; width: 340px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; border-top: 6px solid var(--oro);
+        }
+        .logo-img { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--oro); margin-bottom: 15px; background: #fff; object-fit: cover; }
 
-        /* APP */
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--oro); display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .logo-header { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--oro); background: white; }
+        /* HEADER Y NAVEGACIÓN */
+        header { 
+            background: var(--azul); color: white; padding: 15px; text-align: center; 
+            border-bottom: 5px solid var(--oro); display: flex; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .logo-header { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--oro); background: white; }
+
         .container { max-width: 900px; margin: auto; padding: 15px; }
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #eee; padding: 5px; border-radius: 10px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #ddd; padding: 5px; border-radius: 10px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; background: transparent; }
         .tab-btn.active { background: var(--oro); color: var(--azul); }
+
+        /* TARJETAS Y UI */
         .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
         
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; color: white; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-exito { background: var(--exito); }
         .btn-borrar { background: var(--error); padding: 5px 10px; font-size: 10px; width: auto; margin: 0; }
 
-        .item-gestion { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
         .fila-alumno { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .btn-asis { width: 45px; height: 45px; border-radius: 50%; border: none; color: white; font-weight: bold; cursor: pointer; }
+        .btn-asis { width: 50px; height: 50px; border-radius: 50%; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 18px; }
+        
+        .item-gestion { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
         #app-content, .sec { display: none; }
     </style>
@@ -43,21 +63,21 @@
 
     <div id="login-screen" class="login-screen">
         <div class="login-card">
-            <img src="https://images.clothes.com/i/421692.png" alt="Logo Lucila Palacios" class="logo-img">
-            <h2 style="color:var(--azul); margin:0; font-size: 20px;">LUCILA PALACIOS</h2>
-            <p style="font-size:11px; color:#666; margin-bottom:20px; font-weight: bold;">SAN FÉLIX - 1972</p>
+            <img src="https://images.clothes.com/i/421692.png" alt="EBN Lucila Palacios" class="logo-img">
+            <h2 style="color:var(--azul); margin:0; font-size: 18px;">LUCILA PALACIOS</h2>
+            <p style="font-size:10px; color:#666; margin-bottom:20px; font-weight: bold;">SISTEMA DE CONTROL DE ASISTENCIA</p>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pass" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="iniciarSesion()">ENTRAR AL PANEL</button>
+            <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR AL PANEL</button>
         </div>
     </div>
 
     <div id="app-content">
         <header>
-            <img src="https://images.clothes.com/i/421692.png" alt="Logo Header" class="logo-header">
+            <img src="https://images.clothes.com/i/421692.png" class="logo-header">
             <div>
-                <h3 id="display-area" style="margin:0; text-transform: uppercase; font-size: 16px;">ÁREA</h3>
-                <div id="display-nombre" style="font-size:12px; opacity:0.8;">Nombre</div>
+                <h3 id="display-area" style="margin:0; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">ÁREA</h3>
+                <div id="display-nombre" style="font-size:11px; opacity:0.9;">Docente Especialista</div>
             </div>
         </header>
 
@@ -71,58 +91,77 @@
 
             <div id="sec-asis" class="sec" style="display:block;">
                 <div class="card">
+                    <label style="font-size: 11px; font-weight: bold;">FECHA ACTUAL:</label>
                     <input type="date" id="fecha-selector">
+                    
                     <div style="display:flex; gap:8px;">
-                        <select id="grado-sel" onchange="cambioGrado()">
-                            <option value="">-- Grado --</option>
-                            <option value="1">1°</option><option value="2">2°</option>
-                            <option value="3">3°</option><option value="4">4°</option>
-                            <option value="5">5°</option><option value="6">6°</option>
-                            <option value="GE">Grupo Estable</option>
-                        </select>
-                        <select id="secc-sel"></select>
+                        <div style="flex:1;">
+                            <label style="font-size: 11px;">GRADO:</label>
+                            <select id="grado-sel" onchange="actualizarSecciones()">
+                                <option value="">Seleccione...</option>
+                                <option value="1">1° Grado</option><option value="2">2° Grado</option>
+                                <option value="3">3° Grado</option><option value="4">4° Grado</option>
+                                <option value="5">5° Grado</option><option value="6">6° Grado</option>
+                                <option value="GE">Grupo Estable</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size: 11px;">SECCIÓN (A-E):</label>
+                            <select id="secc-sel">
+                                </select>
+                        </div>
                     </div>
-                    <button class="btn btn-azul" style="margin-top:10px;" onclick="cargarAlumnos()">🔍 CARGAR LISTA</button>
+                    <button class="btn btn-azul" style="margin-top:10px;" onclick="cargarLista()">🔍 BUSCAR ESTUDIANTES</button>
                 </div>
+
                 <div id="panel-lista" class="card" style="display:none;">
                     <div id="search-container" style="display:none; background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px;">
-                        <input type="text" id="input-busqueda" onkeyup="filtrarAlumnos()" placeholder="🔍 Buscar alumno en el grupo...">
+                        <input type="text" id="input-busqueda" onkeyup="filtrarAlumnos()" placeholder="🔍 Buscar estudiante en este grupo...">
                     </div>
-                    <div id="meta-text" style="color:var(--azul); font-weight:bold; margin-bottom:10px; font-size:13px;"></div>
+                    
+                    <div id="meta-info" style="color:var(--azul); font-weight:bold; margin-bottom:12px; font-size:13px; border-left: 4px solid var(--oro); padding-left: 10px;"></div>
                     <div id="render-alumnos"></div>
-                    <textarea id="obs-jornada" placeholder="Observaciones de hoy..."></textarea>
-                    <button class="btn btn-exito" onclick="guardarAsistencia()">💾 GUARDAR REGISTRO</button>
+                    
+                    <label style="font-size: 11px; font-weight: bold; margin-top:15px; display:block;">OBSERVACIONES / NOVEDADES:</label>
+                    <textarea id="obs-jornada" rows="2" placeholder="Describa la actividad o novedad..."></textarea>
+                    
+                    <button class="btn btn-exito" onclick="guardarAsistencia()">💾 GUARDAR JORNADA</button>
                 </div>
             </div>
 
             <div id="sec-admin" class="sec">
                 <div class="card" style="border-left: 5px solid var(--azul);">
-                    <h4>👤 GESTIÓN DE ESPECIALISTAS</h4>
-                    <input type="text" id="adm-nom" placeholder="Nombre Completo">
-                    <input type="text" id="adm-area" placeholder="Área">
+                    <h4>👤 ESPECIALISTAS</h4>
+                    <input type="text" id="adm-nom" placeholder="Nombre y Apellido">
+                    <input type="text" id="adm-area" placeholder="Área Especialista">
                     <div style="display:flex; gap:5px;">
                         <input type="text" id="adm-user" placeholder="Usuario">
                         <input type="text" id="adm-pass" placeholder="Clave">
                     </div>
-                    <button class="btn btn-azul" onclick="crearEspecialista()">CREAR USUARIO</button>
-                    <div id="lista-esp-admin" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+                    <button class="btn btn-azul" onclick="crearEspecialista()">DAR DE ALTA</button>
+                    <div id="lista-esp-admin" style="margin-top:15px; border-top: 1px solid #eee;"></div>
                 </div>
 
                 <div class="card" style="border-left: 5px solid var(--oro);">
-                    <h4>🏆 GRUPOS ESTABLES</h4>
-                    <input type="text" id="ge-nom" placeholder="Nombre del Grupo">
-                    <input type="text" id="ge-obj" placeholder="Meta Pedagógica">
+                    <h4>🏆 GRUPOS ESTABLES (MIXTO A-B-C-D-E)</h4>
+                    <input type="text" id="ge-nom" placeholder="Nombre del Grupo/Proyecto">
+                    <input type="text" id="ge-obj" placeholder="Meta o Propósito">
+                    <label style="font-size:11px;">Docente Responsable:</label>
                     <select id="ge-dueño"></select>
-                    <div id="ge-alumnos-check" style="max-height:180px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:10px; font-size:11px;"></div>
-                    <button class="btn btn-azul" onclick="guardarGrupoEstable()">CREAR GRUPO</button>
-                    <div id="lista-ge-admin" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+                    <div style="margin-top:10px;">
+                        <label style="font-size:11px; font-weight:bold;">MARQUE LOS ESTUDIANTES:</label>
+                        <div id="ge-alumnos-check" style="max-height:250px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:8px; background: #fafafa; font-size:11px;"></div>
+                    </div>
+                    <button class="btn btn-azul" onclick="guardarGrupoEstable()">CREAR GRUPO ESTABLE</button>
+                    <div id="lista-ge-admin" style="margin-top:15px;"></div>
                 </div>
             </div>
 
             <div id="sec-stats" class="sec">
                 <div class="card">
+                    <h4>RESUMEN DE ASISTENCIA</h4>
                     <input type="month" id="mes-filtro">
-                    <button class="btn btn-azul">PRÓXIMAMENTE: DESCARGAR PDF</button>
+                    <button class="btn btn-azul">PROXIMAMENTE: DESCARGAR PDF MENSUAL</button>
                 </div>
             </div>
         </div>
@@ -143,34 +182,40 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let sesion = null;
-    let alumnosActuales = [];
-    let asistTemp = {};
+    let currentSession = null;
+    let estudiantesActivos = [];
+    let recordAsis = {};
 
+    // --- ACCESO ---
     window.iniciarSesion = async () => {
-        const u = document.getElementById('user').value;
-        const p = document.getElementById('pass').value;
+        const u = document.getElementById('user').value.trim();
+        const p = document.getElementById('pass').value.trim();
+
         if(u === "director" && p === "lucila2026") {
-            entrar({id:"admin", nombre:"Dirección", area:"Dirección", rol:"admin"});
+            entrarApp({id:"admin", nombre:"Dirección General", area:"Administración", rol:"admin"});
         } else {
             const d = await getDoc(doc(db, "credenciales_especialistas", u));
-            if(d.exists() && d.data().pass === p) entrar({id:u, ...d.data(), rol:"esp"});
-            else alert("Acceso Incorrecto");
+            if(d.exists() && d.data().pass === p) {
+                entrarApp({id:u, ...d.data(), rol:"esp"});
+            } else {
+                alert("Usuario o clave no válidos.");
+            }
         }
     };
 
-    function entrar(data) {
-        sesion = data;
+    function entrarApp(data) {
+        currentSession = data;
         document.getElementById('login-screen').style.display='none';
         document.getElementById('app-content').style.display='block';
-        document.getElementById('display-area').innerText = sesion.area;
-        document.getElementById('display-nombre').innerText = sesion.nombre;
+        document.getElementById('display-area').innerText = currentSession.area;
+        document.getElementById('display-nombre').innerText = currentSession.nombre;
         document.getElementById('fecha-selector').value = new Date().toISOString().split('T')[0];
-        if(sesion.rol === 'admin') {
+        
+        if(currentSession.rol === 'admin') {
             document.getElementById('btn-admin').style.display='block';
-            cargarAdmin();
+            cargarAdminLists();
         }
-        cambioGrado();
+        actualizarSecciones();
     }
 
     window.verTab = (t) => {
@@ -180,127 +225,161 @@
         document.getElementById('btn-'+t).classList.add('active');
     };
 
-    window.cambioGrado = async () => {
+    // --- LOGICA DE SECCIONES (A, B, C, D, E) ---
+    window.actualizarSecciones = async () => {
         const g = document.getElementById('grado-sel').value;
         const selS = document.getElementById('secc-sel');
         selS.innerHTML = "";
+
         if(g === "GE") {
             const snap = await getDocs(collection(db, "grupos_estables_db"));
             snap.forEach(d => {
-                if(sesion.rol === 'admin' || d.data().espId === sesion.id) {
+                // El especialista solo ve sus grupos, dirección ve todos
+                if(currentSession.rol === 'admin' || d.data().espId === currentSession.id) {
                     selS.innerHTML += `<option value="${d.id}">${d.data().nom}</option>`;
                 }
             });
-        } else {
-            selS.innerHTML = '<option value="A">A</option><option value="B">B</option><option value="C">C</option>';
+        } else if (g !== "") {
+            const secs = ['A', 'B', 'C', 'D', 'E'];
+            secs.forEach(s => {
+                selS.innerHTML += `<option value="${s}">Sección ${s}</option>`;
+            });
         }
     };
 
-    window.cargarAlumnos = async () => {
+    // --- CARGA DE LISTA CON FILTRO "RETIRADO" ---
+    window.cargarLista = async () => {
         const g = document.getElementById('grado-sel').value;
         const s = document.getElementById('secc-sel').value;
-        if(!g || !s) return alert("Seleccione datos");
+        if(!g || !s) return alert("Faltan datos de selección.");
+
+        const render = document.getElementById('render-alumnos');
         document.getElementById('panel-lista').style.display='block';
-        document.getElementById('search-container').style.display = (g==="GE") ? "block" : "none";
-        alumnosActuales = []; asistTemp = {};
+        render.innerHTML = "Cargando estudiantes...";
+        document.getElementById('search-container').style.display = (g === "GE") ? 'block' : 'none';
+        
+        estudiantesActivos = [];
+        recordAsis = {};
 
         if(g === "GE") {
             const d = await getDoc(doc(db, "grupos_estables_db", s));
-            alumnosActuales = d.data().alumnos;
-            document.getElementById('meta-text').innerText = "Meta: " + d.data().meta;
+            if(d.exists()) {
+                estudiantesActivos = d.data().alumnos;
+                document.getElementById('meta-info').innerText = "GRUPO: " + d.data().nom;
+            }
         } else {
+            document.getElementById('meta-info').innerText = `${g}° Grado - Sección ${s}`;
             const snap = await getDocs(collection(db, "docentes_db"));
-            snap.forEach(d => {
-                if(String(d.data().grado).includes(g) && d.data().seccion === s) {
-                    alumnosActuales = d.data().alumnos.filter(a => !a.retirado);
+            snap.forEach(docAl => {
+                const data = docAl.data();
+                // Verificación de Grado y Sección
+                if(String(data.grado) === g && String(data.seccion).toUpperCase() === s.toUpperCase()) {
+                    // FILTRO CRITICO: Solo los que NO están retirados
+                    const filtrados = data.alumnos.filter(a => a.retirado !== true);
+                    estudiantesActivos = [...estudiantesActivos, ...filtrados];
                 }
             });
         }
-        render();
+        dibujarListaDOM();
     };
 
-    function render() {
-        const c = document.getElementById('render-alumnos');
-        c.innerHTML = "";
-        alumnosActuales.forEach(a => {
-            if(!asistTemp[a.id]) asistTemp[a.id] = 1;
-            c.innerHTML += `<div class="fila-alumno" data-n="${a.nombre.toLowerCase()}">
-                <span>${a.nombre}</span>
-                <button class="btn-asis" onclick="toggle(${a.id})" style="background:${asistTemp[a.id]===1?'var(--exito)':'var(--error)'}">
-                    ${asistTemp[a.id]===1?'P':'I'}
-                </button>
-            </div>`;
+    function dibujarListaDOM() {
+        const cont = document.getElementById('render-alumnos');
+        cont.innerHTML = (estudiantesActivos.length === 0) ? "<p style='text-align:center;'>No hay estudiantes en esta sección.</p>" : "";
+        
+        estudiantesActivos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(est => {
+            if(!recordAsis[est.id]) recordAsis[est.id] = 1; // 1 = Presente
+            const col = recordAsis[est.id] === 1 ? 'var(--exito)' : 'var(--error)';
+            cont.innerHTML += `
+                <div class="fila-alumno" data-n="${est.nombre.toLowerCase()}">
+                    <span style="font-weight:bold;">${est.nombre}</span>
+                    <button class="btn-asis" onclick="toggle(${est.id})" style="background:${col}">
+                        ${recordAsis[est.id] === 1 ? 'P' : 'I'}
+                    </button>
+                </div>`;
         });
     }
 
-    window.toggle = (id) => { asistTemp[id] = asistTemp[id] === 1 ? 0 : 1; render(); };
+    window.toggle = (id) => {
+        recordAsis[id] = recordAsis[id] === 1 ? 0 : 1;
+        dibujarListaDOM();
+    };
+
     window.filtrarAlumnos = () => {
-        const v = document.getElementById('input-busqueda').value.toLowerCase();
-        document.querySelectorAll('.fila-alumno').forEach(f => f.style.display = f.dataset.n.includes(v) ? 'flex' : 'none');
+        const val = document.getElementById('input-busqueda').value.toLowerCase();
+        document.querySelectorAll('.fila-alumno').forEach(f => {
+            f.style.display = f.dataset.n.includes(val) ? 'flex' : 'none';
+        });
     };
 
     window.guardarAsistencia = async () => {
         const f = document.getElementById('fecha-selector').value;
+        const g = document.getElementById('grado-sel').value;
         const s = document.getElementById('secc-sel').value;
-        await setDoc(doc(db, "asistencia_especialistas", `${sesion.id}_${f}_${s}`), {
-            esp: sesion.nombre, area: sesion.area, fecha: f, seccion: s, data: asistTemp, obs: document.getElementById('obs-jornada').value
+        if(!f) return alert("Defina la fecha.");
+
+        const docId = `${currentSession.id}_${f}_${s}`.replace(/\s+/g, '');
+        await setDoc(doc(db, "asistencia_especialistas", docId), {
+            docente: currentSession.nombre, area: currentSession.area, 
+            fecha: f, grado: g, seccion: s, data: recordAsis, obs: document.getElementById('obs-jornada').value
         });
-        alert("¡Guardado!"); location.reload();
+        alert("✅ Asistencia Guardada.");
+        location.reload();
     };
 
-    // --- DIRECCIÓN LÓGICA ---
-    async function cargarAdmin() {
-        const sE = await getDocs(collection(db, "credenciales_especialistas"));
-        const sG = await getDocs(collection(db, "grupos_estables_db"));
-        const sA = await getDocs(collection(db, "docentes_db"));
+    // --- PANEL DIRECCIÓN ---
+    async function cargarAdminLists() {
+        const sEsp = await getDocs(collection(db, "credenciales_especialistas"));
+        const sGE = await getDocs(collection(db, "grupos_estables_db"));
+        const sAll = await getDocs(collection(db, "docentes_db"));
         
-        const selEsp = document.getElementById('ge-dueño');
-        const listEsp = document.getElementById('lista-esp-admin');
-        const listGE = document.getElementById('lista-ge-admin');
-        const checkAl = document.getElementById('ge-alumnos-check');
+        const selE = document.getElementById('ge-dueño');
+        const listE = document.getElementById('lista-esp-admin');
+        const listG = document.getElementById('lista-ge-admin');
+        const checkA = document.getElementById('ge-alumnos-check');
 
-        selEsp.innerHTML = ""; listEsp.innerHTML = "<strong>Usuarios:</strong>"; 
-        listGE.innerHTML = "<strong>Grupos Estables:</strong>"; checkAl.innerHTML = "";
+        selE.innerHTML = ""; listE.innerHTML = ""; listG.innerHTML = ""; checkA.innerHTML = "";
 
-        sE.forEach(d => {
-            selEsp.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-            listEsp.innerHTML += `<div class="item-gestion">${d.data().nombre} <button class="btn btn-borrar" onclick="borrarDoc('credenciales_especialistas','${d.id}')">Eliminar</button></div>`;
+        sEsp.forEach(d => {
+            selE.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
+            listE.innerHTML += `<div class="item-gestion">${d.data().nombre} (${d.data().area}) <button class="btn btn-borrar" onclick="delDoc('credenciales_especialistas','${d.id}')">Eliminar</button></div>`;
         });
-
-        sG.forEach(d => {
-            listGE.innerHTML += `<div class="item-gestion">${d.data().nom} <button class="btn btn-borrar" onclick="borrarDoc('grupos_estables_db','${d.id}')">Eliminar</button></div>`;
+        sGE.forEach(d => {
+            listG.innerHTML += `<div class="item-gestion">${d.data().nom} <button class="btn btn-borrar" onclick="delDoc('grupos_estables_db','${d.id}')">Eliminar</button></div>`;
         });
-
-        sA.forEach(d => {
-            d.data().alumnos.forEach(a => {
-                checkAl.innerHTML += `<div><input type="checkbox" class="c-ge" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</div>`;
+        sAll.forEach(docu => {
+            docu.data().alumnos.forEach(alu => {
+                if(!alu.retirado) {
+                    checkA.innerHTML += `<div><input type="checkbox" class="c-ge" data-id="${alu.id}" data-nom="${alu.nombre}"> ${alu.nombre} (${docu.data().grado}°${docu.data().seccion})</div>`;
+                }
             });
         });
     }
 
-    window.borrarDoc = async (col, id) => {
-        if(confirm("¿Desea eliminar este registro permanentemente?")) {
-            await deleteDoc(doc(db, col, id));
-            cargarAdmin();
-        }
+    window.delDoc = async (c, id) => {
+        if(confirm("¿Eliminar este registro?")) { await deleteDoc(doc(db, c, id)); cargarAdminLists(); }
     };
 
     window.crearEspecialista = async () => {
-        const u = document.getElementById('adm-user').value;
+        const u = document.getElementById('adm-user').value.trim();
+        if(!u) return alert("Indique usuario.");
         await setDoc(doc(db, "credenciales_especialistas", u), {
-            nombre: document.getElementById('adm-nom').value, area: document.getElementById('adm-area').value, pass: document.getElementById('adm-pass').value
+            nombre: document.getElementById('adm-nom').value, 
+            area: document.getElementById('adm-area').value, 
+            pass: document.getElementById('adm-pass').value
         });
-        alert("Especialista Creado"); cargarAdmin();
+        alert("Especialista Agregado."); cargarAdminLists();
     };
 
     window.guardarGrupoEstable = async () => {
-        const nom = document.getElementById('ge-nom').value;
-        const lista = [];
-        document.querySelectorAll('.c-ge:checked').forEach(c => lista.push({id: c.dataset.id, nombre: c.dataset.nom}));
-        await setDoc(doc(db, "grupos_estables_db", nom.replace(/ /g, '_')), {
-            nom: nom, meta: document.getElementById('ge-obj').value, espId: document.getElementById('ge-dueño').value, alumnos: lista
+        const n = document.getElementById('ge-nom').value;
+        const lst = [];
+        document.querySelectorAll('.c-ge:checked').forEach(c => lst.push({id: c.dataset.id, nombre: c.dataset.nom}));
+        if(lst.length === 0) return alert("Elija estudiantes.");
+        await setDoc(doc(db, "grupos_estables_db", n.replace(/ /g, '_')), {
+            nom: n, meta: document.getElementById('ge-obj').value, espId: document.getElementById('ge-dueño').value, alumnos: lst
         });
-        alert("Grupo Creado"); cargarAdmin();
+        alert("Grupo Creado."); cargarAdminLists();
     };
 
 </script>
