@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Lucila Palacios - Gestión Avanzada</title>
+    <title>Sistema EBN Lucila Palacios - Gestión Total</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -11,25 +11,22 @@
 
     <style>
         :root { --azul: #002147; --oro: #f39c12; --exito: #27ae60; --error: #c0392b; --fondo: #f4f7f6; --admin: #2c3e50; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; color: #333; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--oro); position: sticky; top:0; z-index: 100; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 5px solid var(--oro); }
         .container { max-width: 1000px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #ddd; cursor: pointer; font-weight: bold; font-size: 11px; white-space: nowrap; }
+        .tab-btn { padding: 12px; border: none; border-radius: 8px; background: #ddd; cursor: pointer; font-weight: bold; font-size: 11px; }
         .tab-btn.active { background: var(--azul); color: white; }
-
-        .alerta-critica { background: #fff3cd; border-left: 5px solid var(--oro); padding: 12px; margin-bottom: 10px; border-radius: 5px; font-size: 12px; }
 
         input, select, textarea { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .btn-primario { background: var(--azul); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
         
-        /* Buscador de alumnos */
-        .search-box { background: #e8f4fd; border: 1px solid var(--azul); padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        /* Buscador solo para Grupos Estables */
+        #buscador-ge { display: none; background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--oro); }
         
-        .chk-list { max-height: 250px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .item-alumno { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 12px; }
+        .chk-list { max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; }
+        .fila-alumno { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         
         #app-content, .sec { display: none; }
     </style>
@@ -52,7 +49,7 @@
         </header>
         
         <div class="container">
-            <div class="nav-tabs">
+            <div class="nav-tabs" style="display:flex; gap:5px; margin-bottom:20px;">
                 <button class="tab-btn active" id="btn-asis" onclick="verTab('asis')">📝 ASISTENCIA</button>
                 <button class="tab-btn" id="btn-stats" onclick="verTab('stats')">📊 REPORTES</button>
                 <button class="tab-btn" id="btn-admin" onclick="verTab('admin')" style="background:var(--admin); color:white; display:none;">🔑 DIRECCIÓN</button>
@@ -63,53 +60,60 @@
                 <div class="card">
                     <input type="date" id="f-asis">
                     <div style="display:flex; gap:5px;">
-                        <select id="g-asis" onchange="actualizarSelectSeccion()">
+                        <select id="g-asis" onchange="alternarBuscador()">
                             <option value="">Seleccione Grado...</option>
                             <option value="1">1°</option><option value="2">2°</option>
                             <option value="3">3°</option><option value="4">4°</option>
                             <option value="5">5°</option><option value="6">6°</option>
                             <option value="GE">GRUPOS ESTABLES / AULA INT.</option>
                         </select>
-                        <select id="s-asis">
-                            </select>
+                        <select id="s-asis" onfocus="cargarSeccionesOGrupos()">
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        </select>
                     </div>
-                    <button class="btn-primario" style="margin-top:10px;" onclick="buscarAlumnos()">🔍 CARGAR LISTA</button>
+                    <button class="btn-primario" style="margin-top:10px;" onclick="buscarAlumnos()">🔍 CARGAR LISTA COMPLETA</button>
                 </div>
 
                 <div id="card-lista" class="card" style="display:none;">
-                    <div class="search-box">
-                        <input type="text" id="busqueda-alumno" onkeyup="filtrarAlumnosEnLista()" placeholder="🔍 Buscar alumno en esta lista...">
+                    <div id="buscador-ge">
+                        <label style="font-size:11px; font-weight:bold;">🔎 BUSCAR ALUMNO EN EL GRUPO:</label>
+                        <input type="text" id="input-busqueda" onkeyup="filtrarLista()" placeholder="Escriba nombre del alumno...">
                     </div>
                     <h4 id="info-meta" style="color:var(--oro); font-size:12px; margin-bottom:10px;"></h4>
                     <div id="lista-render"></div>
-                    <textarea id="obs-clase" placeholder="Observaciones de la sesión..."></textarea>
+                    <textarea id="obs-clase" placeholder="Observaciones de la jornada..."></textarea>
                     <button class="btn-primario" style="background:var(--exito)" onclick="guardarAsistencia()">💾 GUARDAR ASISTENCIA</button>
                 </div>
             </div>
 
+            <div id="sec-admin" class="sec">
+                <div class="card" style="border-left: 5px solid var(--azul);">
+                    <h3>🔐 Registro de Especialistas</h3>
+                    <input type="text" id="new-esp-nom" placeholder="Nombre Completo">
+                    <input type="text" id="new-esp-area" placeholder="Área (Ejem: Deporte, Música)">
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="new-esp-user" placeholder="Usuario">
+                        <input type="password" id="new-esp-pass" placeholder="Contraseña">
+                    </div>
+                    <button class="btn-primario" onclick="crearUsuarioEspecialista()">💾 CREAR CUENTA</button>
+                </div>
+
+                <div class="card" style="border-left: 5px solid var(--oro);">
+                    <h3>🏆 Constructor de Grupos Estables</h3>
+                    <input type="text" id="ge-nombre" placeholder="Nombre del Grupo">
+                    <input type="text" id="ge-meta" placeholder="Meta Pedagógica">
+                    <select id="ge-dueño"></select>
+                    <div class="chk-list" id="ge-alumnos-escuela"></div>
+                    <button class="btn-primario" style="margin-top:10px;" onclick="guardarGrupoEstable()">✅ CREAR GRUPO</button>
+                </div>
+            </div>
+            
             <div id="sec-stats" class="sec">
-                <div id="contenedor-alertas"></div>
                 <div class="card">
                     <input type="month" id="mes-filtro">
-                    <button onclick="generarReporte()" class="btn-primario" style="margin-top:10px;">VER CONSOLIDADO</button>
+                    <button onclick="generarReporte()" class="btn-primario">GENERAR CONSOLIDADO</button>
                 </div>
                 <div id="tabla-reporte-contenedor"></div>
-            </div>
-
-            <div id="sec-admin" class="sec">
-                <div class="card" style="border-top: 5px solid var(--oro);">
-                    <h3>Crear Grupo Estable / Especial</h3>
-                    <input type="text" id="nombre-ge" placeholder="Nombre del Grupo (ej: Futbol 5to)">
-                    <input type="text" id="meta-ge" placeholder="Objetivo Pedagógico">
-                    
-                    <label style="font-size:12px;">Asignar a Especialista:</label>
-                    <select id="select-esp-asignar"></select>
-
-                    <label style="font-size:12px; margin-top:10px; display:block;">Seleccionar Integrantes:</label>
-                    <div class="chk-list" id="lista-alumnos-total"></div>
-                    
-                    <button class="btn-primario" style="margin-top:10px;" onclick="guardarGrupoEstable()">✅ REGISTRAR GRUPO</button>
-                </div>
             </div>
         </div>
     </div>
@@ -130,35 +134,33 @@
     const db = getFirestore(app);
 
     let sesion = null;
-    let alumnosHoy = [];
-    let estadosAsis = {};
+    let alumnosActivos = [];
+    let asistenciaLocal = {};
 
-    // --- SESIÓN ---
+    // --- LOGIN ---
     window.iniciarSesion = async () => {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
         if(u === "director_lucila" && p === "admin2024") {
-            loguear({id:u, nombre:"Dirección", area:"Dirección", rol:"admin"});
+            loguear({id:u, nombre:"Director", area:"Dirección", rol:"admin"});
         } else {
             const d = await getDoc(doc(db, "credenciales_especialistas", u));
             if(d.exists() && d.data().pass === p) loguear({id:u, ...d.data(), rol:"esp"});
-            else alert("Error de acceso");
+            else alert("Error: Usuario o Clave incorrecta");
         }
     };
 
-    async function loguear(data) {
+    function loguear(data) {
         sesion = data;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('app-content').style.display='block';
         document.getElementById('display-area').innerText = sesion.area;
         document.getElementById('display-nombre').innerText = sesion.nombre;
         if(sesion.rol === 'admin') {
-            document.getElementById('btn-admin').style.display = 'block';
-            cargarAlumnosDireccion();
-            cargarEspecialistasDireccion();
+            document.getElementById('btn-admin').style.display='block';
+            cargarDatosAdmin();
         }
         document.getElementById('f-asis').value = new Date().toISOString().split('T')[0];
-        actualizarSelectSeccion(); // Carga grupos estables si es especialista
     }
 
     window.verTab = (t) => {
@@ -166,84 +168,84 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('sec-'+t).style.display='block';
         document.getElementById('btn-'+t).classList.add('active');
-        if(t === 'stats') detectarAusentismo();
     };
 
-    // --- LÓGICA DE GRUPOS ---
-    window.actualizarSelectSeccion = async () => {
+    // --- LÓGICA DE ASISTENCIA ---
+    window.alternarBuscador = () => {
         const g = document.getElementById('g-asis').value;
-        const selS = document.getElementById('s-asis');
-        selS.innerHTML = "";
+        document.getElementById('buscador-ge').style.display = (g === "GE") ? "block" : "none";
+    };
 
+    window.cargarSeccionesOGrupos = async () => {
+        const g = document.getElementById('g-asis').value;
+        const sel = document.getElementById('s-asis');
         if(g === "GE") {
-            const q = query(collection(db, "grupos_estables_db"));
-            const snap = await getDocs(q);
+            sel.innerHTML = "<option>Cargando grupos...</option>";
+            const snap = await getDocs(collection(db, "grupos_estables_db"));
+            sel.innerHTML = "";
             snap.forEach(d => {
-                const grupo = d.data();
-                // Solo mostrar si es el dueño o si es administrador
-                if(sesion.rol === 'admin' || grupo.dueñoId === sesion.id) {
-                    selS.innerHTML += `<option value="${d.id}">${grupo.nombreGrupo}</option>`;
+                if(sesion.rol === 'admin' || d.data().dueñoId === sesion.id) {
+                    sel.innerHTML += `<option value="${d.id}">${d.data().nombreGrupo}</option>`;
                 }
             });
-            if(selS.innerHTML === "") selS.innerHTML = "<option>Sin grupos asignados</option>";
         } else {
-            selS.innerHTML = '<option value="A">A</option><option value="B">B</option><option value="C">C</option>';
+            sel.innerHTML = '<option value="A">A</option><option value="B">B</option><option value="C">C</option>';
         }
-    };
-
-    // --- BUSCADOR DENTRO DE LA LISTA ---
-    window.filtrarAlumnosEnLista = () => {
-        const busqueda = document.getElementById('busqueda-alumno').value.toLowerCase();
-        const filas = document.querySelectorAll('.fila-alumno');
-        filas.forEach(f => {
-            const nombre = f.querySelector('.nombre-txt').innerText.toLowerCase();
-            f.style.display = nombre.includes(busqueda) ? 'flex' : 'none';
-        });
     };
 
     window.buscarAlumnos = async () => {
         const g = document.getElementById('g-asis').value;
         const s = document.getElementById('s-asis').value;
-        if(!g || !s) return alert("Seleccione grado y sección/grupo");
+        if(!g || !s) return alert("Seleccione Grado y Sección/Grupo");
 
-        document.getElementById('card-lista').style.display = 'block';
         const cont = document.getElementById('lista-render');
-        cont.innerHTML = "Cargando...";
+        cont.innerHTML = "Cargando lista...";
+        alumnosActivos = [];
 
         if(g === "GE") {
             const d = await getDoc(doc(db, "grupos_estables_db", s));
-            alumnosHoy = d.data().alumnos;
+            alumnosActivos = d.data().alumnos;
             document.getElementById('info-meta').innerText = "🎯 META: " + d.data().meta;
         } else {
             const snap = await getDocs(collection(db, "docentes_db"));
             snap.forEach(d => {
-                if(String(d.data().grado).includes(g) && d.data().seccion.toUpperCase() === s) {
-                    alumnosHoy = d.data().alumnos.filter(a => !a.retirado);
+                const f_grado = String(d.data().grado);
+                const f_secc = String(d.data().seccion).toUpperCase();
+                if(f_grado.includes(g) && f_secc === s.toUpperCase()) {
+                    alumnosActivos = d.data().alumnos.filter(a => !a.retirado);
                 }
             });
+            document.getElementById('info-meta').innerText = `Lista Regular: ${g}° ${s}`;
         }
-        renderizarLista();
+        renderLista();
     };
 
-    function renderizarLista() {
+    function renderLista() {
+        document.getElementById('card-lista').style.display = 'block';
         const cont = document.getElementById('lista-render');
         cont.innerHTML = "";
-        alumnosHoy.forEach(a => {
-            if(!estadosAsis[a.id]) estadosAsis[a.id] = 1;
+        alumnosActivos.forEach(a => {
+            if(!asistenciaLocal[a.id]) asistenciaLocal[a.id] = 1;
             cont.innerHTML += `
-                <div class="fila-alumno" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                    <span class="nombre-txt" style="font-size:13px;">${a.nombre}</span>
-                    <button onclick="cambiarAsis(${a.id})" style="background:${estadosAsis[a.id]===1?'var(--exito)':'var(--error)'}; color:white; border:none; border-radius:8px; padding:8px 12px; font-weight:bold;">
-                        ${estadosAsis[a.id]===1?'P':'I'}
+                <div class="fila-alumno" data-nombre="${a.nombre.toLowerCase()}">
+                    <span>${a.nombre}</span>
+                    <button onclick="toggle(${a.id})" style="background:${asistenciaLocal[a.id]===1?'var(--exito)':'var(--error)'}; color:white; border:none; border-radius:8px; padding:10px; width:45px;">
+                        ${asistenciaLocal[a.id]===1?'P':'I'}
                     </button>
                 </div>`;
         });
     }
 
-    window.cambiarAsis = (id) => {
-        estadosAsis[id] = estadosAsis[id] === 1 ? 0 : 1;
-        renderizarLista();
-        filtrarAlumnosEnLista(); // Mantiene el filtro si estaba buscando
+    window.toggle = (id) => {
+        asistenciaLocal[id] = asistenciaLocal[id] === 1 ? 0 : 1;
+        renderLista();
+    };
+
+    window.filtrarLista = () => {
+        const txt = document.getElementById('input-busqueda').value.toLowerCase();
+        document.querySelectorAll('.fila-alumno').forEach(f => {
+            f.style.display = f.dataset.nombre.includes(txt) ? 'flex' : 'none';
+        });
     };
 
     window.guardarAsistencia = async () => {
@@ -252,62 +254,54 @@
         const s = document.getElementById('s-asis').value;
         const obs = document.getElementById('obs-clase').value;
 
-        let av=0, ah=0, mv=0, mh=0, faltas = [];
-        alumnosHoy.forEach(a => {
-            const isV = a.genero.toLowerCase().startsWith('v');
-            if(isV) mv++; else mh++;
-            if(estadosAsis[a.id] === 1) { if(isV) av++; else ah++; }
-            else { faltas.push({id: a.id, nombre: a.nombre, g: g, s: s}); }
-        });
-
         await setDoc(doc(db, "asistencia_especialistas", `${sesion.id}_${f}_${s}`.replace(/\s+/g, '')), {
-            espNom: sesion.nombre, area: sesion.area, fecha: f, grado: g, seccion: s,
-            av, ah, mv, mh, obs, faltistas: faltas
+            esp: sesion.nombre, area: sesion.area, fecha: f, grado: g, seccion: s, obs: obs
         });
-        alert("✅ Asistencia Guardada");
+        alert("✅ Guardado Correctamente");
         location.reload();
     };
 
     // --- DIRECCIÓN: GESTIÓN ---
-    async function cargarAlumnosDireccion() {
-        const cont = document.getElementById('lista-alumnos-total');
-        const snap = await getDocs(collection(db, "docentes_db"));
-        cont.innerHTML = "";
-        snap.forEach(d => {
+    window.crearUsuarioEspecialista = async () => {
+        const u = document.getElementById('new-esp-user').value;
+        const p = document.getElementById('new-esp-pass').value;
+        const n = document.getElementById('new-esp-nom').value;
+        const a = document.getElementById('new-esp-area').value;
+        if(!u || !p) return alert("Faltan datos");
+        await setDoc(doc(db, "credenciales_especialistas", u), { nombre: n, area: a, pass: p });
+        alert("Usuario Creado");
+    };
+
+    async function cargarDatosAdmin() {
+        const snapAlumnos = await getDocs(collection(db, "docentes_db"));
+        const contAl = document.getElementById('ge-alumnos-escuela');
+        contAl.innerHTML = "";
+        snapAlumnos.forEach(d => {
             d.data().alumnos.forEach(a => {
-                cont.innerHTML += `
-                <div class="item-alumno">
-                    <input type="checkbox" class="chk-ge" data-id="${a.id}" data-nom="${a.nombre}" data-gen="${a.genero}">
-                    ${a.nombre} (${d.data().grado}° ${d.data().seccion})
-                </div>`;
+                contAl.innerHTML += `<div><input type="checkbox" class="chk-ge" data-id="${a.id}" data-nom="${a.nombre}" data-gen="${a.genero}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</div>`;
             });
         });
-    }
 
-    async function cargarEspecialistasDireccion() {
-        const sel = document.getElementById('select-esp-asignar');
-        const snap = await getDocs(collection(db, "credenciales_especialistas"));
-        sel.innerHTML = "";
-        snap.forEach(d => {
-            sel.innerHTML += `<option value="${d.id}">${d.data().nombre} (${d.data().area})</option>`;
+        const snapEsp = await getDocs(collection(db, "credenciales_especialistas"));
+        const selEsp = document.getElementById('ge-dueño');
+        selEsp.innerHTML = "";
+        snapEsp.forEach(d => {
+            selEsp.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
         });
     }
 
     window.guardarGrupoEstable = async () => {
-        const nom = document.getElementById('nombre-ge').value;
-        const meta = document.getElementById('meta-ge').value;
-        const espId = document.getElementById('select-esp-asignar').value;
-        const checks = document.querySelectorAll('.chk-ge:checked');
-
-        if(!nom || checks.length === 0) return alert("Faltan datos");
-
-        let seleccion = [];
-        checks.forEach(c => seleccion.push({id: c.dataset.id, nombre: c.dataset.nom, genero: c.dataset.gen}));
-
+        const nom = document.getElementById('ge-nombre').value;
+        const meta = document.getElementById('ge-meta').value;
+        const dueño = document.getElementById('ge-dueño').value;
+        const chks = document.querySelectorAll('.chk-ge:checked');
+        let lista = [];
+        chks.forEach(c => lista.push({id: c.dataset.id, nombre: c.dataset.nom, genero: c.dataset.gen}));
+        
         await setDoc(doc(db, "grupos_estables_db", nom.replace(/\s+/g, '_')), {
-            nombreGrupo: nom, meta: meta, dueñoId: espId, alumnos: seleccion
+            nombreGrupo: nom, meta: meta, dueñoId: dueño, alumnos: lista
         });
-        alert("Grupo Creado y Asignado");
+        alert("Grupo Creado");
         location.reload();
     };
 
