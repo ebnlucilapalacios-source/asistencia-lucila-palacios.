@@ -3,137 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA - DIRECCIÓN</title>
+    <title>SISTEMA LUCILA - ACCESO TOTAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --exito: #28a745; }
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--azul); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
-        .btn-azul { background: var(--azul); }
-        .btn-morado { background: var(--morado); }
-        #appContent, .sec, #panelAdmin { display: none; }
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 11px; }
-        .tab-btn.active { background: var(--oro); color: var(--azul); }
-        .badge { background: var(--morado); color: white; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block; }
+        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 20px; width: 300px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-bottom: 5px solid var(--oro); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--azul); color: white; }
+        #app { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; padding: 20px; box-sizing: border-box; text-align: center; }
+        header { background: var(--azul); color: white; padding: 20px; margin: -20px -20px 20px -20px; border-bottom: 4px solid var(--oro); }
+        .admin-box { border: 2px solid var(--morado); padding: 15px; border-radius: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="loginScreen" class="login-screen">
-        <div class="card" style="width: 300px; text-align: center;">
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-            <h2 style="color:var(--azul)">SISTEMA LUCILA</h2>
-            <input type="text" id="logUser" placeholder="Usuario">
-            <input type="password" id="logPass" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR</button>
-        </div>
+    <div id="login-box" class="card">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+        <h2 style="color:var(--azul)">SISTEMA LUCILA</h2>
+        <input type="text" id="u" placeholder="Usuario">
+        <input type="password" id="p" placeholder="Contraseña">
+        <button class="btn" onclick="validar()">INGRESAR</button>
     </div>
 
-    <div id="appContent">
+    <div id="app">
         <header>
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="50">
-            <div id="nomUsu" style="font-weight: bold; font-size: 18px;">...</div>
-            <div id="rolUsu"></div>
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="60">
+            <h2 id="saludo">BIENVENIDO</h2>
         </header>
-
-        <div class="container">
-            <div id="panelAdmin" class="card" style="border: 2px solid var(--morado);">
-                <h4 style="color:var(--morado); margin:0;">📊 PANEL DIRECTIVO</h4>
-                <p style="font-size: 12px; color: #555;">Acceso total a reportes y control de la escuela.</p>
-                <button class="btn btn-morado" onclick="alert('Generando Consolidado...')">📥 DESCARGAR CONSOLIDADO ESCUELA</button>
-            </div>
-
-            <div class="nav-tabs">
-                <button class="tab-btn active" id="tab-asis" onclick="verTab('asis')">ASISTENCIA</button>
-                <button class="tab-btn" id="tab-ge" onclick="verTab('ge')">G. ESTABLES</button>
-                <button class="tab-btn" onclick="location.reload()" style="background:#dc3545; color:white;">SALIR</button>
-            </div>
-
-            <div id="sec-asis" class="sec" style="display: block;">
-                <div class="card">
-                    <input type="date" id="fechaControl">
-                    <button class="btn btn-azul">CARGAR ALUMNOS</button>
-                </div>
-            </div>
+        
+        <div class="admin-box">
+            <h3 style="color:var(--morado)">📊 PANEL DE DIRECCIÓN ACTIVO</h3>
+            <p>Desde aquí puede supervisar toda la institución.</p>
+            <button class="btn" style="background:var(--morado)" onclick="alert('Generando Reporte General...')">📥 DESCARGAR CONSOLIDADO PDF</button>
         </div>
+        
+        <button class="btn" style="margin-top: 20px; background:#666;" onclick="location.reload()">CERRAR SESIÓN</button>
     </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <script>
+        function validar() {
+            // Pasamos todo a minúsculas para evitar errores de teclado
+            const user = document.getElementById('u').value.trim().toLowerCase();
+            const pass = document.getElementById('p').value.trim();
 
-    const config = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-        projectId: "control-de-asistencia-d585e",
-        storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
-    };
+            console.log("Intentando entrar con:", user);
 
-    const app = initializeApp(config);
-    const db = getFirestore(app);
-
-    let sesion = null;
-
-    window.iniciarSesion = async () => {
-        // Obtenemos datos y convertimos a minúsculas
-        const u = document.getElementById('logUser').value.trim().toLowerCase();
-        const p = document.getElementById('logPass').value;
-
-        // --- LLAVE MAESTRA: Si es el admin, entra directo ---
-        if (u === "admin_lucila" && p === "lucila2026") {
-            sesion = { id: u, nombre: "DIRECCIÓN LUCILA", rol: "admin" };
-            // Auto-registro en Firebase para que ya exista en el futuro
-            try {
-                await setDoc(doc(db, "docentes_db", u), { docente: "DIRECCIÓN LUCILA", pass: p, rol: "admin" });
-            } catch(e) { console.log("Error de auto-registro, pero igual entramos."); }
-            entrar();
-            return;
-        }
-
-        // --- BÚSQUEDA NORMAL PARA ESPECIALISTAS ---
-        try {
-            const tablas = ["credenciales_especialistas", "docentes_db"];
-            for (let t of tablas) {
-                const snap = await getDoc(doc(db, t, u));
-                if (snap.exists()) {
-                    const data = snap.data();
-                    const claveDB = data.pass || data.contraseña;
-                    if (String(claveDB) === String(p)) {
-                        sesion = { id: u, ...data, rol: (u.includes("admin") ? "admin" : "especialista") };
-                        entrar();
-                        return;
-                    }
-                }
+            // LLAVE MAESTRA LOCAL (No depende de Firebase para entrar)
+            if (user === "admin_lucila" && pass === "lucila2026") {
+                mostrarSistema("DIRECCIÓN LUCILA");
+            } 
+            else if (user === "especialista1" && pass === "12345") {
+                mostrarSistema("DOCENTE ESPECIALISTA");
             }
-            alert("Acceso Incorrecto. Verifica usuario y clave.");
-        } catch (e) { alert("Error: Revisa tu conexión."); }
-    };
-
-    function entrar() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-        document.getElementById('nomUsu').innerText = sesion.nombre || sesion.docente;
-        document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
-        
-        if (sesion.rol === "admin") {
-            document.getElementById('panelAdmin').style.display = 'block';
-            document.getElementById('rolUsu').innerHTML = '<span class="badge">DIRECTIVO ACTIVO</span>';
+            else {
+                alert("❌ Acceso Incorrecto.\n\nVerifique que el usuario sea: admin_lucila\ny la clave sea: lucila2026");
+            }
         }
-    }
 
-    window.verTab = (t) => {
-        document.querySelectorAll('.sec').forEach(s => s.style.display='none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sec-'+t).style.display='block';
-        document.getElementById('tab-'+t).classList.add('active');
-    };
-</script>
+        function mostrarSistema(nombre) {
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('saludo').innerText = "HOLA, " + nombre;
+            alert("✅ ¡Bienvenido al Sistema!");
+        }
+    </script>
 </body>
 </html>
