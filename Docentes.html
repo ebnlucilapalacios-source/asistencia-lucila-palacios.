@@ -38,7 +38,7 @@
             return edad;
         };
 
-        // --- ACCESO ---
+        // --- AUTENTICACIÓN ---
         window.mostrarRegistro = (v) => { 
             document.getElementById('loginForm').style.display = v ? 'none' : 'block';
             document.getElementById('registerForm').style.display = v ? 'block' : 'none';
@@ -55,7 +55,7 @@
                 turno: document.getElementById('regTurno').value,
                 alumnos: [], asistencias: {}, feriados: [] 
             });
-            alert("Cuenta registrada."); window.mostrarRegistro(false);
+            alert("Cuenta creada."); window.mostrarRegistro(false);
         };
 
         window.login = async () => {
@@ -69,31 +69,16 @@
                 document.getElementById('appContent').style.display = 'block';
                 if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
                 onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { window.db = s.data(); window.render(); });
-            } else { alert("Datos incorrectos"); }
+            } else { alert("Acceso denegado"); }
         };
 
-        // --- DIRECCIÓN: GESTIÓN, CONSOLIDADO Y RESPALDO ---
+        // --- DIRECCIÓN: GESTIÓN DE USUARIOS Y CONSOLIDADO ---
         window.eliminarUsuario = async (id) => {
             if(id === USUARIO_ADMIN) return;
-            if(confirm(`¿ELIMINAR PERMANENTEMENTE EL USUARIO: ${id}?`)) {
+            if(confirm(`¿Desea borrar permanentemente la cuenta: ${id}?`)) {
                 await deleteDoc(doc(dbCloud, "docentes_db", id));
                 window.consolidadoMensual();
             }
-        };
-
-        window.descargarRespaldoGeneral = async () => {
-            if(!confirm("¿Desea generar un archivo de respaldo de TODA la base de datos?")) return;
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let respaldo = {};
-            snap.forEach(s => respaldo[s.id] = s.data());
-            
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(respaldo));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `RESPALDO_LUCILA_PALACIOS_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
         };
 
         window.consolidadoMensual = async () => {
@@ -132,59 +117,86 @@
 
             document.getElementById('adminOutput').innerHTML = `
                 <div class="card">
-                    <strong style="color:var(--morado)">👥 GESTIÓN DE CUENTAS</strong>
+                    <strong style="color:var(--morado)">👥 GESTIÓN DE USUARIOS</strong>
                     <table class="tabla-admin"><thead><tr><th>USER</th><th>DOCENTE</th><th>G/S</th><th>X</th></tr></thead><tbody>${hGest}</tbody></table>
                     <hr>
-                    <strong style="color:var(--azul)">📊 CONSOLIDADO ESTADÍSTICO</strong>
+                    <strong style="color:var(--azul)">📈 CONSOLIDADO ESCUELA</strong>
                     <table class="tabla-admin"><thead><tr><th>DOCENTE</th><th>G/S</th><th>H</th><th>V</th><th>T</th><th>I</th><th>E</th><th>PH</th><th>PV</th><th>PT</th></tr></thead><tbody>${hStats}</tbody></table>
                 </div>`;
         };
 
-        // --- EXPORTACIONES DOCENTE ---
-        window.exportarPDF = () => {
+        // --- EXPORTACIONES DOCENTE (PDF Y EXCEL) ---
+        window.exportarListaPDF = () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const activos = window.db.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+            // Membrete Institucional
             doc.setFontSize(9);
             doc.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 15, {align:"center"});
             doc.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 20, {align:"center"});
             doc.setFont(undefined, 'bold');
             doc.text("E.B.N. LUCILA PALACIOS - CIUDAD GUAYANA", 105, 25, {align:"center"});
+            
             doc.setFontSize(11);
-            doc.text(`NÓMINA: ${window.db.grado}° "${window.db.seccion}" | DOCENTE: ${window.db.docente}`, 14, 38);
-            const rows = activos.map((a, i) => [i+1, a.cedula || "---", a.nombre, a.genero, calcularEdad(a.nacimiento)]);
-            doc.autoTable({ head: [['N°', 'CÉDULA', 'NOMBRE Y APELLIDO', 'G', 'EDAD']], body: rows, startY: 45, theme: 'grid', headStyles: { fillColor: [0, 33, 71] } });
-            doc.save(`Lista_${window.db.grado}${window.db.seccion}.pdf`);
+            doc.text(`NÓMINA DE ESTUDIANTES: ${window.db.grado}° SECCIÓN "${window.db.seccion}"`, 14, 35);
+            doc.setFontSize(10);
+            doc.text(`DOCENTE: ${window.db.docente} | TURNO: ${window.db.turno}`, 14, 42);
+
+            const rows = activos.map((a, i) => [i+1, a.cedula || "S/C", a.nombre, a.genero, calcularEdad(a.nacimiento) + " años"]);
+            doc.autoTable({
+                head: [['N°', 'CÉDULA', 'APELLIDOS Y NOMBRES', 'G', 'EDAD']],
+                body: rows,
+                startY: 48,
+                theme: 'grid',
+                headStyles: { fillColor: [0, 33, 71] },
+                styles: { fontSize: 8 }
+            });
+            doc.save(`Nomina_${window.db.grado}${window.db.seccion}_Lucila.pdf`);
         };
 
-        window.exportarExcel = () => {
+        window.exportarListaExcel = () => {
             const activos = window.db.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-            const data = [["E.B.N. LUCILA PALACIOS - NÓMINA"], [`GRADO: ${window.db.grado}${window.db.seccion}`, `DOCENTE: ${window.db.docente}`], [], ["N°", "CÉDULA", "ESTUDIANTE", "G", "FECHA NAC"]];
-            activos.forEach((a, i) => data.push([i+1, a.cedula, a.nombre, a.genero, a.nacimiento]));
+            const data = [
+                ["E.B.N. LUCILA PALACIOS - LISTADO OFICIAL"],
+                [`GRADO: ${window.db.grado}`, `SECCIÓN: ${window.db.seccion}`, `DOCENTE: ${window.db.docente}`],
+                [],
+                ["N°", "CÉDULA", "ESTUDIANTE", "GÉNERO", "FECHA NAC", "EDAD"]
+            ];
+            activos.forEach((a, i) => data.push([i+1, a.cedula, a.nombre, a.genero, a.nacimiento, calcularEdad(a.nacimiento)]));
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Lista");
-            XLSX.writeFile(wb, `Nomina_${window.db.grado}${window.db.seccion}.xlsx`);
+            XLSX.writeFile(wb, `Lista_${window.db.grado}${window.db.seccion}.xlsx`);
         };
 
-        // --- RENDER Y ACCIONES ---
+        // --- FUNCIONES DE RENDER Y CONTROL ---
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const esFer = window.db.feriados?.includes(fSel);
             const esFin = [0,6].includes(new Date(fSel + "T00:00:00").getDay());
+            
             document.getElementById('docenteTxt').innerText = window.db.docente;
             document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado}${window.db.seccion} - ${window.db.turno}`;
             document.getElementById('btnFeriado').innerText = esFer ? "✅ QUITAR FERIADO" : "🚩 MARCAR FERIADO";
+
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
             const activos = window.db.alumnos.filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
             if(esFer || esFin) {
                 lista.innerHTML = `<div class="aviso-no">🚫 DÍA NO LABORABLE</div>`;
             } else {
                 activos.forEach(a => {
                     const st = window.db.asistencias[fSel]?.[a.id] || 0;
                     let c = "#ccc", t = "F"; if(st===1){c="var(--exito)"; t="P";} if(st===2){c="var(--morado)"; t="J";}
-                    lista.innerHTML += `<div class="alumno-fila"><div class="bola-gen ${a.genero}"></div><div style="flex-grow:1; font-size:13px;">${a.nombre}</div><button onclick="marcar(${a.id})" class="btn-check" style="background:${c}">${t}</button><button onclick="abrirEdicion(${a.id})" class="btn-x" style="color:#f39c12">✏️</button><button onclick="retirarAlumno(${a.id})" class="btn-x">✖</button></div>`;
+                    lista.innerHTML += `<div class="alumno-fila">
+                        <div class="bola-gen ${a.genero}"></div>
+                        <div style="flex-grow:1; font-size:13px;">${a.nombre}</div>
+                        <button onclick="marcar(${a.id})" class="btn-check" style="background:${c}">${t}</button>
+                        <button onclick="abrirEdicion(${a.id})" class="btn-x" style="color:#f39c12">✏️</button>
+                        <button onclick="retirarAlumno(${a.id})" class="btn-x">✖</button>
+                    </div>`;
                 });
             }
             window.actualizar911(activos);
@@ -193,7 +205,9 @@
         window.actualizar911 = (activos) => {
             let eds = {}; 
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
-            let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`);
+            let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => {
+                tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`;
+            });
             document.getElementById('tabla911Output').innerHTML = `<table class="tabla-admin"><thead><tr><th>EDAD</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody></table>`;
         };
 
@@ -212,7 +226,11 @@
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar estudiante?")) { const a = window.db.alumnos.find(x => x.id === id); a.retirado = true; a.fechaEgreso = document.getElementById('fechaSeleccionada').value; await window.save(); }
+            if(confirm("¿Retirar estudiante?")) {
+                const a = window.db.alumnos.find(x => x.id === id);
+                a.retirado = true; a.fechaEgreso = document.getElementById('fechaSeleccionada').value;
+                await window.save();
+            }
         };
 
         window.toggleFeriado = async () => {
@@ -224,23 +242,33 @@
 
         window.abrirEdicion = (id) => {
             const a = window.db.alumnos.find(x => x.id === id);
-            document.getElementById('edId').value = a.id; document.getElementById('edNom').value = a.nombre; document.getElementById('edCed').value = a.cedula || ""; document.getElementById('edNac').value = a.nacimiento; document.getElementById('edGen').value = a.genero;
+            document.getElementById('edId').value = a.id;
+            document.getElementById('edNom').value = a.nombre;
+            document.getElementById('edCed').value = a.cedula || "";
+            document.getElementById('edNac').value = a.nacimiento;
+            document.getElementById('edGen').value = a.genero;
             document.getElementById('modalEdit').style.display = 'flex';
         };
 
         window.guardarEdicion = async () => {
             const idx = window.db.alumnos.findIndex(x => x.id === parseInt(document.getElementById('edId').value));
-            window.db.alumnos[idx].nombre = document.getElementById('edNom').value.toUpperCase(); window.db.alumnos[idx].cedula = document.getElementById('edCed').value; window.db.alumnos[idx].nacimiento = document.getElementById('edNac').value; window.db.alumnos[idx].genero = document.getElementById('edGen').value;
+            window.db.alumnos[idx].nombre = document.getElementById('edNom').value.toUpperCase();
+            window.db.alumnos[idx].cedula = document.getElementById('edCed').value;
+            window.db.alumnos[idx].nacimiento = document.getElementById('edNac').value;
+            window.db.alumnos[idx].genero = document.getElementById('edGen').value;
             await window.save(); document.getElementById('modalEdit').style.display = 'none';
         };
 
         window.verAsistencia31 = () => {
-            const p = document.getElementById('panel31'); p.style.display = p.style.display === 'none' ? 'block' : 'none';
+            const p = document.getElementById('panel31');
+            p.style.display = p.style.display === 'none' ? 'block' : 'none';
             if(p.style.display === 'block') {
                 const fSel = document.getElementById('fechaSeleccionada').value;
-                const fObj = new Date(fSel + "T00:00:00"); const m = fObj.getMonth(), a = fObj.getFullYear(); const dias = new Date(a, m + 1, 0).getDate();
+                const fObj = new Date(fSel + "T00:00:00");
+                const m = fObj.getMonth(), a = fObj.getFullYear();
+                const dias = new Date(a, m + 1, 0).getDate();
                 const activos = window.db.alumnos.filter(x=>!x.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-                let h = `<table class="tabla-mensual"><thead><tr><th>NOMBRE</th>`;
+                let h = `<table class="tabla-mensual"><thead><tr><th>ESTUDIANTE</th>`;
                 for(let i=1; i<=dias; i++) h += `<th>${i}</th>`;
                 h += `<th>T</th></tr></thead><tbody>`;
                 activos.forEach(al => {
@@ -290,13 +318,13 @@
     <h2 style="color:var(--azul)">EBN LUCILA PALACIOS</h2>
     <div id="loginForm" class="card" style="max-width:320px; margin:auto">
         <input type="text" id="loginUser" placeholder="Usuario">
-        <input type="password" id="loginPass" placeholder="Clave">
+        <input type="password" id="loginPass" placeholder="Contraseña">
         <button class="full-btn" onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
-        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer; font-size:12px;">Nueva Cuenta</p>
+        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer; font-size:12px;">Crear Cuenta Nueva</p>
     </div>
     <div id="registerForm" class="card" style="max-width:320px; margin:auto; display:none;">
-        <input type="text" id="regNombre" placeholder="Nombre Docente">
-        <div style="display:flex; gap:4px;"><input type="text" id="regGrado" placeholder="G"><input type="text" id="regSeccion" placeholder="S"></div>
+        <input type="text" id="regNombre" placeholder="Nombre Completo">
+        <div style="display:flex; gap:4px;"><input type="text" id="regGrado" placeholder="Grado"><input type="text" id="regSeccion" placeholder="Secc"></div>
         <select id="regTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Clave">
@@ -314,9 +342,8 @@
 
     <div class="container">
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado)">
-            <b style="color:var(--morado)">DIRECCIÓN Y ESTADÍSTICA</b>
+            <b style="color:var(--morado)">ADMINISTRACIÓN Y DIRECCIÓN</b>
             <button onclick="consolidadoMensual()" class="full-btn" style="background:var(--morado); color:white;">📊 GESTIÓN Y CONSOLIDADO</button>
-            <button onclick="descargarRespaldoGeneral()" class="full-btn" style="background:#2c3e50; color:white;">💾 DESCARGAR RESPALDO TOTAL (JSON)</button>
             <div id="adminOutput"></div>
         </div>
 
@@ -325,9 +352,10 @@
             <b>Sección:</b> <span id="gradoSeccionTxt"></span>
             <input type="date" id="fechaSeleccionada" onchange="window.render()" style="margin-top:10px;">
             <button id="btnFeriado" onclick="toggleFeriado()" class="full-btn" style="background:white; color:var(--rojo); border:1px solid var(--rojo); padding:8px; font-size:11px;"></button>
+            
             <div style="display:flex; gap:5px; margin-top:5px;">
-                <button onclick="exportarPDF()" style="flex:1; background:#c0392b; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold;">📄 PDF</button>
-                <button onclick="exportarExcel()" style="flex:1; background:#27ae60; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold;">📗 EXCEL</button>
+                <button onclick="exportarListaPDF()" style="flex:1; background:#c0392b; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold;">📄 LISTA PDF</button>
+                <button onclick="exportarListaExcel()" style="flex:1; background:#27ae60; color:white; border:none; padding:10px; border-radius:5px; font-size:11px; font-weight:bold;">📗 LISTA EXCEL</button>
             </div>
         </div>
 
@@ -335,20 +363,37 @@
             <h4 style="margin:0 0 5px 0">+ Inscripción</h4>
             <input type="text" id="ced" placeholder="Cédula">
             <input type="text" id="nom" placeholder="Nombres y Apellidos">
-            <div style="display:flex; gap:4px;"><select id="gen" style="width:40%"><option value="F">H</option><option value="M">V</option></select><input type="date" id="nac" style="width:60%"></div>
+            <div style="display:flex; gap:4px;">
+                <select id="gen" style="width:40%"><option value="F">H</option><option value="M">V</option></select>
+                <input type="date" id="nac" style="width:60%">
+            </div>
             <button onclick="agregarEstudiante()" class="full-btn" style="background:var(--exito); color:white;">INSCRIBIR</button>
         </div>
 
         <div class="card"><div id="listaAsistencia"></div></div>
-        <div class="card"><b>📊 CUADRO 911 (EDADES)</b><div id="tabla911Output"></div></div>
-        <div class="card no-print"><button onclick="verAsistencia31()" class="full-btn" style="background:var(--azul); color:white;">📅 ASISTENCIA 31 DÍAS</button><div id="panel31" style="display:none; overflow-x:auto;"><div id="salida31"></div></div></div>
+
+        <div class="card">
+            <h4 style="margin:0 0 10px 0; color:var(--azul);">📊 CUADRO 911 (EDADES)</h4>
+            <div id="tabla911Output"></div>
+        </div>
+
+        <div class="card no-print">
+            <button onclick="verAsistencia31()" class="full-btn" style="background:var(--azul); color:white;">📅 ASISTENCIA 31 DÍAS</button>
+            <div id="panel31" style="display:none; overflow-x:auto;">
+                <div id="salida31"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div id="modalEdit">
     <div class="card" style="width:90%; max-width:350px;">
         <h3>Editar Estudiante</h3>
-        <input type="hidden" id="edId"><input type="text" id="edNom" placeholder="Nombre"><input type="text" id="edCed" placeholder="Cédula"><input type="date" id="edNac"><select id="edGen"><option value="F">H</option><option value="M">V</option></select>
+        <input type="hidden" id="edId">
+        <input type="text" id="edNom" placeholder="Nombre">
+        <input type="text" id="edCed" placeholder="Cédula">
+        <input type="date" id="edNac">
+        <select id="edGen"><option value="F">H</option><option value="M">V</option></select>
         <button onclick="guardarEdicion()" class="full-btn" style="background:var(--exito); color:white;">GUARDAR</button>
         <button onclick="document.getElementById('modalEdit').style.display='none'" class="full-btn" style="background:var(--rojo); color:white;">CERRAR</button>
     </div>
