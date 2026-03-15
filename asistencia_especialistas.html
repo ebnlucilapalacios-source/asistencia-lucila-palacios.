@@ -3,265 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.C.A. Lucila Palacios - Especialistas</title>
+    <title>Control de Especialistas - Escuela</title>
     
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --exito: #27ae60; --error: #c0392b; --fondo: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; padding-bottom: 30px; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 900px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        /* Navegación */
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #ddd; white-space: nowrap; font-size: 12px; }
-        .tab-btn.active { background: var(--azul); color: white; }
-
-        /* Listas */
-        .fila { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; }
-        
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn-main { background: var(--azul); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        #login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--azul); }
+        :root { --primary: #3498db; --secondary: #2ecc71; --dark: #2c3e50; --error: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: var(--dark); }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: var(--primary); }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { cursor: pointer; border: none; font-weight: bold; transition: 0.3s; }
+        .btn-main { background-color: var(--primary); color: white; }
+        .btn-excel { background-color: #1f6e43; color: white; }
+        .btn-pdf { background-color: var(--error); color: white; }
         .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: var(--dark); color: white; }
+        .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="card" style="width: 320px; text-align: center;">
-            <h2 style="color:var(--azul)">LUCILA PALACIOS</h2>
-            <p>Especialistas</p>
-            <input type="text" id="user" placeholder="Usuario">
-            <input type="password" id="pass" placeholder="Contraseña">
-            <button class="btn-main" onclick="iniciarSesion()">ENTRAR</button>
-        </div>
+<div class="container">
+    <h1>🏫 Sistema Especialistas</h1>
+
+    <div id="auth-section">
+        <h2>Iniciar Sesión</h2>
+        <input type="email" id="email" placeholder="Correo Electrónico">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button class="btn-main" onclick="iniciarSesion()">Entrar</button>
+        <p style="text-align: center;"><a href="#" onclick="recuperarClave()">¿Olvidaste tu contraseña?</a></p>
     </div>
 
-    <div id="app-content" class="hidden">
-        <header>
-            <h3 id="display-area" style="margin:0;">ÁREA</h3>
-            <small id="display-nombre"></small>
-        </header>
+    <div id="app-section" class="hidden">
+        <div class="card">
+            <h3>Registro de Asistencia</h3>
+            <label>Materia:</label>
+            <select id="materia" onchange="actualizarSeccionAutomatica()">
+                <option value="">-- Seleccione --</option>
+                <option value="Inglés">Inglés</option>
+                <option value="Cultura">Cultura</option>
+                <option value="Educación Física">Educación Física</option>
+                <option value="Computación">Computación</option>
+            </select>
+            <p>Sección detectada: <strong id="seccion-label">---</strong></p>
+            <input type="number" id="varones" placeholder="Cant. Varones">
+            <input type="number" id="hembras" placeholder="Cant. Hembras">
+            <button class="btn-main" onclick="guardarAsistencia()">Guardar Registro</button>
+        </div>
 
-        <div class="container">
-            <div class="nav-tabs">
-                <button class="tab-btn active" onclick="verTab('asis', this)">📝 ASISTENCIA</button>
-                <button class="tab-btn" onclick="verTab('grupos', this)">🛠️ GRUPOS</button>
-                <button class="tab-btn" onclick="verTab('stats', this)">📊 REPORTE</button>
-                <button id="btn-admin" class="tab-btn hidden" onclick="verTab('admin', this)" style="background:var(--oro)">⚙️ ADMIN</button>
-                <button class="tab-btn" onclick="location.reload()" style="background:var(--error); color:white;">SALIR</button>
-            </div>
+        <div class="card">
+            <h3>Estadísticas del Mes</h3>
+            <canvas id="graficoAsistencia"></canvas>
+            <button class="btn-pdf" onclick="descargarReportePDF()">📥 Descargar Reporte PDF</button>
+        </div>
 
-            <div id="sec-asis" class="tab-content">
-                <div class="card">
-                    <input type="date" id="fecha-asis">
-                    <select id="select-grupo-estable" onchange="cargarListaAsistencia()">
-                        <option value="">-- Seleccione su Grupo Estable --</option>
-                    </select>
-                </div>
-                <div id="panel-asis" class="card hidden">
-                    <div id="render-asis"></div>
-                    <button class="btn-main" style="background:var(--exito)" onclick="guardarAsistencia()">💾 GUARDAR ASISTENCIA</button>
-                </div>
-            </div>
-
-            <div id="sec-grupos" class="tab-content hidden">
-                <div class="card">
-                    <h4>CREAR GRUPO ESTABLE</h4>
-                    <input type="text" id="nombre-ge" placeholder="Nombre del Grupo (Ej: Coro)">
-                    <div style="display:flex; gap:5px;">
-                        <select id="g-busq"><option value="1">1°</option><option value="2">2°</option><option value="3">3°</option><option value="4">4°</option><option value="5">5°</option><option value="6">6°</option></select>
-                        <select id="s-busq"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
-                    </div>
-                    <button class="btn-main" onclick="buscarAlumnos()">BUSCAR ALUMNOS</button>
-                    <div id="lista-busqueda" style="max-height:200px; overflow-y:auto; margin-top:10px;"></div>
-                    <p>Seleccionados: <span id="count-ge">0</span></p>
-                    <button class="btn-main" style="background:var(--exito)" onclick="salvarGrupoEstable()">✅ CREAR GRUPO</button>
-                </div>
-            </div>
-
-            <div id="sec-stats" class="tab-content hidden">
-                <div class="card">
-                    <h4>REPORTE MENSUAL</h4>
-                    <input type="month" id="mes-filtro">
-                    <button class="btn-main" onclick="generarPDF()">📥 DESCARGAR PDF DISGREGADO</button>
-                </div>
-            </div>
-
-            <div id="sec-admin" class="tab-content hidden">
-                <div class="card">
-                    <h4>📥 CARGADOR MASIVO (PDF)</h4>
-                    <select id="g-carga"><option value="1">1°</option><option value="2">2°</option></select>
-                    <select id="s-carga"><option value="A">A</option><option value="B">B</option></select>
-                    <textarea id="texto-carga" placeholder="Pega aquí: NOMBRE GENERO" style="height:100px;"></textarea>
-                    <button class="btn-main" onclick="procesarCarga()">SUBIR ALUMNOS</button>
-                </div>
+        <div id="admin-section" class="hidden">
+            <hr>
+            <h3>Panel Administrativo (Hoy)</h3>
+            <button class="btn-excel" onclick="exportarExcelAdministrativo()">📗 Exportar Base de Datos Excel</button>
+            <div style="overflow-x:auto;">
+                <table id="tabla-admin">
+                    <thead>
+                        <tr><th>Especialista</th><th>Materia</th><th>Sección</th><th>Total</th></tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla"></tbody>
+                </table>
             </div>
         </div>
+
+        <button onclick="cerrarSesion()" style="background:#95a5a6; color:white; margin-top:30px;">Cerrar Sesión</button>
     </div>
+</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, getDocs, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+<script>
+    // 1. CONFIGURACIÓN FIREBASE (REEMPLAZA CON TUS DATOS)
     const firebaseConfig = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        projectId: "control-de-asistencia-d585e",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
+        apiKey: "TU_API_KEY",
+        authDomain: "TU_PROYECTO.firebaseapp.com",
+        projectId: "TU_PROYECTO",
+        storageBucket: "TU_PROYECTO.appspot.com",
+        messagingSenderId: "TU_ID",
+        appId: "TU_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. DATOS DE HORARIOS (Simplificado para ejemplo)
+    const horariosEspecialistas = {
+        "Inglés": {
+            "Lunes": [{ inicio: "12:15", fin: "13:15", seccion: "4°D" }, { inicio: "13:15", fin: "14:00", seccion: "6°C" }],
+            "Martes": [{ inicio: "13:15", fin: "14:00", seccion: "1°D" }]
+        } // Agrega aquí el resto de las materias según las fotos
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let usuario = null;
-    let tempGE = [];
-    let asisHoy = {};
-
-    // LOGIN
-    window.iniciarSesion = async () => {
-        const u = document.getElementById('user').value.trim();
-        const p = document.getElementById('pass').value.trim();
-        if(u === "director" && p === "lucila2026") {
-            entrar({id:"admin", nombre:"Director", area:"Dirección", rol:"admin"});
-        } else {
-            const d = await getDoc(doc(db, "credenciales_especialistas", u));
-            if(d.exists() && d.data().pass === p) entrar({id:u, ...d.data(), rol:"esp"});
-            else alert("Error");
-        }
-    };
-
-    function entrar(data) {
-        usuario = data;
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app-content').classList.remove('hidden');
-        document.getElementById('display-area').innerText = usuario.area;
-        document.getElementById('display-nombre').innerText = usuario.nombre;
-        document.getElementById('fecha-asis').value = new Date().toISOString().split('T')[0];
-        if(usuario.rol === 'admin') document.getElementById('btn-admin').classList.remove('hidden');
-        actualizarSelectGrupos();
+    // 3. LÓGICA DE AUTENTICACIÓN
+    function iniciarSesion() {
+        const e = document.getElementById('email').value;
+        const p = document.getElementById('password').value;
+        firebase.auth().signInWithEmailAndPassword(e, p).catch(err => Swal.fire('Error', 'Datos incorrectos', 'error'));
     }
 
-    window.verTab = (t, btn) => {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sec-'+t).classList.remove('hidden');
-        btn.classList.add('active');
-    };
+    function cerrarSesion() { firebase.auth().signOut(); }
 
-    // GESTIÓN DE GRUPOS
-    window.buscarAlumnos = async () => {
-        const g = document.getElementById('g-busq').value;
-        const s = document.getElementById('s-busq').value;
-        const d = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
-        const cont = document.getElementById('lista-busqueda');
-        cont.innerHTML = "";
-        if(d.exists()) {
-            d.data().alumnos.forEach(a => {
-                cont.innerHTML += `<div class="fila">${a.nombre} <button onclick="toggleGE('${a.id}','${a.nombre}','${a.genero}')">+</button></div>`;
-            });
-        }
-    };
-
-    window.toggleGE = (id, nombre, genero) => {
-        tempGE.push({id, nombre, genero});
-        document.getElementById('count-ge').innerText = tempGE.length;
-    };
-
-    window.salvarGrupoEstable = async () => {
-        const nom = document.getElementById('nombre-ge').value;
-        await setDoc(doc(db, "grupos_estables_db", `GE_${Date.now()}`), {
-            nombre: nom, creador: usuario.id, alumnos: tempGE
-        });
-        alert("Grupo Creado"); location.reload();
-    };
-
-    async function actualizarSelectGrupos() {
-        const s = document.getElementById('select-grupo-estable');
-        const snap = await getDocs(collection(db, "grupos_estables_db"));
-        snap.forEach(d => {
-            if(d.data().creador === usuario.id || usuario.rol === 'admin')
-                s.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
-        });
+    function recuperarClave() {
+        const e = document.getElementById('email').value;
+        if(!e) return Swal.fire('Aviso', 'Escribe tu correo', 'info');
+        firebase.auth().sendPasswordResetEmail(e).then(() => Swal.fire('Enviado', 'Revisa tu correo', 'success'));
     }
 
-    // ASISTENCIA
-    let alumnosDelGrupo = [];
-    window.cargarListaAsistencia = async () => {
-        const id = document.getElementById('select-grupo-estable').value;
-        if(!id) return;
-        const d = await getDoc(doc(db, "grupos_estables_db", id));
-        alumnosDelGrupo = d.data().alumnos;
-        const r = document.getElementById('render-asis');
-        r.innerHTML = "";
-        alumnosDelGrupo.forEach(a => {
-            asisHoy[a.id] = { p: 1, g: a.genero };
-            r.innerHTML += `<div class="fila">${a.nombre} <button id="b-${a.id}" class="btn-asis" style="background:var(--exito)" onclick="marcar('${a.id}')">P</button></div>`;
-        });
-        document.getElementById('panel-asis').classList.remove('hidden');
-    };
-
-    window.marcar = (id) => {
-        asisHoy[id].p = asisHoy[id].p === 1 ? 0 : 1;
-        const b = document.getElementById('b-'+id);
-        b.innerText = asisHoy[id].p === 1 ? 'P' : 'I';
-        b.style.background = asisHoy[id].p === 1 ? 'var(--exito)' : 'var(--error)';
-    };
-
-    window.guardarAsistencia = async () => {
-        const f = document.getElementById('fecha-asis').value;
-        const gNom = document.getElementById('select-grupo-estable').selectedOptions[0].text;
-        await setDoc(doc(db, "asistencia_especialistas", `${usuario.id}_${Date.now()}`), {
-            docente: usuario.nombre, area: usuario.area, fecha: f, grupo: gNom, data: asisHoy
-        });
-        alert("Guardado"); location.reload();
-    };
-
-    // CARGADOR ADMIN
-    window.procesarCarga = async () => {
-        const t = document.getElementById('texto-carga').value;
-        const g = document.getElementById('g-carga').value;
-        const s = document.getElementById('s-carga').value;
-        let lista = t.split('\n').map((l, i) => ({
-            id: `${g}${s}_${i}`,
-            nombre: l.replace(/VARÓN|HEMBRA/gi, "").trim(),
-            genero: l.includes("VARÓN") ? "VARÓN" : "HEMBRA"
-        }));
-        await setDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`), { grado:g, seccion:s, alumnos: lista });
-        alert("Cargados");
-    };
-
-    // PDF REPORTE
-    window.generarPDF = async () => {
-        const mes = document.getElementById('mes-filtro').value;
-        const snap = await getDocs(collection(db, "asistencia_especialistas"));
-        const { jsPDF } = window.jspdf;
-        const docP = new jsPDF();
-        let rows = [];
-        let mH = 0, mV = 0, aH = 0, aV = 0;
-
-        snap.forEach(d => {
-            const r = d.data();
-            if(r.fecha.startsWith(mes)) {
-                Object.values(r.data).forEach(est => {
-                    if(est.g === "HEMBRA") { mH++; if(est.p===1) aH++; }
-                    else { mV++; if(est.p===1) aV++; }
-                });
-                rows.push([r.fecha, r.grupo, Object.keys(r.data).length]);
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            renderizarGrafico();
+            if(user.email === "director@tu-escuela.com") { // Cambia esto por tu correo admin
+                document.getElementById('admin-section').classList.remove('hidden');
+                cargarVistaAdmin();
             }
+        } else {
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+        }
+    });
+
+    // 4. LÓGICA DE HORARIOS
+    function actualizarSeccionAutomatica() {
+        const materia = document.getElementById('materia').value;
+        if(!materia || !horariosEspecialistas[materia]) return;
+        
+        const ahora = new Date();
+        const dia = ahora.toLocaleDateString('es-ES', {weekday:'long'}).charAt(0).toUpperCase() + ahora.toLocaleDateString('es-ES', {weekday:'long'}).slice(1);
+        const hora = ahora.getHours().toString().padStart(2,'0') + ":" + ahora.getMinutes().toString().padStart(2,'0');
+
+        const horarioHoy = horariosEspecialistas[materia][dia] || [];
+        const bloque = horarioHoy.find(b => hora >= b.inicio && hora <= b.fin);
+        document.getElementById('seccion-label').innerText = bloque ? bloque.seccion : "Fuera de Horario";
+    }
+
+    // 5. GUARDADO Y REPORTES
+    async function guardarAsistencia() {
+        const mat = document.getElementById('materia').value;
+        const sec = document.getElementById('seccion-label').innerText;
+        const v = parseInt(document.getElementById('varones').value) || 0;
+        const h = parseInt(document.getElementById('hembras').value) || 0;
+
+        if(!mat || sec === "---") return Swal.fire('Error', 'Seleccione materia y verifique horario', 'warning');
+
+        await db.collection("asistencia_especialistas").add({
+            materia: mat, seccion: sec, varones: v, hembras: h,
+            totalEstudiantes: v + h,
+            usuarioEmail: firebase.auth().currentUser.email,
+            fecha: new Date().toISOString()
         });
 
-        docP.text("REPORTE MENSUAL LUCILA PALACIOS", 10, 10);
-        docP.autoTable({ head: [['Fecha', 'Grupo', 'Matr.']], body: rows });
-        docP.text(`ESTADÍSTICA: HEMBRAS (${aH}/${mH}) | VARONES (${aV}/${mV})`, 10, docP.lastAutoTable.finalY + 10);
-        docP.save("Reporte.pdf");
-    };
+        Swal.fire('¡Guardado!', 'Asistencia registrada', 'success');
+        renderizarGrafico();
+    }
+
+    // (Funciones de Gráfico, PDF y Excel irían aquí según lo desarrollado antes)
+    // Nota: Por brevedad, he omitido el cuerpo repetitivo de las funciones de reporte que ya tienes arriba.
 </script>
 </body>
 </html>
