@@ -3,172 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA PALACIOS - ESPECIALISTAS</title>
+    <title>Sistema Lucila Palacios - Gestión de Especialistas</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 80px; }
-        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--oro); }
-        .container { max-width: 700px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        :root { --azul: #002147; --oro: #f39c12; --verde: #27ae60; --rojo: #e74c3c; --fondo: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--fondo); margin: 0; color: #333; }
+        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--oro); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 900px; margin: 20px auto; padding: 10px; }
+        .card { background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        h3 { color: var(--azul); border-bottom: 2px solid var(--oro); padding-bottom: 5px; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
+        h2, h3 { color: var(--azul); margin-top: 0; border-left: 5px solid var(--oro); padding-left: 10px; }
         
-        select, input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-        
-        .grid-secciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0; }
-        .check-item { background: #eee; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; }
-        .check-item input { display: none; }
-        .check-item.selected { background: var(--oro); border-color: var(--azul); font-weight: bold; }
+        /* Selector de Secciones */
+        .grid-secciones { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin: 20px 0; }
+        .opcion-sec { background: #fff; border: 2px solid #ddd; padding: 15px; border-radius: 10px; cursor: pointer; text-align: center; transition: 0.3s; font-weight: bold; }
+        .opcion-sec:hover { border-color: var(--oro); background: #fff9f0; }
+        .opcion-sec.activa { background: var(--oro); color: white; border-color: var(--azul); }
+        .opcion-sec input { display: none; }
 
-        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: 0.3s; }
+        /* Botones */
+        .btn { padding: 15px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; width: 100%; display: block; margin-top: 10px; }
         .btn-azul { background: var(--azul); color: white; }
         .btn-verde { background: var(--verde); color: white; }
+        .btn-azul:hover, .btn-verde:hover { opacity: 0.9; transform: translateY(-2px); }
 
-        /* TABLA ESTADISTICA DISGREGADA */
-        .tabla-resumen { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; }
-        .tabla-resumen th { background: var(--azul); color: white; padding: 12px; }
-        .tabla-resumen td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-        .total-row { background: #f8f9fa; font-weight: bold; font-size: 1.1em; }
+        /* Lista de Alumnos */
+        .tabla-asis { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tabla-asis th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #ddd; }
+        .tabla-asis td { padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-status { width: 45px; height: 45px; border-radius: 50%; border: none; font-weight: bold; color: white; cursor: pointer; }
+        .p-color { background: var(--verde); }
+        .i-color { background: var(--rojo); }
 
-        .lista-asistencia { margin-top: 20px; border-top: 1px solid #eee; }
-        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-check { width: 50px; height: 40px; border-radius: 8px; border: none; color: white; font-weight: bold; }
+        /* Cuadro Estadístico */
+        .cuadro-stats { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; }
+        .cuadro-stats th { background: var(--azul); color: white; padding: 15px; }
+        .cuadro-stats td { padding: 15px; border: 1px solid #ddd; text-align: center; font-size: 18px; }
+        .fila-total { background: #f1f1f1; font-weight: bold; color: var(--azul); }
+
+        .hidden { display: none; }
+        textarea { width: 100%; height: 80px; margin-top: 15px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="60">
-    <h2>CONTROL DE ESPECIALISTAS</h2>
+    <h1>E.B.N. LUCILA PALACIOS</h1>
+    <p>Gestión de Grupos Estables y Especialistas</p>
 </header>
 
 <div class="container">
-    <div class="card" id="paso1">
-        <h3>1. Crear Grupo Estable</h3>
-        <p>Seleccione las secciones que verá hoy (Ej: Educación Física con 1A, 1B y 1C):</p>
-        <div class="grid-secciones">
-            <label class="check-item">1A <input type="checkbox" value="1A" onchange="toggleLabel(this)"></label>
-            <label class="check-item">1B <input type="checkbox" value="1B" onchange="toggleLabel(this)"></label>
-            <label class="check-item">1C <input type="checkbox" value="1C" onchange="toggleLabel(this)"></label>
-            <label class="check-item">1D <input type="checkbox" value="1D" onchange="toggleLabel(this)"></label>
-            <label class="check-item">1E <input type="checkbox" value="1E" onchange="toggleLabel(this)"></label>
-            <label class="check-item">2A <input type="checkbox" value="2A" onchange="toggleLabel(this)"></label>
-            <label class="check-item">2B <input type="checkbox" value="2B" onchange="toggleLabel(this)"></label>
-            <label class="check-item">2C <input type="checkbox" value="2C" onchange="toggleLabel(this)"></label>
-            <label class="check-item">2D <input type="checkbox" value="2D" onchange="toggleLabel(this)"></label>
-            <label class="check-item">2E <input type="checkbox" value="2E" onchange="toggleLabel(this)"></label>
-        </div>
-        <button class="btn btn-azul" onclick="iniciarGrupo()">GENERAR LISTA UNIFICADA</button>
+    
+    <div id="paso1" class="card">
+        <h3>1. Configurar el Grupo de Hoy</h3>
+        <p>Seleccione todas las secciones que integran su grupo estable:</p>
+        <div class="grid-secciones" id="cont-secciones">
+            </div>
+        <button class="btn btn-azul" onclick="generarGrupo()">CARGAR LISTADO UNIFICADO</button>
     </div>
 
-    <div class="card" id="paso2" style="display:none;">
-        <h3>2. Lista de Asistencia</h3>
-        <div id="lista-estudiantes" class="lista-asistencia"></div>
-        <textarea id="obs" placeholder="Observaciones o novedades..."></textarea>
-        <button class="btn btn-verde" onclick="procesarEstadistica()">💾 GUARDAR Y VER RESUMEN ESTADÍSTICO</button>
+    <div id="paso2" class="card hidden">
+        <h3 id="info-grupo">Lista de Estudiantes</h3>
+        <div style="overflow-x:auto;">
+            <table class="tabla-asis">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Secc.</th>
+                        <th>Género</th>
+                        <th style="text-align:center;">Asis.</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-est"></tbody>
+            </table>
+        </div>
+        <textarea id="observaciones" placeholder="Observaciones de la clase (opcional)..."></textarea>
+        <button class="btn btn-verde" onclick="calcularEstadistica()">FINALIZAR Y GENERAR ESTADÍSTICA</button>
     </div>
 
-    <div class="card" id="paso3" style="display:none;">
-        <h3>📊 Resumen Estadístico (Especialista)</h3>
-        <div id="resultado-final"></div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button class="btn btn-azul" onclick="exportarExcel()">📗 DESCARGAR EXCEL</button>
-            <button class="btn" style="background:#666; color:white;" onclick="location.reload()">NUEVA CLASE</button>
-        </div>
+    <div id="paso3" class="card hidden">
+        <h3>📊 Resumen Estadístico Disgregado</h3>
+        <div id="reporte-final"></div>
+        <button class="btn btn-azul" onclick="descargarExcel()">📗 DESCARGAR EXCEL PARA DIRECCIÓN</button>
+        <button class="btn" style="background:#888; color:white;" onclick="location.reload()">INICIAR OTRA CLASE</button>
     </div>
+
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<script>
+    // BASE DE DATOS BASADA EN TU PDF
+    const estudiantesDB = [
+        {id: 1, nombre: "AMANDA GABRIELA GARCÍA FIGUERA", genero: "HEMBRA", grado: "1", seccion: "A"},
+        {id: 2, nombre: "ANAIAH SHANTAL PALACIO FIGUERA", genero: "HEMBRA", grado: "1", seccion: "A"},
+        {id: 3, nombre: "ANGELA SUSEJ ROJAS ROSAS", genero: "HEMBRA", grado: "1", seccion: "A"},
+        {id: 4, nombre: "ANNELYS ESTEFANIA SOLORZANO", genero: "HEMBRA", grado: "1", seccion: "A"},
+        {id: 5, nombre: "DEYLISMAR NAHIATA PÉREZ", genero: "HEMBRA", grado: "1", seccion: "A"},
+        {id: 6, nombre: "JHORMAN ROSOAN ADELLAN", genero: "VARON", grado: "1", seccion: "B"},
+        {id: 7, nombre: "ALFONSO DE JESUS AGUILERA", genero: "VARON", grado: "1", seccion: "B"},
+        {id: 8, nombre: "MICHELLY DE LOS ANGELES ROJAS", genero: "HEMBRA", grado: "1", seccion: "C"},
+        // ... (Aquí se cargan los 400+ alumnos del PDF)
+    ];
 
-    const config = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        projectId: "control-de-asistencia-d585e",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
-    };
-
-    const app = initializeApp(config);
-    const db = getFirestore(app);
-
-    let alumnosGrupo = [];
+    const secciones = ["1A", "1B", "1C", "1D", "1E", "2A", "2B", "2C", "2D", "2E", "3A", "3B", "3C", "3D", "4A", "4B", "5A", "5B", "6A", "6B"];
+    let grupoEstable = [];
     let asistencia = {};
 
-    window.toggleLabel = (cb) => {
-        cb.parentElement.classList.toggle('selected', cb.checked);
-    };
+    // Iniciar botones de secciones
+    const contSec = document.getElementById('cont-secciones');
+    secciones.forEach(sec => {
+        contSec.innerHTML += `
+            <label class="opcion-sec" id="label-${sec}">
+                <input type="checkbox" value="${sec}" onchange="seleccionarSec('${sec}')"> ${sec}
+            </label>
+        `;
+    });
 
-    window.iniciarGrupo = async () => {
-        const seleccionados = Array.from(document.querySelectorAll('.grid-secciones input:checked')).map(i => i.value);
-        if(seleccionados.length === 0) return alert("Seleccione al menos una sección.");
+    function seleccionarSec(sec) {
+        const el = document.getElementById(`label-${sec}`);
+        el.classList.toggle('activa');
+    }
 
-        alumnosGrupo = [];
-        for(let sec of seleccionados) {
-            const d = await getDoc(doc(db, "docentes_db", `DOCENTE_${sec}`));
-            if(d.exists()) {
-                const lista = d.data().alumnos.map(a => ({...a, sec: sec}));
-                alumnosGrupo.push(...lista);
-            }
+    function generarGrupo() {
+        const seleccionadas = Array.from(document.querySelectorAll('.grid-secciones input:checked')).map(i => i.value);
+        if(seleccionadas.length === 0) return alert("Por favor, seleccione al menos una sección.");
+
+        // Simulación de filtro (En la vida real buscaría en la base de datos completa)
+        grupoEstable = estudiantesDB.filter(a => seleccionadas.includes(a.grado + a.seccion));
+        
+        // Si no hay datos (porque es demo), generamos unos ficticios para que veas el funcionamiento
+        if(grupoEstable.length === 0) {
+            alert("Usando datos de demostración para las secciones seleccionadas...");
+            seleccionadas.forEach(s => {
+                for(let i=1; i<=10; i++) {
+                    grupoEstable.push({
+                        id: s+i, 
+                        nombre: "Estudiante " + i + " de " + s, 
+                        genero: i % 2 === 0 ? "HEMBRA" : "VARON", 
+                        grado: s[0], 
+                        seccion: s[1]
+                    });
+                }
+            });
         }
 
-        const div = document.getElementById('lista-estudiantes');
-        div.innerHTML = "";
-        alumnosGrupo.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-            asistencia[a.id] = 1;
-            div.innerHTML += `
-                <div class="alumno-fila">
-                    <span>${a.nombre} <small>(${a.sec} - ${a.sexo})</small></span>
-                    <button id="btn-${a.id}" class="btn-check" style="background:var(--verde)" onclick="cambiarAsis('${a.id}')">P</button>
-                </div>`;
+        const tbody = document.getElementById('lista-est');
+        tbody.innerHTML = "";
+        grupoEstable.forEach(a => {
+            asistencia[a.id] = 1; // Presente por defecto
+            tbody.innerHTML += `
+                <tr>
+                    <td>${a.nombre}</td>
+                    <td>${a.grado}${a.seccion}</td>
+                    <td>${a.genero}</td>
+                    <td style="text-align:center;">
+                        <button class="btn-status p-color" id="btn-${a.id}" onclick="toggleAsis('${a.id}')">P</button>
+                    </td>
+                </tr>
+            `;
         });
-        document.getElementById('paso1').style.display = 'none';
-        document.getElementById('paso2').style.display = 'block';
-    };
 
-    window.cambiarAsis = (id) => {
-        asistencia[id] = asistencia[id] === 1 ? 0 : 1;
+        document.getElementById('paso1').classList.add('hidden');
+        document.getElementById('paso2').classList.remove('hidden');
+    }
+
+    function toggleAsis(id) {
         const btn = document.getElementById(`btn-${id}`);
-        btn.innerText = asistencia[id] === 1 ? "P" : "I";
-        btn.style.background = asistencia[id] === 1 ? "var(--verde)" : "var(--rojo)";
-    };
+        if(asistencia[id] === 1) {
+            asistencia[id] = 0;
+            btn.innerText = "I";
+            btn.className = "btn-status i-color";
+        } else {
+            asistencia[id] = 1;
+            btn.innerText = "P";
+            btn.className = "btn-status p-color";
+        }
+    }
 
-    window.procesarEstadistica = () => {
-        let stats = { mv:0, mh:0, av:0, ah:0 };
+    function calcularEstadistica() {
+        let stats = {
+            m_v: 0, m_h: 0, // Matrícula Varón/Hembra
+            a_v: 0, a_h: 0  // Asistencia Varón/Hembra
+        };
 
-        alumnosGrupo.forEach(a => {
-            const esV = (a.sexo === 'VARÓN' || a.sexo === 'V');
-            if(esV) stats.mv++; else stats.mh++;
+        grupoEstable.forEach(a => {
+            const esV = (a.genero === "VARON");
+            if(esV) stats.m_v++; else stats.m_h++;
+            
             if(asistencia[a.id] === 1) {
-                if(esV) stats.av++; else stats.ah++;
+                if(esV) stats.a_v++; else stats.a_h++;
             }
         });
 
-        const totalM = stats.mv + stats.mh;
-        const totalA = stats.av + stats.ah;
+        const totalM = stats.m_v + stats.m_h;
+        const totalA = stats.a_v + stats.a_h;
         const porcTotal = ((totalA / totalM) * 100).toFixed(2);
 
-        document.getElementById('resultado-final').innerHTML = `
-            <table class="tabla-resumen" id="tabla-excel">
-                <thead>
-                    <tr><th>GÉNERO</th><th>MATRÍCULA</th><th>ASISTENCIA</th><th>%</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>VARONES</td><td>${stats.mv}</td><td>${stats.av}</td><td>${((stats.av/stats.mv)*100 || 0).toFixed(1)}%</td></tr>
-                    <tr><td>HEMBRAS</td><td>${stats.mh}</td><td>${stats.ah}</td><td>${((stats.ah/stats.mh)*100 || 0).toFixed(1)}%</td></tr>
-                    <tr class="total-row"><td>TOTAL</td><td>${totalM}</td><td>${totalA}</td><td>${porcTotal}%</td></tr>
-                </tbody>
+        const reporte = document.getElementById('reporte-final');
+        reporte.innerHTML = `
+            <table class="cuadro-stats" id="tabla-final">
+                <tr>
+                    <th>GÉNERO</th>
+                    <th>MATRÍCULA</th>
+                    <th>ASISTENCIA</th>
+                    <th>% REAL</th>
+                </tr>
+                <tr>
+                    <td>VARONES</td>
+                    <td>${stats.m_v}</td>
+                    <td>${stats.a_v}</td>
+                    <td>${((stats.a_v/stats.m_v)*100 || 0).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                    <td>HEMBRAS</td>
+                    <td>${stats.m_h}</td>
+                    <td>${stats.a_h}</td>
+                    <td>${((stats.a_h/stats.m_h)*100 || 0).toFixed(1)}%</td>
+                </tr>
+                <tr class="fila-total">
+                    <td>TOTAL GENERAL</td>
+                    <td>${totalM}</td>
+                    <td>${totalA}</td>
+                    <td>${porcTotal}%</td>
+                </tr>
             </table>
+            <div class="card" style="margin-top:15px; background:#f9f9f9;">
+                <strong>Observaciones:</strong><br>
+                ${document.getElementById('observaciones').value || "Ninguna"}
+            </div>
         `;
-        document.getElementById('paso2').style.display = 'none';
-        document.getElementById('paso3').style.display = 'block';
-    };
 
-    window.exportarExcel = () => {
-        const wb = XLSX.utils.table_to_book(document.getElementById('tabla-excel'));
+        document.getElementById('paso2').classList.add('hidden');
+        document.getElementById('paso3').classList.remove('hidden');
+    }
+
+    function descargarExcel() {
+        const table = document.getElementById("tabla-final");
+        const wb = XLSX.utils.table_to_book(table);
         XLSX.writeFile(wb, "Estadistica_Especialista_Lucila.xlsx");
-    };
+    }
 </script>
+
 </body>
 </html>
