@@ -3,111 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA - ESPECIALISTAS Y ESTADÍSTICA</title>
+    <title>SISTEMA LUCILA PALACIOS - OFICIAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
         :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --morado: #6f42c1; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 80px; }
-        header { background: var(--azul); color: white; padding: 10px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 600px; margin: auto; padding: 10px; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
+        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
-        /* Sistema de pestañas y pantallas */
-        #pantalla-login { display: flex; height: 100vh; align-items: center; justify-content: center; background: var(--azul); }
-        .seccion { display: none; }
-        .seccion.activa { display: block; }
+        /* Alertas de Ausentismo */
+        .alerta-critica { background: #fff3cd; border-left: 5px solid #856404; padding: 12px; margin-bottom: 10px; border-radius: 8px; font-size: 13px; color: #856404; }
+        
+        /* Tablas de Reporte */
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        th { background: var(--azul); color: white; }
 
-        /* Inputs y Botones */
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; }
+        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; transition: 0.3s; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-verde { background: var(--verde); }
-        .btn-morado { background: var(--morado); }
+        .btn-excel { background: #1d6f42; margin-bottom: 5px; }
+        .btn-pdf { background: #af2a2a; }
 
-        /* Estilos de Lista */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; }
+        .nav-item { flex: 1; padding: 15px 5px; text-align: center; font-size: 11px; font-weight: bold; color: #666; cursor: pointer; }
+        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); }
+        
+        #pantalla-login, #pantalla-admin, #pantalla-usuario { display: none; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
         .fila-lista { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .btn-asis { width: 40px; height: 40px; border-radius: 8px; border: none; color: white; font-weight: bold; }
-
-        /* PANEL ESTADÍSTICO REAL */
-        .panel-stats { background: #fff; border-top: 4px solid var(--verde); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; }
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
-        .stat-box { background: var(--gris); padding: 8px; border-radius: 5px; text-align: center; border: 1px solid #ddd; }
-        .stat-val { display: block; font-size: 18px; font-weight: bold; color: var(--azul); }
-
-        /* Navegación */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 65px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #666; cursor: pointer; }
-        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); background: #f0f0f0; }
     </style>
 </head>
 <body>
 
-    <div id="pantalla-login">
-        <div class="card" style="width: 280px; text-align: center;">
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="70">
-            <h3>SISTEMA LUCILA</h3>
-            <input type="text" id="u" placeholder="Usuario">
-            <input type="password" id="p" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="login()">ENTRAR</button>
+    <div id="pantalla-login" style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--azul);">
+        <div class="card" style="width: 300px; text-align: center;">
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+            <h2 style="color:var(--azul);">SISTEMA LUCILA</h2>
+            <input type="text" id="logUser" placeholder="Usuario">
+            <input type="password" id="logPass" placeholder="Contraseña">
+            <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR</button>
         </div>
     </div>
 
-    <div id="pantalla-main" style="display:none;">
-        <header>
-            <div id="header-tit" style="font-weight: bold;">...</div>
-            <div id="header-rol" style="font-size: 11px; opacity: 0.8;">...</div>
-        </header>
-
+    <div id="pantalla-admin">
+        <header>DIRECCIÓN - CONTROL TOTAL</header>
         <div class="container">
-            <div id="sec-asistencia" class="seccion activa">
-                <div class="card">
-                    <input type="date" id="fechaAsis">
-                    <div style="display:flex; gap:5px;">
-                        <select id="gSel" onchange="cargarSeccionesE()"><option value="">Grado</option></select>
-                        <select id="sSel"><option value="">Sección</option></select>
-                    </div>
-                    <button class="btn btn-azul" onclick="cargarLista()">CARGAR MATRÍCULA</button>
-                </div>
-
-                <div id="statsPanel" class="panel-stats" style="display:none;">
-                    <strong>📊 Estadística de Atención (Real)</strong>
-                    <div class="grid-stats">
-                        <div class="stat-box">Varo: <span class="stat-val" id="st-v">0</span></div>
-                        <div class="stat-box">Hemb: <span class="stat-val" id="st-h">0</span></div>
-                        <div class="stat-box">Total: <span class="stat-val" id="st-t">0</span></div>
-                        <div class="stat-box">Asis V: <span class="stat-val" id="st-av" style="color:var(--verde)">0</span></div>
-                        <div class="stat-box">Asis H: <span class="stat-val" id="st-ah" style="color:var(--verde)">0</span></div>
-                        <div class="stat-box">% Real: <span class="stat-val" id="st-por" style="color:var(--verde)">0%</span></div>
+            <div id="admin-reportes" class="seccion activa">
+                <div id="contenedor-alertas"></div> <div class="card">
+                    <h4>📊 Consolidado Mensual</h4>
+                    <input type="month" id="mes-filtro">
+                    <button class="btn btn-azul" onclick="generarReporte()">VER TABLA</button>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn btn-excel" onclick="exportarExcel()">📗 EXCEL</button>
+                        <button class="btn btn-pdf" onclick="exportarPDF()">📕 PDF</button>
                     </div>
                 </div>
-
-                <div id="listaContainer" class="card" style="display:none;">
-                    <div id="renderAlumnos"></div>
-                    <button class="btn btn-verde" style="margin-top:20px" onclick="guardarTodo()">💾 GUARDAR ASISTENCIA Y ESTADÍSTICA</button>
-                </div>
+                <div id="tabla-reporte-contenedor" style="overflow-x:auto;"></div>
             </div>
+        </div>
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="navAdmin('reportes')">REPORTES</div>
+            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
+        </div>
+    </div>
 
-            <div id="sec-admin" class="seccion">
+    <div id="pantalla-usuario">
+        <header id="display-area">ESPECIALISTA</header>
+        <div class="container">
+            <div id="usu-asis" class="seccion activa">
                 <div class="card">
-                    <h4>🛠 Gestión de Personal y Alumnos</h4>
-                    <button class="btn btn-morado" onclick="alert('Función para añadir alumnos con Género V/H activada.')">Añadir Alumno (V/H)</button>
-                    <button class="btn btn-azul" onclick="alert('Función para crear especialistas.')">Crear Especialista</button>
+                    <input type="date" id="fechaControl">
+                    <select id="gradoSel" onchange="actualizarSec()">
+                        <option value="">-- Grado --</option>
+                        <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
+                        <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
+                    </select>
+                    <select id="seccionSel">
+                        <option value="A">Sec A</option><option value="B">Sec B</option><option value="C">Sec C</option>
+                        <option value="D">Sec D</option><option value="E">Sec E</option>
+                    </select>
+                    <button class="btn btn-azul" onclick="cargarListaAsis()">CARGAR LISTA</button>
+                </div>
+
+                <div id="areaLista" class="card" style="display:none;">
+                    <div id="renderAlumnos"></div>
+                    <textarea id="obs-clase" placeholder="Observaciones / Eventualidades de hoy..."></textarea>
+                    <button class="btn btn-verde" onclick="guardarAsistencia()">💾 GUARDAR REGISTRO</button>
                 </div>
             </div>
         </div>
-
-        <nav class="nav-bar">
-            <div class="nav-item active" id="tab-asis" onclick="showSec('asistencia')">📝 ASISTENCIA</div>
-            <div class="nav-item" id="tab-admin" onclick="showSec('admin')">⚙️ DIRECCIÓN</div>
-            <div class="nav-item" onclick="location.reload()" style="color:var(--rojo)">🚪 SALIR</div>
-        </nav>
+        <div class="nav-bar">
+            <div class="nav-item active">ASISTENCIA</div>
+            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
+        </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
+    const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
         authDomain: "control-de-asistencia-d585e.firebaseapp.com",
         projectId: "control-de-asistencia-d585e",
@@ -115,149 +117,136 @@
         appId: "1:368890880546:web:a97ab4372dea536217207b"
     };
 
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(config);
     const db = getFirestore(app);
 
-    let userLoged = null;
-    let dataTemp = [];
-    let asisEstado = {};
+    let sesion = null;
+    let alumnosActivos = [];
+    let asistenciaTemp = {};
 
-    // 1. LOGIN
-    window.login = async () => {
-        const u = document.getElementById('u').value.trim().toLowerCase();
-        const p = document.getElementById('p').value.trim();
-
+    // LOGIN
+    window.iniciarSesion = async () => {
+        const u = document.getElementById('logUser').value.trim();
+        const p = document.getElementById('logPass').value.trim();
+        
         if(u === "admin_lucila" && p === "lucila2026") {
-            entrar("DIRECCIÓN", "ADMINISTRADOR");
-            document.getElementById('tab-admin').style.display = "flex";
-        } else {
-            const snap = await getDoc(doc(db, "credenciales_especialistas", u));
-            if(snap.exists() && snap.data().pass === p) {
-                entrar(snap.data().nombre, "ESPECIALISTA");
-                document.getElementById('tab-admin').style.display = "none";
-            } else { alert("Datos incorrectos"); }
+            document.getElementById('pantalla-login').style.display='none';
+            document.getElementById('pantalla-admin').style.display='block';
+            detectarAusentismo(); return;
         }
+
+        const d = await getDoc(doc(db, "credenciales_especialistas", u));
+        if(d.exists() && d.data().pass === p) {
+            sesion = { id: u, ...d.data() };
+            document.getElementById('pantalla-login').style.display='none';
+            document.getElementById('pantalla-usuario').style.display='block';
+            document.getElementById('display-area').innerText = sesion.nombre;
+            document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
+        } else { alert("Acceso Incorrecto"); }
     };
 
-    function entrar(nombre, rol) {
-        userLoged = { nombre, rol };
-        document.getElementById('pantalla-login').style.display = "none";
-        document.getElementById('pantalla-main').style.display = "block";
-        document.getElementById('header-tit').innerText = nombre;
-        document.getElementById('header-rol').innerText = rol;
-        document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
-        llenarCombos();
-    }
-
-    // 2. LLENAR GRADOS Y SECCIONES (A-E)
-    function llenarCombos() {
-        const g = document.getElementById('gSel');
-        g.innerHTML = '<option value="">Grado</option>';
-        ['1','2','3','4','5','6','GE'].forEach(v => g.innerHTML += `<option value="${v}">${v === 'GE' ? 'G. Estable' : v + '°'}</option>`);
-    }
-
-    window.cargarSeccionesE = () => {
-        const g = document.getElementById('gSel').value;
-        const s = document.getElementById('sSel');
-        s.innerHTML = "";
-        if(g === "GE") {
-            s.innerHTML = '<option value="GE_GENERAL">Grupo General</option>';
-        } else {
-            ['A','B','C','D','E'].forEach(l => s.innerHTML += `<option value="${l}">Sec ${l}</option>`);
-        }
-    };
-
-    // 3. CARGAR LISTA Y CALCULAR ESTADÍSTICA
-    window.cargarLista = async () => {
-        const g = document.getElementById('gSel').value;
-        const s = document.getElementById('sSel').value;
-        if(!g || !s) return alert("Elija grado y sección");
-
-        const docID = `DOCENTE_${g}${s}`;
-        const snap = await getDoc(doc(db, "docentes_db", docID));
+    // CARGAR LISTA
+    window.cargarListaAsis = async () => {
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel').value;
+        const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
         
-        if(!snap.exists()) return alert("No hay alumnos cargados en esta sección.");
+        if(!snap.exists()) return alert("Sección sin alumnos registrados.");
         
-        dataTemp = snap.data().alumnos || [];
-        asisEstado = {};
-        
-        const res = document.getElementById('renderAlumnos');
-        res.innerHTML = "";
-        
-        dataTemp.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-            asisEstado[a.id] = 1; // Por defecto presente
-            res.innerHTML += `
-                <div class="fila-lista">
-                    <span>${a.nombre} <small>(${a.sexo || 'V'})</small></span>
-                    <button class="btn-asis" id="btn-${a.id}" style="background:var(--verde)" onclick="toggleAsis('${a.id}')">P</button>
-                </div>`;
+        alumnosActivos = snap.data().alumnos;
+        const div = document.getElementById('renderAlumnos');
+        div.innerHTML = "";
+        asistenciaTemp = {};
+
+        alumnosActivos.forEach(a => {
+            asistenciaTemp[a.id] = 1;
+            div.innerHTML += `<div class="fila-lista">
+                <span>${a.nombre}</span>
+                <button id="btn-${a.id}" class="btn" style="width:40px; background:var(--verde)" onclick="toggleAsis('${a.id}')">P</button>
+            </div>`;
         });
-
-        document.getElementById('listaContainer').style.display = "block";
-        document.getElementById('statsPanel').style.display = "block";
-        recalcStats();
+        document.getElementById('areaLista').style.display='block';
     };
 
     window.toggleAsis = (id) => {
-        asisEstado[id] = asisEstado[id] === 1 ? 0 : 1;
-        const b = document.getElementById('btn-'+id);
-        b.innerText = asisEstado[id] === 1 ? "P" : "I";
-        b.style.background = asisEstado[id] === 1 ? "var(--verde)" : "var(--rojo)";
-        recalcStats();
+        asistenciaTemp[id] = asistenciaTemp[id] === 1 ? 0 : 1;
+        document.getElementById(`btn-${id}`).innerText = asistenciaTemp[id] === 1 ? "P" : "I";
+        document.getElementById(`btn-${id}`).style.background = asistenciaTemp[id] === 1 ? "var(--verde)" : "var(--rojo)";
     };
 
-    function recalcStats() {
-        let v = 0, h = 0, av = 0, ah = 0;
-        dataTemp.forEach(a => {
-            const sexo = (a.sexo || "V").toUpperCase();
-            if(sexo === "V") { v++; if(asisEstado[a.id] === 1) av++; }
-            else { h++; if(asisEstado[a.id] === 1) ah++; }
+    // GUARDAR CON FALTISTAS DETALLADOS (PARA ALERTAS)
+    window.guardarAsistencia = async () => {
+        const f = document.getElementById('fechaControl').value;
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel').value;
+        const obs = document.getElementById('obs-clase').value;
+        
+        let faltistas = [];
+        let av=0, ah=0, mv=0, mh=0;
+
+        alumnosActivos.forEach(a => {
+            const isV = a.sexo === 'V';
+            if(isV) mv++; else mh++;
+            if(asistenciaTemp[a.id] === 1) { if(isV) av++; else ah++; }
+            else { faltistas.push({id: a.id, nombre: a.nombre, grado: g, seccion: s}); }
         });
 
-        const total = v + h;
-        const asisTot = av + ah;
-        const por = total > 0 ? Math.round((asisTot / total) * 100) : 0;
+        await setDoc(doc(db, "asistencia_general", `${sesion.id}_${f}_${g}${s}`), {
+            espNom: sesion.nombre, fecha: f, grado: g, seccion: s,
+            mv, mh, av, ah, obs, faltistas
+        });
 
-        document.getElementById('st-v').innerText = v;
-        document.getElementById('st-h').innerText = h;
-        document.getElementById('st-t').innerText = total;
-        document.getElementById('st-av').innerText = av;
-        document.getElementById('st-ah').innerText = ah;
-        document.getElementById('st-por').innerText = por + "%";
+        alert("Asistencia Guardada");
+        location.reload();
+    };
+
+    // MOTOR DE ALERTAS CRÍTICAS (DIRECCIÓN)
+    async function detectarAusentismo() {
+        const snap = await getDocs(collection(db, "asistencia_general"));
+        let conteo = {};
+        snap.forEach(d => {
+            (d.data().faltistas || []).forEach(f => {
+                if(!conteo[f.id]) conteo[f.id] = {n: f.nombre, c: 0, g: f.grado, s: f.seccion};
+                conteo[f.id].c++;
+            });
+        });
+
+        const box = document.getElementById('contenedor-alertas');
+        box.innerHTML = "";
+        for(let id in conteo) {
+            if(conteo[id].c >= 3) {
+                box.innerHTML += `<div class="alerta-critica">🚩 <b>AUSENTISMO:</b> ${conteo[id].n} (${conteo[id].g}°${conteo[id].s}) ha faltado ${conteo[id].c} veces.</div>`;
+            }
+        }
     }
 
-    window.guardarTodo = async () => {
-        const f = document.getElementById('fechaAsis').value;
-        const g = document.getElementById('gSel').value;
-        const s = document.getElementById('sSel').value;
-        
-        const payload = {
-            especialista: userLoged.nombre,
-            fecha: f,
-            grado: g,
-            seccion: s,
-            asistencia: asisEstado,
-            estadistica: {
-                mv: document.getElementById('st-v').innerText,
-                mh: document.getElementById('st-h').innerText,
-                av: document.getElementById('st-av').innerText,
-                ah: document.getElementById('st-ah').innerText,
-                porcentaje: document.getElementById('st-por').innerText
+    // REPORTES Y EXPORTACIÓN
+    window.generarReporte = async () => {
+        const mes = document.getElementById('mes-filtro').value;
+        if(!mes) return alert("Seleccione un mes");
+        const snap = await getDocs(collection(db, "asistencia_general"));
+        let html = `<table><tr><th>Fecha</th><th>Especialista</th><th>Secc</th><th>Asistencia</th><th>Observación</th></tr>`;
+        snap.forEach(d => {
+            const r = d.data();
+            if(r.fecha.startsWith(mes)) {
+                html += `<tr><td>${r.fecha}</td><td>${r.espNom}</td><td>${r.grado}${r.seccion}</td><td>${r.av}V/${r.ah}H</td><td>${r.obs || '-'}</td></tr>`;
             }
-        };
-
-        await setDoc(doc(db, "asistencia_especialistas", `${f}_${userLoged.nombre}_${g}${s}`), payload);
-        alert("✅ Guardado con éxito. Estadística enviada a Dirección.");
-        document.getElementById('listaContainer').style.display = "none";
+        });
+        document.getElementById('tabla-reporte-contenedor').innerHTML = html + "</table>";
     };
 
-    window.showSec = (id) => {
-        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('sec-'+id).classList.add('activa');
-        document.getElementById('tab-'+id).classList.add('active');
+    window.exportarExcel = () => {
+        const wb = XLSX.utils.table_to_book(document.querySelector("table"));
+        XLSX.writeFile(wb, "Reporte_Lucila_Palacios.xlsx");
     };
 
+    window.exportarPDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("Reporte Mensual - EBN Lucila Palacios", 10, 10);
+        doc.autoTable({ html: 'table', startY: 20 });
+        doc.save("Reporte_Lucila.pdf");
+    };
 </script>
 </body>
 </html>
