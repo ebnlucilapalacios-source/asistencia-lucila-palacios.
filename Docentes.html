@@ -129,27 +129,22 @@
             document.getElementById('adminNewPass').value = "";
         };
 
-        // NUEVA FUNCIÓN: ELIMINAR DOCENTE
+        // FUNCIÓN ELIMINAR DOCENTE CORREGIDA
         window.eliminarDocente = async () => {
             const userDel = document.getElementById('adminDeleteUser').value.toLowerCase().trim();
-            if(!userDel) return alert("Ingrese el usuario que desea eliminar.");
-            if(userDel === USUARIO_ADMIN) return alert("No se puede eliminar la cuenta de administración.");
+            if(!userDel) return alert("Ingrese el usuario a eliminar.");
+            if(userDel === USUARIO_ADMIN) return alert("No se puede eliminar al administrador.");
 
-            const docRef = doc(dbCloud, "docentes_db", userDel);
-            const snap = await getDoc(docRef);
-
+            const ref = doc(dbCloud, "docentes_db", userDel);
+            const snap = await getDoc(ref);
             if(!snap.exists()) return alert("El usuario no existe.");
 
-            const confirmar = confirm(`¿Está seguro de eliminar permanentemente al docente "${userDel}"? Se borrará toda su matrícula y asistencias.`);
-            if(confirmar) {
-                const dobleConfirmar = prompt("Escriba ELIMINAR para confirmar la acción:");
-                if(dobleConfirmar === "ELIMINAR") {
-                    await deleteDoc(docRef);
-                    alert("Docente eliminado de la base de datos.");
+            if(confirm(`¿ELIMINAR DEFINITIVAMENTE al docente "${userDel}"?`)) {
+                if(prompt("Escriba ELIMINAR para confirmar:") === "ELIMINAR") {
+                    await deleteDoc(ref);
+                    alert("Docente borrado.");
                     document.getElementById('adminDeleteUser').value = "";
-                    if(document.getElementById('adminOutput').innerHTML !== "") window.consolidadoMensual();
-                } else {
-                    alert("Acción cancelada.");
+                    window.consolidadoMensual();
                 }
             }
         };
@@ -165,9 +160,10 @@
 
             snap.forEach(dSnap => {
                 const d = dSnap.data();
-                if(dSnap.id !== USUARIO_ADMIN) {
+                // FILTRO: No mostrar Admin ni a quienes tengan "ESPECIALISTA" en su nombre
+                if(dSnap.id !== USUARIO_ADMIN && !d.docente.includes("ESPECIALISTA")) {
                     docentesData.push(d);
-                    const docInfo = `<b>${d.grado}${d.seccion}</b>: ${d.docente} (${dSnap.id})`;
+                    const docInfo = `<b>${d.grado}${d.seccion}</b>: ${d.docente}`;
                     if(d.turno === "Mañana") listMañana.push(docInfo);
                     if(d.turno === "Tarde") listTarde.push(docInfo);
                 }
@@ -182,7 +178,7 @@
 
             let h = `
                 <div class="resumen-direccion">
-                    <div style="text-align:center; font-size:14px; color:var(--azul);"><strong>TOTAL DOCENTES REGISTRADOS: ${docentesData.length}</strong></div>
+                    <div style="text-align:center; font-size:14px; color:var(--azul);"><strong>TOTAL DOCENTES (AULA): ${docentesData.length}</strong></div>
                     <hr style="border-top:1px solid #3498db; margin:8px 0;">
                     <div style="display:flex; gap:10px; font-size:12px;">
                         <div style="flex:1;">
@@ -225,7 +221,7 @@
                 const pH=ds>0?sH/ds:0, pV=ds>0?sV/ds:0, pT=pH+pV, ef=mT>0?(pT/mT*100).toFixed(1):0;
                 T.mH+=mH; T.mV+=mV; T.mT+=mT; T.mI+=mI; T.mE+=mE; T.pH+=pH; T.pV+=pV; T.pT+=pT;
 
-                h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion} (${d.turno || ''})</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
+                h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.grado}${d.seccion}</td><td>${mH}</td><td>${mV}</td><td>${mT}</td><td>${mI}</td><td>${mE}</td><td>${pH.toFixed(1)}</td><td>${pV.toFixed(1)}</td><td>${pT.toFixed(1)}</td><td>${ef}%</td></tr>`;
             });
             const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
             h += `<tr class="fila-total"><td>ESCUELA</td><td>-</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.mI}</td><td>${T.mE}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
@@ -308,7 +304,7 @@
                         <td>${cedulaText}</td>
                         <td style="text-align:left">${a.nombre}</td>
                         <td>${genero}</td>
-                        <td>${count = edad}</td>
+                        <td>${edad}</td>
                         <td>${diasHabiles}</td>
                         <td style="color:var(--exito); font-weight:bold;">${asis}</td>
                         <td style="color:var(--rojo); font-weight:bold;">${inas}</td>
@@ -439,45 +435,22 @@
             else if (formato === 'pdf') {
                 const { jsPDF } = window.jspdf;
                 const docPDF = new jsPDF();
-                
                 docPDF.setFontSize(10);
-                docPDF.setFont("helvetica", "bold");
-                docPDF.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 105, 12, { align: "center" });
-                docPDF.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 105, 17, { align: "center" });
-                docPDF.text("ESTADO BOLÍVAR - MUNICIPIO CARONÍ", 105, 22, { align: "center" });
-                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 27, { align: "center" });
-
+                docPDF.text("E.B.N. LUCILA PALACIOS", 105, 10, { align: "center" });
                 docPDF.setFontSize(14);
-                docPDF.text("LISTA DE ESTUDIANTES", 105, 38, { align: "center" });
-
-                let yPos = 45;
-                let hayDatos = false;
-                
+                docPDF.text("LISTA DE ESTUDIANTES", 105, 20, { align: "center" });
+                let yPos = 30;
                 listaDocentes.forEach(d => {
                     const activos = (d.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
                     if (activos.length === 0) return;
-                    hayDatos = true;
-
                     const filas = activos.map((a, i) => [i + 1, a.cedula || 'S/C', a.nombre]);
-
                     docPDF.autoTable({
-                        head: [
-                            [{content: `GRADO: ${d.grado || ''} ${d.seccion || ''} | DOCENTE: ${d.docente || ''}`, colSpan: 3, styles: {fillColor:[0,33,71], halign: 'center'}}], 
-                            ['N°', 'CÉDULA', 'NOMBRE DEL ESTUDIANTE']
-                        ],
-                        body: filas, 
-                        startY: yPos, 
-                        theme: 'grid', 
-                        styles: {fontSize: 10}, 
-                        headStyles: {fillColor:[52,73,94]}, 
-                        margin: {bottom: 15}
+                        head: [[{content: `GRADO: ${d.grado}${d.seccion} | DOCENTE: ${d.docente}`, colSpan: 3}], ['N°', 'CÉDULA', 'ESTUDIANTE']],
+                        body: filas, startY: yPos, theme: 'grid', styles: {fontSize: 9}
                     });
                     yPos = docPDF.lastAutoTable.finalY + 10;
-                    if(yPos > 270) { docPDF.addPage(); yPos = 20; } 
                 });
-                
-                if(!hayDatos) return alert("No hay alumnos activos para exportar.");
-                docPDF.save(esAdmin ? "Lista_Estudiantes_General.pdf" : `Lista_Estudiantes_${window.db.grado}${window.db.seccion}.pdf`);
+                docPDF.save("Lista_Estudiantes.pdf");
             }
         };
 
@@ -728,27 +701,21 @@
                 <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
                 <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 LISTA DETALLADA PDF</button>
             </div>
-            <button onclick="exportarExcelGeneral()" style="background:#1D6F42; color:white; padding:10px; border:none; width:100%; border-radius:6px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:11px;">📗 MATRÍCULA EXCEL GENERAL</button>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
-                <button onclick="exportarNombresBasico('excel', true)" style="background:#27ae60; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📥 ESTUDIANTES EXCEL</button>
-                <button onclick="exportarNombresBasico('pdf', true)" style="background:#c0392b; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">📄 ESTUDIANTES PDF</button>
-            </div>
             
             <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border: 1px solid #3498db; border-radius: 8px;">
-                <b style="color: var(--azul);">🔐 Cambiar Credenciales de Docente</b>
-                <input type="text" id="adminOldUser" placeholder="Usuario actual del docente" style="margin-top:8px;">
+                <b style="color: var(--azul);">🔐 Cambiar Credenciales</b>
+                <input type="text" id="adminOldUser" placeholder="Usuario actual">
                 <div style="display:flex; gap:4px;">
                     <input type="text" id="adminNewUser" placeholder="Nuevo usuario">
                     <input type="password" id="adminNewPass" placeholder="Nueva clave">
                 </div>
-                <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">ACTUALIZAR CREDENCIALES</button>
+                <button onclick="cambiarCredencialesDocente()" style="background:var(--azul); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">ACTUALIZAR</button>
             </div>
 
             <div style="margin-top: 10px; padding: 10px; background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 8px;">
-                <b style="color: var(--rojo);">⚠️ Gestión de Bajas</b>
-                <input type="text" id="adminDeleteUser" placeholder="Usuario del docente a eliminar" style="margin-top:8px;">
-                <button onclick="eliminarDocente()" style="background:var(--rojo); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">🗑️ ELIMINAR DOCENTE DEL SISTEMA</button>
+                <b style="color: var(--rojo);">🗑️ Eliminar Docente</b>
+                <input type="text" id="adminDeleteUser" placeholder="Usuario a eliminar">
+                <button onclick="eliminarDocente()" style="background:var(--rojo); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">BORRAR DE LA NUBE</button>
             </div>
 
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
