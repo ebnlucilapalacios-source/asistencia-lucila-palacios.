@@ -16,12 +16,11 @@
         .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-morado { background: var(--morado); }
-        .btn-exito { background: var(--exito); }
         #appContent, .sec, #panelAdmin { display: none; }
         .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 11px; }
         .tab-btn.active { background: var(--oro); color: var(--azul); }
-        .badge { background: var(--morado); color: white; padding: 3px 8px; border-radius: 5px; font-size: 10px; }
+        .badge { background: var(--morado); color: white; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -39,15 +38,15 @@
     <div id="appContent">
         <header>
             <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="50">
-            <div id="nomUsu" style="font-weight: bold;">...</div>
+            <div id="nomUsu" style="font-weight: bold; font-size: 18px;">...</div>
             <div id="rolUsu"></div>
         </header>
 
         <div class="container">
             <div id="panelAdmin" class="card" style="border: 2px solid var(--morado);">
-                <h4 style="color:var(--morado); margin:0;">📊 PANEL DIRECTIVO ACTIVO</h4>
-                <p style="font-size: 11px;">Acceso a todos los registros de la escuela.</p>
-                <button class="btn btn-morado" onclick="alert('Generando Consolidado...')">📥 DESCARGAR REPORTE GENERAL</button>
+                <h4 style="color:var(--morado); margin:0;">📊 PANEL DIRECTIVO</h4>
+                <p style="font-size: 12px; color: #555;">Acceso total a reportes y control de la escuela.</p>
+                <button class="btn btn-morado" onclick="alert('Generando Consolidado...')">📥 DESCARGAR CONSOLIDADO ESCUELA</button>
             </div>
 
             <div class="nav-tabs">
@@ -59,14 +58,7 @@
             <div id="sec-asis" class="sec" style="display: block;">
                 <div class="card">
                     <input type="date" id="fechaControl">
-                    <button class="btn btn-azul" onclick="alert('Cargando lista...')">CARGAR ALUMNOS</button>
-                </div>
-            </div>
-
-            <div id="sec-ge" class="sec">
-                <div class="card">
-                    <h4>🔨 Grupos Estables</h4>
-                    <p>Crea y gestiona grupos aquí.</p>
+                    <button class="btn btn-azul">CARGAR ALUMNOS</button>
                 </div>
             </div>
         </div>
@@ -90,34 +82,38 @@
     let sesion = null;
 
     window.iniciarSesion = async () => {
+        // Obtenemos datos y convertimos a minúsculas
         const u = document.getElementById('logUser').value.trim().toLowerCase();
         const p = document.getElementById('logPass').value;
 
-        // --- LLAVE MAESTRA DIRECCIÓN ---
+        // --- LLAVE MAESTRA: Si es el admin, entra directo ---
         if (u === "admin_lucila" && p === "lucila2026") {
             sesion = { id: u, nombre: "DIRECCIÓN LUCILA", rol: "admin" };
-            // Guardamos/Actualizamos en Firebase por si acaso
-            await setDoc(doc(db, "docentes_db", "admin_lucila"), { docente: "DIRECCIÓN LUCILA", pass: "lucila2026", rol: "admin" });
+            // Auto-registro en Firebase para que ya exista en el futuro
+            try {
+                await setDoc(doc(db, "docentes_db", u), { docente: "DIRECCIÓN LUCILA", pass: p, rol: "admin" });
+            } catch(e) { console.log("Error de auto-registro, pero igual entramos."); }
             entrar();
             return;
         }
 
-        // --- BÚSQUEDA NORMAL (ESPECIALISTAS) ---
+        // --- BÚSQUEDA NORMAL PARA ESPECIALISTAS ---
         try {
             const tablas = ["credenciales_especialistas", "docentes_db"];
             for (let t of tablas) {
                 const snap = await getDoc(doc(db, t, u));
                 if (snap.exists()) {
                     const data = snap.data();
-                    if (String(data.pass || data.contraseña) === String(p)) {
-                        sesion = { id: u, ...data, rol: u.includes("admin") ? "admin" : "usuario" };
+                    const claveDB = data.pass || data.contraseña;
+                    if (String(claveDB) === String(p)) {
+                        sesion = { id: u, ...data, rol: (u.includes("admin") ? "admin" : "especialista") };
                         entrar();
                         return;
                     }
                 }
             }
             alert("Acceso Incorrecto. Verifica usuario y clave.");
-        } catch (e) { alert("Error de red: " + e.message); }
+        } catch (e) { alert("Error: Revisa tu conexión."); }
     };
 
     function entrar() {
@@ -128,7 +124,7 @@
         
         if (sesion.rol === "admin") {
             document.getElementById('panelAdmin').style.display = 'block';
-            document.getElementById('rolUsu').innerHTML = '<span class="badge">DIRECTIVO</span>';
+            document.getElementById('rolUsu').innerHTML = '<span class="badge">DIRECTIVO ACTIVO</span>';
         }
     }
 
