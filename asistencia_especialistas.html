@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISTEMA INTEGRAL - EBN LUCILA PALACIOS 2026</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -23,13 +22,12 @@
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
         const CLAVE_INST = "LUCILA2026";
-        const USUARIO_ADMIN = "admin_lucila";
 
         window.usuarioActual = null;
         window.db = {};
-        window.todosLosAlumnos = []; 
+        window.todosLosAlumnosGlobal = [];
 
-        // --- LOGIN ---
+        // --- INICIO DE SESIÓN ---
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
@@ -40,35 +38,35 @@
                 window.db = snap.data();
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
+                document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
 
-                if (u === USUARIO_ADMIN) {
-                    document.getElementById('adminPanel').style.display = 'block';
-                } else if (window.db.tipo === "especialista") {
+                if (window.db.tipo === "especialista") {
                     document.getElementById('panelEspecialistaInterface').style.display = 'block';
                     document.getElementById('seccionDocenteAula').style.display = 'none';
-                    await cargarDatosInicialesEspecialista();
+                    await sincronizarDatosEspecialista();
+                } else if (u === "admin_lucila") {
+                    document.getElementById('adminPanel').style.display = 'block';
                 } else {
                     document.getElementById('seccionDocenteAula').style.display = 'block';
                     document.getElementById('panelEspecialistaInterface').style.display = 'none';
                 }
 
-                // Escucha en tiempo real para mantener datos actualizados
                 onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
                     window.db = s.data(); 
-                    if(window.db.tipo === "especialista") actualizarSelectoresGrupos();
-                    window.render(); 
+                    if(window.db.tipo === "especialista") actualizarInterfazGrupos();
+                    window.renderAula(); 
                 });
             } else {
                 Swal.fire("Error", "Usuario o clave incorrectos", "error");
             }
         };
 
-        // --- LÓGICA ESPECIALISTAS ---
-        async function cargarDatosInicialesEspecialista() {
+        // --- LÓGICA ESPECIALISTA (GRUPOS ESTABLES Y BUSCADOR) ---
+        async function sincronizarDatosEspecialista() {
             const querySnap = await getDocs(collection(dbCloud, "docentes_db"));
             const selSec = document.getElementById('selSecEsp');
             selSec.innerHTML = '<option value="">-- SELECCIONE SECCIÓN --</option>';
-            window.todosLosAlumnos = [];
+            window.todosLosAlumnosGlobal = [];
 
             querySnap.forEach(d => {
                 const data = d.data();
@@ -76,109 +74,93 @@
                     selSec.innerHTML += `<option value="${d.id}">${data.grado}${data.seccion} - ${data.docente}</option>`;
                     if(data.alumnos) {
                         data.alumnos.forEach(a => {
-                            if(!a.retirado) window.todosLosAlumnos.push({...a, procedencia: `${data.grado}${data.seccion}`});
+                            if(!a.retirado) window.todosLosAlumnosGlobal.push({...a, procedencia: `${data.grado}${data.seccion}`});
                         });
                     }
                 }
             });
-            actualizarSelectoresGrupos();
+            actualizarInterfazGrupos();
         }
 
-        window.actualizarSelectoresGrupos = () => {
+        function actualizarInterfazGrupos() {
             const selDestino = document.getElementById('selGrupoDestino');
-            const selAsis = document.getElementById('selGrupoAsistencia');
+            const selAsistencia = document.getElementById('selGrupoAsistencia');
+            const txt = '<option value="">-- ELIJA UN GRUPO --</option>';
             
-            const opciones = '<option value="">-- ELIJA UN GRUPO --</option>';
-            selDestino.innerHTML = opciones;
-            selAsis.innerHTML = opciones;
+            selDestino.innerHTML = txt;
+            selAsistencia.innerHTML = txt;
 
             if (window.db.gruposEstables) {
-                Object.keys(window.db.gruposEstables).forEach(nombreG => {
-                    const opt = `<option value="${nombreG}">${nombreG}</option>`;
-                    selDestino.innerHTML += opt;
-                    selAsis.innerHTML += opt;
+                Object.keys(window.db.gruposEstables).forEach(g => {
+                    selDestino.innerHTML += `<option value="${g}">${g}</option>`;
+                    selAsistencia.innerHTML += `<option value="${g}">${g}</option>`;
                 });
             }
-        };
+        }
 
         window.crearNuevoGrupo = async () => {
             const nombre = document.getElementById('nombreNuevoGrupo').value.toUpperCase().trim();
-            if(!nombre) return Swal.fire("Error", "Escriba un nombre para el grupo", "warning");
-
-            let gruposActuales = window.db.gruposEstables || {};
-            if (gruposActuales[nombre]) return Swal.fire("Aviso", "Este grupo ya existe", "info");
-
-            gruposActuales[nombre] = []; // Inicializa el grupo vacío
+            if(!nombre) return;
             
-            await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: gruposActuales });
+            let grupos = window.db.gruposEstables || {};
+            grupos[nombre] = [];
+            
+            await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: grupos });
             document.getElementById('nombreNuevoGrupo').value = "";
-            Swal.fire("Éxito", `Grupo "${nombre}" creado. Ahora busque alumnos para agregarlos.`, "success");
+            Swal.fire("Grupo Creado", nombre, "success");
         };
 
         window.buscarAlumnoGlobal = () => {
-            const busq = document.getElementById('inputBusqueda').value.toUpperCase();
-            const lista = document.getElementById('resultadosBusqueda');
-            lista.innerHTML = "";
-            if(busq.length < 3) return;
+            const b = document.getElementById('inputBusqueda').value.toUpperCase();
+            const res = document.getElementById('resultadosBusqueda');
+            res.innerHTML = "";
+            if(b.length < 3) return;
 
-            const filtrados = window.todosLosAlumnos.filter(a => a.nombre.includes(busq));
-            filtrados.forEach(a => {
-                lista.innerHTML += `
-                <div class="alumno-fila" style="padding:5px; border-bottom:1px solid #ddd;">
-                    <span style="font-size:12px;">${a.nombre} (${a.procedencia})</span>
-                    <button onclick="agregarAlumnoAGrupo('${a.nombre}', '${a.genero}', '${a.procedencia}')" 
-                            style="width:40px; background:var(--azul); color:white; border-radius:5px; padding:2px;">+</button>
-                </div>`;
+            window.todosLosAlumnosGlobal.filter(a => a.nombre.includes(b)).forEach(a => {
+                res.innerHTML += `
+                    <div class="alumno-fila" style="font-size:12px; border-bottom:1px solid #eee; padding:5px;">
+                        <span>${a.nombre} (${a.procedencia})</span>
+                        <button onclick="agregarAlumnoAGrupo('${a.nombre}', '${a.genero}', '${a.procedencia}')" style="width:30px; background:var(--azul); color:white;">+</button>
+                    </div>`;
             });
         };
 
-        window.agregarAlumnoAGrupo = async (nombre, genero, proc) => {
-            const grupoNombre = document.getElementById('selGrupoDestino').value;
-            if(!grupoNombre) return Swal.fire("Atención", "Seleccione primero el grupo destino arriba", "warning");
+        window.agregarAlumnoAGrupo = async (nombre, genero, procedencia) => {
+            const grupo = document.getElementById('selGrupoDestino').value;
+            if(!grupo) return Swal.fire("Atención", "Seleccione el grupo arriba", "warning");
 
             let grupos = window.db.gruposEstables;
-            if(grupos[grupoNombre].find(x => x.nombre === nombre)) {
-                return Swal.fire("Aviso", "Este alumno ya está en el grupo", "info");
-            }
+            if(grupos[grupo].find(x => x.nombre === nombre)) return Swal.fire("Ya existe", "El alumno ya está en el grupo", "info");
 
-            grupos[grupoNombre].push({ nombre, genero, procedencia: proc, id: Date.now() });
+            grupos[grupo].push({ nombre, genero, procedencia, id: Date.now() });
             await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: grupos });
-            Swal.fire("Agregado", `${nombre} ahora está en ${grupoNombre}`, "success");
+            Swal.fire("Agregado", nombre, "success");
         };
 
-        window.cargarListaGrupoParaAsistencia = () => {
-            const nombreG = document.getElementById('selGrupoAsistencia').value;
+        window.mostrarListaAsistencia = async (tipo) => {
             const cont = document.getElementById('listaAlumnosEsp');
             cont.innerHTML = "";
-            if(!nombreG) return;
+            let alumnos = [];
 
-            const alumnos = window.db.gruposEstables[nombreG];
-            cont.innerHTML = `<h4 style="color:var(--naranja)">Asist. Grupo: ${nombreG}</h4>`;
-            
+            if(tipo === 'seccion') {
+                const id = document.getElementById('selSecEsp').value;
+                if(!id) return;
+                const snap = await getDoc(doc(dbCloud, "docentes_db", id));
+                alumnos = (snap.data().alumnos || []).filter(a => !a.retirado);
+                cont.innerHTML = `<h4>Sección: ${snap.data().grado}${snap.data().seccion}</h4>`;
+            } else {
+                const g = document.getElementById('selGrupoAsistencia').value;
+                if(!g) return;
+                alumnos = window.db.gruposEstables[g];
+                cont.innerHTML = `<h4>Grupo: ${g} <button onclick="gestionarGrupo('${g}')" style="width:auto; font-size:10px; background:red; color:white;">Eliminar Alumnos</button></h4>`;
+            }
+
             alumnos.forEach(a => {
                 cont.innerHTML += `
-                <div class="alumno-fila">
-                    <span>${a.nombre} <small>(${a.procedencia})</small></span>
-                    <input type="checkbox" class="chkEsp" data-gen="${a.genero}" data-proc="${a.procedencia}" checked style="width:25px; height:25px;">
-                </div>`;
-            });
-            document.getElementById('btnGuardarEsp').style.display = 'block';
-        };
-
-        window.verListaSeccionNormal = async () => {
-            const idDocente = document.getElementById('selSecEsp').value;
-            if(!idDocente) return;
-            const snap = await getDoc(doc(dbCloud, "docentes_db", idDocente));
-            const data = snap.data();
-            const cont = document.getElementById('listaAlumnosEsp');
-            cont.innerHTML = `<h4 style="color:var(--azul)">Asist. Sección: ${data.grado}${data.seccion}</h4>`;
-            
-            (data.alumnos || []).filter(a => !a.retirado).forEach(a => {
-                cont.innerHTML += `
-                <div class="alumno-fila">
-                    <span>${a.nombre}</span>
-                    <input type="checkbox" class="chkEsp" data-gen="${a.genero}" data-proc="${data.grado}${data.seccion}" checked style="width:25px; height:25px;">
-                </div>`;
+                    <div class="alumno-fila">
+                        <span>${a.nombre}</span>
+                        <input type="checkbox" class="chkEsp" data-gen="${a.genero}" checked style="width:25px; height:25px;">
+                    </div>`;
             });
             document.getElementById('btnGuardarEsp').style.display = 'block';
         };
@@ -188,32 +170,23 @@
             let h = 0, v = 0;
             chks.forEach(c => { if(c.checked) c.dataset.gen === 'F' ? h++ : v++; });
             
-            const gAsis = document.getElementById('selGrupoAsistencia').value;
-            const sAsis = document.getElementById('selSecEsp').options[document.getElementById('selSecEsp').selectedIndex].text;
-            const destino = gAsis ? `GRUPO: ${gAsis}` : `SECCIÓN: ${sAsis}`;
-
             await addDoc(collection(dbCloud, "asistencia_especialistas"), {
                 especialista: window.db.docente,
-                materia: window.db.materia || "ESPECIALIDAD",
-                seccionAtendida: destino,
-                hembras: h, varones: v, total: h+v,
                 fecha: document.getElementById('fechaSeleccionada').value,
+                hembras: h, varones: v, total: h+v,
                 timestamp: new Date()
             });
-
-            Swal.fire("Guardado", "La asistencia estadística ha sido procesada.", "success");
-            document.getElementById('listaAlumnosEsp').innerHTML = "";
-            document.getElementById('btnGuardarEsp').style.display = 'none';
+            Swal.fire("Guardado", "Estadística enviada", "success");
+            cont.innerHTML = "";
         };
 
         // --- LÓGICA AULA ---
-        window.render = () => {
+        window.renderAula = () => {
             if(window.db.tipo !== "aula") return;
             const f = document.getElementById('fechaSeleccionada').value;
-            document.getElementById('docenteTxt').innerText = window.db.docente;
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
-            (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
+            (window.db.alumnos || []).filter(a => !a.retirado).forEach(a => {
                 const st = window.db.asistencias?.[f]?.[a.id] || 0;
                 let c = "#ccc"; if(st===1) c="var(--exito)"; if(st===2) c="var(--morado)";
                 lista.innerHTML += `<div class="alumno-fila"><span>${a.nombre}</span><button onclick="marcar(${a.id})" class="btn-check" style="background:${c}">${st===1?'P':st===2?'J':'F'}</button></div>`;
@@ -229,87 +202,64 @@
         };
 
         window.logout = () => location.reload();
-
     </script>
 
     <style>
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --naranja: #e67e22; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; color: #333; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; font-weight: bold; }
+        body { font-family: sans-serif; background: #f4f7f9; margin: 0; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
         .container { max-width: 480px; margin: auto; padding: 10px; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
-        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
-        .btn-check { width: 45px; height: 40px; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
-        b { color: var(--azul); }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-check { width: 45px; height: 40px; border: none; color: white; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="authSection" style="padding: 50px 20px; text-align: center;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
-    <h2 style="color:var(--azul)">LUCILA PALACIOS 2026</h2>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+    <h2>LUCILA PALACIOS</h2>
     <div class="card" style="max-width:320px; margin:auto;">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Contraseña">
-        <button onclick="login()" style="background:var(--azul); color:white; font-weight:bold;">INGRESAR</button>
+        <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
-    <header>SISTEMA ESCOLAR 2026</header>
+    <header><b>SISTEMA ESCOLAR 2026</b></header>
     <div class="container">
-        
         <div class="card" style="text-align:center;">
-            <b>FECHA:</b> <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <button onclick="logout()" style="background:#f0f0f0; color:#555; padding:5px; margin-top:5px; border:none; font-size:11px;">CERRAR SESIÓN</button>
+            <input type="date" id="fechaSeleccionada">
+            <button onclick="logout()" style="background:#eee; color:#666; border:none; padding:5px; font-size:10px;">CERRAR SESIÓN</button>
         </div>
 
         <div id="panelEspecialistaInterface" style="display:none;">
-            
             <div class="card" style="border-top: 5px solid var(--naranja);">
-                <b style="color:var(--naranja)">🛠 1. CONFIGURAR GRUPOS ESTABLES</b>
-                <p style="font-size:11px; margin:5px 0;">Cree grupos (Ej: CORO, FUTBOL) y añada alumnos de cualquier grado.</p>
-                <input type="text" id="nombreNuevoGrupo" placeholder="Nombre del nuevo grupo...">
+                <b>🛠 1. GRUPOS ESTABLES</b>
+                <input type="text" id="nombreNuevoGrupo" placeholder="Nombre: Ej FUTBOL">
                 <button onclick="crearNuevoGrupo()" style="background:var(--azul); color:white;">+ CREAR GRUPO</button>
                 <hr>
-                <b>👥 2. AGREGAR ALUMNOS AL GRUPO</b>
-                <select id="selGrupoDestino" style="background:#fff8f0;"></select>
-                <input type="text" id="inputBusqueda" onkeyup="buscarAlumnoGlobal()" placeholder="Buscar alumno por nombre...">
-                <div id="resultadosBusqueda" style="max-height:150px; overflow-y:auto; border:1px solid #eee; border-radius:5px;"></div>
+                <b>👥 2. AÑADIR ALUMNOS</b>
+                <select id="selGrupoDestino"></select>
+                <input type="text" id="inputBusqueda" onkeyup="buscarAlumnoGlobal()" placeholder="Buscar por nombre...">
+                <div id="resultadosBusqueda" style="max-height:120px; overflow-y:auto; background:#f9f9f9;"></div>
             </div>
 
             <div class="card" style="border-top: 5px solid var(--exito);">
-                <b style="color:var(--exito)">📝 3. PASAR ASISTENCIA</b>
-                <label style="font-size:11px;">Por Sección (Aula):</label>
-                <select id="selSecEsp" onchange="verListaSeccionNormal()"></select>
-                
-                <label style="font-size:11px;">Por Grupo Estable:</label>
-                <select id="selGrupoAsistencia" onchange="cargarListaGrupoParaAsistencia()"></select>
-                
-                <div id="listaAlumnosEsp" style="margin-top:15px;"></div>
-                <button id="btnGuardarEsp" style="display:none; background:var(--exito); color:white; font-size:16px;" onclick="guardarAsistenciaEsp()">💾 GUARDAR ASISTENCIA</button>
+                <b>📝 3. PASAR ASISTENCIA</b>
+                <select id="selSecEsp" onchange="mostrarListaAsistencia('seccion')"></select>
+                <select id="selGrupoAsistencia" onchange="mostrarListaAsistencia('grupo')"></select>
+                <div id="listaAlumnosEsp" style="margin-top:10px;"></div>
+                <button id="btnGuardarEsp" style="display:none; background:var(--exito); color:white;" onclick="guardarAsistenciaEsp()">GUARDAR DÍA</button>
             </div>
         </div>
 
         <div id="seccionDocenteAula" style="display:none;">
-            <div class="card" style="background:var(--azul); color:white;">
-                <b>Docente:</b> <span id="docenteTxt"></span>
-            </div>
-            <div class="card">
-                <b>+ Inscripción</b>
-                <input type="text" id="nom" placeholder="Nombres y Apellidos">
-                <select id="gen"><option value="F">Femenino</option><option value="M">Masculino</option></select>
-                <input type="date" id="nac">
-                <button onclick="window.agregarAlumno()" style="background:var(--exito); color:white;">INSCRIBIR</button>
-            </div>
+            <div class="card"><span id="docenteTxt"></span></div>
             <div class="card" id="listaAsistencia"></div>
         </div>
-
-        <div id="adminPanel" style="display:none;">
-            </div>
-
     </div>
 </div>
 
