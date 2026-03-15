@@ -3,70 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA - ACCESO TOTAL</title>
+    <title>SISTEMA CONTROL - EBN LUCILA PALACIOS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; }
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 20px; width: 300px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-bottom: 5px solid var(--oro); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--azul); color: white; }
-        #app { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; padding: 20px; box-sizing: border-box; text-align: center; }
-        header { background: var(--azul); color: white; padding: 20px; margin: -20px -20px 20px -20px; border-bottom: 4px solid var(--oro); }
-        .admin-box { border: 2px solid var(--morado); padding: 15px; border-radius: 10px; margin-top: 20px; }
+        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --exito: #28a745; --error: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 50px; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; font-size: 14px; }
+        .btn-azul { background: var(--azul); }
+        .btn-morado { background: var(--morado); }
+        .btn-exito { background: var(--exito); }
+        
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; }
+        
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 12px; }
+        .tab-btn.active { background: var(--oro); color: var(--azul); }
+        #sec-ge, #areaLista { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="login-box" class="card">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-        <h2 style="color:var(--azul)">SISTEMA LUCILA</h2>
-        <input type="text" id="u" placeholder="Usuario">
-        <input type="password" id="p" placeholder="Contraseña">
-        <button class="btn" onclick="validar()">INGRESAR</button>
-    </div>
+    <header>
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="45">
+        <div id="userDisplay" style="font-size: 14px; font-weight: bold; margin-top: 5px;">DIRECCIÓN ACTIVA</div>
+    </header>
 
-    <div id="app">
-        <header>
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="60">
-            <h2 id="saludo">BIENVENIDO</h2>
-        </header>
-        
-        <div class="admin-box">
-            <h3 style="color:var(--morado)">📊 PANEL DE DIRECCIÓN ACTIVO</h3>
-            <p>Desde aquí puede supervisar toda la institución.</p>
-            <button class="btn" style="background:var(--morado)" onclick="alert('Generando Reporte General...')">📥 DESCARGAR CONSOLIDADO PDF</button>
+    <div class="container">
+        <div class="card" style="border-left: 5px solid var(--morado);">
+            <h4 style="margin:0; color:var(--morado)">📊 Gestión Institucional</h4>
+            <button class="btn btn-morado" style="margin-top:10px" onclick="alert('Generando consolidado de toda la escuela...')">📥 DESCARGAR CONSOLIDADO PDF</button>
         </div>
-        
-        <button class="btn" style="margin-top: 20px; background:#666;" onclick="location.reload()">CERRAR SESIÓN</button>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="verTab('asis', this)">ASISTENCIA</button>
+            <button class="tab-btn" onclick="verTab('ge', this)">GRUPOS ESTABLES</button>
+            <button class="tab-btn" style="background:var(--error); color:white" onclick="location.reload()">SALIR</button>
+        </div>
+
+        <div id="sec-asis">
+            <div class="card">
+                <label>Fecha de Control:</label>
+                <input type="date" id="fechaAsis">
+                
+                <label>Seleccionar Grado:</label>
+                <select id="gradoSel" onchange="actualizarSecciones()">
+                    <option value="">-- Seleccione --</option>
+                    <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
+                    <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
+                    <option value="GE">Grupo Estable</option>
+                </select>
+
+                <label>Sección:</label>
+                <select id="seccionSel"><option value="">Elija Grado primero</option></select>
+                
+                <button class="btn btn-azul" onclick="cargarAlumnos()">🔍 MOSTRAR LISTA</button>
+            </div>
+
+            <div id="areaLista" class="card">
+                <div id="renderAlumnos"></div>
+                <button class="btn btn-exito" style="margin-top:20px" onclick="guardar()">💾 GUARDAR ASISTENCIA</button>
+            </div>
+        </div>
+
+        <div id="sec-ge">
+            <div class="card">
+                <h4>🔨 Crear Nuevo Grupo Estable</h4>
+                <input type="text" id="nombreGE" placeholder="Ej: Danza, Coro, Deporte">
+                <p style="font-size: 11px; color:#666">Seleccione los integrantes:</p>
+                <div id="buscador" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                    Cargando base de datos de alumnos...
+                </div>
+                <button class="btn btn-azul" style="margin-top:10px" onclick="crearGE()">REGISTRAR NUEVO GRUPO</button>
+            </div>
+        </div>
     </div>
 
-    <script>
-        function validar() {
-            // Pasamos todo a minúsculas para evitar errores de teclado
-            const user = document.getElementById('u').value.trim().toLowerCase();
-            const pass = document.getElementById('p').value.trim();
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-            console.log("Intentando entrar con:", user);
+    const config = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+        projectId: "control-de-asistencia-d585e",
+        storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    };
 
-            // LLAVE MAESTRA LOCAL (No depende de Firebase para entrar)
-            if (user === "admin_lucila" && pass === "lucila2026") {
-                mostrarSistema("DIRECCIÓN LUCILA");
-            } 
-            else if (user === "especialista1" && pass === "12345") {
-                mostrarSistema("DOCENTE ESPECIALISTA");
-            }
-            else {
-                alert("❌ Acceso Incorrecto.\n\nVerifique que el usuario sea: admin_lucila\ny la clave sea: lucila2026");
-            }
+    const app = initializeApp(config);
+    const db = getFirestore(app);
+
+    let alumnosData = [];
+    let asistenciaLocal = {};
+
+    // Iniciar fecha de hoy
+    document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
+
+    // Cambio de pestañas
+    window.verTab = (tab, btn) => {
+        document.getElementById('sec-asis').style.display = tab === 'asis' ? 'block' : 'none';
+        document.getElementById('sec-ge').style.display = tab === 'ge' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    // Actualizar secciones dinámicamente
+    window.actualizarSecciones = async () => {
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel');
+        s.innerHTML = '<option value="">Cargando...</option>';
+
+        if(g === "GE") {
+            const snap = await getDocs(collection(db, "grupos_estables_db"));
+            s.innerHTML = "";
+            snap.forEach(d => s.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`);
+        } else {
+            s.innerHTML = '<option value="A">Sección A</option><option value="B">Sección B</option><option value="C">Sección C</option>';
+        }
+    };
+
+    // Cargar alumnos desde Firebase
+    window.cargarAlumnos = async () => {
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel').value;
+        if(!g || !s) return alert("Seleccione Grado y Sección");
+
+        document.getElementById('renderAlumnos').innerHTML = "Buscando alumnos...";
+        const snap = await getDocs(collection(db, "docentes_db"));
+        let lista = [];
+
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            if(String(d.grado) === g && d.seccion === s) lista = d.alumnos || [];
+        });
+
+        if(lista.length === 0) {
+            document.getElementById('renderAlumnos').innerHTML = "❌ No hay alumnos registrados en este grado.";
+            return;
         }
 
-        function mostrarSistema(nombre) {
-            document.getElementById('login-box').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            document.getElementById('saludo').innerText = "HOLA, " + nombre;
-            alert("✅ ¡Bienvenido al Sistema!");
-        }
-    </script>
+        const render = document.getElementById('renderAlumnos');
+        render.innerHTML = "";
+        lista.forEach(a => {
+            asistenciaLocal[a.id] = 1;
+            render.innerHTML += `
+                <div class="alumno-fila">
+                    <span>${a.nombre}</span>
+                    <button class="btn-asis" id="btn-${a.id}" style="background:var(--exito)" onclick="toggle('${a.id}')">P</button>
+                </div>`;
+        });
+        document.getElementById('areaLista').style.display = 'block';
+    };
+
+    window.toggle = (id) => {
+        asistenciaLocal[id] = asistenciaLocal[id] === 1 ? 0 : 1;
+        const btn = document.getElementById('btn-'+id);
+        btn.innerText = asistenciaLocal[id] === 1 ? "P" : "I";
+        btn.style.background = asistenciaLocal[id] === 1 ? "var(--exito)" : "var(--error)";
+    };
+
+    window.guardar = async () => {
+        const f = document.getElementById('fechaAsis').value;
+        const s = document.getElementById('seccionSel').value;
+        await setDoc(doc(db, "asistencia_direccion", `ASIS_${f}_${s}`), {
+            fecha: f, sección: s, datos: asistenciaLocal, responsable: "DIRECCIÓN"
+        });
+        alert("✅ Asistencia Guardada con éxito");
+    };
+
+    // Cargar alumnos para el buscador de Grupos Estables
+    async function cargarBuscador() {
+        const snap = await getDocs(collection(db, "docentes_db"));
+        const box = document.getElementById('buscador');
+        box.innerHTML = "";
+        snap.forEach(d => {
+            if(d.data().alumnos) d.data().alumnos.forEach(a => {
+                box.innerHTML += `<div><label><input type="checkbox" class="sel-al" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</label></div>`;
+            });
+        });
+    }
+    cargarBuscador();
+
+    window.crearGE = async () => {
+        const nom = document.getElementById('nombreGE').value;
+        const seleccion = [];
+        document.querySelectorAll('.sel-al:checked').forEach(c => seleccion.push({id: c.dataset.id, nombre: c.dataset.nom}));
+        if(!nom || seleccion.length === 0) return alert("Escriba nombre y elija alumnos");
+        await setDoc(doc(db, "grupos_estables_db", nom.replace(/ /g,"_")), { nombre: nom, alumnos: seleccion, creador: "DIRECCIÓN" });
+        alert("Grupo '" + nom + "' creado!");
+        location.reload();
+    };
+
+</script>
 </body>
 </html>
