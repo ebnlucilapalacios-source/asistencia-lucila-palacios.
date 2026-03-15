@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, onSnapshot, collection, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -24,7 +24,7 @@
         window.db = {};
         window.alumnosGlobales = [];
 
-        // --- LOGIN ---
+        // --- 1. LOGIN ---
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value.trim();
@@ -38,74 +38,62 @@
                 document.getElementById('appContent').style.display = 'block';
                 document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
 
-                // Lógica por tipo de usuario
                 if (u === "admin_lucila") {
                     document.getElementById('adminPanel').style.display = 'block';
                 } else if (window.db.tipo === "especialista") {
                     document.getElementById('panelEspecialistaInterface').style.display = 'block';
-                    await cargarDatosEspecialista();
+                    await cargarEstudiantesParaEspecialista();
                 } else {
                     document.getElementById('seccionDocenteAula').style.display = 'block';
                     document.getElementById('docTxt').innerText = window.db.docente;
-                    renderAula();
+                    // Escuchar cambios para renderizar lista
+                    onSnapshot(doc(dbCloud, "docentes_db", u), (s) => {
+                        window.db = s.data();
+                        renderAula();
+                    });
                 }
-
-                // ESCUCHA EN TIEMPO REAL (Para que no se pierda la asistencia al marcar)
-                onSnapshot(doc(dbCloud, "docentes_db", u), (s) => {
-                    window.db = s.data();
-                    if(window.db.tipo === "aula") renderAula();
-                });
             } else {
                 Swal.fire("Error", "Usuario o clave incorrectos", "error");
             }
         };
 
-        // --- ASISTENCIA DE AULA (RECUPERADA) ---
+        // --- 2. LÓGICA DE AULA (LO QUE TE FUNCIONABA) ---
         window.renderAula = () => {
-            const f = document.getElementById('fechaSeleccionada').value;
             const l = document.getElementById('listaAula');
+            const f = document.getElementById('fechaSeleccionada').value;
             l.innerHTML = "";
             const alumnos = (window.db.alumnos || []).filter(a => !a.retirado);
             
             if(alumnos.length === 0) {
-                l.innerHTML = "<p style='text-align:center; color:gray;'>No hay alumnos registrados. Use el botón de abajo para agregar.</p>";
+                l.innerHTML = "<p style='text-align:center; padding:20px; color:gray;'>No hay alumnos registrados.</p>";
+                return;
             }
 
             alumnos.forEach(a => {
                 const s = window.db.asistencias?.[f]?.[a.id] || 0;
-                let color = "#ccc"; 
-                if(s === 1) color = "#28a745"; // Presente
-                if(s === 2) color = "#6f42c1"; // Justificado
-                
+                let c = "#ccc"; if(s===1) c="#28a745"; if(s===2) c="#6f42c1";
                 l.innerHTML += `
-                <div class="alumno-fila" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
                     <span>${a.nombre}</span>
-                    <button onclick="marcarAsistencia(${a.id})" style="background:${color}; color:white; width:40px; height:40px; border-radius:8px; border:none; font-weight:bold;">
+                    <button onclick="marcar(${a.id})" style="background:${c}; color:white; width:45px; height:40px; border:none; border-radius:8px; font-weight:bold;">
                         ${s===1?'P':s===2?'J':'F'}
                     </button>
                 </div>`;
             });
         };
 
-        window.marcarAsistencia = async (id) => {
+        window.marcar = async (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
-            let asistencias = window.db.asistencias || {};
-            if(!asistencias[f]) asistencias[f] = {};
-            
-            // Ciclo: 0 (Falta) -> 1 (Presente) -> 2 (Justificado) -> vuelve a 0
-            let estadoActual = asistencias[f][id] || 0;
-            asistencias[f][id] = (estadoActual + 1) % 3;
-
-            await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { asistencias: asistencias });
+            let asis = window.db.asistencias || {};
+            if(!asis[f]) asis[f] = {};
+            asis[f][id] = (asis[f][id] + 1) % 3 || 1;
+            await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { asistencias: asis });
         };
 
-        // --- ESPECIALISTA: CARGA DE DATOS ---
-        async function cargarDatosEspecialista() {
+        // --- 3. LÓGICA ESPECIALISTA (NUEVA Y SEGURA) ---
+        async function cargarEstudiantesParaEspecialista() {
             const querySnap = await getDocs(collection(dbCloud, "docentes_db"));
             window.alumnosGlobales = [];
-            const selGrupos = document.getElementById('selGrupoDestino');
-            selGrupos.innerHTML = '<option value="">-- SELECCIONAR GRUPO --</option>';
-
             querySnap.forEach(d => {
                 const data = d.data();
                 if(data.tipo === "aula" && data.alumnos) {
@@ -114,12 +102,7 @@
                     });
                 }
             });
-
-            if(window.db.gruposEstables) {
-                Object.keys(window.db.gruposEstables).forEach(g => {
-                    selGrupos.innerHTML += `<option value="${g}">${g}</option>`;
-                });
-            }
+            actualizarMenuGrupos();
         }
 
         window.buscarEstudiante = () => {
@@ -127,68 +110,75 @@
             const res = document.getElementById('resBusq');
             res.innerHTML = "";
             if(txt.length < 3) return;
-
             window.alumnosGlobales.filter(a => a.nombre.includes(txt)).forEach(a => {
-                res.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:5px; background:#f9f9f9; margin-bottom:2px; font-size:12px;">
+                res.innerHTML += `<div style="padding:8px; border-bottom:1px solid #eee; font-size:12px; display:flex; justify-content:space-between;">
                     <span>${a.nombre} (${a.proc})</span>
-                    <button onclick="agregarAGrupo('${a.nombre}','${a.genero}','${a.proc}')" style="background:#002147; color:white; border:none; padding:2px 8px; border-radius:4px;">+</button>
+                    <button onclick="agregarAlGrupo('${a.nombre}','${a.genero}','${a.proc}')" style="background:#002147; color:white; border:none; padding:2px 10px; border-radius:4px;">+</button>
                 </div>`;
             });
         };
 
-        window.agregarAGrupo = async (nombre, genero, proc) => {
-            const gNombre = document.getElementById('selGrupoDestino').value;
-            if(!gNombre) return Swal.fire("Atención", "Selecciona un grupo primero", "warning");
-            
+        window.agregarAlGrupo = async (nombre, genero, proc) => {
+            const grupo = document.getElementById('selGrupoDestino').value;
+            if(!grupo) return Swal.fire("Aviso", "Elige un grupo", "warning");
             let grupos = window.db.gruposEstables || {};
-            if(!grupos[gNombre].find(x => x.nombre === nombre)) {
-                grupos[gNombre].push({ nombre, genero, procedencia: proc });
+            if(!grupos[grupo].find(x => x.nombre === nombre)) {
+                grupos[grupo].push({ nombre, genero, procedencia: proc });
                 await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: grupos });
-                Swal.fire("Añadido", nombre, "success");
+                Swal.fire("Éxito", "Estudiante agregado al grupo", "success");
             }
         };
 
         window.crearGrupo = async () => {
-            const n = document.getElementById('nuevoGrupoNombre').value.toUpperCase().trim();
+            const n = document.getElementById('nomG').value.toUpperCase().trim();
             if(!n) return;
             let grupos = window.db.gruposEstables || {};
             grupos[n] = [];
             await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: grupos });
-            document.getElementById('nuevoGrupoNombre').value = "";
-            await cargarDatosEspecialista();
+            document.getElementById('nomG').value = "";
+            actualizarMenuGrupos();
         };
 
-        window.logout = () => location.reload();
+        function actualizarMenuGrupos() {
+            const s = document.getElementById('selGrupoDestino');
+            s.innerHTML = '<option value="">-- ELIJA UN GRUPO --</option>';
+            if(window.db.gruposEstables) {
+                Object.keys(window.db.gruposEstables).forEach(g => {
+                    s.innerHTML += `<option value="${g}">${g}</option>`;
+                });
+            }
+        }
 
+        window.logout = () => location.reload();
     </script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
-        header { background: #002147; color: white; padding: 15px; text-align: center; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; margin: 0; }
+        .header { background: #002147; color: white; padding: 15px; text-align: center; }
         .container { max-width: 400px; margin: auto; padding: 10px; }
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { cursor: pointer; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="padding: 40px 20px; text-align: center;">
-    <h2 style="color:#002147;">E.B.N LUCILA PALACIOS</h2>
-    <div class="card">
-        <input type="text" id="loginUser" placeholder="Usuario">
-        <input type="password" id="loginPass" placeholder="Contraseña">
-        <button onclick="login()" style="background:#002147; color:white; font-weight:bold;">INGRESAR</button>
+<div id="authSection" style="padding-top: 50px; text-align: center;">
+    <h2>LUCILA PALACIOS 2026</h2>
+    <div class="container">
+        <div class="card">
+            <input type="text" id="loginUser" placeholder="Usuario">
+            <input type="password" id="loginPass" placeholder="Clave">
+            <button onclick="login()" style="background:#002147; color:white;">ENTRAR</button>
+        </div>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
-    <header>SISTEMA DE ASISTENCIA 2026</header>
+    <div class="header"><b>PANEL ESCOLAR</b></div>
     <div class="container">
-        
         <div class="card" style="text-align:center;">
-            <b>FECHA:</b> <input type="date" id="fechaSeleccionada" onchange="if(window.db.tipo==='aula') renderAula()">
-            <button onclick="logout()" style="background:#f8f9fa; border:1px solid #ddd; color:red; padding:5px; font-size:10px; margin-top:5px;">CERRAR SESIÓN</button>
+            <input type="date" id="fechaSeleccionada" onchange="if(window.db.tipo==='aula') renderAula()">
+            <button onclick="logout()" style="background:none; border:none; color:red; font-size:11px;">CERRAR SESIÓN</button>
         </div>
 
         <div id="seccionDocenteAula" style="display:none;">
@@ -197,25 +187,20 @@
         </div>
 
         <div id="panelEspecialistaInterface" style="display:none;">
-            <div class="card" style="border-top:5px solid #e67e22;">
-                <b>CREAR GRUPO ESTABLE</b>
-                <input type="text" id="nuevoGrupoNombre" placeholder="Nombre: Ej ATLETISMO">
-                <button onclick="crearGrupo()" style="background:#e67e22; color:white;">+ CREAR</button>
+            <div class="card">
+                <b>GESTIÓN DE GRUPOS</b>
+                <input type="text" id="nomG" placeholder="Nombre de Grupo">
+                <button onclick="crearGrupo()" style="background:#e67e22; color:white;">+ CREAR GRUPO</button>
                 <hr>
-                <b>AÑADIR ESTUDIANTES</b>
                 <select id="selGrupoDestino"></select>
-                <input type="text" id="busqEst" onkeyup="buscarEstudiante()" placeholder="Buscar por nombre...">
-                <div id="resBusq" style="max-height:150px; overflow-y:auto; border:1px solid #eee; margin-top:5px;"></div>
+                <input type="text" id="busqEst" onkeyup="buscarEstudiante()" placeholder="Buscar alumno...">
+                <div id="resBusq" style="max-height:150px; overflow-y:auto;"></div>
             </div>
         </div>
 
         <div id="adminPanel" style="display:none;">
-            <div class="card">
-                <h3>DIRECCIÓN</h3>
-                <p>Usa esta sección para gestionar las cuentas globales.</p>
-                </div>
+            <div class="card"><h3>DIRECCIÓN</h3><p>Panel Administrativo Activo</p></div>
         </div>
-
     </div>
 </div>
 
