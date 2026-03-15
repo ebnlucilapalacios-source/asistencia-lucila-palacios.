@@ -2,36 +2,91 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA LUCILA - PRUEBA FINAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA EBN LUCILA PALACIOS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #e5e7eb; }
-        .box { background: white; padding: 20px; border-radius: 15px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { display: block; width: 250px; padding: 10px; margin: 10px auto; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 5px; border: none; }
-        .btn-azul { background: #002147; color: white; }
-        .btn-verde { background: #10b981; color: white; margin-top: 20px; }
-        #log { margin-top: 20px; color: red; font-size: 12px; font-weight: bold; }
+        :root { --azul: #002147; --oro: #f3c612; --exito: #28a745; --error: #dc3545; --fondo: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
+        .container { max-width: 500px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--azul); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
+        .btn-azul { background: var(--azul); }
+        .btn-exito { background: var(--exito); }
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; }
+        #appContent, .sec, #adminExtra { display: none; }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 11px; white-space: nowrap; }
+        .tab-btn.active { background: var(--oro); color: var(--azul); }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-        <h2>ACCESO DIRECTO</h2>
-        
-        <input type="text" id="u" placeholder="Usuario">
-        <input type="password" id="p" placeholder="Contraseña">
-        
-        <button class="btn-azul" onclick="entrar()">ENTRAR AL SISTEMA</button>
-        <br>
-        <button class="btn-verde" onclick="crear()">1. ACTIVAR USUARIOS (Clic aquí primero)</button>
-        
-        <div id="log"></div>
+    <div id="loginScreen" class="login-screen">
+        <div class="card" style="width: 320px; text-align: center;">
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
+            <h2 style="color:var(--azul)">SISTEMA LUCILA</h2>
+            <input type="text" id="logUser" placeholder="Usuario">
+            <input type="password" id="logPass" placeholder="Contraseña">
+            <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR</button>
+        </div>
+    </div>
+
+    <div id="appContent">
+        <header>
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="50">
+            <div id="nombreDocente" style="font-weight: bold;">Cargando...</div>
+        </header>
+
+        <div class="container">
+            <div id="adminExtra" class="card" style="border: 2px solid #6f42c1; display:none;">
+                <b style="color:#6f42c1">📊 PANEL DE DIRECCIÓN</b>
+                <button class="btn" style="background:#6f42c1; font-size: 11px;" onclick="alert('Generando consolidado...')">VER CONSOLIDADO ESCUELA</button>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="tab-btn active" id="tab-asis" onclick="verTab('asis')">ASISTENCIA</button>
+                <button class="tab-btn" id="tab-ge" onclick="verTab('ge')">G. ESTABLES</button>
+                <button class="tab-btn" onclick="location.reload()" style="background:var(--error); color:white;">SALIR</button>
+            </div>
+
+            <div id="sec-asis" class="sec" style="display: block;">
+                <div class="card">
+                    <input type="date" id="fechaAsis">
+                    <select id="gradoSel" onchange="actualizarSecciones()">
+                        <option value="">Seleccione Grado</option>
+                        <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
+                        <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
+                        <option value="GE">Grupo Estable</option>
+                    </select>
+                    <select id="seccionSel"><option value="">Sección</option></select>
+                    <button class="btn btn-azul" onclick="cargarAlumnos()">CARGAR LISTA</button>
+                </div>
+                <div id="listaArea" class="card" style="display:none;">
+                    <div id="renderAlumnos"></div>
+                    <button class="btn btn-exito" onclick="guardar()">GUARDAR ASISTENCIA</button>
+                </div>
+            </div>
+
+            <div id="sec-ge" class="sec">
+                <div class="card">
+                    <h4>🔨 Crear Nuevo Grupo Estable</h4>
+                    <input type="text" id="nombreGE" placeholder="Nombre del Grupo (Danza, Deporte, etc)">
+                    <p style="font-size: 11px;">Seleccione los alumnos de la escuela:</p>
+                    <div id="buscadorAlumnos" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;"></div>
+                    <button class="btn btn-azul" onclick="crearGE()">REGISTRAR GRUPO</button>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -44,48 +99,121 @@
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    // FUNCIÓN PARA CREAR LOS USUARIOS
-    window.crear = async () => {
-        alert("Intentando activar usuarios...");
+    let sesion = null;
+    let alumnosActuales = [];
+    let asistenciaData = {};
+
+    window.iniciarSesion = async () => {
+        const u = document.getElementById('logUser').value.trim().toLowerCase();
+        const p = document.getElementById('logPass').value;
+        const tablas = ["credenciales_especialistas", "docentes_db"];
+
         try {
-            // Creamos especialista1
-            await setDoc(doc(db, "credenciales_especialistas", "especialista1"), {
-                nombre: "Docente Especialista",
-                pass: "12345"
-            });
-            alert("✅ USUARIOS ACTIVADOS. Ya puedes intentar entrar con especialista1 y 12345");
-        } catch (e) {
-            document.getElementById('log').innerText = "ERROR AL ACTIVAR: " + e.message;
-            alert("Error: No se pudo activar. Revisa tus REGLAS de Firebase.");
+            for (let t of tablas) {
+                const d = await getDoc(doc(db, t, u));
+                if (d.exists()) {
+                    const data = d.data();
+                    if (String(data.pass || data.contraseña) === String(p)) {
+                        sesion = { id: u, ...data };
+                        entrarAlApp();
+                        return;
+                    }
+                }
+            }
+            alert("Usuario o clave incorrecta");
+        } catch (e) { alert("Error de conexión"); }
+    };
+
+    function entrarAlApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        document.getElementById('nombreDocente').innerText = sesion.nombre || sesion.docente;
+        document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
+        
+        if (sesion.id.includes("admin")) document.getElementById('adminExtra').style.display = 'block';
+        cargarBuscadorGlobal();
+    }
+
+    window.verTab = (t) => {
+        document.querySelectorAll('.sec').forEach(s => s.style.display='none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sec-'+t).style.display='block';
+        document.getElementById('tab-'+t).classList.add('active');
+    };
+
+    window.actualizarSecciones = async () => {
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel');
+        s.innerHTML = '<option value="">Cargando...</option>';
+        if (g === "GE") {
+            const snap = await getDocs(collection(db, "grupos_estables_db"));
+            s.innerHTML = "";
+            snap.forEach(d => { if(d.data().creador === sesion.id) s.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`; });
+        } else {
+            s.innerHTML = '<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>';
         }
     };
 
-    // FUNCIÓN PARA ENTRAR
-    window.entrar = async () => {
-        const user = document.getElementById('u').value.trim();
-        const pass = document.getElementById('p').value;
-
-        if(!user) return alert("Escribe el usuario");
-        alert("Buscando a: " + user);
-
-        try {
-            const docRef = doc(db, "credenciales_especialistas", user);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (String(data.pass) === String(pass)) {
-                    alert("¡BIENVENIDO! Has logrado ingresar.");
-                    document.body.innerHTML = "<h1>SISTEMA ABIERTO. ¡Éxito!</h1>";
-                } else {
-                    alert("❌ Contraseña incorrecta. En la base de datos dice: " + data.pass);
-                }
-            } else {
-                alert("❌ El usuario '" + user + "' no existe. ¿Ya le diste al botón verde de activar?");
-            }
-        } catch (e) {
-            alert("❌ ERROR CRÍTICO: " + e.message);
+    window.cargarAlumnos = async () => {
+        const g = document.getElementById('gradoSel').value;
+        const s = document.getElementById('seccionSel').value;
+        alumnosActuales = []; asistenciaData = {};
+        
+        if (g === "GE") {
+            const d = await getDoc(doc(db, "grupos_estables_db", s));
+            if (d.exists()) alumnosActuales = d.data().alumnos;
+        } else {
+            const snap = await getDocs(collection(db, "docentes_db"));
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                if (String(d.grado) === g && d.seccion === s) alumnosActuales = d.alumnos.filter(a => !a.retirado);
+            });
         }
+        
+        const render = document.getElementById('renderAlumnos');
+        render.innerHTML = "";
+        alumnosActuales.forEach(a => {
+            asistenciaData[a.id] = 1;
+            render.innerHTML += `<div class="alumno-fila">
+                <span>${a.nombre}</span>
+                <button class="btn-asis" id="btn-${a.id}" style="background:var(--exito)" onclick="toggle('${a.id}')">P</button>
+            </div>`;
+        });
+        document.getElementById('listaArea').style.display = 'block';
+    };
+
+    window.toggle = (id) => {
+        asistenciaData[id] = asistenciaData[id] === 1 ? 0 : 1;
+        const b = document.getElementById('btn-'+id);
+        b.innerText = asistenciaData[id] === 1 ? "P" : "I";
+        b.style.background = asistenciaData[id] === 1 ? "var(--exito)" : "var(--error)";
+    };
+
+    window.guardar = async () => {
+        const fecha = document.getElementById('fechaAsis').value;
+        const sec = document.getElementById('seccionSel').value;
+        await setDoc(doc(db, "asistencia_especialistas", `ASIS_${sesion.id}_${fecha}_${sec}`), {
+            docente: sesion.nombre || sesion.docente, fecha, data: asistenciaData, seccion: sec
+        });
+        alert("¡Asistencia Guardada!");
+    };
+
+    async function cargarBuscadorGlobal() {
+        const snap = await getDocs(collection(db, "docentes_db"));
+        const div = document.getElementById('buscadorAlumnos');
+        snap.forEach(d => {
+            if(d.data().alumnos) d.data().alumnos.forEach(a => {
+                div.innerHTML += `<div><label><input type="checkbox" class="sel-alum" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}${d.data().seccion})</label></div>`;
+            });
+        });
+    }
+
+    window.crearGE = async () => {
+        const nom = document.getElementById('nombreGE').value;
+        const seleccion = [];
+        document.querySelectorAll('.sel-alum:checked').forEach(c => seleccion.push({id: c.dataset.id, nombre: c.dataset.nom}));
+        await setDoc(doc(db, "grupos_estables_db", nom.replace(/ /g,"_")), { nombre: nom, creador: sesion.id, alumnos: seleccion });
+        alert("Grupo Creado Exitosamente");
     };
 </script>
 </body>
