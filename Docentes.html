@@ -23,7 +23,6 @@
 
         const app = initializeApp(firebaseConfig);
         const dbCloud = getFirestore(app);
-        
         const CLAVE_INST = "LUCILA2026";
         const USUARIO_ADMIN = "admin_lucila";
 
@@ -39,16 +38,16 @@
             return edad;
         };
 
-        // --- AUTENTICACIÓN ---
+        // --- ACCESO ---
         window.mostrarRegistro = (v) => { 
             document.getElementById('loginForm').style.display = v ? 'none' : 'block';
             document.getElementById('registerForm').style.display = v ? 'block' : 'none';
         };
 
         window.registrarCuenta = async () => {
-            const cI = document.getElementById('regClaveInst').value.trim();
-            if(cI !== CLAVE_INST) return alert("❌ Clave Institucional Incorrecta");
-
+            const clave = document.getElementById('regClaveInst').value;
+            if(clave !== CLAVE_INST) return alert("❌ Clave Institucional Incorrecta");
+            
             const u = document.getElementById('regUser').value.toLowerCase().trim();
             const p = document.getElementById('regPass').value.trim();
             const n = document.getElementById('regNombre').value.toUpperCase().trim();
@@ -56,71 +55,70 @@
             const s = document.getElementById('regSeccion').value.toUpperCase().trim();
             const t = document.getElementById('regTurno').value;
 
-            if(!u || !p || !n || !g || !s) return alert("⚠️ Rellene todos los campos.");
+            if(!u || !p || !n) return alert("⚠️ Rellene los campos obligatorios.");
 
             try {
                 const docRef = doc(dbCloud, "docentes_db", u);
                 const snap = await getDoc(docRef);
-                if(snap.exists()) return alert("🚫 Este usuario ya está registrado.");
+                if(snap.exists()) return alert("🚫 El usuario ya existe.");
 
-                // IMPORTANTE: Estructura inicial limpia
                 await setDoc(docRef, { 
                     docente: n, pass: p, grado: g, seccion: s, turno: t,
                     alumnos: [], asistencias: {}, feriados: [] 
                 });
-                alert("✅ ¡Cuenta creada! Ahora inicia sesión."); 
+                alert("✅ Cuenta creada con éxito."); 
                 window.mostrarRegistro(false);
-            } catch (e) { alert("Error al registrar: " + e.message); }
+            } catch(e) { alert("Error: " + e.message); }
         };
 
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
-            const p = document.getElementById('loginPass').value.trim();
+            const p = document.getElementById('loginPass').value;
             
-            if(!u || !p) return alert("Ingrese usuario y clave.");
-
             try {
                 const docRef = doc(dbCloud, "docentes_db", u);
                 const snap = await getDoc(docRef);
                 
                 if (snap.exists() && snap.data().pass === p) {
                     window.usuarioActual = u;
-                    document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
+                    const hoy = new Date().toISOString().split('T')[0];
+                    document.getElementById('fechaSeleccionada').value = hoy;
+
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('appContent').style.display = 'block';
                     
                     if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
                     
                     onSnapshot(docRef, (s) => { 
-                        if(s.exists()){ window.db = s.data(); window.render(); }
+                        if(s.exists()){
+                            window.db = s.data(); 
+                            window.render(); 
+                        }
                     });
-                } else { alert("❌ Usuario o clave incorrectos."); }
-            } catch (e) { alert("Error de conexión."); }
+                } else { alert("❌ Acceso denegado."); }
+            } catch(e) { alert("Error de conexión."); }
         };
 
-        // --- SISTEMA ---
-        window.save = async () => { 
-            if(window.usuarioActual) await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); 
-        };
-
+        // --- FUNCIONES DE ALUMNOS ---
         window.agregarAlumno = async () => {
-            const c = document.getElementById('ced').value.trim();
+            const c = document.getElementById('ced').value.trim().toUpperCase();
             const n = document.getElementById('nom').value.toUpperCase().trim();
             const na = document.getElementById('nac').value;
-            if(!n || !na) return alert("Nombre y Fecha de Nacimiento requeridos");
+            if(!n || !na) return alert("Nombre y Fecha son obligatorios");
             
             window.db.alumnos.push({ 
                 id: Date.now(), cedula: c, nombre: n, genero: document.getElementById('gen').value, 
-                nacimiento: na, retirado: false, fechaIngreso: document.getElementById('fechaSeleccionada').value 
+                nacimiento: na, retirado: false, 
+                fechaIngreso: document.getElementById('fechaSeleccionada').value 
             });
-            await window.save();
+            await window.save(); 
             document.getElementById('ced').value=""; document.getElementById('nom').value="";
         };
 
         window.marcar = (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
             const hoy = new Date().toISOString().split('T')[0];
-            if (f > hoy) return alert("⚠️ No puedes marcar asistencia futura.");
+            if (f > hoy) return alert("⚠️ No se puede marcar asistencia futura.");
             
             if(!window.db.asistencias[f]) window.db.asistencias[f]={};
             let actual = window.db.asistencias[f][id] || 0;
@@ -134,8 +132,8 @@
             const esFeriado = window.db.feriados?.includes(fSel);
             const esFinde = (fObj.getDay() === 0 || fObj.getDay() === 6);
             
-            document.getElementById('docenteTxt').innerText = window.db.docente;
-            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado}° "${window.db.seccion}" - ${window.db.turno}`;
+            document.getElementById('docenteTxt').innerText = window.db.docente || "---";
+            document.getElementById('gradoSeccionTxt').innerText = `${window.db.grado}${window.db.seccion} - ${window.db.turno}`;
             document.getElementById('btnFeriado').innerText = esFeriado ? "✅ VOLVER LABORABLE" : "🚩 MARCAR FERIADO";
 
             const lista = document.getElementById('listaAsistencia');
@@ -149,90 +147,111 @@
                     const st = window.db.asistencias[fSel]?.[a.id] || 0;
                     const colores = ["#ccc", "var(--exito)", "var(--morado)"];
                     const textos = ["F", "P", "J"];
-                    
                     lista.innerHTML += `
                     <div class="alumno-fila">
                         <div class="bola-gen ${a.genero}"></div>
-                        <div style="flex-grow:1">${a.nombre} <br><small>${a.cedula || 'S/C'}</small></div>
+                        <div style="flex-grow:1">${a.nombre}<br><small>${a.cedula || 'S/C'}</small></div>
                         <button onclick="marcar(${a.id})" class="btn-check" style="background:${colores[st]}">${textos[st]}</button>
                     </div>`;
                 });
             }
+            
+            // Renderizar reportes (Estadística 911)
+            let sH=0, sV=0, dsH=0;
+            const mesActual = fObj.getMonth();
+            Object.keys(window.db.asistencias).forEach(f => {
+                const d = new Date(f + "T00:00:00");
+                if(d.getMonth() === mesActual && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(f)) {
+                    dsH++;
+                    activos.forEach(a => { if(window.db.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
+                }
+            });
+            const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?((pH+pV)/activos.length*100).toFixed(0):0;
+            
+            document.getElementById('reporteDocente').innerHTML = `
+                <div class="reporte-card">
+                    <h2>ESTADÍSTICA MENSUAL</h2>
+                    <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
+                    <div class="grid-promedios">
+                        <div>H: <b>${pH.toFixed(1)}</b></div>
+                        <div>V: <b>${pV.toFixed(1)}</b></div>
+                        <div>Total: <b>${(pH+pV).toFixed(1)}</b></div>
+                    </div>
+                </div>`;
         };
 
+        window.save = async () => { 
+            if(window.usuarioActual) await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); 
+        };
+        
         window.logout = () => location.reload();
+
     </script>
 
     <style>
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; }
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
-        header { background: var(--azul); color: white; padding: 15px; display: flex; justify-content: space-between; }
-        .container { max-width: 450px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
+        header { background: var(--azul); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f39c12; }
+        .container { max-width: 480px; margin: auto; padding: 10px; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .alumno-fila { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .bola-gen { width: 12px; height: 12px; border-radius: 50%; }
         .bola-gen.F { background: #ff85a2; } .bola-gen.M { background: #3498db; }
-        .btn-check { width: 45px; height: 45px; border: none; color: white; font-weight: bold; border-radius: 10px; cursor: pointer; }
-        .aviso-no { padding: 20px; text-align: center; color: var(--rojo); font-weight: bold; }
+        .btn-check { width: 45px; height: 40px; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .reporte-card { background: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .circulo-eficiencia { width: 70px; height: 70px; border: 5px solid var(--azul); border-radius: 50%; margin: 10px auto; display: flex; flex-direction: column; justify-content: center; font-weight: bold; }
+        .grid-promedios { display: flex; justify-content: space-around; margin-top: 10px; font-size: 13px; }
+        .aviso-no { text-align: center; padding: 20px; color: var(--rojo); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="text-align:center; padding-top: 50px;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+<div id="authSection" style="text-align:center; padding: 50px 20px;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="100">
     <h2>SISTEMA LUCILA 2026</h2>
-    
-    <div id="loginForm" class="card" style="max-width:320px; margin:auto">
+    <div id="loginForm" class="card" style="max-width:350px; margin:auto">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Clave">
-        <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
-        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer;">Crear Cuenta Nueva</p>
+        <button onclick="login()" style="background:var(--azul); color:white; font-weight:bold;">INGRESAR</button>
+        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer; font-size:13px;">Crear cuenta nueva</p>
     </div>
-
-    <div id="registerForm" class="card" style="max-width:320px; margin:auto; display:none;">
-        <h3>Nuevo Registro</h3>
-        <input type="text" id="regNombre" placeholder="Nombre completo">
-        <div style="display:flex; gap:5px;">
-            <input type="number" id="regGrado" placeholder="Grado">
-            <input type="text" id="regSeccion" placeholder="Secc">
-        </div>
+    <div id="registerForm" class="card" style="max-width:350px; margin:auto; display:none;">
+        <input type="text" id="regNombre" placeholder="Nombre y Apellido">
+        <div style="display:flex; gap:5px;"><input type="number" id="regGrado" placeholder="Grado"><input type="text" id="regSeccion" placeholder="Secc"></div>
         <select id="regTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Clave">
         <input type="password" id="regClaveInst" placeholder="Clave Institucional">
-        <button onclick="registrarCuenta()" style="background:var(--exito); color:white;">REGISTRAR</button>
+        <button onclick="registrarCuenta()" style="background:var(--exito); color:white; font-weight:bold;">REGISTRAR</button>
         <p onclick="mostrarRegistro(false)" style="cursor:pointer;">Volver</p>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
     <header>
-        <span>LUCILA 2026</span>
-        <button onclick="logout()" style="width:auto; padding:5px; background:var(--rojo); color:white; border:none; border-radius:4px;">SALIR</button>
+        <b>EBN LUCILA PALACIOS</b>
+        <button onclick="logout()" style="width:auto; padding:5px 10px; background:var(--rojo); color:white; border:none; border-radius:5px;">SALIR</button>
     </header>
     <div class="container">
         <div class="card">
             <b>Docente:</b> <span id="docenteTxt"></span><br>
             <b>Sección:</b> <span id="gradoSeccionTxt"></span>
             <input type="date" id="fechaSeleccionada" onchange="window.render()" style="margin-top:10px; border: 2px solid var(--azul)">
-            <button id="btnFeriado" onclick="window.db.feriados.push(document.getElementById('fechaSeleccionada').value); window.save();" style="font-size:11px;"></button>
+            <button id="btnFeriado" onclick="window.db.feriados.push(document.getElementById('fechaSeleccionada').value); window.save();" style="font-size:11px; color:var(--rojo); background:none; border:1px solid var(--rojo)"></button>
         </div>
-
         <div class="card">
             <h4 style="margin:0">+ Inscribir Alumno</h4>
             <input type="text" id="ced" placeholder="Cédula">
-            <input type="text" id="nom" placeholder="Nombres">
+            <input type="text" id="nom" placeholder="Nombre Completo">
             <div style="display:flex; gap:5px;">
-                <select id="gen" style="width:40%"><option value="F">H</option><option value="M">V</option></select>
+                <select id="gen" style="width:40%"><option value="F">Hembra</option><option value="M">Varón</option></select>
                 <input type="date" id="nac" style="width:60%">
             </div>
-            <button onclick="agregarAlumno()" style="background:var(--exito); color:white;">AGREGAR</button>
+            <button onclick="agregarAlumno()" style="background:var(--exito); color:white; font-weight:bold;">AGREGAR</button>
         </div>
-
-        <div class="card">
-            <div id="listaAsistencia"></div>
-        </div>
+        <div class="card"><div id="listaAsistencia"></div></div>
+        <div id="reporteDocente"></div>
     </div>
 </div>
 
