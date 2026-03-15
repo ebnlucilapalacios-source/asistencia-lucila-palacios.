@@ -129,6 +129,31 @@
             document.getElementById('adminNewPass').value = "";
         };
 
+        // NUEVA FUNCIÓN: ELIMINAR DOCENTE
+        window.eliminarDocente = async () => {
+            const userDel = document.getElementById('adminDeleteUser').value.toLowerCase().trim();
+            if(!userDel) return alert("Ingrese el usuario que desea eliminar.");
+            if(userDel === USUARIO_ADMIN) return alert("No se puede eliminar la cuenta de administración.");
+
+            const docRef = doc(dbCloud, "docentes_db", userDel);
+            const snap = await getDoc(docRef);
+
+            if(!snap.exists()) return alert("El usuario no existe.");
+
+            const confirmar = confirm(`¿Está seguro de eliminar permanentemente al docente "${userDel}"? Se borrará toda su matrícula y asistencias.`);
+            if(confirmar) {
+                const dobleConfirmar = prompt("Escriba ELIMINAR para confirmar la acción:");
+                if(dobleConfirmar === "ELIMINAR") {
+                    await deleteDoc(docRef);
+                    alert("Docente eliminado de la base de datos.");
+                    document.getElementById('adminDeleteUser').value = "";
+                    if(document.getElementById('adminOutput').innerHTML !== "") window.consolidadoMensual();
+                } else {
+                    alert("Acción cancelada.");
+                }
+            }
+        };
+
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
@@ -142,7 +167,7 @@
                 const d = dSnap.data();
                 if(dSnap.id !== USUARIO_ADMIN) {
                     docentesData.push(d);
-                    const docInfo = `<b>${d.grado}${d.seccion}</b>: ${d.docente}`;
+                    const docInfo = `<b>${d.grado}${d.seccion}</b>: ${d.docente} (${dSnap.id})`;
                     if(d.turno === "Mañana") listMañana.push(docInfo);
                     if(d.turno === "Tarde") listTarde.push(docInfo);
                 }
@@ -283,7 +308,7 @@
                         <td>${cedulaText}</td>
                         <td style="text-align:left">${a.nombre}</td>
                         <td>${genero}</td>
-                        <td>${edad}</td>
+                        <td>${count = edad}</td>
                         <td>${diasHabiles}</td>
                         <td style="color:var(--exito); font-weight:bold;">${asis}</td>
                         <td style="color:var(--rojo); font-weight:bold;">${inas}</td>
@@ -320,7 +345,6 @@
             docPDF.save(`Consolidado_Alumnos_${window.db.grado}${window.db.seccion}_${mesStr}.pdf`);
         };
 
-        // --- FUNCIONES DE EXPORTAR LISTAS ---
         window.descargarListaEstudiantesPDF = async () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF();
@@ -382,7 +406,6 @@
             XLSX.writeFile(wb, "Matricula_Lucila_Palacios_2026.xlsx");
         };
 
-        // --- ACTUALIZACIÓN SOLICITADA: LISTA DE ESTUDIANTES (SIN NOMBRES EN TÍTULO Y CON COLUMNA CÉDULA) ---
         window.exportarNombresBasico = async (formato, esAdmin) => {
             let listaDocentes = [];
 
@@ -458,7 +481,6 @@
             }
         };
 
-        // --- MANTENIMIENTO ---
         window.exportarBackupJSON = () => {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.db));
             const downloadAnchorElem = document.createElement('a');
@@ -722,6 +744,13 @@
                 </div>
                 <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">ACTUALIZAR CREDENCIALES</button>
             </div>
+
+            <div style="margin-top: 10px; padding: 10px; background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 8px;">
+                <b style="color: var(--rojo);">⚠️ Gestión de Bajas</b>
+                <input type="text" id="adminDeleteUser" placeholder="Usuario del docente a eliminar" style="margin-top:8px;">
+                <button onclick="eliminarDocente()" style="background:var(--rojo); color:white; padding:8px; width:100%; border:none; border-radius:6px; margin-top:5px; font-weight:bold; cursor:pointer;">🗑️ ELIMINAR DOCENTE DEL SISTEMA</button>
+            </div>
+
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
 
