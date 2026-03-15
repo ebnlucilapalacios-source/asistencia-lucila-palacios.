@@ -2,156 +2,173 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SISTEMA LUCILA PALACIOS - ESPECIALISTAS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; }
-        body { font-family: sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 800px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        select, input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn-verde { background: var(--verde); color: white; font-weight: bold; border: none; }
-        .btn-azul { background: var(--azul); color: white; font-weight: bold; border: none; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 80px; }
+        header { background: var(--azul); color: white; padding: 20px; text-align: center; border-bottom: 5px solid var(--oro); }
+        .container { max-width: 700px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* TABLA ESTADÍSTICA DISGREGADA */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th { background: var(--azul); color: white; padding: 10px; }
-        td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-        .resumen-global { background: #e9ecef; font-weight: bold; }
+        h3 { color: var(--azul); border-bottom: 2px solid var(--oro); padding-bottom: 5px; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
         
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; }
-        .nav-item { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; }
+        select, input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        
+        .grid-secciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0; }
+        .check-item { background: #eee; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; }
+        .check-item input { display: none; }
+        .check-item.selected { background: var(--oro); border-color: var(--azul); font-weight: bold; }
+
+        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: 0.3s; }
+        .btn-azul { background: var(--azul); color: white; }
+        .btn-verde { background: var(--verde); color: white; }
+
+        /* TABLA ESTADISTICA DISGREGADA */
+        .tabla-resumen { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; }
+        .tabla-resumen th { background: var(--azul); color: white; padding: 12px; }
+        .tabla-resumen td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        .total-row { background: #f8f9fa; font-weight: bold; font-size: 1.1em; }
+
+        .lista-asistencia { margin-top: 20px; border-top: 1px solid #eee; }
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .btn-check { width: 50px; height: 40px; border-radius: 8px; border: none; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>SISTEMA LUCILA PALACIOS - GRUPOS ESTABLES</header>
+<header>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="60">
+    <h2>CONTROL DE ESPECIALISTAS</h2>
+</header>
 
 <div class="container">
-    <div id="seccion-especialista" class="card">
-        <h3>🛠️ Configurar Grupo Estable</h3>
-        <p><small>Seleccione los grados que integran su grupo para pasar asistencia conjunta.</small></p>
-        <div id="selector-grados" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            </div>
-        <button class="btn-azul" onclick="cargarGrupoEspecialista()">CARGAR ALUMNOS DEL GRUPO</button>
+    <div class="card" id="paso1">
+        <h3>1. Crear Grupo Estable</h3>
+        <p>Seleccione las secciones que verá hoy (Ej: Educación Física con 1A, 1B y 1C):</p>
+        <div class="grid-secciones">
+            <label class="check-item">1A <input type="checkbox" value="1A" onchange="toggleLabel(this)"></label>
+            <label class="check-item">1B <input type="checkbox" value="1B" onchange="toggleLabel(this)"></label>
+            <label class="check-item">1C <input type="checkbox" value="1C" onchange="toggleLabel(this)"></label>
+            <label class="check-item">1D <input type="checkbox" value="1D" onchange="toggleLabel(this)"></label>
+            <label class="check-item">1E <input type="checkbox" value="1E" onchange="toggleLabel(this)"></label>
+            <label class="check-item">2A <input type="checkbox" value="2A" onchange="toggleLabel(this)"></label>
+            <label class="check-item">2B <input type="checkbox" value="2B" onchange="toggleLabel(this)"></label>
+            <label class="check-item">2C <input type="checkbox" value="2C" onchange="toggleLabel(this)"></label>
+            <label class="check-item">2D <input type="checkbox" value="2D" onchange="toggleLabel(this)"></label>
+            <label class="check-item">2E <input type="checkbox" value="2E" onchange="toggleLabel(this)"></label>
+        </div>
+        <button class="btn btn-azul" onclick="iniciarGrupo()">GENERAR LISTA UNIFICADA</button>
     </div>
 
-    <div id="area-asistencia" class="card" style="display:none;">
-        <h3 id="titulo-especialidad">Pase de Asistencia</h3>
-        <div id="lista-alumnos"></div>
-        <button class="btn-verde" onclick="guardarAsistenciaEspecialista()">💾 GUARDAR Y GENERAR ESTADÍSTICA</button>
+    <div class="card" id="paso2" style="display:none;">
+        <h3>2. Lista de Asistencia</h3>
+        <div id="lista-estudiantes" class="lista-asistencia"></div>
+        <textarea id="obs" placeholder="Observaciones o novedades..."></textarea>
+        <button class="btn btn-verde" onclick="procesarEstadistica()">💾 GUARDAR Y VER RESUMEN ESTADÍSTICO</button>
     </div>
 
-    <div id="seccion-reporte" class="card" style="display:none;">
-        <h3>📊 Resumen Estadístico Disgregado</h3>
-        <div id="tabla-estadistica"></div>
-        <button class="btn-azul" onclick="exportarExcel()">Descargar Reporte Excel</button>
+    <div class="card" id="paso3" style="display:none;">
+        <h3>📊 Resumen Estadístico (Especialista)</h3>
+        <div id="resultado-final"></div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-azul" onclick="exportarExcel()">📗 DESCARGAR EXCEL</button>
+            <button class="btn" style="background:#666; color:white;" onclick="location.reload()">NUEVA CLASE</button>
+        </div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const config = { /* Tu configuración de Firebase aquí */ };
+    const config = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+        projectId: "control-de-asistencia-d585e",
+        appId: "1:368890880546:web:a97ab4372dea536217207b"
+    };
+
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    const grados = ["1A", "1B", "1C", "1D", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "3D"];
-    let grupoActual = [];
+    let alumnosGrupo = [];
+    let asistencia = {};
 
-    // Inicializar selectores de grado
-    const selector = document.getElementById('selector-grados');
-    grados.forEach(g => {
-        selector.innerHTML += `<label><input type="checkbox" value="${g}" class="grado-check"> ${g}</label>`;
-    });
+    window.toggleLabel = (cb) => {
+        cb.parentElement.classList.toggle('selected', cb.checked);
+    };
 
-    window.cargarGrupoEspecialista = async () => {
-        const seleccionados = Array.from(document.querySelectorAll('.grado-check:checked')).map(cb => cb.value);
+    window.iniciarGrupo = async () => {
+        const seleccionados = Array.from(document.querySelectorAll('.grid-secciones input:checked')).map(i => i.value);
         if(seleccionados.length === 0) return alert("Seleccione al menos una sección.");
 
-        grupoActual = [];
-        for(let g of seleccionados) {
-            const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}`));
-            if(snap.exists()) {
-                const alumnos = snap.data().alumnos.map(a => ({...a, seccionOriginal: g}));
-                grupoActual.push(...alumnos);
+        alumnosGrupo = [];
+        for(let sec of seleccionados) {
+            const d = await getDoc(doc(db, "docentes_db", `DOCENTE_${sec}`));
+            if(d.exists()) {
+                const lista = d.data().alumnos.map(a => ({...a, sec: sec}));
+                alumnosGrupo.push(...lista);
             }
         }
 
-        renderLista();
-    };
-
-    function renderLista() {
-        const div = document.getElementById('lista-alumnos');
+        const div = document.getElementById('lista-estudiantes');
         div.innerHTML = "";
-        grupoActual.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+        alumnosGrupo.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            asistencia[a.id] = 1;
             div.innerHTML += `
-                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
-                    <span>${a.nombre} <small>(${a.seccionOriginal} - ${a.sexo})</small></span>
-                    <select class="status" data-id="${a.id}" data-sexo="${a.sexo}" style="width:70px;">
-                        <option value="P">P</option>
-                        <option value="I">I</option>
-                    </select>
+                <div class="alumno-fila">
+                    <span>${a.nombre} <small>(${a.sec} - ${a.sexo})</small></span>
+                    <button id="btn-${a.id}" class="btn-check" style="background:var(--verde)" onclick="cambiarAsis('${a.id}')">P</button>
                 </div>`;
         });
-        document.getElementById('area-asistencia').style.display = 'block';
-    }
+        document.getElementById('paso1').style.display = 'none';
+        document.getElementById('paso2').style.display = 'block';
+    };
 
-    window.guardarAsistenciaEspecialista = async () => {
-        const filas = document.querySelectorAll('.status');
-        let stats = { mv: 0, mh: 0, av: 0, ah: 0 };
+    window.cambiarAsis = (id) => {
+        asistencia[id] = asistencia[id] === 1 ? 0 : 1;
+        const btn = document.getElementById(`btn-${id}`);
+        btn.innerText = asistencia[id] === 1 ? "P" : "I";
+        btn.style.background = asistencia[id] === 1 ? "var(--verde)" : "var(--rojo)";
+    };
 
-        filas.forEach(f => {
-            const sexo = f.getAttribute('data-sexo'); // V o H
-            if(sexo === 'VARÓN' || sexo === 'V') stats.mv++; else stats.mh++;
-            
-            if(f.value === 'P') {
-                if(sexo === 'VARÓN' || sexo === 'V') stats.av++; else stats.ah++;
+    window.procesarEstadistica = () => {
+        let stats = { mv:0, mh:0, av:0, ah:0 };
+
+        alumnosGrupo.forEach(a => {
+            const esV = (a.sexo === 'VARÓN' || a.sexo === 'V');
+            if(esV) stats.mv++; else stats.mh++;
+            if(asistencia[a.id] === 1) {
+                if(esV) stats.av++; else stats.ah++;
             }
         });
 
-        const totalMatricula = stats.mv + stats.mh;
-        const totalAsistencia = stats.av + stats.ah;
-        const promedioReal = ((totalAsistencia / totalMatricula) * 100).toFixed(2);
+        const totalM = stats.mv + stats.mh;
+        const totalA = stats.av + stats.ah;
+        const porcTotal = ((totalA / totalM) * 100).toFixed(2);
 
-        mostrarResumen(stats, promedioReal);
-    };
-
-    function mostrarResumen(s, prom) {
-        const div = document.getElementById('tabla-estadistica');
-        div.innerHTML = `
-            <table>
-                <tr>
-                    <th>GÉNERO</th>
-                    <th>MATRÍCULA</th>
-                    <th>ASISTENCIA</th>
-                    <th>% REAL</th>
-                </tr>
-                <tr>
-                    <td>VARONES</td>
-                    <td>${s.mv}</td>
-                    <td>${s.av}</td>
-                    <td>${((s.av/s.mv)*100 || 0).toFixed(2)}%</td>
-                </tr>
-                <tr>
-                    <td>HEMBRAS</td>
-                    <td>${s.mh}</td>
-                    <td>${s.ah}</td>
-                    <td>${((s.ah/s.mh)*100 || 0).toFixed(2)}%</td>
-                </tr>
-                <tr class="resumen-global">
-                    <td>TOTAL</td>
-                    <td>${s.mv + s.mh}</td>
-                    <td>${s.av + s.ah}</td>
-                    <td>${prom}%</td>
-                </tr>
+        document.getElementById('resultado-final').innerHTML = `
+            <table class="tabla-resumen" id="tabla-excel">
+                <thead>
+                    <tr><th>GÉNERO</th><th>MATRÍCULA</th><th>ASISTENCIA</th><th>%</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>VARONES</td><td>${stats.mv}</td><td>${stats.av}</td><td>${((stats.av/stats.mv)*100 || 0).toFixed(1)}%</td></tr>
+                    <tr><td>HEMBRAS</td><td>${stats.mh}</td><td>${stats.ah}</td><td>${((stats.ah/stats.mh)*100 || 0).toFixed(1)}%</td></tr>
+                    <tr class="total-row"><td>TOTAL</td><td>${totalM}</td><td>${totalA}</td><td>${porcTotal}%</td></tr>
+                </tbody>
             </table>
         `;
-        document.getElementById('seccion-reporte').style.display = 'block';
-        alert("Estadística generada con éxito.");
-    }
+        document.getElementById('paso2').style.display = 'none';
+        document.getElementById('paso3').style.display = 'block';
+    };
+
+    window.exportarExcel = () => {
+        const wb = XLSX.utils.table_to_book(document.getElementById('tabla-excel'));
+        XLSX.writeFile(wb, "Estadistica_Especialista_Lucila.xlsx");
+    };
 </script>
 </body>
 </html>
