@@ -30,70 +30,97 @@
 
         window.usuarioActual = null;
         window.db = {};
-        let miGraficoEsp = null;
 
-        // --- AUTENTICACIÓN Y ROLES ---
+        // --- AUTENTICACIÓN ---
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
-            const snap = await getDoc(doc(dbCloud, "docentes_db", u));
             
-            if (snap.exists() && snap.data().pass === p) {
-                window.usuarioActual = u;
-                window.db = snap.data();
-                
-                document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
+            try {
+                const snap = await getDoc(doc(dbCloud, "docentes_db", u));
+                if (snap.exists() && snap.data().pass === p) {
+                    window.usuarioActual = u;
+                    window.db = snap.data();
+                    
+                    document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
 
-                // Limpiar vistas antes de mostrar la correcta
-                document.getElementById('adminPanel').style.display = 'none';
-                document.getElementById('panelEspecialistaInterface').style.display = 'none';
-                document.getElementById('seccionDocenteAula').style.display = 'none';
+                    // RESET DE VISTAS
+                    document.getElementById('adminPanel').style.display = 'none';
+                    document.getElementById('panelEspecialistaInterface').style.display = 'none';
+                    document.getElementById('seccionDocenteAula').style.display = 'none';
 
-                if (u === USUARIO_ADMIN) {
-                    document.getElementById('adminPanel').style.display = 'block';
-                } else if (window.db.tipo === "especialista") {
-                    document.getElementById('panelEspecialistaInterface').style.display = 'block';
-                    cargarSeccionesParaEspecialista();
+                    if (u === USUARIO_ADMIN) {
+                        document.getElementById('adminPanel').style.display = 'block';
+                    } else if (window.db.tipo === "especialista") {
+                        document.getElementById('panelEspecialistaInterface').style.display = 'block';
+                        await window.cargarSeccionesParaEspecialista(); // Esperar la carga
+                    } else {
+                        document.getElementById('seccionDocenteAula').style.display = 'block';
+                    }
+
+                    onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
+                        window.db = s.data(); 
+                        if(window.db.tipo === "aula") window.render(); 
+                    });
                 } else {
-                    document.getElementById('seccionDocenteAula').style.display = 'block';
+                    Swal.fire("Error", "Usuario o clave incorrectos", "error");
                 }
-
-                onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
-                    window.db = s.data(); 
-                    window.render(); 
-                });
-            } else {
-                Swal.fire("Error", "Usuario o clave incorrectos", "error");
+            } catch (e) {
+                console.error(e);
+                Swal.fire("Error", "Problema de conexión", "error");
             }
         };
 
-        // --- FUNCIONES ESPECIALISTAS ---
+        // --- LÓGICA ESPECIALISTAS (CORREGIDA) ---
         window.cargarSeccionesParaEspecialista = async () => {
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
             const sel = document.getElementById('selSecEsp');
             sel.innerHTML = '<option value="">-- SELECCIONE GRADO --</option>';
-            snap.forEach(d => {
-                const data = d.data();
-                if(data.tipo === "aula") {
-                    sel.innerHTML += `<option value="${d.id}">${data.grado}${data.seccion} - ${data.docente}</option>`;
+            
+            const querySnapshot = await getDocs(collection(dbCloud, "docentes_db"));
+            let conteo = 0;
+
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                // Solo mostrar los que NO son admin y NO son especialistas (es decir, son aulas)
+                if (docSnap.id !== USUARIO_ADMIN && data.tipo !== "especialista") {
+                    const nombreOpcion = `${data.grado}${data.seccion} - ${data.docente}`;
+                    const opcion = document.createElement("option");
+                    opcion.value = docSnap.id;
+                    opcion.textContent = nombreOpcion;
+                    sel.appendChild(opcion);
+                    conteo++;
                 }
             });
+
+            if(conteo === 0) {
+                sel.innerHTML = '<option value="">No hay aulas registradas</option>';
+            }
         };
 
         window.verListaEsp = async () => {
-            const id = document.getElementById('selSecEsp').value;
-            if(!id) return;
-            const snap = await getDoc(doc(doc(dbCloud, "docentes_db", id)));
-            const alumnos = (snap.data().alumnos || []).filter(a => !a.retirado);
+            const idDocenteAula = document.getElementById('selSecEsp').value;
+            if(!idDocenteAula) return;
+
+            const snap = await getDoc(doc(dbCloud, "docentes_db", idDocenteAula));
+            const data = snap.data();
+            const alumnos = (data.alumnos || []).filter(a => !a.retirado);
+            
             const cont = document.getElementById('listaAlumnosEsp');
-            cont.innerHTML = `<h4>Asistencia: ${snap.data().grado}${snap.data().seccion}</h4>`;
-            alumnos.forEach(a => {
+            cont.innerHTML = `<h4 style="color:var(--naranja)">Asistencia: ${data.grado}${data.seccion}</h4>`;
+            
+            if(alumnos.length === 0) {
+                cont.innerHTML += "<p>Esta sección no tiene alumnos inscritos.</p>";
+                document.getElementById('btnGuardarEsp').style.display = 'none';
+                return;
+            }
+
+            alumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a => {
                 cont.innerHTML += `
                 <div class="alumno-fila">
-                    <span>${a.nombre}</span>
-                    <input type="checkbox" class="chkEsp" data-gen="${a.genero}" checked>
+                    <span style="font-size:14px;">${a.nombre}</span>
+                    <input type="checkbox" class="chkEsp" data-gen="${a.genero}" checked style="width:25px; height:25px; accent-color:var(--naranja);">
                 </div>`;
             });
             document.getElementById('btnGuardarEsp').style.display = 'block';
@@ -104,59 +131,26 @@
             let h = 0, v = 0;
             chks.forEach(c => { if(c.checked) c.dataset.gen === 'F' ? h++ : v++; });
             
+            const sel = document.getElementById('selSecEsp');
             await addDoc(collection(dbCloud, "asistencia_especialistas"), {
                 especialista: window.db.docente,
-                materia: window.db.materia,
-                seccionAtendida: document.getElementById('selSecEsp').options[document.getElementById('selSecEsp').selectedIndex].text,
+                materia: window.db.materia || "ESPECIALISTA",
+                seccionAtendida: sel.options[sel.selectedIndex].text,
                 hembras: h, varones: v, total: h+v,
-                fecha: document.getElementById('fechaSeleccionada').value
+                fecha: document.getElementById('fechaSeleccionada').value,
+                timestamp: new Date()
             });
-            Swal.fire("Guardado", "Estadística enviada a dirección", "success");
+
+            Swal.fire("¡Éxito!", "Asistencia guardada correctamente", "success");
             document.getElementById('listaAlumnosEsp').innerHTML = "";
             document.getElementById('btnGuardarEsp').style.display = 'none';
-        };
-
-        // --- FUNCIONES ADMINISTRADOR ---
-        window.registrarEspecialistaDB = async () => {
-            const n = document.getElementById('regNomEsp').value.toUpperCase();
-            const m = document.getElementById('regMateriaEsp').value;
-            const u = document.getElementById('regUserEsp').value.toLowerCase().trim();
-            const p = document.getElementById('regPassEsp').value;
-            if(!n || !u || !p) return;
-            await setDoc(doc(dbCloud, "docentes_db", u), { docente: n, pass: p, materia: m, tipo: "especialista", grado: "ESP", seccion: "ESP" });
-            Swal.fire("Éxito", "Especialista Creado", "success");
-        };
-
-        window.generarCierreMensualWA = async () => {
-            const fSel = document.getElementById('fechaSeleccionada').value;
-            const mesRef = new Date(fSel + "T00:00:00").getMonth();
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let tMat = 0, tAsis = 0, tM = 0;
-
-            snap.forEach(docSnap => {
-                const d = docSnap.data();
-                if(d.tipo === "aula") {
-                    const activos = (d.alumnos || []).filter(a => !a.retirado);
-                    tMat += activos.length;
-                    Object.keys(d.asistencias || {}).forEach(f => {
-                        if(new Date(f + "T00:00:00").getMonth() === mesRef) {
-                            Object.values(d.asistencias[f]).forEach(v => { if(v === 1) tAsis++; });
-                            if(!d.feriados?.includes(f)) tM += activos.length;
-                        }
-                    });
-                }
-            });
-            const ef = tM > 0 ? ((tAsis / tM) * 100).toFixed(1) : 0;
-            const msj = `📌 *REPORTE LUCILA PALACIOS*\n🏫 Matrícula: ${tMat}\n📈 Eficiencia: ${ef}%`;
-            navigator.clipboard.writeText(msj);
-            Swal.fire("Copiado", "Resumen listo para WhatsApp", "success");
+            sel.value = "";
         };
 
         // --- FUNCIONES AULA ---
         window.render = () => {
-            if(window.db.tipo !== "aula") return;
             const fSel = document.getElementById('fechaSeleccionada').value;
-            document.getElementById('docenteTxt').innerText = window.db.docente;
+            document.getElementById('docenteTxt').innerText = window.db.docente || "Docente";
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
             const alumnos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
@@ -182,11 +176,22 @@
             document.getElementById('nom').value="";
         };
 
+        // --- ADMIN ---
+        window.registrarEspecialistaDB = async () => {
+            const n = document.getElementById('regNomEsp').value.toUpperCase();
+            const m = document.getElementById('regMateriaEsp').value;
+            const u = document.getElementById('regUserEsp').value.toLowerCase().trim();
+            const p = document.getElementById('regPassEsp').value;
+            if(!n || !u || !p) return Swal.fire("Atención", "Llene todos los campos", "warning");
+            await setDoc(doc(dbCloud, "docentes_db", u), { docente: n, pass: p, materia: m, tipo: "especialista" });
+            Swal.fire("Éxito", "Especialista Creado", "success");
+        };
+
         window.logout = () => location.reload();
         window.mostrarRegistro = (v) => { document.getElementById('loginForm').style.display = v?'none':'block'; document.getElementById('registerForm').style.display = v?'block':'none'; };
         
         window.registrarCuenta = async () => {
-            if(document.getElementById('regClaveInst').value !== CLAVE_INST) return alert("Clave Incorrecta");
+            if(document.getElementById('regClaveInst').value !== CLAVE_INST) return alert("Clave Institucional Incorrecta");
             const u = document.getElementById('regUser').value.toLowerCase().trim();
             await setDoc(doc(dbCloud, "docentes_db", u), { 
                 docente: document.getElementById('regNombre').value.toUpperCase(), 
@@ -195,93 +200,101 @@
                 seccion: document.getElementById('regSeccion').value.toUpperCase(), 
                 tipo: "aula", alumnos: [], asistencias: {}, feriados: [] 
             });
-            Swal.fire("Listo", "Cuenta Creada", "success"); window.mostrarRegistro(false);
+            Swal.fire("¡Listo!", "Cuenta de Aula creada", "success"); window.mostrarRegistro(false);
         };
     </script>
 
     <style>
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --naranja: #e67e22; }
-        body { font-family: sans-serif; background: #f4f7f9; margin: 0; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
-        .container { max-width: 450px; margin: auto; padding: 10px; }
-        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .btn-check { width: 40px; height: 35px; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { cursor: pointer; font-weight: bold; }
-        .btn-naranja { background: var(--naranja); color: white; border: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f9; margin: 0; color: #333; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; font-weight: bold; border-bottom: 4px solid #f39c12; }
+        .container { max-width: 480px; margin: auto; padding: 10px; }
+        .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .btn-check { width: 45px; height: 40px; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        input, select, button { width: 100%; padding: 14px; margin: 6px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; }
+        button { cursor: pointer; border: none; transition: 0.3s; }
+        button:active { transform: scale(0.98); }
+        .btn-naranja { background: var(--naranja); color: white; }
     </style>
 </head>
 <body>
 
-<div id="authSection" style="padding: 40px 20px; text-align: center;">
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-    <h2>LUCILA PALACIOS</h2>
-    <div id="loginForm" class="card">
+<div id="authSection" style="padding: 50px 20px; text-align: center;">
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="100">
+    <h1 style="color:var(--azul);">LUCILA PALACIOS</h1>
+    <div id="loginForm" class="card" style="max-width:350px; margin:auto;">
         <input type="text" id="loginUser" placeholder="Usuario">
         <input type="password" id="loginPass" placeholder="Contraseña">
-        <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
-        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer;">Registrar Nueva Aula</p>
+        <button onclick="login()" style="background:var(--azul); color:white; font-weight:bold;">ENTRAR AL SISTEMA</button>
+        <p onclick="mostrarRegistro(true)" style="color:var(--morado); cursor:pointer; font-size:14px; margin-top:15px;">¿Es docente de aula nuevo? Regístrese aquí</p>
     </div>
-    <div id="registerForm" class="card" style="display:none;">
-        <input type="text" id="regNombre" placeholder="Nombre Docente">
-        <input type="text" id="regGrado" placeholder="Grado (Ej: 1ero)">
+    <div id="registerForm" class="card" style="max-width:350px; margin:auto; display:none;">
+        <input type="text" id="regNombre" placeholder="Nombre Completo">
+        <input type="text" id="regGrado" placeholder="Grado (Ej: 1er Grado)">
         <input type="text" id="regSeccion" placeholder="Sección (Ej: A)">
-        <input type="text" id="regUser" placeholder="Nuevo Usuario">
-        <input type="password" id="regPass" placeholder="Nueva Clave">
-        <input type="password" id="regClaveInst" placeholder="Clave Institucional">
-        <button onclick="registrarCuenta()" style="background:var(--exito); color:white;">REGISTRAR</button>
-        <p onclick="mostrarRegistro(false)" style="cursor:pointer;">Volver</p>
+        <input type="text" id="regUser" placeholder="Nombre de Usuario">
+        <input type="password" id="regPass" placeholder="Crear Contraseña">
+        <input type="password" id="regClaveInst" placeholder="Clave Institucional (LUCILA2026)">
+        <button onclick="registrarCuenta()" style="background:var(--exito); color:white;">CREAR MI CUENTA</button>
+        <p onclick="mostrarRegistro(false)" style="cursor:pointer; font-size:14px;">Volver al inicio</p>
     </div>
 </div>
 
 <div id="appContent" style="display:none;">
-    <header><b>SISTEMA ESCOLAR 2026</b></header>
+    <header>SISTEMA ESCOLAR 2026</header>
     
     <div class="container">
-        <div class="card">
-            <input type="date" id="fechaSeleccionada" onchange="window.render()">
-            <button onclick="logout()" style="background:#666; color:white; padding:5px; font-size:10px;">CERRAR SESIÓN</button>
+        <div class="card" style="text-align:center; padding:10px;">
+            <label style="font-size:12px; font-weight:bold;">FECHA DE TRABAJO:</label>
+            <input type="date" id="fechaSeleccionada" onchange="window.render()" style="text-align:center;">
+            <button onclick="logout()" style="background:#eee; color:#666; padding:8px; font-size:11px; margin-top:5px; border-radius:5px;">CERRAR SESIÓN</button>
         </div>
 
         <div id="adminPanel" style="display:none;">
             <div class="card" style="border-top: 5px solid var(--morado);">
-                <b>Panel de Dirección</b>
-                <button onclick="generarCierreMensualWA()" style="background:var(--exito); color:white;">GENERAR CIERRE WHATSAPP</button>
+                <b style="color:var(--morado);">GESTIÓN DIRECCIÓN</b>
+                <button onclick="generarCierreMensualWA()" style="background:var(--exito); color:white;">📱 GENERAR REPORTE WHATSAPP</button>
                 <hr>
-                <b>Crear Especialista</b>
-                <input type="text" id="regNomEsp" placeholder="Nombre Especialista">
+                <b>REGISTRAR DOCENTE ESPECIALISTA</b>
+                <input type="text" id="regNomEsp" placeholder="Nombre del Especialista">
                 <select id="regMateriaEsp">
                     <option value="EDUCACIÓN FÍSICA">EDUCACIÓN FÍSICA</option>
                     <option value="INGLÉS">INGLÉS</option>
-                    <option value="MÚSICA">MÚSICA</option>
+                    <option value="MÚSICA / CULTURA">MÚSICA / CULTURA</option>
+                    <option value="COMPUTACIÓN">COMPUTACIÓN</option>
                 </select>
                 <input type="text" id="regUserEsp" placeholder="Usuario">
                 <input type="password" id="regPassEsp" placeholder="Clave">
-                <button onclick="registrarEspecialistaDB()" class="btn-naranja">CREAR CUENTA</button>
+                <button onclick="registrarEspecialistaDB()" class="btn-naranja">CREAR CUENTA ESPECIALISTA</button>
             </div>
         </div>
 
         <div id="panelEspecialistaInterface" style="display:none;">
             <div class="card" style="border-top: 5px solid var(--naranja);">
-                <h3>Asistencia Especialista</h3>
-                <select id="selSecEsp" onchange="verListaEsp()"></select>
-                <div id="listaAlumnosEsp"></div>
-                <button id="btnGuardarEsp" style="display:none; background:var(--exito); color:white;" onclick="guardarAsistenciaEsp()">GUARDAR DÍA</button>
+                <h3 style="color:var(--naranja); margin-top:0;">Asistencia Especialista</h3>
+                <label>Seleccione Grado y Sección:</label>
+                <select id="selSecEsp" onchange="verListaEsp()" style="border:2px solid var(--naranja); background:#fffef0;"></select>
+                <div id="listaAlumnosEsp" style="margin-top:15px;"></div>
+                <button id="btnGuardarEsp" style="display:none; background:var(--exito); color:white; font-size:18px;" onclick="guardarAsistenciaEsp()">💾 GUARDAR ASISTENCIA</button>
             </div>
         </div>
 
         <div id="seccionDocenteAula" style="display:none;">
-            <div class="card">
+            <div class="card" style="background:var(--azul); color:white;">
                 <b>Docente:</b> <span id="docenteTxt"></span>
             </div>
             <div class="card">
-                <input type="text" id="nom" placeholder="Nombre Estudiante">
+                <b>+ Inscripción de Alumno</b>
+                <input type="text" id="nom" placeholder="Nombre y Apellido">
                 <select id="gen"><option value="F">Femenino</option><option value="M">Masculino</option></select>
                 <input type="date" id="nac">
-                <button onclick="agregarAlumno()" style="background:var(--exito); color:white;">+ AGREGAR ALUMNO</button>
+                <button onclick="agregarAlumno()" style="background:var(--exito); color:white; font-weight:bold;">+ AGREGAR A MATRÍCULA</button>
             </div>
-            <div class="card" id="listaAsistencia"></div>
+            <div class="card">
+                <h4 style="margin:0 0 10px 0;">Control de Asistencia</h4>
+                <div id="listaAsistencia"></div>
+            </div>
         </div>
     </div>
 </div>
