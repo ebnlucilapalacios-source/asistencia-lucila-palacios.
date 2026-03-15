@@ -3,78 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIRECCIÓN - GESTIÓN TOTAL</title>
+    <title>DIRECCIÓN - CONTROL MAESTRO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --rojo: #dc3545; --verde: #28a745; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 60px; }
-        header { background: var(--azul); color: white; padding: 10px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .menu-inferior { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
-        .menu-item { flex: 1; padding: 12px; text-align: center; font-size: 10px; font-weight: bold; color: #666; cursor: pointer; }
-        .menu-item.active { color: var(--azul); border-top: 3px solid var(--oro); }
-        .content { padding: 15px; max-width: 600px; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+        :root { --azul: #002147; --oro: #f3c612; --rojo: #dc3545; --verde: #28a745; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--gris); padding-bottom: 70px; }
+        
+        /* Encabezado */
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
+        
+        /* Contenedores */
+        .content { padding: 15px; max-width: 500px; margin: auto; }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+
+        /* Formularios */
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; transition: 0.3s; }
         .btn-azul { background: var(--azul); }
         .btn-verde { background: var(--verde); }
-        .btn-rojo { background: var(--rojo); font-size: 10px; padding: 5px; width: auto; }
-        .lista-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .btn-rojo { background: var(--rojo); padding: 8px; font-size: 12px; width: auto; }
+
+        /* Lista de Datos */
+        .item-lista { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fff; }
+
+        /* Menú Inferior */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 11px; font-weight: bold; color: #666; cursor: pointer; }
+        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); background: #f9f9f9; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="35">
-    <div style="font-size: 12px;">E.B.N. LUCILA PALACIOS</div>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="40">
+    <div style="font-size: 14px; font-weight: bold;">E.B.N. LUCILA PALACIOS</div>
+    <div style="font-size: 11px; opacity: 0.8;">GESTIÓN ADMINISTRATIVA</div>
 </header>
 
 <div class="content">
-    
-    <div id="sec-especialistas" class="seccion">
+
+    <div id="sec-esp" class="seccion activa">
         <div class="card">
-            <h3>👥 Crear Especialista</h3>
+            <h3 style="margin-top:0; color:var(--azul);">➕ Nuevo Especialista</h3>
             <input type="text" id="esp-user" placeholder="Usuario (ej: deporte1)">
-            <input type="text" id="esp-nom" placeholder="Nombre del Docente">
+            <input type="text" id="esp-nom" placeholder="Nombre Completo">
             <input type="password" id="esp-pass" placeholder="Contraseña">
-            <button class="btn btn-verde" onclick="crearEspecialista()">+ REGISTRAR ESPECIALISTA</button>
+            <button class="btn btn-verde" onclick="crearEspecialista()">GUARDAR ESPECIALISTA</button>
         </div>
         <div class="card">
-            <h4>Especialistas Activos</h4>
+            <h4>📋 Especialistas Activos</h4>
             <div id="lista-especialistas">Cargando...</div>
         </div>
     </div>
 
-    <div id="sec-alumnos" class="seccion" style="display:none;">
+    <div id="sec-alum" class="seccion">
         <div class="card">
-            <h3>🎒 Agregar Alumno</h3>
-            <select id="alum-grado">
+            <h3 style="margin-top:0; color:var(--azul);">🎒 Cargar Estudiante</h3>
+            <select id="grado-a">
                 <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
                 <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
             </select>
-            <select id="alum-seccion">
+            <select id="seccion-a">
                 <option value="A">Sección A</option><option value="B">Sección B</option><option value="C">Sección C</option>
             </select>
-            <input type="text" id="alum-nom" placeholder="Nombre Apellido">
-            <button class="btn btn-azul" onclick="agregarAlumno()">AGREGAR A LISTA</button>
+            <input type="text" id="nom-a" placeholder="Nombre y Apellido">
+            <button class="btn btn-azul" onclick="agregarAlumno()">AÑADIR A MATRÍCULA</button>
         </div>
-        <div id="lista-alumnos-ver" class="card">
-            <h4>Alumnos de la Sección</h4>
-            <div id="tabla-alumnos">Elija grado arriba para ver</div>
+        <div class="card">
+            <h4>🔍 Ver Lista Actual</h4>
+            <button class="btn btn-azul" style="background:#666" onclick="verMatricula()">MOSTRAR ALUMNOS</button>
+            <div id="tabla-alumnos" style="margin-top:15px;"></div>
         </div>
     </div>
 
 </div>
 
-<div class="menu-inferior">
-    <div class="menu-item active" onclick="verSeccion('especialistas', this)">ESPECIALISTAS</div>
-    <div class="menu-item" onclick="verSeccion('alumnos', this)">ALUMNOS</div>
-    <div class="menu-item" onclick="location.reload()" style="color:red">SALIR</div>
+<div class="nav-bar">
+    <div id="btn-esp" class="nav-item active" onclick="cambiarSeccion('esp')">ESPECIALISTAS</div>
+    <div id="btn-alum" class="nav-item" onclick="cambiarSeccion('alum')">ALUMNOS</div>
+    <div class="nav-item" onclick="cerrarSesion()" style="color:var(--rojo);">SALIR</div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -87,23 +101,32 @@
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    window.verSeccion = (id, el) => {
-        document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
-        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-        document.getElementById('sec-' + id).style.display = 'block';
-        el.classList.add('active');
-        if(id === 'especialistas') listarEspecialistas();
+    // NAVEGACIÓN CORREGIDA
+    window.cambiarSeccion = (id) => {
+        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        
+        document.getElementById('sec-' + id).classList.add('activa');
+        document.getElementById('btn-' + id).classList.add('active');
+        
+        if(id === 'esp') listarEspecialistas();
     };
 
-    // --- GESTIÓN ESPECIALISTAS ---
+    window.cerrarSesion = () => {
+        if(confirm("¿Seguro que desea salir?")) {
+            location.reload(); // Esto limpia la memoria y vuelve al login real
+        }
+    };
+
+    // GESTIÓN ESPECIALISTAS
     window.crearEspecialista = async () => {
         const u = document.getElementById('esp-user').value.toLowerCase().trim();
         const n = document.getElementById('esp-nom').value.trim();
         const p = document.getElementById('esp-pass').value.trim();
-        if(!u || !n || !p) return alert("Complete los campos");
+        if(!u || !n || !p) return alert("Faltan datos");
 
         await setDoc(doc(db, "credenciales_especialistas", u), { nombre: n, pass: p });
-        alert("Especialista Creado");
+        alert("Especialista guardado.");
         listarEspecialistas();
     };
 
@@ -112,34 +135,61 @@
         const div = document.getElementById('lista-especialistas');
         div.innerHTML = "";
         snap.forEach(d => {
-            div.innerHTML += `<div class="lista-item">${d.data().nombre} (${d.id}) 
-            <button class="btn-rojo" onclick="eliminarEsp('${d.id}')">Eliminar</button></div>`;
+            div.innerHTML += `<div class="item-lista">
+                <span><b>${d.id}</b> - ${d.data().nombre}</span>
+                <button class="btn-rojo" onclick="eliminarEsp('${d.id}')">Borrar</button>
+            </div>`;
         });
     }
 
-    // --- GESTIÓN ALUMNOS ---
-    window.agregarAlumno = async () => {
-        const g = document.getElementById('alum-grado').value;
-        const s = document.getElementById('alum-seccion').value;
-        const n = document.getElementById('alum-nom').value.trim();
-        const docID = `DOCENTE_${g}${s}`; // ID unificado
+    window.eliminarEsp = async (id) => {
+        if(confirm("¿Eliminar acceso a " + id + "?")) {
+            await deleteDoc(doc(db, "credenciales_especialistas", id));
+            listarEspecialistas();
+        }
+    };
 
+    // GESTIÓN ALUMNOS
+    window.agregarAlumno = async () => {
+        const g = document.getElementById('grado-a').value;
+        const s = document.getElementById('seccion-a').value;
+        const n = document.getElementById('nom-a').value.trim();
+        if(!n) return alert("Escriba el nombre");
+
+        const docID = `DOCENTE_${g}${s}`;
         const nuevoAlum = { id: "ID" + Date.now(), nombre: n };
-        
+
         try {
             const docRef = doc(db, "docentes_db", docID);
             const d = await getDoc(docRef);
             if(d.exists()) {
                 await updateDoc(docRef, { alumnos: arrayUnion(nuevoAlum) });
             } else {
-                await setDoc(docRef, { grado: g, seccion: s, alumnos: [nuevoAlum], docente: "Por asignar" });
+                await setDoc(docRef, { grado: g, seccion: s, alumnos: [nuevoAlum], docente: "Sin Asignar" });
             }
-            alert("Alumno Agregado");
-            document.getElementById('alum-nom').value = "";
-        } catch(e) { alert("Error al agregar"); }
+            alert("Alumno guardado en " + g + "° " + s);
+            document.getElementById('nom-a').value = "";
+        } catch(e) { alert("Error al guardar alumno"); }
     };
 
-    // Cargar Especialistas al iniciar
+    window.verMatricula = async () => {
+        const g = document.getElementById('grado-a').value;
+        const s = document.getElementById('seccion-a').value;
+        const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
+        const div = document.getElementById('tabla-alumnos');
+        
+        if(snap.exists() && snap.data().alumnos) {
+            let h = "<table border='1' width='100%' style='border-collapse:collapse;'>";
+            snap.data().alumnos.forEach(a => {
+                h += `<tr><td style='padding:8px;'>${a.nombre}</td></tr>`;
+            });
+            div.innerHTML = h + "</table>";
+        } else {
+            div.innerHTML = "No hay alumnos en esta sección.";
+        }
+    };
+
+    // Cargar datos iniciales
     listarEspecialistas();
 
 </script>
