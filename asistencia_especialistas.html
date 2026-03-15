@@ -3,35 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA CONTROL - DIRECCIÓN</title>
-    
+    <title>SISTEMA LUCILA - DIRECCIÓN</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --exito: #28a745; --error: #dc3545; --morado: #6f42c1; --fondo: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--fondo); margin: 0; }
+        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --exito: #28a745; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; }
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
         .container { max-width: 500px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--azul); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-morado { background: var(--morado); }
         .btn-exito { background: var(--exito); }
-        #appContent, .sec, #panelDireccion { display: none; }
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 11px; white-space: nowrap; }
+        #appContent, .sec, #panelAdmin { display: none; }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 11px; }
         .tab-btn.active { background: var(--oro); color: var(--azul); }
-        .badge-admin { background: var(--morado); color: white; padding: 4px 8px; border-radius: 5px; font-size: 10px; margin-top: 5px; display: inline-block; }
+        .badge { background: var(--morado); color: white; padding: 3px 8px; border-radius: 5px; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div id="loginScreen" class="login-screen">
-        <div class="card" style="width: 320px; text-align: center;">
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="90">
+        <div class="card" style="width: 300px; text-align: center;">
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
             <h2 style="color:var(--azul)">SISTEMA LUCILA</h2>
             <input type="text" id="logUser" placeholder="Usuario">
             <input type="password" id="logPass" placeholder="Contraseña">
@@ -42,48 +39,34 @@
     <div id="appContent">
         <header>
             <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="50">
-            <div id="nombreUsuario" style="font-weight: bold;">...</div>
-            <div id="tagRol"></div>
+            <div id="nomUsu" style="font-weight: bold;">...</div>
+            <div id="rolUsu"></div>
         </header>
 
         <div class="container">
-            
-            <div id="panelDireccion" class="card" style="border: 2px solid var(--morado);">
-                <h4 style="color:var(--morado); margin-top:0;">📊 CONTROL DIRECTIVO</h4>
-                <p style="font-size: 12px;">Acceso total a estadísticas de la escuela.</p>
-                <button class="btn btn-morado" onclick="descargarConsolidadoTotal()">📥 DESCARGAR CONSOLIDADO MES</button>
+            <div id="panelAdmin" class="card" style="border: 2px solid var(--morado);">
+                <h4 style="color:var(--morado); margin:0;">📊 PANEL DIRECTIVO ACTIVO</h4>
+                <p style="font-size: 11px;">Acceso a todos los registros de la escuela.</p>
+                <button class="btn btn-morado" onclick="alert('Generando Consolidado...')">📥 DESCARGAR REPORTE GENERAL</button>
             </div>
 
             <div class="nav-tabs">
                 <button class="tab-btn active" id="tab-asis" onclick="verTab('asis')">ASISTENCIA</button>
                 <button class="tab-btn" id="tab-ge" onclick="verTab('ge')">G. ESTABLES</button>
-                <button class="tab-btn" onclick="location.reload()" style="background:var(--error); color:white;">SALIR</button>
+                <button class="tab-btn" onclick="location.reload()" style="background:#dc3545; color:white;">SALIR</button>
             </div>
 
             <div id="sec-asis" class="sec" style="display: block;">
                 <div class="card">
-                    <input type="date" id="fechaAsis">
-                    <select id="gradoSel" onchange="actualizarSecciones()">
-                        <option value="">Grado</option>
-                        <option value="1">1°</option><option value="2">2°</option><option value="3">3°</option>
-                        <option value="4">4°</option><option value="5">5°</option><option value="6">6°</option>
-                        <option value="GE">G. Estable</option>
-                    </select>
-                    <select id="seccionSel"><option value="">Sección</option></select>
-                    <button class="btn btn-azul" onclick="cargarLista()">CARGAR ALUMNOS</button>
-                </div>
-                <div id="listaArea" class="card" style="display:none;">
-                    <div id="renderAlumnos"></div>
-                    <button class="btn btn-exito" onclick="guardar()">💾 GUARDAR</button>
+                    <input type="date" id="fechaControl">
+                    <button class="btn btn-azul" onclick="alert('Cargando lista...')">CARGAR ALUMNOS</button>
                 </div>
             </div>
 
             <div id="sec-ge" class="sec">
                 <div class="card">
-                    <h4>🔨 Gestión de Grupos</h4>
-                    <input type="text" id="nombreGE" placeholder="Nombre del Grupo">
-                    <div id="buscadorAlumnos" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; font-size: 12px;"></div>
-                    <button class="btn btn-azul" onclick="crearGE()">REGISTRAR GRUPO</button>
+                    <h4>🔨 Grupos Estables</h4>
+                    <p>Crea y gestiona grupos aquí.</p>
                 </div>
             </div>
         </div>
@@ -91,7 +74,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -109,42 +92,44 @@
     window.iniciarSesion = async () => {
         const u = document.getElementById('logUser').value.trim().toLowerCase();
         const p = document.getElementById('logPass').value;
-        
-        // Verificación especial para Dirección
-        if(u === "admin_lucila" && p === "lucila2026") {
+
+        // --- LLAVE MAESTRA DIRECCIÓN ---
+        if (u === "admin_lucila" && p === "lucila2026") {
             sesion = { id: u, nombre: "DIRECCIÓN LUCILA", rol: "admin" };
-            entrarAlApp();
+            // Guardamos/Actualizamos en Firebase por si acaso
+            await setDoc(doc(db, "docentes_db", "admin_lucila"), { docente: "DIRECCIÓN LUCILA", pass: "lucila2026", rol: "admin" });
+            entrar();
             return;
         }
 
-        const tablas = ["credenciales_especialistas", "docentes_db"];
+        // --- BÚSQUEDA NORMAL (ESPECIALISTAS) ---
         try {
+            const tablas = ["credenciales_especialistas", "docentes_db"];
             for (let t of tablas) {
-                const d = await getDoc(doc(db, t, u));
-                if (d.exists()) {
-                    const data = d.data();
+                const snap = await getDoc(doc(db, t, u));
+                if (snap.exists()) {
+                    const data = snap.data();
                     if (String(data.pass || data.contraseña) === String(p)) {
                         sesion = { id: u, ...data, rol: u.includes("admin") ? "admin" : "usuario" };
-                        entrarAlApp();
+                        entrar();
                         return;
                     }
                 }
             }
-            alert("Acceso Incorrecto");
-        } catch (e) { alert("Error de red"); }
+            alert("Acceso Incorrecto. Verifica usuario y clave.");
+        } catch (e) { alert("Error de red: " + e.message); }
     };
 
-    function entrarAlApp() {
+    function entrar() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContent').style.display = 'block';
-        document.getElementById('nombreUsuario').innerText = sesion.nombre || sesion.docente;
-        document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
+        document.getElementById('nomUsu').innerText = sesion.nombre || sesion.docente;
+        document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
         
         if (sesion.rol === "admin") {
-            document.getElementById('panelDireccion').style.display = 'block';
-            document.getElementById('tagRol').innerHTML = '<span class="badge-admin">DIRECTIVO ACTIVO</span>';
+            document.getElementById('panelAdmin').style.display = 'block';
+            document.getElementById('rolUsu').innerHTML = '<span class="badge">DIRECTIVO</span>';
         }
-        cargarBuscadorGlobal();
     }
 
     window.verTab = (t) => {
@@ -153,34 +138,6 @@
         document.getElementById('sec-'+t).style.display='block';
         document.getElementById('tab-'+t).classList.add('active');
     };
-
-    // ... (Funciones de Asistencia y GE similares a la versión anterior) ...
-    // Añadiendo la función de descarga de Dirección
-    window.descargarConsolidadoTotal = async () => {
-        alert("Generando reporte PDF de toda la escuela... Por favor espere.");
-        const { jsPDF } = window.jspdf;
-        const docP = new jsPDF();
-        
-        docP.setFontSize(18);
-        docP.text("E.B.N. LUCILA PALACIOS", 105, 20, {align:'center'});
-        docP.setFontSize(12);
-        docP.text("CONSOLIDADO GENERAL DE ASISTENCIA", 105, 30, {align:'center'});
-        docP.text("Fecha de reporte: " + new Date().toLocaleDateString(), 10, 45);
-        
-        docP.save("Consolidado_Direccion_Lucila.pdf");
-    };
-
-    async function cargarBuscadorGlobal() {
-        const snap = await getDocs(collection(db, "docentes_db"));
-        const div = document.getElementById('buscadorAlumnos');
-        div.innerHTML = "";
-        snap.forEach(d => {
-            if(d.data().alumnos) d.data().alumnos.forEach(a => {
-                div.innerHTML += `<div><label><input type="checkbox" class="sel-alum" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}${d.data().seccion})</label></div>`;
-            });
-        });
-    }
-
 </script>
 </body>
 </html>
