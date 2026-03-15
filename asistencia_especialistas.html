@@ -3,99 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA PALACIOS - OFICIAL</title>
+    <title>SISTEMA LUCILA PALACIOS - ESTADÍSTICA COMPLETA</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --morado: #6f42c1; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; }
+        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 60px; }
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
         .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
-        /* Alertas de Ausentismo */
-        .alerta-critica { background: #fff3cd; border-left: 5px solid #856404; padding: 12px; margin-bottom: 10px; border-radius: 8px; font-size: 13px; color: #856404; }
-        
-        /* Tablas de Reporte */
-        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background: var(--azul); color: white; }
+        /* Tabla Estadística */
+        .tabla-stats { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+        .tabla-stats th { background: var(--azul); color: white; padding: 8px; }
+        .tabla-stats td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        .fila-total { background: #eee; font-weight: bold; }
 
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; }
-        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; transition: 0.3s; margin-top: 5px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
         .btn-verde { background: var(--verde); }
-        .btn-excel { background: #1d6f42; margin-bottom: 5px; }
-        .btn-pdf { background: #af2a2a; }
+        .btn-excel { background: #1d6f42; }
 
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; z-index: 1000; }
-        .nav-item { flex: 1; padding: 15px 5px; text-align: center; font-size: 11px; font-weight: bold; color: #666; cursor: pointer; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; }
+        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 12px; font-weight: bold; color: #666; cursor: pointer; }
         .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); }
-        
+
         #pantalla-login, #pantalla-admin, #pantalla-usuario { display: none; }
         .seccion { display: none; }
         .seccion.activa { display: block; }
-        .fila-lista { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
     <div id="pantalla-login" style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--azul);">
         <div class="card" style="width: 300px; text-align: center;">
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-            <h2 style="color:var(--azul);">SISTEMA LUCILA</h2>
+            <h2 style="color:var(--azul);">LUCILA PALACIOS</h2>
             <input type="text" id="logUser" placeholder="Usuario">
             <input type="password" id="logPass" placeholder="Contraseña">
             <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR</button>
         </div>
     </div>
 
-    <div id="pantalla-admin">
-        <header>DIRECCIÓN - CONTROL TOTAL</header>
-        <div class="container">
-            <div id="admin-reportes" class="seccion activa">
-                <div id="contenedor-alertas"></div> <div class="card">
-                    <h4>📊 Consolidado Mensual</h4>
-                    <input type="month" id="mes-filtro">
-                    <button class="btn btn-azul" onclick="generarReporte()">VER TABLA</button>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button class="btn btn-excel" onclick="exportarExcel()">📗 EXCEL</button>
-                        <button class="btn btn-pdf" onclick="exportarPDF()">📕 PDF</button>
-                    </div>
-                </div>
-                <div id="tabla-reporte-contenedor" style="overflow-x:auto;"></div>
-            </div>
-        </div>
-        <div class="nav-bar">
-            <div class="nav-item active" onclick="navAdmin('reportes')">REPORTES</div>
-            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
-        </div>
-    </div>
-
     <div id="pantalla-usuario">
-        <header id="display-area">ESPECIALISTA</header>
+        <header id="nomUsu">ESPECIALISTA</header>
         <div class="container">
             <div id="usu-asis" class="seccion activa">
                 <div class="card">
-                    <input type="date" id="fechaControl">
-                    <select id="gradoSel" onchange="actualizarSec()">
-                        <option value="">-- Grado --</option>
-                        <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
-                        <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
-                    </select>
-                    <select id="seccionSel">
-                        <option value="A">Sec A</option><option value="B">Sec B</option><option value="C">Sec C</option>
-                        <option value="D">Sec D</option><option value="E">Sec E</option>
-                    </select>
-                    <button class="btn btn-azul" onclick="cargarListaAsis()">CARGAR LISTA</button>
+                    <input type="date" id="fechaAsis">
+                    <div style="display:flex; gap:5px;">
+                        <select id="gradoSel">
+                            <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
+                            <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
+                        </select>
+                        <select id="seccionSel">
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                            <option value="D">D</option><option value="E">E</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-azul" onclick="cargarAlumnos()">CARGAR LISTA</button>
                 </div>
 
                 <div id="areaLista" class="card" style="display:none;">
                     <div id="renderAlumnos"></div>
-                    <textarea id="obs-clase" placeholder="Observaciones / Eventualidades de hoy..."></textarea>
-                    <button class="btn btn-verde" onclick="guardarAsistencia()">💾 GUARDAR REGISTRO</button>
+                    <textarea id="obs" placeholder="Observaciones de la clase..."></textarea>
+                    <button class="btn btn-verde" onclick="guardarAsistencia()">💾 GUARDAR Y GENERAR ESTADÍSTICA</button>
                 </div>
             </div>
         </div>
@@ -105,9 +80,41 @@
         </div>
     </div>
 
+    <div id="pantalla-admin">
+        <header>DIRECCIÓN - ESTADÍSTICAS</header>
+        <div class="container">
+            <div class="card">
+                <h4>📊 Resumen Estadístico Disgregado</h4>
+                <input type="month" id="mesFiltro">
+                <button class="btn btn-azul" onclick="consultarEstadistica()">GENERAR REPORTE REAL</button>
+                <button class="btn btn-excel" style="margin-top:10px;" onclick="exportarExcel()">📗 DESCARGAR EXCEL</button>
+            </div>
+            <div id="resultado-stats" class="card" style="overflow-x:auto; display:none;">
+                <table class="tabla-stats" id="tabla-final">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Fecha / Sección</th>
+                            <th colspan="2">Matrícula</th>
+                            <th colspan="2">Asistencia</th>
+                            <th rowspan="2">% Real</th>
+                        </tr>
+                        <tr>
+                            <th>V</th><th>H</th><th>V</th><th>H</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-stats"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <div class="nav-item active">ESTADÍSTICAS</div>
+            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
+        </div>
+    </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -120,11 +127,10 @@
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    let sesion = null;
-    let alumnosActivos = [];
-    let asistenciaTemp = {};
+    let usuario = null;
+    let listaAlumnos = [];
+    let asisLocal = {};
 
-    // LOGIN
     window.iniciarSesion = async () => {
         const u = document.getElementById('logUser').value.trim();
         const p = document.getElementById('logPass').value.trim();
@@ -132,121 +138,102 @@
         if(u === "admin_lucila" && p === "lucila2026") {
             document.getElementById('pantalla-login').style.display='none';
             document.getElementById('pantalla-admin').style.display='block';
-            detectarAusentismo(); return;
+            return;
         }
 
         const d = await getDoc(doc(db, "credenciales_especialistas", u));
         if(d.exists() && d.data().pass === p) {
-            sesion = { id: u, ...d.data() };
+            usuario = { id: u, ...d.data() };
             document.getElementById('pantalla-login').style.display='none';
             document.getElementById('pantalla-usuario').style.display='block';
-            document.getElementById('display-area').innerText = sesion.nombre;
-            document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
-        } else { alert("Acceso Incorrecto"); }
+            document.getElementById('nomUsu').innerText = usuario.nombre;
+            document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
+        } else { alert("Usuario/Clave incorrecta"); }
     };
 
-    // CARGAR LISTA
-    window.cargarListaAsis = async () => {
+    window.cargarAlumnos = async () => {
         const g = document.getElementById('gradoSel').value;
         const s = document.getElementById('seccionSel').value;
         const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
         
-        if(!snap.exists()) return alert("Sección sin alumnos registrados.");
+        if(!snap.exists()) return alert("No hay alumnos en esta sección.");
         
-        alumnosActivos = snap.data().alumnos;
+        listaAlumnos = snap.data().alumnos;
         const div = document.getElementById('renderAlumnos');
         div.innerHTML = "";
-        asistenciaTemp = {};
+        asisLocal = {};
 
-        alumnosActivos.forEach(a => {
-            asistenciaTemp[a.id] = 1;
-            div.innerHTML += `<div class="fila-lista">
-                <span>${a.nombre}</span>
-                <button id="btn-${a.id}" class="btn" style="width:40px; background:var(--verde)" onclick="toggleAsis('${a.id}')">P</button>
+        listaAlumnos.forEach(a => {
+            asisLocal[a.id] = 1; // Presente por defecto
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
+                <span>${a.nombre} (${a.sexo || 'V'})</span>
+                <button onclick="toggleAsis('${a.id}')" id="btn-${a.id}" style="background:var(--verde); color:white; border:none; border-radius:5px; padding:5px 10px;">P</button>
             </div>`;
         });
         document.getElementById('areaLista').style.display='block';
     };
 
     window.toggleAsis = (id) => {
-        asistenciaTemp[id] = asistenciaTemp[id] === 1 ? 0 : 1;
-        document.getElementById(`btn-${id}`).innerText = asistenciaTemp[id] === 1 ? "P" : "I";
-        document.getElementById(`btn-${id}`).style.background = asistenciaTemp[id] === 1 ? "var(--verde)" : "var(--rojo)";
+        asisLocal[id] = asisLocal[id] === 1 ? 0 : 1;
+        const btn = document.getElementById(`btn-${id}`);
+        btn.innerText = asisLocal[id] === 1 ? "P" : "I";
+        btn.style.background = asisLocal[id] === 1 ? "var(--verde)" : "var(--rojo)";
     };
 
-    // GUARDAR CON FALTISTAS DETALLADOS (PARA ALERTAS)
     window.guardarAsistencia = async () => {
-        const f = document.getElementById('fechaControl').value;
+        const f = document.getElementById('fechaAsis').value;
         const g = document.getElementById('gradoSel').value;
         const s = document.getElementById('seccionSel').value;
-        const obs = document.getElementById('obs-clase').value;
         
-        let faltistas = [];
-        let av=0, ah=0, mv=0, mh=0;
+        let mv=0, mh=0, av=0, ah=0;
 
-        alumnosActivos.forEach(a => {
-            const isV = a.sexo === 'V';
-            if(isV) mv++; else mh++;
-            if(asistenciaTemp[a.id] === 1) { if(isV) av++; else ah++; }
-            else { faltistas.push({id: a.id, nombre: a.nombre, grado: g, seccion: s}); }
+        listaAlumnos.forEach(a => {
+            const esV = (a.sexo === 'V' || !a.sexo);
+            if(esV) mv++; else mh++;
+            if(asisLocal[a.id] === 1) { if(esV) av++; else ah++; }
         });
 
-        await setDoc(doc(db, "asistencia_general", `${sesion.id}_${f}_${g}${s}`), {
-            espNom: sesion.nombre, fecha: f, grado: g, seccion: s,
-            mv, mh, av, ah, obs, faltistas
+        const porcentaje = Math.round(((av + ah) / (mv + mh)) * 100);
+
+        await setDoc(doc(db, "asistencia_general", `${usuario.id}_${f}_${g}${s}`), {
+            especialista: usuario.nombre,
+            fecha: f, grado: g, seccion: s,
+            mv, mh, av, ah, porcentaje,
+            observacion: document.getElementById('obs').value
         });
 
-        alert("Asistencia Guardada");
+        alert("✅ Estadística guardada con éxito.");
         location.reload();
     };
 
-    // MOTOR DE ALERTAS CRÍTICAS (DIRECCIÓN)
-    async function detectarAusentismo() {
-        const snap = await getDocs(collection(db, "asistencia_general"));
-        let conteo = {};
-        snap.forEach(d => {
-            (d.data().faltistas || []).forEach(f => {
-                if(!conteo[f.id]) conteo[f.id] = {n: f.nombre, c: 0, g: f.grado, s: f.seccion};
-                conteo[f.id].c++;
-            });
-        });
-
-        const box = document.getElementById('contenedor-alertas');
-        box.innerHTML = "";
-        for(let id in conteo) {
-            if(conteo[id].c >= 3) {
-                box.innerHTML += `<div class="alerta-critica">🚩 <b>AUSENTISMO:</b> ${conteo[id].n} (${conteo[id].g}°${conteo[id].s}) ha faltado ${conteo[id].c} veces.</div>`;
-            }
-        }
-    }
-
-    // REPORTES Y EXPORTACIÓN
-    window.generarReporte = async () => {
-        const mes = document.getElementById('mes-filtro').value;
+    window.consultarEstadistica = async () => {
+        const mes = document.getElementById('mesFiltro').value;
         if(!mes) return alert("Seleccione un mes");
+
         const snap = await getDocs(collection(db, "asistencia_general"));
-        let html = `<table><tr><th>Fecha</th><th>Especialista</th><th>Secc</th><th>Asistencia</th><th>Observación</th></tr>`;
+        const body = document.getElementById('body-stats');
+        body.innerHTML = "";
+        document.getElementById('resultado-stats').style.display='block';
+
         snap.forEach(d => {
             const r = d.data();
             if(r.fecha.startsWith(mes)) {
-                html += `<tr><td>${r.fecha}</td><td>${r.espNom}</td><td>${r.grado}${r.seccion}</td><td>${r.av}V/${r.ah}H</td><td>${r.obs || '-'}</td></tr>`;
+                body.innerHTML += `<tr>
+                    <td>${r.fecha}<br><b>${r.grado}° ${r.seccion}</b></td>
+                    <td>${r.mv}</td><td>${r.mh}</td>
+                    <td>${r.av}</td><td>${r.ah}</td>
+                    <td style="color:var(--verde); font-weight:bold;">${r.porcentaje}%</td>
+                </tr>`;
             }
         });
-        document.getElementById('tabla-reporte-contenedor').innerHTML = html + "</table>";
     };
 
     window.exportarExcel = () => {
-        const wb = XLSX.utils.table_to_book(document.querySelector("table"));
-        XLSX.writeFile(wb, "Reporte_Lucila_Palacios.xlsx");
+        const table = document.getElementById('tabla-final');
+        const wb = XLSX.utils.table_to_book(table);
+        XLSX.writeFile(wb, "Estadistica_Lucila_Palacios.xlsx");
     };
 
-    window.exportarPDF = () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("Reporte Mensual - EBN Lucila Palacios", 10, 10);
-        doc.autoTable({ html: 'table', startY: 20 });
-        doc.save("Reporte_Lucila.pdf");
-    };
 </script>
 </body>
 </html>
