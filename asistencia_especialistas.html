@@ -3,63 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA PALACIOS - ESTADÍSTICA COMPLETA</title>
+    <title>SISTEMA LUCILA PALACIOS - OFICIAL</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 60px; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
-        .container { max-width: 800px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; --morado: #6f42c1; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--gris); margin: 0; padding-bottom: 80px; }
         
-        /* Tabla Estadística */
-        .tabla-stats { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        .tabla-stats th { background: var(--azul); color: white; padding: 8px; }
-        .tabla-stats td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        .fila-total { background: #eee; font-weight: bold; }
-
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; }
+        /* HEADER */
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); position: sticky; top: 0; z-index: 100; }
+        
+        .container { max-width: 600px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* INPUTS */
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 10px; font-size: 14px; }
         .btn-azul { background: var(--azul); }
         .btn-verde { background: var(--verde); }
-        .btn-excel { background: #1d6f42; }
+        .btn-rojo { background: var(--rojo); }
 
+        /* TABLA ESTADÍSTICA */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 15px; background: white; }
+        th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
+        td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+
+        /* ALERTAS */
+        .alerta { background: #fff3cd; border-left: 5px solid #856404; padding: 10px; border-radius: 5px; font-size: 12px; margin-bottom: 10px; }
+
+        /* NAVEGACIÓN */
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; }
         .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 12px; font-weight: bold; color: #666; cursor: pointer; }
-        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); }
+        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); background: #f9f9f9; }
 
         #pantalla-login, #pantalla-admin, #pantalla-usuario { display: none; }
         .seccion { display: none; }
         .seccion.activa { display: block; }
+        
+        /* BOTONES ASISTENCIA */
+        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="pantalla-login" style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--azul);">
-        <div class="card" style="width: 300px; text-align: center;">
-            <h2 style="color:var(--azul);">LUCILA PALACIOS</h2>
-            <input type="text" id="logUser" placeholder="Usuario">
-            <input type="password" id="logPass" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="iniciarSesion()">INGRESAR</button>
+        <div class="card" style="width: 320px; text-align: center;">
+            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+            <h2 style="color:var(--azul); margin: 10px 0;">INICIAR SESIÓN</h2>
+            <input type="text" id="user" placeholder="Usuario (ej: especialista1)">
+            <input type="password" id="pass" placeholder="Contraseña">
+            <button class="btn btn-azul" onclick="iniciarSesion()">ENTRAR AL SISTEMA</button>
         </div>
     </div>
 
     <div id="pantalla-usuario">
-        <header id="nomUsu">ESPECIALISTA</header>
+        <header id="nombreDisplay">USUARIO</header>
         <div class="container">
             <div id="usu-asis" class="seccion activa">
                 <div class="card">
-                    <input type="date" id="fechaAsis">
+                    <label>Fecha:</label>
+                    <input type="date" id="fechaControl">
                     <div style="display:flex; gap:5px;">
-                        <select id="gradoSel">
+                        <select id="gSel">
                             <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
                             <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
                         </select>
-                        <select id="seccionSel">
+                        <select id="sSel">
                             <option value="A">A</option><option value="B">B</option><option value="C">C</option>
                             <option value="D">D</option><option value="E">E</option>
                         </select>
@@ -68,53 +80,44 @@
                 </div>
 
                 <div id="areaLista" class="card" style="display:none;">
-                    <div id="renderAlumnos"></div>
-                    <textarea id="obs" placeholder="Observaciones de la clase..."></textarea>
-                    <button class="btn btn-verde" onclick="guardarAsistencia()">💾 GUARDAR Y GENERAR ESTADÍSTICA</button>
+                    <div id="listaRender"></div>
+                    <textarea id="observaciones" placeholder="Escriba novedades u observaciones aquí..."></textarea>
+                    <button class="btn btn-verde" onclick="guardarTodo()">💾 GUARDAR ASISTENCIA</button>
                 </div>
             </div>
         </div>
         <div class="nav-bar">
             <div class="nav-item active">ASISTENCIA</div>
-            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
+            <div class="nav-item" onclick="location.reload()" style="color:var(--rojo)">SALIR</div>
         </div>
     </div>
 
     <div id="pantalla-admin">
-        <header>DIRECCIÓN - ESTADÍSTICAS</header>
+        <header>DIRECCIÓN - PANEL DE CONTROL</header>
         <div class="container">
-            <div class="card">
-                <h4>📊 Resumen Estadístico Disgregado</h4>
-                <input type="month" id="mesFiltro">
-                <button class="btn btn-azul" onclick="consultarEstadistica()">GENERAR REPORTE REAL</button>
-                <button class="btn btn-excel" style="margin-top:10px;" onclick="exportarExcel()">📗 DESCARGAR EXCEL</button>
-            </div>
-            <div id="resultado-stats" class="card" style="overflow-x:auto; display:none;">
-                <table class="tabla-stats" id="tabla-final">
-                    <thead>
-                        <tr>
-                            <th rowspan="2">Fecha / Sección</th>
-                            <th colspan="2">Matrícula</th>
-                            <th colspan="2">Asistencia</th>
-                            <th rowspan="2">% Real</th>
-                        </tr>
-                        <tr>
-                            <th>V</th><th>H</th><th>V</th><th>H</th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-stats"></tbody>
-                </table>
+            <div id="admin-stats" class="seccion activa">
+                <div id="alertasCriticas"></div>
+                <div class="card">
+                    <h4>📊 Consolidado Estadístico</h4>
+                    <input type="month" id="mesFiltro">
+                    <button class="btn btn-azul" onclick="consultarStats()">GENERAR REPORTE</button>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-verde" onclick="exportarExcel()">EXCEL</button>
+                        <button class="btn btn-rojo" onclick="exportarPDF()">PDF</button>
+                    </div>
+                </div>
+                <div id="tablaContenedor" style="overflow-x:auto;"></div>
             </div>
         </div>
         <div class="nav-bar">
             <div class="nav-item active">ESTADÍSTICAS</div>
-            <div class="nav-item" onclick="location.reload()" style="color:red">SALIR</div>
+            <div class="nav-item" onclick="location.reload()" style="color:var(--rojo)">SALIR</div>
         </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -127,113 +130,138 @@
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    let usuario = null;
-    let listaAlumnos = [];
-    let asisLocal = {};
+    let sesion = null;
+    let alumnosActivos = [];
+    let asistenciaLocal = {};
 
+    // INICIO DE SESIÓN CORREGIDO
     window.iniciarSesion = async () => {
-        const u = document.getElementById('logUser').value.trim();
-        const p = document.getElementById('logPass').value.trim();
-        
+        const u = document.getElementById('user').value.toLowerCase().trim();
+        const p = document.getElementById('pass').value.trim();
+
         if(u === "admin_lucila" && p === "lucila2026") {
             document.getElementById('pantalla-login').style.display='none';
             document.getElementById('pantalla-admin').style.display='block';
+            detectarAusentismo();
             return;
         }
 
-        const d = await getDoc(doc(db, "credenciales_especialistas", u));
-        if(d.exists() && d.data().pass === p) {
-            usuario = { id: u, ...d.data() };
+        // Buscar en especialistas o docentes
+        const refEsp = doc(db, "credenciales_especialistas", u);
+        const refDoc = doc(db, "docentes_db", u);
+        
+        let snap = await getDoc(refEsp);
+        if(!snap.exists()) snap = await getDoc(refDoc);
+
+        if(snap.exists() && (snap.data().pass === p || snap.data().contraseña === p)) {
+            sesion = { id: u, nombre: snap.data().nombre || snap.data().docente };
             document.getElementById('pantalla-login').style.display='none';
             document.getElementById('pantalla-usuario').style.display='block';
-            document.getElementById('nomUsu').innerText = usuario.nombre;
-            document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
-        } else { alert("Usuario/Clave incorrecta"); }
+            document.getElementById('nombreDisplay').innerText = sesion.nombre;
+            document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
+        } else {
+            alert("❌ Usuario o Clave incorrectos.");
+        }
     };
 
+    // CARGAR ALUMNOS (INCLUYE GÉNERO V/H)
     window.cargarAlumnos = async () => {
-        const g = document.getElementById('gradoSel').value;
-        const s = document.getElementById('seccionSel').value;
+        const g = document.getElementById('gSel').value;
+        const s = document.getElementById('sSel').value;
         const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
-        
-        if(!snap.exists()) return alert("No hay alumnos en esta sección.");
-        
-        listaAlumnos = snap.data().alumnos;
-        const div = document.getElementById('renderAlumnos');
-        div.innerHTML = "";
-        asisLocal = {};
 
-        listaAlumnos.forEach(a => {
-            asisLocal[a.id] = 1; // Presente por defecto
-            div.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
-                <span>${a.nombre} (${a.sexo || 'V'})</span>
-                <button onclick="toggleAsis('${a.id}')" id="btn-${a.id}" style="background:var(--verde); color:white; border:none; border-radius:5px; padding:5px 10px;">P</button>
-            </div>`;
+        if(!snap.exists()) return alert("No hay alumnos registrados en esta sección.");
+
+        alumnosActivos = snap.data().alumnos;
+        const render = document.getElementById('listaRender');
+        render.innerHTML = "";
+        asistenciaLocal = {};
+
+        alumnosActivos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            asistenciaLocal[a.id] = 1;
+            render.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                    <span style="font-size:14px;">${a.nombre} <small>(${a.sexo || 'V'})</small></span>
+                    <button class="btn-asis" id="btn-${a.id}" style="background:var(--verde)" onclick="toggle('${a.id}')">P</button>
+                </div>`;
         });
         document.getElementById('areaLista').style.display='block';
     };
 
-    window.toggleAsis = (id) => {
-        asisLocal[id] = asisLocal[id] === 1 ? 0 : 1;
-        const btn = document.getElementById(`btn-${id}`);
-        btn.innerText = asisLocal[id] === 1 ? "P" : "I";
-        btn.style.background = asisLocal[id] === 1 ? "var(--verde)" : "var(--rojo)";
+    window.toggle = (id) => {
+        asistenciaLocal[id] = asistenciaLocal[id] === 1 ? 0 : 1;
+        const b = document.getElementById(`btn-${id}`);
+        b.innerText = asistenciaLocal[id] === 1 ? "P" : "I";
+        b.style.background = asistenciaLocal[id] === 1 ? "var(--verde)" : "var(--rojo)";
     };
 
-    window.guardarAsistencia = async () => {
-        const f = document.getElementById('fechaAsis').value;
-        const g = document.getElementById('gradoSel').value;
-        const s = document.getElementById('seccionSel').value;
-        
-        let mv=0, mh=0, av=0, ah=0;
+    // GUARDAR CON ESTADÍSTICA DISGREGADA
+    window.guardarTodo = async () => {
+        const f = document.getElementById('fechaControl').value;
+        const g = document.getElementById('gSel').value;
+        const s = document.getElementById('sSel').value;
+        const obs = document.getElementById('observaciones').value;
 
-        listaAlumnos.forEach(a => {
+        let mv=0, mh=0, av=0, ah=0;
+        let faltistas = [];
+
+        alumnosActivos.forEach(a => {
             const esV = (a.sexo === 'V' || !a.sexo);
             if(esV) mv++; else mh++;
-            if(asisLocal[a.id] === 1) { if(esV) av++; else ah++; }
+            if(asistenciaLocal[a.id] === 1) { if(esV) av++; else ah++; }
+            else { faltistas.push({id: a.id, nombre: a.nombre, grado: g, seccion: s}); }
         });
 
-        const porcentaje = Math.round(((av + ah) / (mv + mh)) * 100);
+        const porc = Math.round(((av+ah)/(mv+mh)) * 100);
 
-        await setDoc(doc(db, "asistencia_general", `${usuario.id}_${f}_${g}${s}`), {
-            especialista: usuario.nombre,
-            fecha: f, grado: g, seccion: s,
-            mv, mh, av, ah, porcentaje,
-            observacion: document.getElementById('obs').value
+        await setDoc(doc(db, "asistencia_general", `${sesion.id}_${f}_${g}${s}`), {
+            profesor: sesion.nombre, fecha: f, grado: g, seccion: s,
+            mv, mh, av, ah, porc, obs, faltistas
         });
 
-        alert("✅ Estadística guardada con éxito.");
+        alert("✅ Registro guardado correctamente.");
         location.reload();
     };
 
-    window.consultarEstadistica = async () => {
+    // REPORTES DIRECCIÓN
+    window.consultarStats = async () => {
         const mes = document.getElementById('mesFiltro').value;
-        if(!mes) return alert("Seleccione un mes");
-
         const snap = await getDocs(collection(db, "asistencia_general"));
-        const body = document.getElementById('body-stats');
-        body.innerHTML = "";
-        document.getElementById('resultado-stats').style.display='block';
-
+        const cont = document.getElementById('tablaContenedor');
+        
+        let html = `<table><tr><th>Fecha</th><th>Secc</th><th>Matrícula V/H</th><th>Asistencia V/H</th><th>%</th></tr>`;
         snap.forEach(d => {
             const r = d.data();
             if(r.fecha.startsWith(mes)) {
-                body.innerHTML += `<tr>
-                    <td>${r.fecha}<br><b>${r.grado}° ${r.seccion}</b></td>
-                    <td>${r.mv}</td><td>${r.mh}</td>
-                    <td>${r.av}</td><td>${r.ah}</td>
-                    <td style="color:var(--verde); font-weight:bold;">${r.porcentaje}%</td>
-                </tr>`;
+                html += `<tr><td>${r.fecha}</td><td>${r.grado}${r.seccion}</td><td>${r.mv}V-${r.mh}H</td><td>${r.av}V-${r.ah}H</td><td style="font-weight:bold; color:var(--verde)">${r.porc}%</td></tr>`;
             }
         });
+        cont.innerHTML = html + "</table>";
     };
+
+    // DETECTAR AUSENTISMO (MÁS DE 3 FALTAS)
+    async function detectarAusentismo() {
+        const snap = await getDocs(collection(db, "asistencia_general"));
+        let conteo = {};
+        snap.forEach(d => {
+            (d.data().faltistas || []).forEach(f => {
+                if(!conteo[f.id]) conteo[f.id] = {n: f.nombre, c: 0, g: f.grado, s: f.seccion};
+                conteo[f.id].c++;
+            });
+        });
+        const alertBox = document.getElementById('alertasCriticas');
+        alertBox.innerHTML = "";
+        for(let id in conteo) {
+            if(conteo[id].c >= 3) {
+                alertBox.innerHTML += `<div class="alerta">⚠️ <b>${conteo[id].n}</b> (${conteo[id].g}°${conteo[id].s}) ha faltado <b>${conteo[id].c}</b> veces.</div>`;
+            }
+        }
+    }
 
     window.exportarExcel = () => {
-        const table = document.getElementById('tabla-final');
-        const wb = XLSX.utils.table_to_book(table);
-        XLSX.writeFile(wb, "Estadistica_Lucila_Palacios.xlsx");
+        const wb = XLSX.utils.table_to_book(document.querySelector("table"));
+        XLSX.writeFile(wb, `Reporte_Lucila_${document.getElementById('mesFiltro').value}.xlsx`);
     };
-
 </script>
 </body>
 </html>
