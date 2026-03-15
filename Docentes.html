@@ -25,6 +25,7 @@
         const dbCloud = getFirestore(app);
         const CLAVE_INST = "LUCILA2026";
         const USUARIO_ADMIN = "admin_lucila";
+        const LOGO_URL = "https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png";
 
         window.usuarioActual = null;
         window.db = { docente: "", seccion: "", grado: "", turno: "", alumnos: [], asistencias: {}, feriados: [] };
@@ -89,6 +90,71 @@
             await window.save(); alert("Perfil actualizado");
         };
 
+        // --- NUEVA FUNCIÓN: LISTADO CON MEMBRETE ---
+        window.descargarListaConMembrete = async (esAdmin = false) => {
+            const { jsPDF } = window.jspdf;
+            const docPDF = new jsPDF();
+            
+            // Función para dibujar encabezado
+            const dibujarEncabezado = (doc) => {
+                doc.addImage(LOGO_URL, 'PNG', 15, 10, 20, 20);
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 40, 15);
+                doc.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 40, 21);
+                doc.text("E.B.N. LUCILA PALACIOS - CIUDAD GUAYANA", 40, 27);
+                doc.setLineWidth(0.5);
+                doc.line(15, 33, 195, 33);
+            };
+
+            if (esAdmin) {
+                const snap = await getDocs(collection(dbCloud, "docentes_db"));
+                let docs = [];
+                snap.forEach(s => { if(s.id !== USUARIO_ADMIN) docs.push(s.data()); });
+                docs.sort((a,b) => (parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
+                
+                let y = 45;
+                dibujarEncabezado(docPDF);
+                docPDF.text("LISTADO GENERAL DE ESTUDIANTES 2026", 105, 40, {align: "center"});
+
+                docs.forEach(d => {
+                    const ac = (d.alumnos || []).filter(a => !a.retirado);
+                    if(ac.length === 0) return;
+                    const rows = ac.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map((a,i)=>[i+1, a.cedula||'S/C', a.nombre]);
+                    
+                    docPDF.autoTable({ 
+                        head: [[{content: `GRADO: ${d.grado} SECCIÓN: "${d.seccion}" - DOCENTE: ${d.docente}`, colSpan: 3}]],
+                        body: rows, 
+                        startY: y, 
+                        theme: 'grid',
+                        headStyles: { fillColor: [0, 33, 71] },
+                        styles: { fontSize: 9 }
+                    });
+                    y = docPDF.lastAutoTable.finalY + 10;
+                    if(y > 270) { docPDF.addPage(); dibujarEncabezado(docPDF); y = 45; }
+                });
+                docPDF.save("Lista_General_Institucional.pdf");
+            } else {
+                dibujarEncabezado(docPDF);
+                docPDF.text(`LISTADO DE ESTUDIANTES: ${window.db.grado}° "${window.db.seccion}"`, 105, 40, {align: "center"});
+                docPDF.setFontSize(10);
+                docPDF.text(`DOCENTE: ${window.db.docente}`, 15, 48);
+
+                const ac = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+                const rows = ac.map((a, i) => [i+1, a.cedula || 'S/C', a.nombre]);
+                
+                docPDF.autoTable({
+                    head: [['N°', 'CÉDULA ESCOLAR', 'APELLIDOS Y NOMBRES']],
+                    body: rows,
+                    startY: 55,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 33, 71] },
+                    styles: { fontSize: 10 }
+                });
+                docPDF.save(`Lista_${window.db.grado}${window.db.seccion}_Lucila.pdf`);
+            }
+        };
+
         // --- DIRECCIÓN (ESTADÍSTICAS Y GESTIÓN) ---
         window.eliminarDocenteAdmin = async (uID) => {
             if(uID === USUARIO_ADMIN) return alert("No puedes eliminar al administrador.");
@@ -121,8 +187,8 @@
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
-            let todosLosDocentes = []; // Para la lista de gestión (incluye especialistas)
-            let docentesData = []; // Para el consolidado estadístico (excluye especialistas)
+            let todosLosDocentes = []; 
+            let docentesData = []; 
             const excluidos = ["ANGEL FIGUERA", "JUSTINA FERNANDEZ", "YUBIRY MARTINEZ", "LEOSMARY LOROÑO"];
 
             snap.forEach(dSnap => {
@@ -230,28 +296,6 @@
             docPDF.save("Consolidado_Alumnos.pdf");
         };
 
-        // --- EXPORTAR LISTAS ---
-        window.descargarListaEstudiantesPDF = async () => {
-            const { jsPDF } = window.jspdf;
-            const docPDF = new jsPDF();
-            const snap = await getDocs(collection(dbCloud, "docentes_db"));
-            let docs = [];
-            snap.forEach(s => { if(s.id!==USUARIO_ADMIN) docs.push(s.data()); });
-            docs.sort((a,b) => (parseInt(a.grado)-parseInt(b.grado)) || a.seccion.localeCompare(b.seccion));
-            
-            let y = 20;
-            docPDF.text("LISTADO GENERAL DE ESTUDIANTES - LUCILA PALACIOS", 105, 10, {align:"center"});
-            docs.forEach(d => {
-                const ac = (d.alumnos || []).filter(a=>!a.retirado);
-                if(ac.length === 0) return;
-                const rows = ac.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map((a,i)=>[i+1, a.cedula||'S/C', a.nombre, a.genero, calcularEdad(a.nacimiento)]);
-                docPDF.autoTable({ head: [[{content: `${d.grado}${d.seccion} - ${d.docente}`, colSpan: 5}]], body: rows, startY: y, styles: {fontSize: 8} });
-                y = docPDF.lastAutoTable.finalY + 10;
-                if(y>270) { docPDF.addPage(); y=20; }
-            });
-            docPDF.save("Lista_General_Lucila.pdf");
-        };
-
         window.exportarNombresBasico = async (formato, esAdmin) => {
             let lista = esAdmin ? [] : [window.db];
             if(esAdmin) {
@@ -340,7 +384,6 @@
                 });
             }
 
-            // Estadísticas Docente (Tabla 911)
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -462,26 +505,18 @@
             <b>📊 DIRECCIÓN</b>
             <div class="btns-admin-row" style="margin-top:10px;">
                 <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
-                <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📄 LISTA PDF</button>
+                <button onclick="descargarListaConMembrete(true)" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📄 LISTA PDF (INS)</button>
             </div>
             <div style="display:flex; gap:5px; margin-top:5px;">
                 <button onclick="exportarNombresBasico('excel', true)" style="flex:1; background:#27ae60; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📥 EST. EXCEL</button>
-                <button onclick="exportarNombresBasico('pdf', true)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📄 EST. PDF</button>
             </div>
-            
-            <details style="margin-top:10px;">
-                <summary style="cursor:pointer; font-size:12px; color:var(--morado);">🔐 Gestión de Credenciales</summary>
-                <input type="text" id="adminOldUser" placeholder="Usuario actual">
-                <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
-                <input type="password" id="adminNewPass" placeholder="Nueva clave (Opcional)">
-                <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold;">ACTUALIZAR</button>
-            </details>
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
 
         <div class="card no-print">
             <b>Docente:</b> <span id="docenteTxt"></span> | <b>Sección:</b> <span id="gradoSeccionTxt"></span>
             <input type="date" id="fechaSeleccionada" onchange="window.render()" style="margin-top:10px;">
+            <button onclick="descargarListaConMembrete(false)" style="background:var(--azul); color:white; width:100%; padding:8px; border-radius:5px; font-size:11px; margin-top:5px; font-weight:bold; border:none;">📄 DESCARGAR LISTA ESTUDIANTES (MEMBRETE)</button>
             <button id="btnFeriado" onclick="toggleFeriado()" style="background:none; border:1px solid var(--rojo); color:var(--rojo); width:100%; padding:8px; border-radius:5px; font-size:11px; margin-top:5px; font-weight:bold;"></button>
         </div>
 
@@ -517,10 +552,6 @@
                     <button onclick="actualizarPerfil()" style="background:var(--azul); color:white; border:none; padding:10px; width:100%; border-radius:5px; margin-top:5px;">GUARDAR PERFIL</button>
                     <hr>
                     <button onclick="exportarBackupJSON()" style="width:100%; background:#34495e; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; margin-bottom:5px;">💾 BACKUP JSON</button>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="limpiarMovimientos()" style="flex:1; background:#f39c12; color:white; border:none; padding:8px; border-radius:5px; font-size:9px;">LIMPIAR MOVIMIENTOS</button>
-                        <button onclick="borrarMatriculaTotal()" style="flex:1; background:var(--rojo); color:white; border:none; padding:8px; border-radius:5px; font-size:9px;">VACIAR MATRÍCULA</button>
-                    </div>
                 </div>
             </details>
         </div>
