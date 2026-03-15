@@ -3,175 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Especialistas - Escuela</title>
+    <title>ESPECIALISTAS - EBN LUCILA PALACIOS</title>
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // TU CONFIGURACIÓN DE FIREBASE (Usa la misma que en el de docentes)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            appId: "1:368890880546:web:a97ab4372dea536217207b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const dbCloud = getFirestore(app);
+
+        window.especialistaActual = null;
+        window.seccionSeleccionada = null;
+
+        // --- LOGIN PARA ESPECIALISTAS ---
+        window.loginEspecialista = async () => {
+            const u = document.getElementById('userEsp').value.toLowerCase().trim();
+            const p = document.getElementById('passEsp').value;
+            
+            // Usaremos una colección diferente o la misma, pero identificada
+            const snap = await getDoc(doc(dbCloud, "especialistas_db", u));
+            
+            if (snap.exists() && snap.data().pass === p) {
+                window.especialistaActual = snap.data();
+                window.especialistaActual.id = u;
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('nombreDocente').innerText = window.especialistaActual.nombre;
+                cargarSeccionesExistentes();
+            } else {
+                Swal.fire("Error", "Usuario o clave incorrecta", "error");
+            }
+        };
+
+        // --- CARGAR SECCIONES DE LA BASE DE DATOS DE DOCENTES ---
+        async function cargarSeccionesExistentes() {
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            const selector = document.getElementById('selectorSeccion');
+            selector.innerHTML = '<option value="">-- Seleccione Sección --</option>';
+            
+            snap.forEach(d => {
+                if(d.id !== "admin_lucila") {
+                    const data = d.data();
+                    const option = document.createElement('option');
+                    option.value = d.id; // El ID del docente (usuario)
+                    option.textContent = `${data.grado}${data.seccion} - ${data.docente}`;
+                    selector.appendChild(option);
+                }
+            });
+        }
+
+        // --- MOSTRAR LISTA DE LA SECCIÓN SELECCIONADA ---
+        window.cargarListaSeccion = async () => {
+            const docenteId = document.getElementById('selectorSeccion').value;
+            if(!docenteId) return;
+
+            const snap = await getDoc(doc(dbCloud, "docentes_db", docenteId));
+            const data = snap.data();
+            window.seccionSeleccionada = data;
+
+            const lista = document.getElementById('listaAsistenciaEsp');
+            lista.innerHTML = "";
+            
+            const activos = (data.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+            activos.forEach(a => {
+                lista.innerHTML += `
+                    <div class="alumno-fila">
+                        <div style="flex-grow:1"><b>${a.nombre}</b></div>
+                        <input type="checkbox" class="check-asistencia" data-id="${a.id}" checked style="width:25px; height:25px;">
+                    </div>`;
+            });
+            document.getElementById('btnGuardar').style.display = 'block';
+        };
+
+        // --- GUARDAR ESTADÍSTICA DEL ESPECIALISTA ---
+        window.guardarAsistenciaEspecialista = async () => {
+            const checkboxes = document.querySelectorAll('.check-asistencia');
+            let varones = 0; let hembras = 0;
+
+            checkboxes.forEach(cb => {
+                if(cb.checked) {
+                    const idAlum = parseInt(cb.dataset.id);
+                    const alumno = window.seccionSeleccionada.alumnos.find(x => x.id === idAlum);
+                    alumno.genero === 'M' ? varones++ : hembras++;
+                }
+            });
+
+            const estadistica = {
+                especialista: window.especialistaActual.nombre,
+                materia: window.especialistaActual.materia,
+                grado: window.seccionSeleccionada.grado,
+                seccion: window.seccionSeleccionada.seccion,
+                varones: varones,
+                hembras: hembras,
+                total: varones + hembras,
+                fecha: new Date().toISOString().split('T')[0],
+                timestamp: new Date()
+            };
+
+            await addDoc(collection(dbCloud, "estadisticas_especialistas"), estadistica);
+            Swal.fire("¡Éxito!", "Asistencia de especialista guardada", "success");
+            document.getElementById('listaAsistenciaEsp').innerHTML = "";
+            document.getElementById('btnGuardar').style.display = 'none';
+        };
+
+    </script>
+
     <style>
-        :root { --primary: #3498db; --secondary: #2ecc71; --dark: #2c3e50; --error: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: var(--dark); }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: var(--primary); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { cursor: pointer; border: none; font-weight: bold; transition: 0.3s; }
-        .btn-main { background-color: var(--primary); color: white; }
-        .btn-excel { background-color: #1f6e43; color: white; }
-        .btn-pdf { background-color: var(--error); color: white; }
-        .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: var(--dark); color: white; }
-        .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        :root { --azul: #002147; --dorado: #f39c12; }
+        body { font-family: sans-serif; background: #f4f4f4; margin: 0; }
+        .header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--dorado); }
+        .container { max-width: 450px; margin: auto; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .alumno-fila { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-entrar { background: var(--azul); color: white; font-weight: bold; cursor: pointer; }
+        .btn-guardar { background: #28a745; color: white; font-weight: bold; border: none; display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🏫 Sistema Especialistas</h1>
-
-    <div id="auth-section">
-        <h2>Iniciar Sesión</h2>
-        <input type="email" id="email" placeholder="Correo Electrónico">
-        <input type="password" id="password" placeholder="Contraseña">
-        <button class="btn-main" onclick="iniciarSesion()">Entrar</button>
-        <p style="text-align: center;"><a href="#" onclick="recuperarClave()">¿Olvidaste tu contraseña?</a></p>
-    </div>
-
-    <div id="app-section" class="hidden">
-        <div class="card">
-            <h3>Registro de Asistencia</h3>
-            <label>Materia:</label>
-            <select id="materia" onchange="actualizarSeccionAutomatica()">
-                <option value="">-- Seleccione --</option>
-                <option value="Inglés">Inglés</option>
-                <option value="Cultura">Cultura</option>
-                <option value="Educación Física">Educación Física</option>
-                <option value="Computación">Computación</option>
-            </select>
-            <p>Sección detectada: <strong id="seccion-label">---</strong></p>
-            <input type="number" id="varones" placeholder="Cant. Varones">
-            <input type="number" id="hembras" placeholder="Cant. Hembras">
-            <button class="btn-main" onclick="guardarAsistencia()">Guardar Registro</button>
-        </div>
-
-        <div class="card">
-            <h3>Estadísticas del Mes</h3>
-            <canvas id="graficoAsistencia"></canvas>
-            <button class="btn-pdf" onclick="descargarReportePDF()">📥 Descargar Reporte PDF</button>
-        </div>
-
-        <div id="admin-section" class="hidden">
-            <hr>
-            <h3>Panel Administrativo (Hoy)</h3>
-            <button class="btn-excel" onclick="exportarExcelAdministrativo()">📗 Exportar Base de Datos Excel</button>
-            <div style="overflow-x:auto;">
-                <table id="tabla-admin">
-                    <thead>
-                        <tr><th>Especialista</th><th>Materia</th><th>Sección</th><th>Total</th></tr>
-                    </thead>
-                    <tbody id="cuerpo-tabla"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <button onclick="cerrarSesion()" style="background:#95a5a6; color:white; margin-top:30px;">Cerrar Sesión</button>
+<div id="authSection" class="container" style="margin-top: 50px;">
+    <div class="card" style="text-align: center;">
+        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
+        <h3>ESPECIALISTAS</h3>
+        <input type="text" id="userEsp" placeholder="Usuario Especialista">
+        <input type="password" id="passEsp" placeholder="Contraseña">
+        <button class="btn-entrar" onclick="loginEspecialista()">INGRESAR</button>
     </div>
 </div>
 
-<script>
-    // 1. CONFIGURACIÓN FIREBASE (REEMPLAZA CON TUS DATOS)
-    const firebaseConfig = {
-        apiKey: "TU_API_KEY",
-        authDomain: "TU_PROYECTO.firebaseapp.com",
-        projectId: "TU_PROYECTO",
-        storageBucket: "TU_PROYECTO.appspot.com",
-        messagingSenderId: "TU_ID",
-        appId: "TU_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<div id="appContent" style="display:none;">
+    <div class="header">
+        <b>EBN LUCILA PALACIOS</b><br>
+        <small id="nombreDocente"></small>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <label><b>Seleccione el Grado y Sección:</b></label>
+            <select id="selectorSeccion" onchange="cargarListaSeccion()"></select>
+        </div>
 
-    // 2. DATOS DE HORARIOS (Simplificado para ejemplo)
-    const horariosEspecialistas = {
-        "Inglés": {
-            "Lunes": [{ inicio: "12:15", fin: "13:15", seccion: "4°D" }, { inicio: "13:15", fin: "14:00", seccion: "6°C" }],
-            "Martes": [{ inicio: "13:15", fin: "14:00", seccion: "1°D" }]
-        } // Agrega aquí el resto de las materias según las fotos
-    };
+        <div class="card">
+            <div id="listaAsistenciaEsp"></div>
+            <button id="btnGuardar" class="btn-guardar" onclick="guardarAsistenciaEspecialista()">GUARDAR ASISTENCIA</button>
+        </div>
+    </div>
+</div>
 
-    // 3. LÓGICA DE AUTENTICACIÓN
-    function iniciarSesion() {
-        const e = document.getElementById('email').value;
-        const p = document.getElementById('password').value;
-        firebase.auth().signInWithEmailAndPassword(e, p).catch(err => Swal.fire('Error', 'Datos incorrectos', 'error'));
-    }
-
-    function cerrarSesion() { firebase.auth().signOut(); }
-
-    function recuperarClave() {
-        const e = document.getElementById('email').value;
-        if(!e) return Swal.fire('Aviso', 'Escribe tu correo', 'info');
-        firebase.auth().sendPasswordResetEmail(e).then(() => Swal.fire('Enviado', 'Revisa tu correo', 'success'));
-    }
-
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('app-section').classList.remove('hidden');
-            renderizarGrafico();
-            if(user.email === "director@tu-escuela.com") { // Cambia esto por tu correo admin
-                document.getElementById('admin-section').classList.remove('hidden');
-                cargarVistaAdmin();
-            }
-        } else {
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('app-section').classList.add('hidden');
-        }
-    });
-
-    // 4. LÓGICA DE HORARIOS
-    function actualizarSeccionAutomatica() {
-        const materia = document.getElementById('materia').value;
-        if(!materia || !horariosEspecialistas[materia]) return;
-        
-        const ahora = new Date();
-        const dia = ahora.toLocaleDateString('es-ES', {weekday:'long'}).charAt(0).toUpperCase() + ahora.toLocaleDateString('es-ES', {weekday:'long'}).slice(1);
-        const hora = ahora.getHours().toString().padStart(2,'0') + ":" + ahora.getMinutes().toString().padStart(2,'0');
-
-        const horarioHoy = horariosEspecialistas[materia][dia] || [];
-        const bloque = horarioHoy.find(b => hora >= b.inicio && hora <= b.fin);
-        document.getElementById('seccion-label').innerText = bloque ? bloque.seccion : "Fuera de Horario";
-    }
-
-    // 5. GUARDADO Y REPORTES
-    async function guardarAsistencia() {
-        const mat = document.getElementById('materia').value;
-        const sec = document.getElementById('seccion-label').innerText;
-        const v = parseInt(document.getElementById('varones').value) || 0;
-        const h = parseInt(document.getElementById('hembras').value) || 0;
-
-        if(!mat || sec === "---") return Swal.fire('Error', 'Seleccione materia y verifique horario', 'warning');
-
-        await db.collection("asistencia_especialistas").add({
-            materia: mat, seccion: sec, varones: v, hembras: h,
-            totalEstudiantes: v + h,
-            usuarioEmail: firebase.auth().currentUser.email,
-            fecha: new Date().toISOString()
-        });
-
-        Swal.fire('¡Guardado!', 'Asistencia registrada', 'success');
-        renderizarGrafico();
-    }
-
-    // (Funciones de Gráfico, PDF y Excel irían aquí según lo desarrollado antes)
-    // Nota: Por brevedad, he omitido el cuerpo repetitivo de las funciones de reporte que ya tienes arriba.
-</script>
 </body>
 </html>
