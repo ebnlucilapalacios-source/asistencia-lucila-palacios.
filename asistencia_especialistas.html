@@ -32,40 +32,37 @@
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
             
-            try {
-                const snap = await getDoc(doc(dbCloud, "docentes_db", u));
-                if (snap.exists() && snap.data().pass === p) {
-                    window.usuarioActual = u;
-                    window.db = snap.data();
-                    
-                    document.getElementById('authSection').style.display = 'none';
-                    document.getElementById('appContent').style.display = 'block';
-                    document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
+            const snap = await getDoc(doc(dbCloud, "docentes_db", u));
+            if (snap.exists() && snap.data().pass === p) {
+                window.usuarioActual = u;
+                window.db = snap.data();
+                
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('fechaSeleccionada').value = new Date().toISOString().split('T')[0];
 
-                    if (u === USUARIO_ADMIN) {
-                        document.getElementById('adminPanel').style.display = 'block';
-                    } else if (window.db.tipo === "especialista") {
-                        document.getElementById('panelEspecialistaInterface').style.display = 'block';
-                        await sincronizarTodo(); // Carga crítica de datos
-                    } else {
-                        document.getElementById('seccionDocenteAula').style.display = 'block';
-                        document.getElementById('docTxt').innerText = window.db.docente;
-                    }
-
-                    onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
-                        window.db = s.data(); 
-                        if(window.db.tipo === "especialista") actualizarMenusGrupos();
-                        if(window.db.tipo === "aula") window.renderAula(); 
-                    });
+                if (u === USUARIO_ADMIN) {
+                    document.getElementById('adminPanel').style.display = 'block';
+                    await listarCuentasAdmin();
+                } else if (window.db.tipo === "especialista") {
+                    document.getElementById('panelEspecialistaInterface').style.display = 'block';
+                    await sincronizarEspecialista();
                 } else {
-                    Swal.fire("Error", "Usuario o clave incorrectos", "error");
+                    document.getElementById('seccionDocenteAula').style.display = 'block';
+                    document.getElementById('docTxt').innerText = window.db.docente;
                 }
-            } catch (e) {
-                Swal.fire("Error de Conexión", "No se pudo conectar con la base de datos", "error");
+
+                onSnapshot(doc(dbCloud, "docentes_db", u), (s) => { 
+                    window.db = s.data(); 
+                    if(window.db.tipo === "especialista") actualizarMenusGrupos();
+                    if(window.db.tipo === "aula") window.renderAula(); 
+                });
+            } else {
+                Swal.fire("Error", "Usuario o clave incorrectos", "error");
             }
         };
 
-        // --- 2. PANEL DE DIRECCIÓN (RE-INTEGRADO TOTALMENTE) ---
+        // --- 2. PANEL DE DIRECCIÓN (COMPLETO) ---
         window.crearCuenta = async (tipo) => {
             let u, p, n, g, s, mat;
             if(tipo === 'aula') {
@@ -84,30 +81,45 @@
                 if(!u || !p || !n) return Swal.fire("Campos vacíos", "", "warning");
                 await setDoc(doc(dbCloud, "docentes_db", u), { docente: n, pass: p, materia: mat, tipo: "especialista", gruposEstables: {} });
             }
-            Swal.fire("Éxito", "Cuenta creada correctamente", "success");
+            Swal.fire("Éxito", "Cuenta creada", "success");
+            listarCuentasAdmin();
         };
+
+        async function listarCuentasAdmin() {
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            const lista = document.getElementById('listaCuentasAdmin');
+            lista.innerHTML = "";
+            snap.forEach(d => {
+                const data = d.data();
+                if(d.id !== USUARIO_ADMIN) {
+                    lista.innerHTML += `<div style="font-size:12px; border-bottom:1px solid #eee; padding:5px;">
+                        <b>${data.tipo.toUpperCase()}:</b> ${data.docente} (${d.id})
+                    </div>`;
+                }
+            });
+        }
 
         window.generarReporteGlobal = async () => {
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             let total = 0;
             snap.forEach(d => { if(d.data().tipo === 'aula') total += (d.data().alumnos || []).length; });
-            const msj = `*REPORTE EBN LUCILA PALACIOS*\nMatrícula Total: ${total}\nFecha: ${document.getElementById('fechaSeleccionada').value}`;
+            const msj = `*REPORTE EBN LUCILA PALACIOS*\nMatrícula: ${total}\nFecha: ${document.getElementById('fechaSeleccionada').value}`;
             navigator.clipboard.writeText(msj);
-            Swal.fire("Reporte Copiado", "Listo para WhatsApp", "success");
+            Swal.fire("Copiado", "Listo para WhatsApp", "success");
         };
 
-        // --- 3. LÓGICA ESPECIALISTA (CORREGIDA) ---
-        async function sincronizarTodo() {
+        // --- 3. ESPECIALISTA (CARGA MEJORADA) ---
+        async function sincronizarEspecialista() {
             const querySnap = await getDocs(collection(dbCloud, "docentes_db"));
             const selSec = document.getElementById('selSecEsp');
             selSec.innerHTML = '<option value="">-- SELECCIONE SECCIÓN --</option>';
             window.alumnosGlobales = [];
+            let contadorAula = 0;
 
-            let seccionesEncontradas = 0;
             querySnap.forEach(docSnap => {
                 const data = docSnap.data();
                 if(data.tipo === "aula") {
-                    seccionesEncontradas++;
+                    contadorAula++;
                     selSec.innerHTML += `<option value="${docSnap.id}">${data.grado}${data.seccion} - ${data.docente}</option>`;
                     if(data.alumnos) {
                         data.alumnos.forEach(a => {
@@ -117,8 +129,12 @@
                 }
             });
 
-            if(seccionesEncontradas === 0) {
-                Swal.fire("Información", "Aún no hay secciones de aula registradas en el sistema.", "info");
+            if(contadorAula === 0) {
+                Swal.fire({
+                    title: "Sin Secciones",
+                    text: "No hay cuentas de Aula registradas. Dirección debe crearlas primero.",
+                    icon: "info"
+                });
             }
             actualizarMenusGrupos();
         }
@@ -154,7 +170,7 @@
 
             window.alumnosGlobales.filter(a => a.nombre.includes(txt)).forEach(a => {
                 res.innerHTML += `
-                <div class="alumno-fila" style="font-size:12px; background:#fff; padding:5px; border-bottom:1px solid #ddd;">
+                <div class="alumno-fila" style="font-size:12px;">
                     <span>${a.nombre} (${a.proc})</span>
                     <button onclick="agregarAlGrupo('${a.nombre}','${a.genero}','${a.proc}')" style="width:35px; background:var(--azul); color:white;">+</button>
                 </div>`;
@@ -166,7 +182,6 @@
             if(!grupoDest) return Swal.fire("Aviso", "Seleccione un grupo", "warning");
             let grupos = window.db.gruposEstables;
             if(grupos[grupoDest].find(x => x.nombre === n)) return Swal.fire("Ya existe", "", "info");
-            
             grupos[grupoDest].push({ nombre: n, genero: g, procedencia: p });
             await updateDoc(doc(dbCloud, "docentes_db", window.usuarioActual), { gruposEstables: grupos });
             Swal.fire("Añadido", n, "success");
@@ -189,11 +204,10 @@
             }
 
             cont.innerHTML = "";
-            if(lista.length === 0) return cont.innerHTML = "<p>No hay alumnos en la lista.</p>";
+            if(lista.length === 0) return cont.innerHTML = "<p>No hay alumnos registrados aquí.</p>";
 
             lista.forEach(a => {
-                cont.innerHTML += `
-                <div class="alumno-fila">
+                cont.innerHTML += `<div class="alumno-fila">
                     <span>${a.nombre}</span>
                     <input type="checkbox" class="chkE" data-gen="${a.genero}" checked style="width:25px; height:25px;">
                 </div>`;
@@ -211,10 +225,9 @@
             });
             Swal.fire("Guardado", "Estadística enviada", "success");
             document.getElementById('listaEsp').innerHTML = "";
-            document.getElementById('btnGuarEsp').style.display = 'none';
         };
 
-        // --- 4. PANEL AULA ---
+        // --- 4. AULA ---
         window.renderAula = () => {
             if(window.db.tipo !== 'aula') return;
             const f = document.getElementById('fechaSeleccionada').value;
@@ -243,7 +256,7 @@
         header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid #f39c12; }
         .container { max-width: 450px; margin: auto; padding: 10px; }
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
         input, select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         button { cursor: pointer; font-weight: bold; border: none; }
         .btn-check { width: 45px; height: 40px; color: white; border-radius: 5px; }
@@ -256,7 +269,7 @@
     <h2 style="color:var(--azul)">LUCILA PALACIOS 2026</h2>
     <div class="card" style="max-width:320px; margin:auto;">
         <input type="text" id="loginUser" placeholder="Usuario">
-        <input type="password" id="loginPass" placeholder="Contraseña">
+        <input type="password" id="loginPass" placeholder="Clave">
         <button onclick="login()" style="background:var(--azul); color:white;">ENTRAR</button>
     </div>
 </div>
@@ -267,13 +280,16 @@
         
         <div class="card" style="text-align:center;">
             <b>FECHA:</b> <input type="date" id="fechaSeleccionada">
-            <button onclick="logout()" style="background:#eee; color:#666; padding:5px; font-size:10px; margin-top:5px;">CERRAR SESIÓN</button>
+            <button onclick="logout()" style="background:#eee; font-size:10px;">CERRAR SESIÓN</button>
         </div>
 
         <div id="adminPanel" style="display:none;">
             <div class="card" style="border-top: 6px solid var(--morado);">
                 <b style="color:var(--morado)">⚙️ DIRECCIÓN: REGISTROS</b>
-                <button onclick="generarReporteGlobal()" style="background:var(--exito); color:white; margin-bottom:15px;">📊 REPORTE GLOBAL</button>
+                <button onclick="generarReporteGlobal()" style="background:var(--exito); color:white; margin-bottom:10px;">📊 REPORTE GLOBAL</button>
+                <hr>
+                <b>CUENTAS EXISTENTES:</b>
+                <div id="listaCuentasAdmin" style="max-height:100px; overflow-y:auto; background:#f9f9f9; padding:5px; margin-bottom:10px;"></div>
                 <hr>
                 <b>NUEVA AULA</b>
                 <input type="text" id="regNomAula" placeholder="Docente">
@@ -298,18 +314,19 @@
 
         <div id="panelEspecialistaInterface" style="display:none;">
             <div class="card" style="border-top: 6px solid var(--naranja);">
-                <b>🛠 1. CONFIGURAR GRUPOS ESTABLES</b>
-                <input type="text" id="nomGrupoNuevo" placeholder="Nombre: Ej ATLETISMO">
+                <b>🛠 GRUPOS ESTABLES</b>
+                <input type="text" id="nomGrupoNuevo" placeholder="Ej ATLETISMO">
                 <button onclick="crearGrupo()" style="background:var(--azul); color:white;">+ CREAR GRUPO</button>
                 <hr>
-                <b>🔍 2. BUSCAR ESTUDIANTE (TODOS LOS GRADOS)</b>
+                <b>🔍 BUSCAR ESTUDIANTE</b>
                 <select id="selGrupoDestino"></select>
-                <input type="text" id="busqEst" onkeyup="buscarEstudiante()" placeholder="Escriba nombre del alumno...">
+                <input type="text" id="busqEst" onkeyup="buscarEstudiante()" placeholder="Nombre (mínimo 3 letras)...">
                 <div id="resBusq" style="max-height:100px; overflow-y:auto; border:1px solid #eee;"></div>
             </div>
 
             <div class="card" style="border-top: 6px solid var(--exito);">
-                <b>📝 3. PASAR ASISTENCIA</b>
+                <b>📝 PASAR ASISTENCIA</b>
+                <button onclick="sincronizarEspecialista()" style="background:#f8f9fa; font-size:10px; border:1px solid #ddd; margin-bottom:5px;">🔄 ACTUALIZAR LISTAS</button>
                 <select id="selSecEsp" onchange="cargarListaEspecialista('seccion')"></select>
                 <select id="selGrupoAsistencia" onchange="cargarListaEspecialista('grupo')"></select>
                 <div id="listaEsp" style="margin-top:10px;"></div>
