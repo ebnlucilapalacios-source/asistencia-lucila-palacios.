@@ -3,89 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA CONTROL - EBN LUCILA PALACIOS</title>
+    <title>DIRECCIÓN - GESTIÓN TOTAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --exito: #28a745; --error: #dc3545; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding-bottom: 50px; }
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); position: sticky; top: 0; z-index: 100; }
-        .container { max-width: 500px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn { padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 5px; font-size: 14px; }
+        :root { --azul: #002147; --oro: #f3c612; --morado: #6f42c1; --rojo: #dc3545; --verde: #28a745; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 60px; }
+        header { background: var(--azul); color: white; padding: 10px; text-align: center; border-bottom: 4px solid var(--oro); }
+        .menu-inferior { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
+        .menu-item { flex: 1; padding: 12px; text-align: center; font-size: 10px; font-weight: bold; color: #666; cursor: pointer; }
+        .menu-item.active { color: var(--azul); border-top: 3px solid var(--oro); }
+        .content { padding: 15px; max-width: 600px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; box-sizing: border-box; }
+        .btn { padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
         .btn-azul { background: var(--azul); }
-        .btn-morado { background: var(--morado); }
-        .btn-exito { background: var(--exito); }
-        
-        .alumno-fila { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; }
-        
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 12px; }
-        .tab-btn.active { background: var(--oro); color: var(--azul); }
-        #sec-ge, #areaLista { display: none; }
+        .btn-verde { background: var(--verde); }
+        .btn-rojo { background: var(--rojo); font-size: 10px; padding: 5px; width: auto; }
+        .lista-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <header>
-        <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="45">
-        <div id="userDisplay" style="font-size: 14px; font-weight: bold; margin-top: 5px;">DIRECCIÓN ACTIVA</div>
-    </header>
+<header>
+    <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="35">
+    <div style="font-size: 12px;">E.B.N. LUCILA PALACIOS</div>
+</header>
 
-    <div class="container">
-        <div class="card" style="border-left: 5px solid var(--morado);">
-            <h4 style="margin:0; color:var(--morado)">📊 Gestión Institucional</h4>
-            <button class="btn btn-morado" style="margin-top:10px" onclick="alert('Generando consolidado de toda la escuela...')">📥 DESCARGAR CONSOLIDADO PDF</button>
+<div class="content">
+    
+    <div id="sec-especialistas" class="seccion">
+        <div class="card">
+            <h3>👥 Crear Especialista</h3>
+            <input type="text" id="esp-user" placeholder="Usuario (ej: deporte1)">
+            <input type="text" id="esp-nom" placeholder="Nombre del Docente">
+            <input type="password" id="esp-pass" placeholder="Contraseña">
+            <button class="btn btn-verde" onclick="crearEspecialista()">+ REGISTRAR ESPECIALISTA</button>
         </div>
-
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="verTab('asis', this)">ASISTENCIA</button>
-            <button class="tab-btn" onclick="verTab('ge', this)">GRUPOS ESTABLES</button>
-            <button class="tab-btn" style="background:var(--error); color:white" onclick="location.reload()">SALIR</button>
-        </div>
-
-        <div id="sec-asis">
-            <div class="card">
-                <label>Fecha de Control:</label>
-                <input type="date" id="fechaAsis">
-                
-                <label>Seleccionar Grado:</label>
-                <select id="gradoSel" onchange="actualizarSecciones()">
-                    <option value="">-- Seleccione --</option>
-                    <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
-                    <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
-                    <option value="GE">Grupo Estable</option>
-                </select>
-
-                <label>Sección:</label>
-                <select id="seccionSel"><option value="">Elija Grado primero</option></select>
-                
-                <button class="btn btn-azul" onclick="cargarAlumnos()">🔍 MOSTRAR LISTA</button>
-            </div>
-
-            <div id="areaLista" class="card">
-                <div id="renderAlumnos"></div>
-                <button class="btn btn-exito" style="margin-top:20px" onclick="guardar()">💾 GUARDAR ASISTENCIA</button>
-            </div>
-        </div>
-
-        <div id="sec-ge">
-            <div class="card">
-                <h4>🔨 Crear Nuevo Grupo Estable</h4>
-                <input type="text" id="nombreGE" placeholder="Ej: Danza, Coro, Deporte">
-                <p style="font-size: 11px; color:#666">Seleccione los integrantes:</p>
-                <div id="buscador" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-                    Cargando base de datos de alumnos...
-                </div>
-                <button class="btn btn-azul" style="margin-top:10px" onclick="crearGE()">REGISTRAR NUEVO GRUPO</button>
-            </div>
+        <div class="card">
+            <h4>Especialistas Activos</h4>
+            <div id="lista-especialistas">Cargando...</div>
         </div>
     </div>
 
+    <div id="sec-alumnos" class="seccion" style="display:none;">
+        <div class="card">
+            <h3>🎒 Agregar Alumno</h3>
+            <select id="alum-grado">
+                <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
+                <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
+            </select>
+            <select id="alum-seccion">
+                <option value="A">Sección A</option><option value="B">Sección B</option><option value="C">Sección C</option>
+            </select>
+            <input type="text" id="alum-nom" placeholder="Nombre Apellido">
+            <button class="btn btn-azul" onclick="agregarAlumno()">AGREGAR A LISTA</button>
+        </div>
+        <div id="lista-alumnos-ver" class="card">
+            <h4>Alumnos de la Sección</h4>
+            <div id="tabla-alumnos">Elija grado arriba para ver</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="menu-inferior">
+    <div class="menu-item active" onclick="verSeccion('especialistas', this)">ESPECIALISTAS</div>
+    <div class="menu-item" onclick="verSeccion('alumnos', this)">ALUMNOS</div>
+    <div class="menu-item" onclick="location.reload()" style="color:red">SALIR</div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const config = {
         apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
@@ -98,106 +87,60 @@
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    let alumnosData = [];
-    let asistenciaLocal = {};
-
-    // Iniciar fecha de hoy
-    document.getElementById('fechaAsis').value = new Date().toISOString().split('T')[0];
-
-    // Cambio de pestañas
-    window.verTab = (tab, btn) => {
-        document.getElementById('sec-asis').style.display = tab === 'asis' ? 'block' : 'none';
-        document.getElementById('sec-ge').style.display = tab === 'ge' ? 'block' : 'none';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    window.verSeccion = (id, el) => {
+        document.querySelectorAll('.seccion').forEach(s => s.style.display = 'none');
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        document.getElementById('sec-' + id).style.display = 'block';
+        el.classList.add('active');
+        if(id === 'especialistas') listarEspecialistas();
     };
 
-    // Actualizar secciones dinámicamente
-    window.actualizarSecciones = async () => {
-        const g = document.getElementById('gradoSel').value;
-        const s = document.getElementById('seccionSel');
-        s.innerHTML = '<option value="">Cargando...</option>';
+    // --- GESTIÓN ESPECIALISTAS ---
+    window.crearEspecialista = async () => {
+        const u = document.getElementById('esp-user').value.toLowerCase().trim();
+        const n = document.getElementById('esp-nom').value.trim();
+        const p = document.getElementById('esp-pass').value.trim();
+        if(!u || !n || !p) return alert("Complete los campos");
 
-        if(g === "GE") {
-            const snap = await getDocs(collection(db, "grupos_estables_db"));
-            s.innerHTML = "";
-            snap.forEach(d => s.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`);
-        } else {
-            s.innerHTML = '<option value="A">Sección A</option><option value="B">Sección B</option><option value="C">Sección C</option>';
-        }
+        await setDoc(doc(db, "credenciales_especialistas", u), { nombre: n, pass: p });
+        alert("Especialista Creado");
+        listarEspecialistas();
     };
 
-    // Cargar alumnos desde Firebase
-    window.cargarAlumnos = async () => {
-        const g = document.getElementById('gradoSel').value;
-        const s = document.getElementById('seccionSel').value;
-        if(!g || !s) return alert("Seleccione Grado y Sección");
-
-        document.getElementById('renderAlumnos').innerHTML = "Buscando alumnos...";
-        const snap = await getDocs(collection(db, "docentes_db"));
-        let lista = [];
-
-        snap.forEach(docSnap => {
-            const d = docSnap.data();
-            if(String(d.grado) === g && d.seccion === s) lista = d.alumnos || [];
-        });
-
-        if(lista.length === 0) {
-            document.getElementById('renderAlumnos').innerHTML = "❌ No hay alumnos registrados en este grado.";
-            return;
-        }
-
-        const render = document.getElementById('renderAlumnos');
-        render.innerHTML = "";
-        lista.forEach(a => {
-            asistenciaLocal[a.id] = 1;
-            render.innerHTML += `
-                <div class="alumno-fila">
-                    <span>${a.nombre}</span>
-                    <button class="btn-asis" id="btn-${a.id}" style="background:var(--exito)" onclick="toggle('${a.id}')">P</button>
-                </div>`;
-        });
-        document.getElementById('areaLista').style.display = 'block';
-    };
-
-    window.toggle = (id) => {
-        asistenciaLocal[id] = asistenciaLocal[id] === 1 ? 0 : 1;
-        const btn = document.getElementById('btn-'+id);
-        btn.innerText = asistenciaLocal[id] === 1 ? "P" : "I";
-        btn.style.background = asistenciaLocal[id] === 1 ? "var(--exito)" : "var(--error)";
-    };
-
-    window.guardar = async () => {
-        const f = document.getElementById('fechaAsis').value;
-        const s = document.getElementById('seccionSel').value;
-        await setDoc(doc(db, "asistencia_direccion", `ASIS_${f}_${s}`), {
-            fecha: f, sección: s, datos: asistenciaLocal, responsable: "DIRECCIÓN"
-        });
-        alert("✅ Asistencia Guardada con éxito");
-    };
-
-    // Cargar alumnos para el buscador de Grupos Estables
-    async function cargarBuscador() {
-        const snap = await getDocs(collection(db, "docentes_db"));
-        const box = document.getElementById('buscador');
-        box.innerHTML = "";
+    async function listarEspecialistas() {
+        const snap = await getDocs(collection(db, "credenciales_especialistas"));
+        const div = document.getElementById('lista-especialistas');
+        div.innerHTML = "";
         snap.forEach(d => {
-            if(d.data().alumnos) d.data().alumnos.forEach(a => {
-                box.innerHTML += `<div><label><input type="checkbox" class="sel-al" data-id="${a.id}" data-nom="${a.nombre}"> ${a.nombre} (${d.data().grado}°${d.data().seccion})</label></div>`;
-            });
+            div.innerHTML += `<div class="lista-item">${d.data().nombre} (${d.id}) 
+            <button class="btn-rojo" onclick="eliminarEsp('${d.id}')">Eliminar</button></div>`;
         });
     }
-    cargarBuscador();
 
-    window.crearGE = async () => {
-        const nom = document.getElementById('nombreGE').value;
-        const seleccion = [];
-        document.querySelectorAll('.sel-al:checked').forEach(c => seleccion.push({id: c.dataset.id, nombre: c.dataset.nom}));
-        if(!nom || seleccion.length === 0) return alert("Escriba nombre y elija alumnos");
-        await setDoc(doc(db, "grupos_estables_db", nom.replace(/ /g,"_")), { nombre: nom, alumnos: seleccion, creador: "DIRECCIÓN" });
-        alert("Grupo '" + nom + "' creado!");
-        location.reload();
+    // --- GESTIÓN ALUMNOS ---
+    window.agregarAlumno = async () => {
+        const g = document.getElementById('alum-grado').value;
+        const s = document.getElementById('alum-seccion').value;
+        const n = document.getElementById('alum-nom').value.trim();
+        const docID = `DOCENTE_${g}${s}`; // ID unificado
+
+        const nuevoAlum = { id: "ID" + Date.now(), nombre: n };
+        
+        try {
+            const docRef = doc(db, "docentes_db", docID);
+            const d = await getDoc(docRef);
+            if(d.exists()) {
+                await updateDoc(docRef, { alumnos: arrayUnion(nuevoAlum) });
+            } else {
+                await setDoc(docRef, { grado: g, seccion: s, alumnos: [nuevoAlum], docente: "Por asignar" });
+            }
+            alert("Alumno Agregado");
+            document.getElementById('alum-nom').value = "";
+        } catch(e) { alert("Error al agregar"); }
     };
+
+    // Cargar Especialistas al iniciar
+    listarEspecialistas();
 
 </script>
 </body>
