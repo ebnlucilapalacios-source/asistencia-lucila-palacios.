@@ -2,266 +2,156 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA LUCILA PALACIOS - OFICIAL</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <title>SISTEMA LUCILA PALACIOS - ESPECIALISTAS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
-        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; --morado: #6f42c1; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--gris); margin: 0; padding-bottom: 80px; }
+        :root { --azul: #002147; --oro: #f3c612; --verde: #28a745; --rojo: #dc3545; --gris: #f4f7f6; }
+        body { font-family: sans-serif; background: var(--gris); margin: 0; padding-bottom: 70px; }
+        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        select, input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-verde { background: var(--verde); color: white; font-weight: bold; border: none; }
+        .btn-azul { background: var(--azul); color: white; font-weight: bold; border: none; }
         
-        /* HEADER */
-        header { background: var(--azul); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--oro); position: sticky; top: 0; z-index: 100; }
-        
-        .container { max-width: 600px; margin: auto; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        /* INPUTS */
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-        .btn { padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; color: white; margin-top: 10px; font-size: 14px; }
-        .btn-azul { background: var(--azul); }
-        .btn-verde { background: var(--verde); }
-        .btn-rojo { background: var(--rojo); }
-
-        /* TABLA ESTADÍSTICA */
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 15px; background: white; }
-        th { background: var(--azul); color: white; padding: 8px; border: 1px solid #ddd; }
+        /* TABLA ESTADÍSTICA DISGREGADA */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        th { background: var(--azul); color: white; padding: 10px; }
         td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-
-        /* ALERTAS */
-        .alerta { background: #fff3cd; border-left: 5px solid #856404; padding: 10px; border-radius: 5px; font-size: 12px; margin-bottom: 10px; }
-
-        /* NAVEGACIÓN */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; }
-        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 12px; font-weight: bold; color: #666; cursor: pointer; }
-        .nav-item.active { color: var(--azul); border-top: 4px solid var(--oro); background: #f9f9f9; }
-
-        #pantalla-login, #pantalla-admin, #pantalla-usuario { display: none; }
-        .seccion { display: none; }
-        .seccion.activa { display: block; }
+        .resumen-global { background: #e9ecef; font-weight: bold; }
         
-        /* BOTONES ASISTENCIA */
-        .btn-asis { width: 45px; height: 45px; border-radius: 10px; border: none; color: white; font-weight: bold; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 2px solid #ddd; }
+        .nav-item { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="pantalla-login" style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--azul);">
-        <div class="card" style="width: 320px; text-align: center;">
-            <img src="https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png" width="80">
-            <h2 style="color:var(--azul); margin: 10px 0;">INICIAR SESIÓN</h2>
-            <input type="text" id="user" placeholder="Usuario (ej: especialista1)">
-            <input type="password" id="pass" placeholder="Contraseña">
-            <button class="btn btn-azul" onclick="iniciarSesion()">ENTRAR AL SISTEMA</button>
-        </div>
-    </div>
+<header>SISTEMA LUCILA PALACIOS - GRUPOS ESTABLES</header>
 
-    <div id="pantalla-usuario">
-        <header id="nombreDisplay">USUARIO</header>
-        <div class="container">
-            <div id="usu-asis" class="seccion activa">
-                <div class="card">
-                    <label>Fecha:</label>
-                    <input type="date" id="fechaControl">
-                    <div style="display:flex; gap:5px;">
-                        <select id="gSel">
-                            <option value="1">1ero</option><option value="2">2do</option><option value="3">3ero</option>
-                            <option value="4">4to</option><option value="5">5to</option><option value="6">6to</option>
-                        </select>
-                        <select id="sSel">
-                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
-                            <option value="D">D</option><option value="E">E</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-azul" onclick="cargarAlumnos()">CARGAR LISTA</button>
-                </div>
-
-                <div id="areaLista" class="card" style="display:none;">
-                    <div id="listaRender"></div>
-                    <textarea id="observaciones" placeholder="Escriba novedades u observaciones aquí..."></textarea>
-                    <button class="btn btn-verde" onclick="guardarTodo()">💾 GUARDAR ASISTENCIA</button>
-                </div>
+<div class="container">
+    <div id="seccion-especialista" class="card">
+        <h3>🛠️ Configurar Grupo Estable</h3>
+        <p><small>Seleccione los grados que integran su grupo para pasar asistencia conjunta.</small></p>
+        <div id="selector-grados" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             </div>
-        </div>
-        <div class="nav-bar">
-            <div class="nav-item active">ASISTENCIA</div>
-            <div class="nav-item" onclick="location.reload()" style="color:var(--rojo)">SALIR</div>
-        </div>
+        <button class="btn-azul" onclick="cargarGrupoEspecialista()">CARGAR ALUMNOS DEL GRUPO</button>
     </div>
 
-    <div id="pantalla-admin">
-        <header>DIRECCIÓN - PANEL DE CONTROL</header>
-        <div class="container">
-            <div id="admin-stats" class="seccion activa">
-                <div id="alertasCriticas"></div>
-                <div class="card">
-                    <h4>📊 Consolidado Estadístico</h4>
-                    <input type="month" id="mesFiltro">
-                    <button class="btn btn-azul" onclick="consultarStats()">GENERAR REPORTE</button>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn btn-verde" onclick="exportarExcel()">EXCEL</button>
-                        <button class="btn btn-rojo" onclick="exportarPDF()">PDF</button>
-                    </div>
-                </div>
-                <div id="tablaContenedor" style="overflow-x:auto;"></div>
-            </div>
-        </div>
-        <div class="nav-bar">
-            <div class="nav-item active">ESTADÍSTICAS</div>
-            <div class="nav-item" onclick="location.reload()" style="color:var(--rojo)">SALIR</div>
-        </div>
+    <div id="area-asistencia" class="card" style="display:none;">
+        <h3 id="titulo-especialidad">Pase de Asistencia</h3>
+        <div id="lista-alumnos"></div>
+        <button class="btn-verde" onclick="guardarAsistenciaEspecialista()">💾 GUARDAR Y GENERAR ESTADÍSTICA</button>
     </div>
+
+    <div id="seccion-reporte" class="card" style="display:none;">
+        <h3>📊 Resumen Estadístico Disgregado</h3>
+        <div id="tabla-estadistica"></div>
+        <button class="btn-azul" onclick="exportarExcel()">Descargar Reporte Excel</button>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const config = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
-        authDomain: "control-de-asistencia-d585e.firebaseapp.com",
-        projectId: "control-de-asistencia-d585e",
-        storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
-        appId: "1:368890880546:web:a97ab4372dea536217207b"
-    };
-
+    const config = { /* Tu configuración de Firebase aquí */ };
     const app = initializeApp(config);
     const db = getFirestore(app);
 
-    let sesion = null;
-    let alumnosActivos = [];
-    let asistenciaLocal = {};
+    const grados = ["1A", "1B", "1C", "1D", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "3D"];
+    let grupoActual = [];
 
-    // INICIO DE SESIÓN CORREGIDO
-    window.iniciarSesion = async () => {
-        const u = document.getElementById('user').value.toLowerCase().trim();
-        const p = document.getElementById('pass').value.trim();
+    // Inicializar selectores de grado
+    const selector = document.getElementById('selector-grados');
+    grados.forEach(g => {
+        selector.innerHTML += `<label><input type="checkbox" value="${g}" class="grado-check"> ${g}</label>`;
+    });
 
-        if(u === "admin_lucila" && p === "lucila2026") {
-            document.getElementById('pantalla-login').style.display='none';
-            document.getElementById('pantalla-admin').style.display='block';
-            detectarAusentismo();
-            return;
+    window.cargarGrupoEspecialista = async () => {
+        const seleccionados = Array.from(document.querySelectorAll('.grado-check:checked')).map(cb => cb.value);
+        if(seleccionados.length === 0) return alert("Seleccione al menos una sección.");
+
+        grupoActual = [];
+        for(let g of seleccionados) {
+            const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}`));
+            if(snap.exists()) {
+                const alumnos = snap.data().alumnos.map(a => ({...a, seccionOriginal: g}));
+                grupoActual.push(...alumnos);
+            }
         }
 
-        // Buscar en especialistas o docentes
-        const refEsp = doc(db, "credenciales_especialistas", u);
-        const refDoc = doc(db, "docentes_db", u);
-        
-        let snap = await getDoc(refEsp);
-        if(!snap.exists()) snap = await getDoc(refDoc);
-
-        if(snap.exists() && (snap.data().pass === p || snap.data().contraseña === p)) {
-            sesion = { id: u, nombre: snap.data().nombre || snap.data().docente };
-            document.getElementById('pantalla-login').style.display='none';
-            document.getElementById('pantalla-usuario').style.display='block';
-            document.getElementById('nombreDisplay').innerText = sesion.nombre;
-            document.getElementById('fechaControl').value = new Date().toISOString().split('T')[0];
-        } else {
-            alert("❌ Usuario o Clave incorrectos.");
-        }
+        renderLista();
     };
 
-    // CARGAR ALUMNOS (INCLUYE GÉNERO V/H)
-    window.cargarAlumnos = async () => {
-        const g = document.getElementById('gSel').value;
-        const s = document.getElementById('sSel').value;
-        const snap = await getDoc(doc(db, "docentes_db", `DOCENTE_${g}${s}`));
-
-        if(!snap.exists()) return alert("No hay alumnos registrados en esta sección.");
-
-        alumnosActivos = snap.data().alumnos;
-        const render = document.getElementById('listaRender');
-        render.innerHTML = "";
-        asistenciaLocal = {};
-
-        alumnosActivos.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
-            asistenciaLocal[a.id] = 1;
-            render.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                    <span style="font-size:14px;">${a.nombre} <small>(${a.sexo || 'V'})</small></span>
-                    <button class="btn-asis" id="btn-${a.id}" style="background:var(--verde)" onclick="toggle('${a.id}')">P</button>
+    function renderLista() {
+        const div = document.getElementById('lista-alumnos');
+        div.innerHTML = "";
+        grupoActual.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(a => {
+            div.innerHTML += `
+                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
+                    <span>${a.nombre} <small>(${a.seccionOriginal} - ${a.sexo})</small></span>
+                    <select class="status" data-id="${a.id}" data-sexo="${a.sexo}" style="width:70px;">
+                        <option value="P">P</option>
+                        <option value="I">I</option>
+                    </select>
                 </div>`;
         });
-        document.getElementById('areaLista').style.display='block';
-    };
-
-    window.toggle = (id) => {
-        asistenciaLocal[id] = asistenciaLocal[id] === 1 ? 0 : 1;
-        const b = document.getElementById(`btn-${id}`);
-        b.innerText = asistenciaLocal[id] === 1 ? "P" : "I";
-        b.style.background = asistenciaLocal[id] === 1 ? "var(--verde)" : "var(--rojo)";
-    };
-
-    // GUARDAR CON ESTADÍSTICA DISGREGADA
-    window.guardarTodo = async () => {
-        const f = document.getElementById('fechaControl').value;
-        const g = document.getElementById('gSel').value;
-        const s = document.getElementById('sSel').value;
-        const obs = document.getElementById('observaciones').value;
-
-        let mv=0, mh=0, av=0, ah=0;
-        let faltistas = [];
-
-        alumnosActivos.forEach(a => {
-            const esV = (a.sexo === 'V' || !a.sexo);
-            if(esV) mv++; else mh++;
-            if(asistenciaLocal[a.id] === 1) { if(esV) av++; else ah++; }
-            else { faltistas.push({id: a.id, nombre: a.nombre, grado: g, seccion: s}); }
-        });
-
-        const porc = Math.round(((av+ah)/(mv+mh)) * 100);
-
-        await setDoc(doc(db, "asistencia_general", `${sesion.id}_${f}_${g}${s}`), {
-            profesor: sesion.nombre, fecha: f, grado: g, seccion: s,
-            mv, mh, av, ah, porc, obs, faltistas
-        });
-
-        alert("✅ Registro guardado correctamente.");
-        location.reload();
-    };
-
-    // REPORTES DIRECCIÓN
-    window.consultarStats = async () => {
-        const mes = document.getElementById('mesFiltro').value;
-        const snap = await getDocs(collection(db, "asistencia_general"));
-        const cont = document.getElementById('tablaContenedor');
-        
-        let html = `<table><tr><th>Fecha</th><th>Secc</th><th>Matrícula V/H</th><th>Asistencia V/H</th><th>%</th></tr>`;
-        snap.forEach(d => {
-            const r = d.data();
-            if(r.fecha.startsWith(mes)) {
-                html += `<tr><td>${r.fecha}</td><td>${r.grado}${r.seccion}</td><td>${r.mv}V-${r.mh}H</td><td>${r.av}V-${r.ah}H</td><td style="font-weight:bold; color:var(--verde)">${r.porc}%</td></tr>`;
-            }
-        });
-        cont.innerHTML = html + "</table>";
-    };
-
-    // DETECTAR AUSENTISMO (MÁS DE 3 FALTAS)
-    async function detectarAusentismo() {
-        const snap = await getDocs(collection(db, "asistencia_general"));
-        let conteo = {};
-        snap.forEach(d => {
-            (d.data().faltistas || []).forEach(f => {
-                if(!conteo[f.id]) conteo[f.id] = {n: f.nombre, c: 0, g: f.grado, s: f.seccion};
-                conteo[f.id].c++;
-            });
-        });
-        const alertBox = document.getElementById('alertasCriticas');
-        alertBox.innerHTML = "";
-        for(let id in conteo) {
-            if(conteo[id].c >= 3) {
-                alertBox.innerHTML += `<div class="alerta">⚠️ <b>${conteo[id].n}</b> (${conteo[id].g}°${conteo[id].s}) ha faltado <b>${conteo[id].c}</b> veces.</div>`;
-            }
-        }
+        document.getElementById('area-asistencia').style.display = 'block';
     }
 
-    window.exportarExcel = () => {
-        const wb = XLSX.utils.table_to_book(document.querySelector("table"));
-        XLSX.writeFile(wb, `Reporte_Lucila_${document.getElementById('mesFiltro').value}.xlsx`);
+    window.guardarAsistenciaEspecialista = async () => {
+        const filas = document.querySelectorAll('.status');
+        let stats = { mv: 0, mh: 0, av: 0, ah: 0 };
+
+        filas.forEach(f => {
+            const sexo = f.getAttribute('data-sexo'); // V o H
+            if(sexo === 'VARÓN' || sexo === 'V') stats.mv++; else stats.mh++;
+            
+            if(f.value === 'P') {
+                if(sexo === 'VARÓN' || sexo === 'V') stats.av++; else stats.ah++;
+            }
+        });
+
+        const totalMatricula = stats.mv + stats.mh;
+        const totalAsistencia = stats.av + stats.ah;
+        const promedioReal = ((totalAsistencia / totalMatricula) * 100).toFixed(2);
+
+        mostrarResumen(stats, promedioReal);
     };
+
+    function mostrarResumen(s, prom) {
+        const div = document.getElementById('tabla-estadistica');
+        div.innerHTML = `
+            <table>
+                <tr>
+                    <th>GÉNERO</th>
+                    <th>MATRÍCULA</th>
+                    <th>ASISTENCIA</th>
+                    <th>% REAL</th>
+                </tr>
+                <tr>
+                    <td>VARONES</td>
+                    <td>${s.mv}</td>
+                    <td>${s.av}</td>
+                    <td>${((s.av/s.mv)*100 || 0).toFixed(2)}%</td>
+                </tr>
+                <tr>
+                    <td>HEMBRAS</td>
+                    <td>${s.mh}</td>
+                    <td>${s.ah}</td>
+                    <td>${((s.ah/s.mh)*100 || 0).toFixed(2)}%</td>
+                </tr>
+                <tr class="resumen-global">
+                    <td>TOTAL</td>
+                    <td>${s.mv + s.mh}</td>
+                    <td>${s.av + s.ah}</td>
+                    <td>${prom}%</td>
+                </tr>
+            </table>
+        `;
+        document.getElementById('seccion-reporte').style.display = 'block';
+        alert("Estadística generada con éxito.");
+    }
 </script>
 </body>
 </html>
