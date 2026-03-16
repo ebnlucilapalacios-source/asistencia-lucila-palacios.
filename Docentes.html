@@ -121,8 +121,8 @@
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
-            let todosLosDocentes = []; // Para la lista de gestión (incluye especialistas)
-            let docentesData = []; // Para el consolidado estadístico (excluye especialistas)
+            let todosLosDocentes = []; 
+            let docentesData = []; 
             const excluidos = ["ANGEL FIGUERA", "JUSTINA FERNANDEZ", "YUBIRY MARTINEZ", "LEOSMARY LOROÑO"];
 
             snap.forEach(dSnap => {
@@ -313,6 +313,7 @@
         window.render = () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const fObj = new Date(fSel + "T00:00:00");
+            const mesRef = fObj.getMonth();
             const esFeriado = window.db.feriados?.includes(fSel);
             const esFinde = (fObj.getDay() === 0 || fObj.getDay() === 6);
             
@@ -345,24 +346,35 @@
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
                 const d = new Date(f + "T00:00:00");
-                if(d.getMonth() === fObj.getMonth() && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(f)) {
+                if(d.getMonth() === mesRef && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(f)) {
                     dsH++; activos.forEach(a => { if(window.db.asistencias[f][a.id]===1) a.genero==='F'?sH++:sV++; });
                 }
             });
             const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?((pH+pV)/activos.length*100).toFixed(0):0;
+            
+            // Cálculo de Ingresos y Egresos del mes
+            const mI = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
+            const mE = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
+
             let tEd = ""; Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
 
             document.getElementById('reporteDocente').innerHTML = `
-                <div class="reporte-card">
+                <div class="reporte-card card">
                     <div class="membrete-print" style="display:none; text-align:center;">
                         <strong>E.B.N. LUCILA PALACIOS</strong>
                     </div>
-                    <h2>ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
+                    <h2 style="text-align:center;">ESTADÍSTICA: ${window.db.grado}${window.db.seccion}</h2>
                     <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
                     <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>Total: <b>${(pH+pV).toFixed(1)}</b></div></div>
-                    <table class="tabla-911"><thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead><tbody>${tEd}</tbody>
-                    <tfoot><tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr></tfoot></table>
-                    <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px; background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; width:100%;">🖨️ IMPRIMIR REPORTE</button>
+                    <table class="tabla-911">
+                        <thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead>
+                        <tbody>${tEd}</tbody>
+                        <tfoot>
+                            <tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr>
+                            <tr style="background:#e8f4f8; font-size:11px;"><td colspan="2">INGRESOS: <b>${mI}</b></td><td colspan="2">EGRESOS: <b>${mE}</b></td></tr>
+                        </tfoot>
+                    </table>
+                    <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px; background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; width:100%; font-weight:bold;">🖨️ IMPRIMIR REPORTE</button>
                 </div>`;
         };
 
@@ -376,15 +388,28 @@
         };
 
         window.agregarAlumno = async () => {
-            const n = document.getElementById('nom').value.toUpperCase();
+            const n = document.getElementById('nom').value.trim().toUpperCase();
             const na = document.getElementById('nac').value;
+            const c = document.getElementById('ced').value.trim().toUpperCase();
             if(!n || !na) return;
-            window.db.alumnos.push({ id: Date.now(), cedula: document.getElementById('ced').value, nombre: n, genero: document.getElementById('gen').value, nacimiento: na, retirado: false, fechaIngreso: document.getElementById('fechaSeleccionada').value });
-            await window.save(); document.getElementById('nom').value=""; document.getElementById('ced').value="";
+            
+            // Verificación de duplicados: Busca si ya hay alguien con el mismo nombre, o si introdujeron una cédula que ya existe
+            const duplicado = window.db.alumnos.some(a => a.nombre === n || (a.cedula === c && c !== ""));
+            
+            if (duplicado) {
+                alert("Atención: Ya existe un estudiante registrado con este nombre o cédula.");
+                return; // Si existe, la función se detiene aquí y no guarda
+            }
+
+            window.db.alumnos.push({ id: Date.now(), cedula: c, nombre: n, genero: document.getElementById('gen').value, nacimiento: na, retirado: false, fechaIngreso: document.getElementById('fechaSeleccionada').value });
+            await window.save(); 
+            document.getElementById('nom').value=""; 
+            document.getElementById('ced').value="";
+            document.getElementById('nac').value="";
         };
 
         window.retirarAlumno = async (id) => {
-            if(confirm("¿Retirar?")){ const a=window.db.alumnos.find(x=>x.id===id); if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); } }
+            if(confirm("¿Retirar al estudiante?")){ const a=window.db.alumnos.find(x=>x.id===id); if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); } }
         };
 
         window.toggleFeriado = async () => {
@@ -496,7 +521,8 @@
             <button onclick="agregarAlumno()" style="background:var(--exito); color:white; padding:12px; border:none; width:100%; border-radius:6px; font-weight:bold; margin-top:5px;">AGREGAR</button>
         </div>
 
-        <div class="card"><div id="listaAsistencia"></div></div>
+        <div class="card no-print"><div id="listaAsistencia"></div></div>
+        
         <div id="reporteDocente"></div>
 
         <div class="card no-print">
