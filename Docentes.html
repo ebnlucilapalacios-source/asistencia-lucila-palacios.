@@ -260,13 +260,11 @@
                 if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) { dsHab++; fList.push(f); }
             });
 
-            // AQUÍ agregamos las nuevas columnas (INAS y JUST) al encabezado de la tabla
             let h = `<table class="tabla-admin" id="tablaConsolidadoInd"><thead><tr><th>N°</th><th>CÉDULA</th><th>NOMBRE</th><th>G</th><th>EDAD</th><th>ASIS</th><th>INAS</th><th>JUST</th><th>%</th></tr></thead><tbody>`;
             
             activos.forEach((a, i) => {
                 let asis = 0, inasis = 0, justif = 0;
                 fList.forEach(f => {
-                    // Verificamos el estado (1=Asistió, 2=Justificado, 0 o undefined=Inasistencia)
                     const estado = d.asistencias[f] ? d.asistencias[f][a.id] : 0;
                     if(estado === 1) asis++;
                     else if(estado === 2) justif++;
@@ -274,7 +272,6 @@
                 });
                 
                 let p = dsHab > 0 ? ((asis/dsHab)*100).toFixed(1) : 0;
-                // Agregamos las variables inasis y justif a la fila generada
                 h += `<tr><td>${i+1}</td><td>${a.cedula||'S/C'}</td><td style="text-align:left">${a.nombre}</td><td>${a.genero}</td><td>${calcularEdad(a.nacimiento)}</td><td>${asis}</td><td>${inasis}</td><td>${justif}</td><td>${p}%</td></tr>`;
             });
             h += `</tbody></table>`;
@@ -289,7 +286,93 @@
             docPDF.save("Consolidado_Alumnos.pdf");
         };
 
-        // --- EXPORTAR LISTAS ---
+        // --- EXPORTAR LISTAS (NUEVAS FUNCIONES DE LISTADO) ---
+        window.imprimirListadoEstudiantesPDF = async () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Función para convertir la imagen del logo
+            const getDataUrl = (url) => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.src = url;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width; canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.onerror = (e) => reject(e);
+                });
+            };
+
+            // Intentar cargar logo (arriba a la izquierda)
+            try {
+                const logoData = await getDataUrl("https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png");
+                doc.addImage(logoData, 'PNG', 14, 10, 22, 22);
+            } catch(e) { console.warn("No se pudo cargar el logo", e); }
+
+            // Membrete oficial
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 40, 15);
+            doc.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 40, 20);
+            doc.text("E.B.N. LUCILA PALACIOS", 40, 25);
+            
+            // Datos del salón
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`DOCENTE: ${window.db.docente || 'No asignado'}`, 14, 40);
+            doc.text(`GRADO Y SECCIÓN: ${window.db.grado} ${window.db.seccion}`, 14, 45);
+            doc.text(`TURNO: ${window.db.turno}`, 14, 50);
+
+            // Obtener estudiantes activos
+            const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const rows = activos.map((a, i) => [i + 1, a.cedula || 'S/C', a.nombre]);
+
+            // Crear la tabla
+            doc.autoTable({
+                startY: 55,
+                head: [['N°', 'CÉDULA / C. ESCOLAR', 'NOMBRES Y APELLIDOS']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [0, 33, 71] }, // Color Azul institucional
+                styles: { fontSize: 10 }
+            });
+
+            doc.save(`Listado_Estudiantes_${window.db.grado}${window.db.seccion}.pdf`);
+        };
+
+        window.exportarListadoEstudiantesExcel = () => {
+            const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            const data = [];
+            
+            // Membrete de texto en el Excel
+            data.push(["REPÚBLICA BOLIVARIANA DE VENEZUELA"]);
+            data.push(["MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN"]);
+            data.push(["E.B.N. LUCILA PALACIOS"]);
+            data.push([]); // Espacio
+            data.push(["DOCENTE:", window.db.docente || 'No asignado']);
+            data.push(["GRADO Y SECCIÓN:", `${window.db.grado} ${window.db.seccion}`]);
+            data.push(["TURNO:", window.db.turno]);
+            data.push([]); // Espacio
+            
+            // Encabezados de tabla
+            data.push(["N°", "CÉDULA / C. ESCOLAR", "NOMBRES Y APELLIDOS"]);
+            
+            // Llenado de estudiantes
+            activos.forEach((a, i) => {
+                data.push([i + 1, a.cedula || 'S/C', a.nombre]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Listado_Estudiantes");
+            XLSX.writeFile(wb, `Listado_Estudiantes_${window.db.grado}${window.db.seccion}.xlsx`);
+        };
+
         window.descargarListaEstudiantesPDF = async () => {
             const { jsPDF } = window.jspdf;
             const docPDF = new jsPDF();
@@ -675,6 +758,14 @@
                     </div>
                 </div>
             </details>
+        </div>
+
+        <div class="card no-print" style="border: 2px solid var(--azul);">
+            <h4 style="margin:0 0 10px 0; color: var(--azul); text-align: center;">📑 DESCARGAR LISTADO DEL SALÓN</h4>
+            <div style="display:flex; gap:5px;">
+                <button onclick="imprimirListadoEstudiantesPDF()" style="flex:1; background:#c0392b; color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; font-size:11px;">🖨️ IMPRIMIR PDF</button>
+                <button onclick="exportarListadoEstudiantesExcel()" style="flex:1; background:#27ae60; color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; font-size:11px;">📥 EXPORTAR EXCEL</button>
+            </div>
         </div>
 
     </div>
