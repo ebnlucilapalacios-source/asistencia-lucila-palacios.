@@ -260,11 +260,22 @@
                 if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) { dsHab++; fList.push(f); }
             });
 
-            let h = `<table class="tabla-admin" id="tablaConsolidadoInd"><thead><tr><th>N°</th><th>CÉDULA</th><th>NOMBRE</th><th>G</th><th>EDAD</th><th>ASIS</th><th>%</th></tr></thead><tbody>`;
+            // AQUÍ agregamos las nuevas columnas (INAS y JUST) al encabezado de la tabla
+            let h = `<table class="tabla-admin" id="tablaConsolidadoInd"><thead><tr><th>N°</th><th>CÉDULA</th><th>NOMBRE</th><th>G</th><th>EDAD</th><th>ASIS</th><th>INAS</th><th>JUST</th><th>%</th></tr></thead><tbody>`;
+            
             activos.forEach((a, i) => {
-                let asis = 0; fList.forEach(f => { if(d.asistencias[f] && d.asistencias[f][a.id] === 1) asis++; });
+                let asis = 0, inasis = 0, justif = 0;
+                fList.forEach(f => {
+                    // Verificamos el estado (1=Asistió, 2=Justificado, 0 o undefined=Inasistencia)
+                    const estado = d.asistencias[f] ? d.asistencias[f][a.id] : 0;
+                    if(estado === 1) asis++;
+                    else if(estado === 2) justif++;
+                    else inasis++; 
+                });
+                
                 let p = dsHab > 0 ? ((asis/dsHab)*100).toFixed(1) : 0;
-                h += `<tr><td>${i+1}</td><td>${a.cedula||'S/C'}</td><td style="text-align:left">${a.nombre}</td><td>${a.genero}</td><td>${calcularEdad(a.nacimiento)}</td><td>${asis}</td><td>${p}%</td></tr>`;
+                // Agregamos las variables inasis y justif a la fila generada
+                h += `<tr><td>${i+1}</td><td>${a.cedula||'S/C'}</td><td style="text-align:left">${a.nombre}</td><td>${a.genero}</td><td>${calcularEdad(a.nacimiento)}</td><td>${asis}</td><td>${inasis}</td><td>${justif}</td><td>${p}%</td></tr>`;
             });
             h += `</tbody></table>`;
             document.getElementById('salidaConsolidadoInd').innerHTML = h;
