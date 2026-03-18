@@ -15,6 +15,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // --- CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -65,7 +66,6 @@
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
             
-            // Mostrar estado de carga
             Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             const snap = await getDoc(doc(dbCloud, "docentes_db", u));
@@ -73,7 +73,6 @@
             if (snap.exists() && snap.data().pass === p) {
                 window.usuarioActual = u;
                 
-                // Guardar sesión en localStorage
                 localStorage.setItem('lucila_usuario', u);
                 localStorage.setItem('lucila_pass', p);
 
@@ -241,6 +240,130 @@
             doc.save("Consolidado_Direccion.pdf");
         };
 
+        // --- MÓDULO DE PROMOCIÓN / MIGRACIÓN ESTUDIANTIL ---
+        // 1. Cargar la lista de profesores en los selectores desplegables
+        window.cargarOpcionesMigracion = async () => {
+            const snap = await getDocs(collection(dbCloud, "docentes_db"));
+            let html = `<option value="">Seleccione...</option>`;
+            let docentesData = [];
+            snap.forEach(dSnap => {
+                if(dSnap.id !== USUARIO_ADMIN) docentesData.push({...dSnap.data(), idLogin: dSnap.id});
+            });
+            docentesData.sort((a,b) => (parseInt(a.grado) || 0) - (parseInt(b.grado) || 0) || (a.seccion || "").localeCompare(b.seccion || ""));
+            docentesData.forEach(d => {
+                html += `<option value="${d.idLogin}">${d.grado}${d.seccion} - ${d.docente}</option>`;
+            });
+            // Asignamos la lista a ambos desplegables (Origen y Destino)
+            document.getElementById('migracionOrigen').innerHTML = html;
+            document.getElementById('migracionDestino').innerHTML = html;
+        };
+
+        // 2. Al seleccionar el Origen, leemos su base de datos para ver los alumnos
+        window.cargarAlumnosMigracion = async () => {
+            const origenId = document.getElementById('migracionOrigen').value;
+            const contenedor = document.getElementById('listaAlumnosMigracion');
+            if (!origenId) { contenedor.innerHTML = "<div style='padding:5px'>Seleccione un origen.</div>"; return; }
+            
+            contenedor.innerHTML = "<div style='padding:5px'>Cargando estudiantes...</div>";
+            const snap = await getDoc(doc(dbCloud, "docentes_db", origenId));
+            if (!snap.exists()) { contenedor.innerHTML = "<div style='padding:5px'>Error al cargar.</div>"; return; }
+            
+            const data = snap.data();
+            const activos = (data.alumnos || []).filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
+            
+            if (activos.length === 0) {
+                contenedor.innerHTML = "<div style='padding:5px; color:red'>No hay alumnos activos en esta sección.</div>";
+                return;
+            }
+            
+            // Generamos la lista de Checkboxes
+            let html = `<div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid #ccc;">
+                <input type="checkbox" id="checkTodosMig" onchange="seleccionarTodosMigracion(this.checked)"> <label for="checkTodosMig"><strong>Seleccionar Todos</strong></label>
+            </div>`;
+            
+            activos.forEach(a => {
+                html += `<div style="padding:4px 0;"><input type="checkbox" class="check-migrar" value="${a.id}"> ${a.nombre} <small style="color:#555">(C.I: ${a.cedula || 'S/C'})</small></div>`;
+            });
+            contenedor.innerHTML = html;
+        };
+
+        // 3. Función auxiliar para marcar/desmarcar todos a la vez
+        window.seleccionarTodosMigracion = (marcado) => {
+            const checks = document.querySelectorAll('.check-migrar');
+            checks.forEach(c => c.checked = marcado);
+        };
+
+        // 4. Mover a los estudiantes de una cuenta a otra
+        window.ejecutarMigracion = async () => {
+            const origenId = document.getElementById('migracionOrigen').value;
+            const destinoId = document.getElementById('migracionDestino').value;
+            if (!origenId || !destinoId) return Swal.fire('Error', 'Seleccione sección de origen y de destino.', 'error');
+            if (origenId === destinoId) return Swal.fire('Error', 'La sección de origen y destino no pueden ser la misma.', 'error');
+            
+            const checks = document.querySelectorAll('.check-migrar:checked');
+            const idsSeleccionados = Array.from(checks).map(c => parseInt(c.value));
+            
+            if (idsSeleccionados.length === 0) return Swal.fire('Atención', 'Debe marcar al menos un estudiante para migrar.', 'warning');
+            
+            const result = await Swal.fire({
+                title: '¿Confirmar Promoción?',
+                text: `Se moverán ${idsSeleccionados.length} estudiante(s) a la nueva sección. Se eliminarán de la sección actual.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, mover'
+            });
+            
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Migrando Datos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                try {
+                    const origenSnap = await getDoc(doc(dbCloud, "docentes_db", origenId));
+                    const destinoSnap = await getDoc(doc(dbCloud, "docentes_db", destinoId));
+                    
+                    if (!origenSnap.exists() || !destinoSnap.exists()) throw new Error('Documento(s) no encontrado(s)');
+                    
+                    let origenData = origenSnap.data();
+                    let destinoData = destinoSnap.data();
+                    const fechaHoy = document.getElementById('fechaSeleccionada').value;
+                    
+                    const alumnosAMigrar = [];
+                    // Sacamos a los estudiantes seleccionados del Origen
+                    origenData.alumnos = (origenData.alumnos || []).filter(a => {
+                        if (idsSeleccionados.includes(a.id)) {
+                            // Preparamos al estudiante para su nuevo salón
+                            const alumnoCopiado = { ...a, fechaIngreso: fechaHoy, retirado: false };
+                            alumnosAMigrar.push(alumnoCopiado);
+                            return false; // False significa que se elimina del arreglo original
+                        }
+                        return true; // Se mantiene si no fue seleccionado
+                    });
+                    
+                    // Añadimos a los estudiantes al Destino
+                    destinoData.alumnos = destinoData.alumnos || [];
+                    alumnosAMigrar.forEach(aMigrar => {
+                        // Verificamos por nombre para evitar alumnos duplicados
+                        const index = destinoData.alumnos.findIndex(x => x.nombre === aMigrar.nombre);
+                        if (index > -1) {
+                            destinoData.alumnos[index] = aMigrar; // Lo sobrescribe si ya existe
+                        } else {
+                            destinoData.alumnos.push(aMigrar); // Lo agrega nuevo
+                        }
+                    });
+                    
+                    // Guardamos ambas bases de datos actualizadas en la nube
+                    await setDoc(doc(dbCloud, "docentes_db", origenId), origenData);
+                    await setDoc(doc(dbCloud, "docentes_db", destinoId), destinoData);
+                    
+                    Swal.fire('¡Proceso Completado!', 'Estudiantes promovidos/migrados correctamente a su nueva sección.', 'success');
+                    window.cargarAlumnosMigracion(); // Refresca la lista que vemos en pantalla
+                } catch (e) {
+                    Swal.fire('Error', 'Hubo un problema al migrar: ' + e.message, 'error');
+                }
+            }
+        };
+
         // --- CONSOLIDADO INDIVIDUAL ALUMNOS ---
         window.toggleConsolidadoInd = () => {
             const p = document.getElementById('panelConsolidadoInd');
@@ -291,7 +414,6 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
-            // Función para convertir la imagen del logo
             const getDataUrl = (url) => {
                 return new Promise((resolve, reject) => {
                     const img = new Image();
@@ -308,37 +430,32 @@
                 });
             };
 
-            // Intentar cargar logo (arriba a la izquierda)
             try {
                 const logoData = await getDataUrl("https://raw.githubusercontent.com/ebnlucilapalacios-source/asistencia-lucila-palacios./main/IMG_20260225_005025_993.png");
                 doc.addImage(logoData, 'PNG', 14, 10, 22, 22);
             } catch(e) { console.warn("No se pudo cargar el logo", e); }
 
-            // Membrete oficial
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.text("REPÚBLICA BOLIVARIANA DE VENEZUELA", 40, 15);
             doc.text("MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN", 40, 20);
             doc.text("E.B.N. LUCILA PALACIOS", 40, 25);
             
-            // Datos del salón
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
             doc.text(`DOCENTE: ${window.db.docente || 'No asignado'}`, 14, 40);
             doc.text(`GRADO Y SECCIÓN: ${window.db.grado} ${window.db.seccion}`, 14, 45);
             doc.text(`TURNO: ${window.db.turno}`, 14, 50);
 
-            // Obtener estudiantes activos
             const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
             const rows = activos.map((a, i) => [i + 1, a.cedula || 'S/C', a.nombre]);
 
-            // Crear la tabla
             doc.autoTable({
                 startY: 55,
                 head: [['N°', 'CÉDULA / C. ESCOLAR', 'NOMBRES Y APELLIDOS']],
                 body: rows,
                 theme: 'grid',
-                headStyles: { fillColor: [0, 33, 71] }, // Color Azul institucional
+                headStyles: { fillColor: [0, 33, 71] },
                 styles: { fontSize: 10 }
             });
 
@@ -349,20 +466,17 @@
             const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b) => a.nombre.localeCompare(b.nombre));
             const data = [];
             
-            // Membrete de texto en el Excel
             data.push(["REPÚBLICA BOLIVARIANA DE VENEZUELA"]);
             data.push(["MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN"]);
             data.push(["E.B.N. LUCILA PALACIOS"]);
-            data.push([]); // Espacio
+            data.push([]); 
             data.push(["DOCENTE:", window.db.docente || 'No asignado']);
             data.push(["GRADO Y SECCIÓN:", `${window.db.grado} ${window.db.seccion}`]);
             data.push(["TURNO:", window.db.turno]);
-            data.push([]); // Espacio
+            data.push([]); 
             
-            // Encabezados de tabla
             data.push(["N°", "CÉDULA / C. ESCOLAR", "NOMBRES Y APELLIDOS"]);
             
-            // Llenado de estudiantes
             activos.forEach((a, i) => {
                 data.push([i + 1, a.cedula || 'S/C', a.nombre]);
             });
@@ -521,10 +635,8 @@
                 });
             }
             
-            // Refrescar filtro en caso de que esté en uso
             window.filtrarAlumnos();
 
-            // Estadísticas Docente (Tabla 911)
             let sH=0, sV=0, dsH=0, eds={};
             activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
             Object.keys(window.db.asistencias).forEach(f => {
@@ -535,7 +647,6 @@
             });
             const pH=dsH>0?sH/dsH:0, pV=dsH>0?sV/dsH:0, ef=activos.length>0?((pH+pV)/activos.length*100).toFixed(0):0;
             
-            // Cálculo de Ingresos y Egresos del mes
             const mI = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
             const mE = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
 
@@ -561,7 +672,6 @@
                 </div>`;
         };
 
-        // --- CORRECCIÓN APLICADA AQUÍ ---
         window.marcar = (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
             const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -569,12 +679,8 @@
             
             if(!window.db.asistencias[f]) window.db.asistencias[f]={};
             
-            // Declaramos el estado actual. Si es undefined o null, inicializa en 0.
             let estadoActual = window.db.asistencias[f][id] || 0;
-            
-            // Calculamos el ciclo 0 -> 1 -> 2 de forma cíclica
             window.db.asistencias[f][id] = (estadoActual + 1) % 3;
-            
             window.save();
         };
 
@@ -627,7 +733,6 @@
 
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
         
-        // Iniciar validación de sesión al cargar el script
         window.checkSession();
     </script>
 
@@ -654,7 +759,6 @@
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 5px; font-weight: bold; }
         .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 5px; font-weight: bold; }
         
-        /* Estilos de la barra de búsqueda */
         .search-bar { background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px 12px; border-radius: 20px; outline: none; transition: border-color 0.3s ease; }
         .search-bar:focus { border-color: var(--azul); box-shadow: 0 0 5px rgba(0, 33, 71, 0.2); }
 
@@ -697,7 +801,7 @@
     <div class="container">
         
         <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
-            <b>📊 DIRECCIÓN</b>
+            <b style="color:var(--morado);">📊 PANEL DE DIRECCIÓN</b>
             <div class="btns-admin-row" style="margin-top:10px;">
                 <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
                 <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📄 LISTA PDF</button>
@@ -709,11 +813,31 @@
             
             <details style="margin-top:10px;">
                 <summary style="cursor:pointer; font-size:12px; color:var(--morado);">🔐 Gestión de Credenciales</summary>
-                <input type="text" id="adminOldUser" placeholder="Usuario actual">
-                <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
-                <input type="password" id="adminNewPass" placeholder="Nueva clave (Opcional)">
-                <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold;">ACTUALIZAR</button>
+                <div style="padding-top:5px;">
+                    <input type="text" id="adminOldUser" placeholder="Usuario actual">
+                    <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
+                    <input type="password" id="adminNewPass" placeholder="Nueva clave (Opcional)">
+                    <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold;">ACTUALIZAR</button>
+                </div>
             </details>
+
+            <details style="margin-top:10px;" onclick="cargarOpcionesMigracion()">
+                <summary style="cursor:pointer; font-size:12px; color:var(--exito);">🔄 Promoción y Migración de Estudiantes</summary>
+                <div style="padding-top:10px; background:#f8f9fa; border-radius:5px; padding:10px; margin-top:5px; border:1px solid #ddd;">
+                    <label style="font-size:11px; font-weight:bold;">Origen (Sección actual):</label>
+                    <select id="migracionOrigen" onchange="cargarAlumnosMigracion()"><option value="">Seleccione...</option></select>
+                    
+                    <div id="listaAlumnosMigracion" style="max-height:150px; overflow-y:auto; border:1px solid #ccc; padding:5px; margin:5px 0; background:white; font-size:11px;">
+                        <div style="padding:5px; color:#777;">Seleccione un origen para ver la lista.</div>
+                    </div>
+
+                    <label style="font-size:11px; font-weight:bold;">Destino (Nueva sección):</label>
+                    <select id="migracionDestino"><option value="">Seleccione...</option></select>
+                    
+                    <button onclick="ejecutarMigracion()" style="background:var(--exito); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; margin-top:10px;">MOVER ESTUDIANTES SELECCIONADOS</button>
+                </div>
+            </details>
+
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
 
