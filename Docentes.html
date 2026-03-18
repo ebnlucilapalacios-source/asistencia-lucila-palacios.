@@ -453,7 +453,6 @@
             const filas = document.querySelectorAll('.alumno-fila');
 
             filas.forEach(fila => {
-                // Buscamos dentro del div que contiene el nombre (es el segundo hijo de la fila)
                 const divInfo = fila.querySelector('div:nth-child(2)'); 
                 if (divInfo) {
                     const contenido = divInfo.innerText.toLowerCase();
@@ -562,12 +561,20 @@
                 </div>`;
         };
 
+        // --- CORRECCIÓN APLICADA AQUÍ ---
         window.marcar = (id) => {
             const f = document.getElementById('fechaSeleccionada').value;
             const hoy = new Date(); hoy.setHours(0,0,0,0);
             if(new Date(f + "T00:00:00") > hoy) return Swal.fire('Aviso', 'Fecha futura bloqueada.', 'warning');
+            
             if(!window.db.asistencias[f]) window.db.asistencias[f]={};
-            window.db.asistencias[f][id] = (window.db.asistencias[f][id]+1)%3 || 1;
+            
+            // Declaramos el estado actual. Si es undefined o null, inicializa en 0.
+            let estadoActual = window.db.asistencias[f][id] || 0;
+            
+            // Calculamos el ciclo 0 -> 1 -> 2 de forma cíclica
+            window.db.asistencias[f][id] = (estadoActual + 1) % 3;
+            
             window.save();
         };
 
