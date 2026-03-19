@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -199,16 +198,37 @@
     async function actualizarTodo() {
         const fe = document.getElementById('fechaEscuela').value;
         const fv = document.getElementById('fechaVig').value;
-        const snap = await db.collection("asistencia_ebnlp_final").where("f", "in", [fe, fv]).get();
-        const marcados = {}; 
+        
+        // CORRECCIÓN: Evitamos enviar duplicados en la consulta a Firebase si las fechas son iguales
+        const fechasFiltro = [...new Set([fe, fv])]; 
+        const snap = await db.collection("asistencia_ebnlp_final").where("f", "in", fechasFiltro).get();
+        
+        // CORRECCIÓN: Separar marcados de escuela y vigilancia
+        const marcadosEscuela = {}; 
+        const marcadosVigilancia = {};
+        
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
 
         snap.forEach(doc => {
-            const d = doc.data(); d.id = doc.id; marcados[d.n] = d;
-            if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
-            else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+            const d = doc.data(); 
+            d.id = doc.id; 
+            
+            const esVigilante = (d.c === "Vigilante");
+
+            // CORRECCIÓN CLAVE: Validamos a qué sección pertenece la fecha para no duplicar datos en el dash
+            if (!esVigilante && d.f === fe) {
+                marcadosEscuela[d.n] = d;
+                if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
+                else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+            } 
+            else if (esVigilante && d.f === fv) {
+                marcadosVigilancia[d.n] = d;
+                if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
+                else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+            }
         });
 
+        // Actualización de la interfaz del Dash
         document.getElementById('dDoc').innerText = c.Docente;
         document.getElementById('dObr').innerText = c.Obrero;
         document.getElementById('dAdm').innerText = c.Administrativo;
@@ -221,8 +241,9 @@
         document.getElementById('barOtros').style.width = (c.Otros/total*100) + "%";
         document.getElementById('porcentajeDia').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
 
-        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], fe, marcados, null, "tablaGeneralEscuela");
-        dibujarSeccion("contVigilancia", ["Vigilante"], fv, marcados, document.getElementById('filtroGrupo').value, "tablaGeneralVig");
+        // Pasamos sus respectivas listas de marcados
+        dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], fe, marcadosEscuela, null, "tablaGeneralEscuela");
+        dibujarSeccion("contVigilancia", ["Vigilante"], fv, marcadosVigilancia, document.getElementById('filtroGrupo').value, "tablaGeneralVig");
     }
 
     function getClase(e) {
@@ -288,18 +309,15 @@
         const tipoVig = document.getElementById('tipoDiaVig').value;
         const fechaAct = (p.c === "Vigilante") ? document.getElementById('fechaVig').value : document.getElementById('fechaEscuela').value;
 
-        // --- NUEVA LÓGICA: Validación de 30 días consecutivos para P. PERSONAL e INASISTENCIA ---
         if (e === "P. PERSONAL" || e === "INASISTENCIA") {
             let fechaObj = new Date(fechaAct);
             fechaObj.setDate(fechaObj.getDate() - 30);
             let limiteFecha = fechaObj.toISOString().split('T')[0];
 
-            // Traer registros de este usuario
             let snapUser = await db.collection("asistencia_ebnlp_final").where("n", "==", n).get();
             let count = 0;
             snapUser.forEach(doc => {
                 let data = doc.data();
-                // Filtrar localmente en el rango de los últimos 30 días
                 if(data.e === e && data.f >= limiteFecha && data.f <= fechaAct) {
                     count++;
                 }
@@ -307,7 +325,7 @@
 
             if(count >= 3) {
                 alert(`⚠️ LÍMITE ALCANZADO:\nEl empleado(a) ${n} ya posee ${count} registros de ${e} en los últimos 30 días.\nNo se permite registrar más.`);
-                return; // Detiene la ejecución, no se guarda.
+                return; 
             }
         }
 
@@ -407,7 +425,6 @@
         });
     }
 
-    // Exportar Excel de todo (Original)
     function exportarExcel() {
         let tabla1 = document.getElementById('tablaEst1').outerHTML;
         let tabla2 = document.getElementById('tablaEst2').outerHTML;
@@ -432,7 +449,6 @@
         a.click();
     }
 
-    // --- NUEVO: Exportar Solo Tabla Individual a Excel ---
     function exportarExcelIndividual() {
         let tabla = document.getElementById('tablaEst2').outerHTML;
         let html = `
@@ -451,7 +467,6 @@
         a.click();
     }
 
-    // --- NUEVO: Exportar Solo Tabla Individual a PDF ---
     function exportarPDFIndividual() {
         const elemento = document.getElementById('tablaEst2');
         const opt = {
@@ -461,7 +476,6 @@
             html2canvas:  { scale: 2 },
             jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
-        // html2pdf procesa el div/tabla y lo descarga
         html2pdf().set(opt).from(elemento).save();
     }
 
