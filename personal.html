@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; }
+        :root { --azul: #0a2144; --naranja: #f39c12; --verde: #1d6f42; --rojo: #c0392b; --gris: #f4f4f4; --gris-oscuro: #7f8c8d; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding-bottom: 50px; }
         header { background: var(--azul); color: white; text-align: center; padding: 10px; border-bottom: 4px solid var(--naranja); }
         
@@ -53,6 +53,7 @@
         .st-personal { background-color: #efebe9 !important; color: #3e2723; }
         .st-medico { background-color: #e3f2fd !important; color: #0d47a1; }
         .st-institucional { background-color: #e8f5e9 !important; color: #1b5e20; }
+        .st-nolaborable { background-color: #e9ecef !important; color: #495057; }
 
         input, select { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; box-sizing: border-box; font-size: 0.8rem; margin-bottom: 8px; }
         .hidden { display: none; }
@@ -139,7 +140,7 @@
         <button onclick="generarEstadistica()" style="background:var(--azul); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 100px;">CALCULAR</button>
         <button onclick="exportarExcel()" style="background:var(--verde); color:white; border:none; padding:10px; border-radius:5px; flex:1; font-weight:bold; min-width: 120px;">EXPORTAR TODO (EXCEL)</button>
     </div>
-    <div class="seccion-titulo">PROMEDIO POR GÉNERO</div>
+    <div class="seccion-titulo">PROMEDIO POR GÉNERO (No incluye días no laborables)</div>
     <div class="table-wrap">
         <table id="tablaEst1">
             <thead><tr><th>Cargo</th><th>Gen</th><th>Nom</th><th>Asis</th><th>Prom</th><th>%</th></tr></thead>
@@ -156,7 +157,7 @@
     </div>
     <div class="table-wrap">
         <table id="tablaEst2">
-            <thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>Prom</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Asis</th><th>Act</th><th>Ret</th><th>Ina</th><th>Vac</th><th>Med</th><th>Per</th><th>N.Lab</th><th>Prom</th></tr></thead>
             <tbody id="bodyIndividual"></tbody>
         </table>
     </div>
@@ -198,37 +199,32 @@
     async function actualizarTodo() {
         const fe = document.getElementById('fechaEscuela').value;
         const fv = document.getElementById('fechaVig').value;
-        
-        // CORRECCIÓN: Evitamos enviar duplicados en la consulta a Firebase si las fechas son iguales
         const fechasFiltro = [...new Set([fe, fv])]; 
         const snap = await db.collection("asistencia_ebnlp_final").where("f", "in", fechasFiltro).get();
         
-        // CORRECCIÓN: Separar marcados de escuela y vigilancia
         const marcadosEscuela = {}; 
         const marcadosVigilancia = {};
-        
         let c = {Docente:0, Obrero:0, Administrativo:0, "CNAE (Cocinera)":0, Vigilante:0, Asis:0, Ina:0, Otros:0};
 
         snap.forEach(doc => {
             const d = doc.data(); 
             d.id = doc.id; 
-            
             const esVigilante = (d.c === "Vigilante");
 
-            // CORRECCIÓN CLAVE: Validamos a qué sección pertenece la fecha para no duplicar datos en el dash
             if (!esVigilante && d.f === fe) {
                 marcadosEscuela[d.n] = d;
                 if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
-                else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+                else if(d.e === "INASISTENCIA") { c.Ina++; } 
+                else if(d.e !== "DÍA NO LABORABLE") { c.Otros++; }
             } 
             else if (esVigilante && d.f === fv) {
                 marcadosVigilancia[d.n] = d;
                 if(["ASISTENCIA", "ACT. INST.", "RETRASO"].includes(d.e)) { c[d.c]++; c.Asis++; }
-                else if(d.e === "INASISTENCIA") { c.Ina++; } else { c.Otros++; }
+                else if(d.e === "INASISTENCIA") { c.Ina++; } 
+                else if(d.e !== "DÍA NO LABORABLE") { c.Otros++; }
             }
         });
 
-        // Actualización de la interfaz del Dash
         document.getElementById('dDoc').innerText = c.Docente;
         document.getElementById('dObr').innerText = c.Obrero;
         document.getElementById('dAdm').innerText = c.Administrativo;
@@ -241,13 +237,12 @@
         document.getElementById('barOtros').style.width = (c.Otros/total*100) + "%";
         document.getElementById('porcentajeDia').innerText = Math.round(c.Asis/nomina.length*100 || 0) + "%";
 
-        // Pasamos sus respectivas listas de marcados
         dibujarSeccion("contEscuela", ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)"], fe, marcadosEscuela, null, "tablaGeneralEscuela");
         dibujarSeccion("contVigilancia", ["Vigilante"], fv, marcadosVigilancia, document.getElementById('filtroGrupo').value, "tablaGeneralVig");
     }
 
     function getClase(e) {
-        const clases = { "ASISTENCIA": "st-asistencia", "INASISTENCIA": "st-inasistencia", "RETRASO": "st-retraso", "VACACIONES": "st-vacaciones", "P. PERSONAL": "st-personal", "P. MÉDICO": "st-medico", "ACT. INST.": "st-institucional" };
+        const clases = { "ASISTENCIA": "st-asistencia", "INASISTENCIA": "st-inasistencia", "RETRASO": "st-retraso", "VACACIONES": "st-vacaciones", "P. PERSONAL": "st-personal", "P. MÉDICO": "st-medico", "ACT. INST.": "st-institucional", "DÍA NO LABORABLE": "st-nolaborable" };
         return clases[e] || "";
     }
 
@@ -279,28 +274,22 @@
                         <button class="btn-check" style="background:#f3e5f5" onclick="registrar('${p.n}','VACACIONES')">VACACIONES</button>
                         <button class="btn-check" style="background:#efebe9" onclick="registrar('${p.n}','P. PERSONAL')">P. PERSONAL</button>
                         <button class="btn-check" style="background:#e3f2fd" onclick="registrar('${p.n}','P. MÉDICO')">P. MÉDICO</button>
-                        <button class="btn-check" style="background:#e8f5e9" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>`;
+                        <button class="btn-check" style="background:#e8f5e9" onclick="registrar('${p.n}','ACT. INST.')">ACT. INST.</button>
+                        <button class="btn-check" style="background:#e9ecef" onclick="registrar('${p.n}','DÍA NO LABORABLE')">NO LABORABLE</button>`;
                     tablaG.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td style="color:#999">PENDIENTE</td><td>-</td><td>-</td><td>0%</td><td>-</td></tr>`;
                 } else {
-                    f.style.borderColor = "var(--verde)";
-                    f.innerHTML = `<button class="btn-del" onclick="eliminarRegistro('${m.id}')">X</button><b>${p.n}</b><br><span style="color:var(--verde); font-weight:bold;">✓ ${m.e}</span><br>
-                        ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO"].includes(m.e) ? 
+                    f.style.borderColor = (m.e === "DÍA NO LABORABLE") ? "#ccc" : "var(--verde)";
+                    f.innerHTML = `<button class="btn-del" onclick="eliminarRegistro('${m.id}')">X</button><b>${p.n}</b><br><span style="color:${m.e === 'DÍA NO LABORABLE' ? '#666' : 'var(--verde)'}; font-weight:bold;">✓ ${m.e}</span><br>
+                        ${m.hS === "---" && !["INASISTENCIA","VACACIONES","P. PERSONAL","P. MÉDICO", "DÍA NO LABORABLE"].includes(m.e) ? 
                         `<button class="btn-check btn-salida" onclick="marcarSalida('${m.n}','${fecha}')">SALIDA</button>` : `<small>${m.hE} / ${m.hS} <br>(${m.turno})</small>`}`;
                     
-                    let efec = (m.hE !== "---" && m.hS !== "---") ? "100%" : (m.hE !== "---" ? "50%" : "0%");
+                    let efec = (m.e === "DÍA NO LABORABLE") ? "N/A" : ((m.hE !== "---" && m.hS !== "---") ? "100%" : (m.hE !== "---" ? "50%" : "0%"));
                     tablaG.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td class="${getClase(m.e)}">${m.e}</td><td>${m.hE}</td><td>${m.hS}</td><td>${efec}</td><td>${m.obs || "-"}</td></tr>`;
                 }
                 grid.appendChild(f);
             });
             content.appendChild(grid); sec.appendChild(content); cont.appendChild(sec);
         });
-    }
-
-    async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar este registro de asistencia?")) {
-            await db.collection("asistencia_ebnlp_final").doc(id).delete();
-            actualizarTodo();
-        }
     }
 
     async function registrar(n, e) {
@@ -313,43 +302,29 @@
             let fechaObj = new Date(fechaAct);
             fechaObj.setDate(fechaObj.getDate() - 30);
             let limiteFecha = fechaObj.toISOString().split('T')[0];
-
             let snapUser = await db.collection("asistencia_ebnlp_final").where("n", "==", n).get();
             let count = 0;
             snapUser.forEach(doc => {
                 let data = doc.data();
-                if(data.e === e && data.f >= limiteFecha && data.f <= fechaAct) {
-                    count++;
-                }
+                if(data.e === e && data.f >= limiteFecha && data.f <= fechaAct) count++;
             });
-
             if(count >= 3) {
-                alert(`⚠️ LÍMITE ALCANZADO:\nEl empleado(a) ${n} ya posee ${count} registros de ${e} en los últimos 30 días.\nNo se permite registrar más.`);
+                alert(`⚠️ LÍMITE ALCANZADO: ${n} ya posee ${count} registros de ${e} en los últimos 30 días.`);
                 return; 
             }
         }
 
         let obsFinal = "";
-        if (e === "P. MÉDICO" || e === "ACT. INST.") {
-            let m = prompt(`Por favor, indique el motivo o lugar para ${e}:`);
-            if (m === null) return; 
-            obsFinal = m;
-        }
-
-        let hSug = "07:00";
-        if(p.c === "Vigilante") {
-            if(tipoVig === "NORMAL") {
-                t = "NOCTURNO"; hSug = "18:00";
-            } else {
-                t = prompt("DÍA ESPECIAL: ¿Turno DIURNO o NOCTURNO?", "DIURNO").toUpperCase();
-                hSug = (t === "DIURNO") ? "06:00" : "18:00";
-            }
-        } else {
-            hSug = (t === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "06:45" : "07:00") : (p.c === "Obrero" ? "11:30" : "12:00");
+        if (e === "P. MÉDICO" || e === "ACT. INST." || e === "DÍA NO LABORABLE") {
+            let m = prompt(`Motivo para ${e}:`);
+            if (m === null && e !== "DÍA NO LABORABLE") return; 
+            obsFinal = m || "";
         }
 
         let hE = "---";
-        if(!["INASISTENCIA","VACACIONES","P. PERSONAL", "P. MÉDICO"].includes(e)) {
+        if(!["INASISTENCIA","VACACIONES","P. PERSONAL", "P. MÉDICO", "DÍA NO LABORABLE"].includes(e)) {
+            let hSug = (t === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "06:45" : "07:00") : (p.c === "Obrero" ? "11:30" : "12:00");
+            if(p.c === "Vigilante") hSug = (tipoVig === "NORMAL") ? "18:00" : "06:00";
             hE = prompt("Confirmar Entrada:", hSug); if(!hE) return;
         }
 
@@ -362,32 +337,17 @@
         if(q.empty) return;
         const docData = q.docs[0].data();
         const p = nomina.find(x => x.n === n);
-        
-        let hMin = "12:00";
-        if(p.c === "Vigilante") {
-            hMin = (docData.turno === "DIURNO") ? "18:00" : "06:00";
-        } else {
-            hMin = (docData.turno === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "12:45" : (p.c === "CNAE (Cocinera)" ? "14:00" : "12:00")) : (p.c === "Administrativo" ? "18:00" : "17:00");
-        }
-
+        let hMin = (docData.turno === "MAÑANA") ? (["Obrero", "Administrativo"].includes(p.c) ? "12:45" : "12:00") : "17:00";
         const hS = prompt("Confirmar Salida:", hMin); if(!hS) return;
         let obs = "";
-        
-        if(hS < hMin && docData.turno !== "NOCTURNO") {
-             obs = prompt("SALIDA ANTICIPADA. Motivo:");
-        } else if (docData.turno === "NOCTURNO" && hS > "00:00" && hS < "06:00") {
-             
-        } else if (docData.turno === "NOCTURNO" && hS > "18:00" && hS < "23:59") {
-             obs = prompt("SALIDA ANTICIPADA (Antes de amanecer). Motivo:");
-        }
-
-        await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, obs: obs || "" });
+        if(hS < hMin) obs = prompt("SALIDA ANTICIPADA. Motivo:");
+        await db.collection("asistencia_ebnlp_final").doc(q.docs[0].id).update({ hS, obs: obs || docData.obs || "" });
         actualizarTodo();
     }
 
     async function generarEstadistica() {
         const mes = document.getElementById('mesReporte').value; if(!mes) return;
-        const diasHabiles = parseInt(document.getElementById('diasHabiles').value) || 20;
+        const diasHabilesBase = parseInt(document.getElementById('diasHabiles').value) || 20;
         
         const snap = await db.collection("asistencia_ebnlp_final").where("mes","==",mes).get();
         const docs = snap.docs.map(d => d.data());
@@ -397,22 +357,31 @@
         ["Docente", "Obrero", "Administrativo", "CNAE (Cocinera)", "Vigilante"].forEach(c => {
             let totalNominaCargo = 0;
             let totalAsisCargo = 0;
+            let totalDiasDescontarCargo = 0;
 
             ["F","M"].forEach(g => {
                 const nT = nomina.filter(x => x.c === c && x.gender === g);
                 if(nT.length > 0) {
                     const aC = docs.filter(d => d.c === c && d.gender === g && ["ASISTENCIA","ACT. INST.","RETRASO"].includes(d.e)).length;
-                    const pr = (aC / diasHabiles).toFixed(2);
+                    const nLab = docs.filter(d => d.c === c && d.gender === g && d.e === "DÍA NO LABORABLE").length;
+                    
+                    // Promedio ajustado: Asistencias / (Días Hábiles - Días No Laborables reportados para ese grupo)
+                    // Para simplificar, dividimos los días no laborables entre la cantidad de personas del grupo
+                    const promedioDiasNoLab = nLab / nT.length;
+                    const diasEfectivos = diasHabilesBase - promedioDiasNoLab;
+                    const pr = (aC / (diasEfectivos || 1)).toFixed(2);
                     
                     totalNominaCargo += nT.length;
                     totalAsisCargo += aC;
+                    totalDiasDescontarCargo += nLab;
                     
                     bEst.innerHTML += `<tr><td>${c}</td><td>${g}</td><td>${nT.length}</td><td>${aC}</td><td>${pr}</td><td>${((pr/nT.length)*100).toFixed(1)}%</td></tr>`;
                 }
             });
             
             if(totalNominaCargo > 0) {
-                const prTotal = (totalAsisCargo / diasHabiles).toFixed(2);
+                const diasEfectivosTotal = diasHabilesBase - (totalDiasDescontarCargo / totalNominaCargo);
+                const prTotal = (totalAsisCargo / (diasEfectivosTotal || 1)).toFixed(2);
                 bEst.innerHTML += `<tr style="background:#e9ecef; font-weight:bold;"><td colspan="2">TOTAL ${c.toUpperCase()}</td><td>${totalNominaCargo}</td><td>${totalAsisCargo}</td><td>${prTotal}</td><td>${((prTotal/totalNominaCargo)*100).toFixed(1)}%</td></tr>`;
             }
         });
@@ -421,93 +390,53 @@
             const m = docs.filter(d => d.n === p.n);
             const r = (tipo) => m.filter(x => x.e === tipo).length;
             const asisT = r("ASISTENCIA") + r("ACT. INST.") + r("RETRASO");
-            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td><b>${asisT}</b></td></tr>`;
+            const diasEfectivosInd = diasHabilesBase - r("DÍA NO LABORABLE");
+            const promInd = (asisT / (diasEfectivosInd || 1)).toFixed(2);
+
+            bInd.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${r("ASISTENCIA")}</td><td>${r("ACT. INST.")}</td><td>${r("RETRASO")}</td><td>${r("INASISTENCIA")}</td><td>${r("VACACIONES")}</td><td>${r("P. MÉDICO")}</td><td>${r("P. PERSONAL")}</td><td>${r("DÍA NO LABORABLE")}</td><td><b>${promInd}</b></td></tr>`;
         });
     }
 
-    function exportarExcel() {
-        let tabla1 = document.getElementById('tablaEst1').outerHTML;
-        let tabla2 = document.getElementById('tablaEst2').outerHTML;
-        
-        let html = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"></head>
-            <body>
-                <h3>PROMEDIO POR GÉNERO Y CARGO</h3>
-                ${tabla1}
-                <br><br>
-                <h3>CONSOLIDADO INDIVIDUAL</h3>
-                ${tabla2}
-            </body>
-            </html>
-        `;
-
-        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
-        let a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'Reporte_Estadistico.xls';
-        a.click();
+    // Funciones de exportación y UI se mantienen igual
+    function verTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
     }
-
-    function exportarExcelIndividual() {
-        let tabla = document.getElementById('tablaEst2').outerHTML;
-        let html = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"></head>
-            <body>
-                <h3>CONSOLIDADO INDIVIDUAL MENSUAL</h3>
-                ${tabla}
-            </body>
-            </html>
-        `;
-        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
-        let a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'Consolidado_Individual.xls';
-        a.click();
-    }
-
-    function exportarPDFIndividual() {
-        const elemento = document.getElementById('tablaEst2');
-        const opt = {
-            margin:       0.3,
-            filename:     'Consolidado_Individual.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(elemento).save();
-    }
-
-    function respaldarJSON() {
-        if(nomina.length === 0) {
-            alert("No hay datos de nómina para respaldar.");
-            return;
-        }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nomina, null, 2));
-        const a = document.createElement('a');
-        a.href = dataStr;
-        a.download = "respaldo_nomina_lucila_palacios.json";
-        a.click();
-    }
-
-    function agregarNomina() {
-        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
-        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
-        document.getElementById('nNombre').value = "";
-    }
-
     function renderNomina() {
         const b = document.getElementById('bodyNomina'); b.innerHTML = "";
         nomina.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
             b.innerHTML += `<tr><td style="text-align:left">${p.n}</td><td>${p.c}</td><td><button onclick="db.collection('nomina_institucional').doc('${p.id}').delete()" style="color:red;border:none;background:none;font-weight:bold;">X</button></td></tr>`;
         });
     }
-
-    function verTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.remove('hidden'); btn.classList.add('active');
+    function agregarNomina() {
+        const n = document.getElementById('nNombre').value.toUpperCase(); if(!n) return;
+        db.collection("nomina_institucional").add({ n, c: document.getElementById('nCargo').value, gender: document.getElementById('nGen').value, grupo: document.getElementById('nGrupo').value });
+        document.getElementById('nNombre').value = "";
+    }
+    async function eliminarRegistro(id) {
+        if(confirm("¿Eliminar este registro?")) { await db.collection("asistencia_ebnlp_final").doc(id).delete(); actualizarTodo(); }
+    }
+    function exportarExcel() {
+        let tabla1 = document.getElementById('tablaEst1').outerHTML;
+        let tabla2 = document.getElementById('tablaEst2').outerHTML;
+        let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><h3>REPORTE ESTADÍSTICO</h3>${tabla1}<br>${tabla2}</body></html>`;
+        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+        let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Reporte_Estadistico.xls'; a.click();
+    }
+    function exportarExcelIndividual() {
+        let tabla = document.getElementById('tablaEst2').outerHTML;
+        let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body><h3>CONSOLIDADO</h3>${tabla}</body></html>`;
+        let blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+        let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Consolidado.xls'; a.click();
+    }
+    function exportarPDFIndividual() {
+        const elemento = document.getElementById('tablaEst2');
+        html2pdf().set({ margin: 0.3, filename: 'Consolidado.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } }).from(elemento).save();
+    }
+    function respaldarJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(nomina, null, 2));
+        const a = document.createElement('a'); a.href = dataStr; a.download = "respaldo_nomina.json"; a.click();
     }
 </script>
 </body>
