@@ -78,7 +78,6 @@
                 data.especialidad = document.getElementById('regEspecialidad').value;
                 data.etapa = document.getElementById('regEtapa').value;
                 
-                // Recoger días laborales del especialista
                 let diasLab = [];
                 document.querySelectorAll('.dia-esp:checked').forEach(cb => diasLab.push(parseInt(cb.value)));
                 if(diasLab.length === 0) return Swal.fire('Error', 'Debe seleccionar al menos un día laboral.', 'warning');
@@ -116,7 +115,7 @@
                 onSnapshot(doc(dbCloud, "docentes_db", u), async (s) => { 
                     window.db = s.data(); 
                     if (!window.db.rol) window.db.rol = "AULA"; 
-                    if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; // Compatibilidad
+                    if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; 
                     
                     if (window.db.rol === 'ESPECIALISTA') {
                         await window.cargarSeccionesEscuela();
@@ -161,18 +160,6 @@
             if(uID === USUARIO_ADMIN) return Swal.fire('Error', 'No puedes eliminar al administrador.', 'error');
             const result = await Swal.fire({ title: `¿Eliminar al usuario: ${uID}?`, text: "Acción permanente.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar' });
             if(result.isConfirmed){ await deleteDoc(doc(dbCloud, "docentes_db", uID)); Swal.fire('Eliminado', 'Cuenta eliminada.', 'success'); window.consolidadoMensual(); }
-        };
-
-        window.cambiarCredencialesDocente = async () => {
-            const oldU = document.getElementById('adminOldUser').value.toLowerCase().trim();
-            const newU = document.getElementById('adminNewUser').value.toLowerCase().trim();
-            const newP = document.getElementById('adminNewPass').value;
-            if(!oldU) return;
-            const oldRef = doc(dbCloud, "docentes_db", oldU); const snap = await getDoc(oldRef);
-            if(!snap.exists()) return Swal.fire('Error', 'El usuario no existe.', 'error');
-            const data = snap.data(); if(newP) data.pass = newP;
-            if(newU && newU !== oldU) { await setDoc(doc(dbCloud, "docentes_db", newU), data); await deleteDoc(oldRef); } else { await setDoc(oldRef, data); }
-            Swal.fire('Éxito', 'Credenciales actualizadas.', 'success');
         };
 
         window.consolidadoMensual = async () => {
@@ -244,9 +231,9 @@
             
             // --- TABLA ESPECIALISTAS AJUSTADA ---
             if(docentesEsp.length > 0) {
-                h += `<div style="text-align:center; font-size:14px; color:var(--morado); margin-top:20px;"><strong>ESTADÍSTICA ESPECIALISTAS (AJUSTE REAL POR HORARIO)</strong></div>
+                h += `<div style="text-align:center; font-size:14px; color:var(--morado); margin-top:20px;"><strong>ESTADÍSTICA ESPECIALISTAS (DIARIO Y MENSUAL)</strong></div>
                 <table class="tabla-admin" id="tablaEspecialistasDir">
-                <thead><tr><th>ESPECIALISTA</th><th>ÁREA</th><th>DÍAS PROG.</th><th>DÍAS TRAB.</th><th>% ASIST. DOCENTE</th><th>PROM. ATENCIÓN DIARIA</th></tr></thead><tbody>`;
+                <thead><tr><th>ESPECIALISTA</th><th>ÁREA</th><th>DÍAS PROG.</th><th>DÍAS TRAB.</th><th>% ASIST. DOCENTE</th><th>SECC. HOY</th><th>SECC. MES</th><th>PROM. ATENCIÓN DIARIA</th></tr></thead><tbody>`;
                 
                 docentesEsp.forEach(d => {
                     let diasLab = d.diasLaborales || [1,2,3,4,5];
@@ -254,6 +241,21 @@
                     let diasAsistidos = 0;
                     let totalEvaluados = 0;
                     
+                    // NUEVO: Variables para secciones de Dirección
+                    let seccionesAtendidasHoy = [];
+                    let seccionesAtendidasMes = new Set();
+                    
+                    // Cálculo Hoy
+                    if (d.asistencias && d.asistencias[fSel]) {
+                        Object.keys(d.asistencias[fSel]).forEach(secId => {
+                            let trabajo = Object.values(d.asistencias[fSel][secId]).some(st => st === 1 || st === 2);
+                            if(trabajo) {
+                                const secObj = docentesAula.find(a => a.idLogin === secId);
+                                seccionesAtendidasHoy.push(secObj ? `${secObj.grado}${secObj.seccion}` : secId);
+                            }
+                        });
+                    }
+
                     const daysInMonth = new Date(yearRef, mesRef + 1, 0).getDate();
                     for (let i = 1; i <= daysInMonth; i++) {
                         let dDate = new Date(yearRef, mesRef, i);
@@ -264,10 +266,13 @@
                             if (d.asistencias && d.asistencias[dateStr]) {
                                 let worked = false;
                                 Object.keys(d.asistencias[dateStr]).forEach(secId => {
+                                    let secWorked = false;
                                     Object.values(d.asistencias[dateStr][secId]).forEach(st => {
-                                        if(st === 1 || st === 2) worked = true;
+                                        if(st === 1 || st === 2) { worked = true; secWorked = true; }
                                         if(st === 1) totalEvaluados++;
                                     });
+                                    // NUEVO: Agregar al set del mes si trabajó en ella
+                                    if(secWorked) seccionesAtendidasMes.add(secId);
                                 });
                                 if (worked) diasAsistidos++;
                             }
@@ -276,7 +281,10 @@
                     let pctAsist = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
                     let promDia = diasAsistidos > 0 ? (totalEvaluados / diasAsistidos).toFixed(1) : 0;
                     
-                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td>${diasObligatorios}</td><td>${diasAsistidos}</td><td><b>${pctAsist}%</b></td><td>${promDia} est/día</td></tr>`;
+                    // NUEVO: Formateo de las celdas de las secciones
+                    let strSeccionesHoy = seccionesAtendidasHoy.length > 0 ? `<b style="color:var(--morado)">${seccionesAtendidasHoy.length}</b><br><small style="font-size:9px">(${seccionesAtendidasHoy.join(', ')})</small>` : "0";
+                    
+                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td>${diasObligatorios}</td><td>${diasAsistidos}</td><td><b>${pctAsist}%</b></td><td>${strSeccionesHoy}</td><td><b style="color:var(--morado)">${seccionesAtendidasMes.size}</b></td><td>${promDia} est/día</td></tr>`;
                 });
                 h += `</tbody></table>`;
             }
@@ -393,7 +401,8 @@
         };
 
         window.generarReporteDocente = (activos, mesRef, esEspecialista) => {
-            const fSelDate = new Date(document.getElementById('fechaSeleccionada').value + "T00:00:00");
+            const fSel = document.getElementById('fechaSeleccionada').value;
+            const fSelDate = new Date(fSel + "T00:00:00");
             const yearRef = fSelDate.getFullYear();
             
             if (!esEspecialista) {
@@ -429,11 +438,26 @@
                         </table>
                     </div>`;
             } else {
-                // LÓGICA ESPECIALISTA: Ajuste a días laborales reales
+                // LÓGICA ESPECIALISTA: Ajuste a días laborales reales y secciones
                 let diasObligatorios = 0;
                 let diasAsistidos = 0;
                 let totalAlumnosEvaluados = 0;
                 let diasLaborales = window.db.diasLaborales || [1,2,3,4,5]; 
+                
+                // NUEVO: Variables para almacenar estadísticas de secciones
+                let seccionesAtendidasHoy = [];
+                let seccionesAtendidasMes = new Set();
+                
+                // Cálculo de secciones de HOY
+                if (window.db.asistencias && window.db.asistencias[fSel]) {
+                    Object.keys(window.db.asistencias[fSel]).forEach(secId => {
+                        let trabajoHoy = Object.values(window.db.asistencias[fSel][secId]).some(st => st === 1 || st === 2);
+                        if (trabajoHoy) {
+                            const sec = window.seccionesEscuela.find(s => s.idLogin === secId);
+                            seccionesAtendidasHoy.push(sec ? `${sec.grado}${sec.seccion}` : secId);
+                        }
+                    });
+                }
 
                 const daysInMonth = new Date(yearRef, mesRef + 1, 0).getDate();
                 for (let i = 1; i <= daysInMonth; i++) {
@@ -445,10 +469,13 @@
                         if (window.db.asistencias && window.db.asistencias[dateStr]) {
                             let workedThisDay = false;
                             Object.keys(window.db.asistencias[dateStr]).forEach(secId => {
+                                let secWorked = false;
                                 Object.values(window.db.asistencias[dateStr][secId]).forEach(st => {
-                                    if(st === 1 || st === 2) workedThisDay = true;
+                                    if(st === 1 || st === 2) { workedThisDay = true; secWorked = true; }
                                     if(st === 1) totalAlumnosEvaluados++;
                                 });
+                                // NUEVO: Añadir la sección al registro mensual
+                                if (secWorked) seccionesAtendidasMes.add(secId);
                             });
                             if (workedThisDay) diasAsistidos++;
                         }
@@ -457,18 +484,34 @@
                 
                 let porcentajeAsistenciaEsp = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
                 let promAlumnosDia = diasAsistidos > 0 ? (totalAlumnosEvaluados / diasAsistidos).toFixed(1) : 0;
+                
+                // Formateo visual
+                let listadoHoyStr = seccionesAtendidasHoy.length > 0 ? `(${seccionesAtendidasHoy.join(', ')})` : "";
 
                 document.getElementById('reporteDocente').innerHTML = `
                     <div class="reporte-card card">
                         <h2 style="text-align:center; color:var(--morado);">📊 ESTADÍSTICA DE ATENCIÓN</h2>
+                        
+                        <div class="grid-promedios" style="margin-top:5px; background:#f4ebff; text-align:center; border:1px solid var(--morado)">
+                            <div style="flex:1">
+                                <span style="font-size:11px; font-weight:bold;">Secciones Atendidas Hoy</span><br>
+                                <b style="font-size:22px; color:var(--morado)">${seccionesAtendidasHoy.length}</b><br>
+                                <small style="font-size:11px">${listadoHoyStr}</small>
+                            </div>
+                            <div style="flex:1; border-left:1px solid #ccc">
+                                <span style="font-size:11px; font-weight:bold;">Total Secciones en el Mes</span><br>
+                                <b style="font-size:22px; color:var(--morado)">${seccionesAtendidasMes.size}</b>
+                            </div>
+                        </div>
+
                         <div class="grid-promedios" style="text-align:center;">
                             <div>Días Progr.<br><b style="font-size:18px">${diasObligatorios}</b></div>
                             <div>Días Trabajados<br><b style="font-size:18px">${diasAsistidos}</b></div>
-                            <div>% Asistencia<br><b style="font-size:18px; color:var(--morado)">${porcentajeAsistenciaEsp}%</b></div>
+                            <div>% Asist. Docente<br><b style="font-size:18px; color:var(--morado)">${porcentajeAsistenciaEsp}%</b></div>
                         </div>
                         <div class="grid-promedios" style="margin-top:5px; background:#e8f4f8; text-align:center;">
-                            <div>Total de Alumnos Atendidos<br><b style="font-size:16px">${totalAlumnosEvaluados}</b></div>
-                            <div>Promedio de Estudiantes por Día<br><b style="font-size:16px">${promAlumnosDia}</b></div>
+                            <div>Total Alumnos Eval.<br><b style="font-size:16px">${totalAlumnosEvaluados}</b></div>
+                            <div>Promedio Eval. / Día<br><b style="font-size:16px">${promAlumnosDia}</b></div>
                         </div>
                     </div>`;
             }
@@ -535,6 +578,7 @@
         window.abrirEdicionAlumno = (id) => {  }
         window.cerrarEdicionAlumno = () => {  }
         window.guardarEdicionAlumno = async () => {  }
+        window.imprimirListadoEstudiantesPDF = () => {  }
     </script>
 
     <style>
