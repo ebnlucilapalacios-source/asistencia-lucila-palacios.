@@ -28,7 +28,7 @@
         const USUARIO_ADMIN = "admin_lucila";
 
         window.usuarioActual = null;
-        window.db = { docente: "", seccion: "", grado: "", turno: "", rol: "AULA", alumnos: [], asistencias: {}, feriados: [] };
+        window.db = { docente: "", seccion: "", grado: "", turno: "", rol: "AULA", alumnos: [], asistencias: {}, feriados: [], diasLaborales: [1,2,3,4,5] };
         
         // Variables temporales para el Especialista
         window.seccionesEscuela = []; 
@@ -54,6 +54,7 @@
             const rol = document.getElementById('regRol').value;
             document.getElementById('divAulaReg').style.display = rol === 'AULA' ? 'flex' : 'none';
             document.getElementById('divEspReg').style.display = rol === 'ESPECIALISTA' ? 'block' : 'none';
+            document.getElementById('diasLaboralesEsp').style.display = rol === 'ESPECIALISTA' ? 'block' : 'none';
         };
 
         window.registrarCuenta = async () => {
@@ -76,6 +77,12 @@
             } else {
                 data.especialidad = document.getElementById('regEspecialidad').value;
                 data.etapa = document.getElementById('regEtapa').value;
+                
+                // Recoger días laborales del especialista
+                let diasLab = [];
+                document.querySelectorAll('.dia-esp:checked').forEach(cb => diasLab.push(parseInt(cb.value)));
+                if(diasLab.length === 0) return Swal.fire('Error', 'Debe seleccionar al menos un día laboral.', 'warning');
+                data.diasLaborales = diasLab;
             }
 
             await setDoc(doc(dbCloud, "docentes_db", u), data);
@@ -108,7 +115,8 @@
                 
                 onSnapshot(doc(dbCloud, "docentes_db", u), async (s) => { 
                     window.db = s.data(); 
-                    if (!window.db.rol) window.db.rol = "AULA"; // Compatibilidad hacia atrás
+                    if (!window.db.rol) window.db.rol = "AULA"; 
+                    if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; // Compatibilidad
                     
                     if (window.db.rol === 'ESPECIALISTA') {
                         await window.cargarSeccionesEscuela();
@@ -149,7 +157,6 @@
         };
 
         // --- DIRECCIÓN (ESTADÍSTICAS Y GESTIÓN) ---
-        // ... (Se mantienen las funciones eliminarDocenteAdmin y cambiarCredencialesDocente igual) ...
         window.eliminarDocenteAdmin = async (uID) => {
             if(uID === USUARIO_ADMIN) return Swal.fire('Error', 'No puedes eliminar al administrador.', 'error');
             const result = await Swal.fire({ title: `¿Eliminar al usuario: ${uID}?`, text: "Acción permanente.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar' });
@@ -171,6 +178,7 @@
         window.consolidadoMensual = async () => {
             const fSel = document.getElementById('fechaSeleccionada').value;
             const mesRef = new Date(fSel + "T00:00:00").getMonth();
+            const yearRef = new Date(fSel + "T00:00:00").getFullYear();
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
             let todosLosDocentes = []; 
@@ -234,29 +242,41 @@
             const efG = T.mT>0?(T.pT/T.mT*100).toFixed(1):0;
             h += `<tr class="fila-total"><td>ESCUELA</td><td>-</td><td>${T.mH}</td><td>${T.mV}</td><td>${T.mT}</td><td>${T.mI}</td><td>${T.mE}</td><td>${T.pH.toFixed(1)}</td><td>${T.pV.toFixed(1)}</td><td>${T.pT.toFixed(1)}</td><td>${efG}%</td></tr></tbody></table>`;
             
-            // --- TABLA ESPECIALISTAS ---
+            // --- TABLA ESPECIALISTAS AJUSTADA ---
             if(docentesEsp.length > 0) {
-                h += `<div style="text-align:center; font-size:14px; color:var(--morado); margin-top:20px;"><strong>ESTADÍSTICA ESPECIALISTAS</strong></div>
+                h += `<div style="text-align:center; font-size:14px; color:var(--morado); margin-top:20px;"><strong>ESTADÍSTICA ESPECIALISTAS (AJUSTE REAL POR HORARIO)</strong></div>
                 <table class="tabla-admin" id="tablaEspecialistasDir">
-                <thead><tr><th>ESPECIALISTA</th><th>ÁREA</th><th>PROM. REAL H</th><th>PROM. REAL V</th><th>PROM TOTAL</th><th>EFIC. %</th></tr></thead><tbody>`;
+                <thead><tr><th>ESPECIALISTA</th><th>ÁREA</th><th>DÍAS PROG.</th><th>DÍAS TRAB.</th><th>% ASIST. DOCENTE</th><th>PROM. ATENCIÓN DIARIA</th></tr></thead><tbody>`;
+                
                 docentesEsp.forEach(d => {
-                    // Calculamos promedios del especialista
-                    let sH=0, sV=0, ds=0, mH=0, mV=0;
-                    Object.keys(d.asistencias || {}).forEach(f => {
-                        const fo = new Date(f + "T00:00:00");
-                        if(fo.getMonth() === mesRef && fo.getDay()!==0 && fo.getDay()!==6 && !d.feriados?.includes(f)) {
-                            ds++;
-                            // Recorrer las secciones atendidas ese día
-                            Object.keys(d.asistencias[f]).forEach(secId => {
-                                const marcas = d.asistencias[f][secId];
-                                Object.keys(marcas).forEach(alumId => {
-                                    if(marcas[alumId] === 1) { /* No tenemos género directo, asumimos 50/50 o se omite disgregado si no se guarda. Para simplificar, mostramos el total marcado en la vista general */ }
+                    let diasLab = d.diasLaborales || [1,2,3,4,5];
+                    let diasObligatorios = 0;
+                    let diasAsistidos = 0;
+                    let totalEvaluados = 0;
+                    
+                    const daysInMonth = new Date(yearRef, mesRef + 1, 0).getDate();
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        let dDate = new Date(yearRef, mesRef, i);
+                        let dateStr = `${dDate.getFullYear()}-${String(dDate.getMonth()+1).padStart(2,'0')}-${String(dDate.getDate()).padStart(2,'0')}`;
+                        
+                        if (diasLab.includes(dDate.getDay()) && !d.feriados?.includes(dateStr)) {
+                            diasObligatorios++;
+                            if (d.asistencias && d.asistencias[dateStr]) {
+                                let worked = false;
+                                Object.keys(d.asistencias[dateStr]).forEach(secId => {
+                                    Object.values(d.asistencias[dateStr][secId]).forEach(st => {
+                                        if(st === 1 || st === 2) worked = true;
+                                        if(st === 1) totalEvaluados++;
+                                    });
                                 });
-                            });
+                                if (worked) diasAsistidos++;
+                            }
                         }
-                    });
-                    // Como el administrador no tiene la data de género de cada niño marcado por el especialista aquí de forma fácil, mostramos un resumen simplificado
-                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td colspan="4">Ver detalle en su sesión</td></tr>`;
+                    }
+                    let pctAsist = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
+                    let promDia = diasAsistidos > 0 ? (totalEvaluados / diasAsistidos).toFixed(1) : 0;
+                    
+                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td>${diasObligatorios}</td><td>${diasAsistidos}</td><td><b>${pctAsist}%</b></td><td>${promDia} est/día</td></tr>`;
                 });
                 h += `</tbody></table>`;
             }
@@ -270,8 +290,6 @@
             doc.autoTable({ html: '#tablaAdminConsolidado', startY: 22, theme: 'grid', styles: {fontSize: 8} });
             doc.save("Consolidado_Direccion.pdf");
         };
-
-        // ... (Se mantienen las funciones de migración y exportación igual) ...
 
         // --- FUNCIONES ESPECIALISTAS ---
         window.cargarSeccionesEscuela = async () => {
@@ -308,7 +326,6 @@
             
             document.getElementById('docenteTxt').innerText = window.db.docente || "No asignado";
             
-            // Adaptar Interfaz según Rol
             const esEspecialista = window.db.rol === 'ESPECIALISTA';
             
             if (esEspecialista) {
@@ -317,12 +334,10 @@
                 document.getElementById('panelDescargas').style.display = 'none';
                 document.getElementById('panelEspecialista').style.display = 'block';
                 
-                // Llenar selector de secciones si no está lleno
                 const selectEsp = document.getElementById('selectEspecialista');
                 if (selectEsp.options.length <= 1) {
                     let html = `<option value="">Seleccione una sección...</option>`;
                     window.seccionesEscuela.forEach(sec => {
-                        // Filtrar por turno y por etapa si aplica
                         let pasaFiltro = sec.turno === window.db.turno;
                         if (pasaFiltro && window.db.etapa === '1') {
                             pasaFiltro = ['1','2','3'].includes(sec.grado);
@@ -348,7 +363,6 @@
             const lista = document.getElementById('listaAsistencia');
             lista.innerHTML = "";
             
-            // Definir alumnos a mostrar (Aula = sus alumnos, Esp = alumnos de la sección elegida)
             const activos = esEspecialista ? window.alumnosSeccionActiva : (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
 
             if (esFeriado || esFinde) {
@@ -357,7 +371,6 @@
                 lista.innerHTML = `<div class="aviso-no" style="color:var(--morado)">☝️ Selecciona una sección para tomar asistencia</div>`;
             } else {
                 activos.forEach(a => {
-                    // Búsqueda de estado
                     let st = 0;
                     if (esEspecialista) {
                         st = (window.db.asistencias[fSel] && window.db.asistencias[fSel][window.seccionActivaEspecialista] && window.db.asistencias[fSel][window.seccionActivaEspecialista][a.id]) || 0;
@@ -380,10 +393,11 @@
         };
 
         window.generarReporteDocente = (activos, mesRef, esEspecialista) => {
-            let sH=0, sV=0, dsH=0, ef=0;
-            let mI=0, mE=0, tEd = "";
-
+            const fSelDate = new Date(document.getElementById('fechaSeleccionada').value + "T00:00:00");
+            const yearRef = fSelDate.getFullYear();
+            
             if (!esEspecialista) {
+                let sH=0, sV=0, dsH=0, ef=0, mI=0, mE=0, tEd = "";
                 let eds={};
                 activos.forEach(al => { const e=calcularEdad(al.nacimiento); if(!eds[e]) eds[e]={F:0, M:0}; eds[e][al.genero]++; });
                 Object.keys(window.db.asistencias || {}).forEach(f => {
@@ -395,49 +409,69 @@
                 mI = (window.db.alumnos || []).filter(a => a.fechaIngreso && new Date(a.fechaIngreso+"T00:00:00").getMonth() === mesRef).length;
                 mE = (window.db.alumnos || []).filter(a => a.retirado && a.fechaEgreso && new Date(a.fechaEgreso+"T00:00:00").getMonth() === mesRef).length;
                 Object.keys(eds).sort((a,b)=>a-b).forEach(e => { tEd += `<tr><td>${e}a</td><td>${eds[e].F}</td><td>${eds[e].M}</td><td>${eds[e].F+eds[e].M}</td></tr>`; });
+                
+                const pH = dsH>0 ? sH/dsH : 0;
+                const pV = dsH>0 ? sV/dsH : 0;
+                ef = activos.length>0 ? ((pH+pV)/activos.length*100).toFixed(0) : 0;
+
+                document.getElementById('reporteDocente').innerHTML = `
+                    <div class="reporte-card card">
+                        <h2 style="text-align:center;">ESTADÍSTICA MENSUAL</h2>
+                        <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
+                        <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>Total: <b>${(pH+pV).toFixed(1)}</b></div></div>
+                        <table class="tabla-911">
+                            <thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead>
+                            <tbody>${tEd}</tbody>
+                            <tfoot>
+                                <tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr>
+                                <tr style="background:#e8f4f8; font-size:11px;"><td colspan="2">INGRESOS: <b>${mI}</b></td><td colspan="2">EGRESOS: <b>${mE}</b></td></tr>
+                            </tfoot>
+                        </table>
+                    </div>`;
             } else {
-                // Cálculo para especialistas
+                // LÓGICA ESPECIALISTA: Ajuste a días laborales reales
+                let diasObligatorios = 0;
+                let diasAsistidos = 0;
                 let totalAlumnosEvaluados = 0;
-                Object.keys(window.db.asistencias || {}).forEach(f => {
-                    const d = new Date(f + "T00:00:00");
-                    if(d.getMonth() === mesRef && d.getDay()!==0 && d.getDay()!==6 && !window.db.feriados?.includes(f)) {
-                        dsH++;
-                        Object.keys(window.db.asistencias[f]).forEach(secId => {
-                            const marcas = window.db.asistencias[f][secId];
-                            const seccion = window.seccionesEscuela.find(s => s.idLogin === secId);
-                            if(seccion) {
-                                Object.keys(marcas).forEach(alumId => {
-                                    const alum = seccion.alumnos.find(a => a.id == alumId);
-                                    if(alum && marcas[alumId] === 1) { alum.genero === 'F' ? sH++ : sV++; }
-                                    if(alum) totalAlumnosEvaluados++;
+                let diasLaborales = window.db.diasLaborales || [1,2,3,4,5]; 
+
+                const daysInMonth = new Date(yearRef, mesRef + 1, 0).getDate();
+                for (let i = 1; i <= daysInMonth; i++) {
+                    let dDate = new Date(yearRef, mesRef, i);
+                    let dateStr = `${dDate.getFullYear()}-${String(dDate.getMonth()+1).padStart(2,'0')}-${String(dDate.getDate()).padStart(2,'0')}`;
+                    
+                    if (diasLaborales.includes(dDate.getDay()) && !window.db.feriados?.includes(dateStr)) {
+                        diasObligatorios++;
+                        if (window.db.asistencias && window.db.asistencias[dateStr]) {
+                            let workedThisDay = false;
+                            Object.keys(window.db.asistencias[dateStr]).forEach(secId => {
+                                Object.values(window.db.asistencias[dateStr][secId]).forEach(st => {
+                                    if(st === 1 || st === 2) workedThisDay = true;
+                                    if(st === 1) totalAlumnosEvaluados++;
                                 });
-                            }
-                        });
+                            });
+                            if (workedThisDay) diasAsistidos++;
+                        }
                     }
-                });
-                ef = totalAlumnosEvaluados > 0 ? (((sH+sV)/totalAlumnosEvaluados)*100).toFixed(0) : 0;
+                }
+                
+                let porcentajeAsistenciaEsp = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
+                let promAlumnosDia = diasAsistidos > 0 ? (totalAlumnosEvaluados / diasAsistidos).toFixed(1) : 0;
+
+                document.getElementById('reporteDocente').innerHTML = `
+                    <div class="reporte-card card">
+                        <h2 style="text-align:center; color:var(--morado);">📊 ESTADÍSTICA DE ATENCIÓN</h2>
+                        <div class="grid-promedios" style="text-align:center;">
+                            <div>Días Progr.<br><b style="font-size:18px">${diasObligatorios}</b></div>
+                            <div>Días Trabajados<br><b style="font-size:18px">${diasAsistidos}</b></div>
+                            <div>% Asistencia<br><b style="font-size:18px; color:var(--morado)">${porcentajeAsistenciaEsp}%</b></div>
+                        </div>
+                        <div class="grid-promedios" style="margin-top:5px; background:#e8f4f8; text-align:center;">
+                            <div>Total de Alumnos Atendidos<br><b style="font-size:16px">${totalAlumnosEvaluados}</b></div>
+                            <div>Promedio de Estudiantes por Día<br><b style="font-size:16px">${promAlumnosDia}</b></div>
+                        </div>
+                    </div>`;
             }
-
-            const pH = dsH>0 ? sH/dsH : 0;
-            const pV = dsH>0 ? sV/dsH : 0;
-            if(!esEspecialista) ef = activos.length>0 ? ((pH+pV)/activos.length*100).toFixed(0) : 0;
-
-            let htmlReporte = `
-                <div class="reporte-card card">
-                    <h2 style="text-align:center;">ESTADÍSTICA MENSUAL</h2>
-                    <div class="circulo-eficiencia"><b>${ef}%</b><br><small>Efic.</small></div>
-                    <div class="grid-promedios"><div>H: <b>${pH.toFixed(1)}</b></div><div>V: <b>${pV.toFixed(1)}</b></div><div>Total: <b>${(pH+pV).toFixed(1)}</b></div></div>
-                    ${!esEspecialista ? `
-                    <table class="tabla-911">
-                        <thead><tr><th>Edad</th><th>H</th><th>V</th><th>T</th></tr></thead>
-                        <tbody>${tEd}</tbody>
-                        <tfoot>
-                            <tr style="background:#eee"><td>TOTAL</td><td>${activos.filter(a=>a.genero==='F').length}</td><td>${activos.filter(a=>a.genero==='M').length}</td><td>${activos.length}</td></tr>
-                            <tr style="background:#e8f4f8; font-size:11px;"><td colspan="2">INGRESOS: <b>${mI}</b></td><td colspan="2">EGRESOS: <b>${mE}</b></td></tr>
-                        </tfoot>
-                    </table>` : '<div style="text-align:center; color:var(--morado); font-size:12px; margin-top:10px;">Los datos corresponden a todas las secciones atendidas en el mes.</div>'}
-                </div>`;
-            document.getElementById('reporteDocente').innerHTML = htmlReporte;
         };
 
         window.marcar = (id) => {
@@ -461,8 +495,7 @@
             window.save();
         };
 
-        // ... (El resto de funciones como agregarAlumno, retirarAlumno, toggleFeriado se mantienen idénticas) ...
-        window.agregarAlumno = async () => { /* Código original de agregarAlumno */
+        window.agregarAlumno = async () => { 
             const n = document.getElementById('nom').value.trim().toUpperCase(); const na = document.getElementById('nac').value; const c = document.getElementById('ced').value.trim().toUpperCase();
             if(!n || !na) return Swal.fire('Atención', 'Obligatorios.', 'warning');
             const duplicado = window.db.alumnos.some(a => a.nombre === n || (a.cedula === c && c !== ""));
@@ -472,7 +505,7 @@
             Swal.fire('Agregado', 'Estudiante inscrito.', 'success');
         };
 
-        window.retirarAlumno = async (id) => { /* Código original de retirarAlumno */
+        window.retirarAlumno = async (id) => { 
             const result = await Swal.fire({ title: '¿Retirar?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí' });
             if(result.isConfirmed) { const a = window.db.alumnos.find(x=>x.id===id); if(a){ a.retirado=true; a.fechaEgreso=document.getElementById('fechaSeleccionada').value; await window.save(); Swal.fire('Retirado', 'Marcado como egreso.', 'success'); } }
         };
@@ -484,7 +517,6 @@
             await window.save();
         };
 
-        // --- BUSCADOR ---
         window.filtrarAlumnos = () => {
             const texto = document.getElementById('busquedaAlumno').value.toLowerCase();
             const filas = document.querySelectorAll('.alumno-fila');
@@ -500,14 +532,12 @@
         window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
         window.checkSession();
 
-        // Ocultar modalEdicion global
-        window.abrirEdicionAlumno = (id) => { /* Código original */ }
-        window.cerrarEdicionAlumno = () => { /* Código original */ }
-        window.guardarEdicionAlumno = async () => { /* Código original */ }
+        window.abrirEdicionAlumno = (id) => {  }
+        window.cerrarEdicionAlumno = () => {  }
+        window.guardarEdicionAlumno = async () => {  }
     </script>
 
     <style>
-        /* Mismos estilos que tenías, más algunos retoques visuales ligeros */
         :root { --azul: #002147; --exito: #28a745; --morado: #6f42c1; --rojo: #dc3545; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
         header { background: var(--azul); color: white; padding: 15px; display: flex; justify-content: space-between; border-bottom: 4px solid #f39c12; }
@@ -563,7 +593,16 @@
             <select id="regEtapa"><option value="TODAS">Todas las Etapas</option><option value="1">1ra Etapa (1ro a 3ro)</option><option value="2">2da Etapa (4to a 6to)</option></select>
         </div>
 
-        <select id="regTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
+        <div id="diasLaboralesEsp" style="display:none; text-align:left; margin-top:5px; background:#f0f2f5; padding:8px; border-radius:6px;">
+            <label style="font-size:11px; font-weight:bold; color:var(--morado);">Días que labora en la escuela:</label><br>
+            <label style="font-size:12px;"><input type="checkbox" value="1" class="dia-esp" checked> Lun</label>
+            <label style="font-size:12px;"><input type="checkbox" value="2" class="dia-esp" checked> Mar</label>
+            <label style="font-size:12px;"><input type="checkbox" value="3" class="dia-esp" checked> Mié</label>
+            <label style="font-size:12px;"><input type="checkbox" value="4" class="dia-esp" checked> Jue</label>
+            <label style="font-size:12px;"><input type="checkbox" value="5" class="dia-esp" checked> Vie</label>
+        </div>
+
+        <select id="regTurno" style="margin-top:10px;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option></select>
         <input type="text" id="regUser" placeholder="Usuario">
         <input type="password" id="regPass" placeholder="Contraseña">
         <input type="password" id="regClaveInst" placeholder="Clave Institucional">
