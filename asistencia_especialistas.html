@@ -233,15 +233,21 @@
             if(docentesEsp.length > 0) {
                 h += `<div style="text-align:center; font-size:14px; color:var(--morado); margin-top:20px;"><strong>ESTADÍSTICA ESPECIALISTAS (DIARIO Y MENSUAL)</strong></div>
                 <table class="tabla-admin" id="tablaEspecialistasDir">
-                <thead><tr><th>ESPECIALISTA</th><th>ÁREA</th><th>DÍAS PROG.</th><th>DÍAS TRAB.</th><th>% ASIST. DOCENTE</th><th>SECC. HOY</th><th>SECC. MES</th><th>PROM. ATENCIÓN DIARIA</th></tr></thead><tbody>`;
+                <thead>
+                    <tr><th rowspan="2">ESPECIALISTA</th><th rowspan="2">ÁREA</th><th rowspan="2">DÍAS PROG.</th><th rowspan="2">DÍAS TRAB.</th><th rowspan="2">% ASIST.</th><th rowspan="2">SECC. HOY</th><th rowspan="2">SECC. MES</th><th colspan="3">PROM. REAL ATENCIÓN</th></tr>
+                    <tr><th>H</th><th>V</th><th>T</th></tr>
+                </thead><tbody>`;
                 
                 docentesEsp.forEach(d => {
                     let diasLab = d.diasLaborales || [1,2,3,4,5];
                     let diasObligatorios = 0;
                     let diasAsistidos = 0;
-                    let totalEvaluados = 0;
                     
-                    // NUEVO: Variables para secciones de Dirección
+                    // Contadores de Promedio Real 
+                    let totalH = 0;
+                    let totalV = 0;
+                    let totalT = 0;
+                    
                     let seccionesAtendidasHoy = [];
                     let seccionesAtendidasMes = new Set();
                     
@@ -267,11 +273,20 @@
                                 let worked = false;
                                 Object.keys(d.asistencias[dateStr]).forEach(secId => {
                                     let secWorked = false;
-                                    Object.values(d.asistencias[dateStr][secId]).forEach(st => {
+                                    // Obtenemos los alumnos de esa sección para saber el género
+                                    const secObj = docentesAula.find(a => a.idLogin === secId);
+                                    const alumnosSec = secObj ? (secObj.alumnos || []) : [];
+
+                                    Object.keys(d.asistencias[dateStr][secId]).forEach(stId => {
+                                        const st = d.asistencias[dateStr][secId][stId];
                                         if(st === 1 || st === 2) { worked = true; secWorked = true; }
-                                        if(st === 1) totalEvaluados++;
+                                        if(st === 1) {
+                                            totalT++;
+                                            const alumno = alumnosSec.find(a => a.id == stId);
+                                            if (alumno && alumno.genero === 'F') totalH++;
+                                            else if (alumno && alumno.genero === 'M') totalV++;
+                                        }
                                     });
-                                    // NUEVO: Agregar al set del mes si trabajó en ella
                                     if(secWorked) seccionesAtendidasMes.add(secId);
                                 });
                                 if (worked) diasAsistidos++;
@@ -279,12 +294,15 @@
                         }
                     }
                     let pctAsist = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
-                    let promDia = diasAsistidos > 0 ? (totalEvaluados / diasAsistidos).toFixed(1) : 0;
                     
-                    // NUEVO: Formateo de las celdas de las secciones
+                    // Promedios Reales Disgregados
+                    let promH = diasAsistidos > 0 ? (totalH / diasAsistidos).toFixed(1) : 0;
+                    let promV = diasAsistidos > 0 ? (totalV / diasAsistidos).toFixed(1) : 0;
+                    let promT = diasAsistidos > 0 ? (totalT / diasAsistidos).toFixed(1) : 0;
+                    
                     let strSeccionesHoy = seccionesAtendidasHoy.length > 0 ? `<b style="color:var(--morado)">${seccionesAtendidasHoy.length}</b><br><small style="font-size:9px">(${seccionesAtendidasHoy.join(', ')})</small>` : "0";
                     
-                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td>${diasObligatorios}</td><td>${diasAsistidos}</td><td><b>${pctAsist}%</b></td><td>${strSeccionesHoy}</td><td><b style="color:var(--morado)">${seccionesAtendidasMes.size}</b></td><td>${promDia} est/día</td></tr>`;
+                    h += `<tr><td style="text-align:left">${d.docente}</td><td>${d.especialidad}</td><td>${diasObligatorios}</td><td>${diasAsistidos}</td><td><b>${pctAsist}%</b></td><td>${strSeccionesHoy}</td><td><b style="color:var(--morado)">${seccionesAtendidasMes.size}</b></td><td>${promH}</td><td>${promV}</td><td><b>${promT}</b></td></tr>`;
                 });
                 h += `</tbody></table>`;
             }
@@ -438,13 +456,14 @@
                         </table>
                     </div>`;
             } else {
-                // LÓGICA ESPECIALISTA: Ajuste a días laborales reales y secciones
+                // LÓGICA ESPECIALISTA: Ajuste a días laborales reales, secciones y promedios por género
                 let diasObligatorios = 0;
                 let diasAsistidos = 0;
-                let totalAlumnosEvaluados = 0;
+                let totalH = 0;
+                let totalV = 0;
+                let totalT = 0;
                 let diasLaborales = window.db.diasLaborales || [1,2,3,4,5]; 
                 
-                // NUEVO: Variables para almacenar estadísticas de secciones
                 let seccionesAtendidasHoy = [];
                 let seccionesAtendidasMes = new Set();
                 
@@ -470,11 +489,20 @@
                             let workedThisDay = false;
                             Object.keys(window.db.asistencias[dateStr]).forEach(secId => {
                                 let secWorked = false;
-                                Object.values(window.db.asistencias[dateStr][secId]).forEach(st => {
+                                const secObj = window.seccionesEscuela.find(s => s.idLogin === secId);
+                                const alumnosSec = secObj ? (secObj.alumnos || []) : [];
+
+                                Object.keys(window.db.asistencias[dateStr][secId]).forEach(stId => {
+                                    const st = window.db.asistencias[dateStr][secId][stId];
                                     if(st === 1 || st === 2) { workedThisDay = true; secWorked = true; }
-                                    if(st === 1) totalAlumnosEvaluados++;
+                                    if(st === 1) {
+                                        totalT++;
+                                        const alumno = alumnosSec.find(a => a.id == stId);
+                                        if (alumno && alumno.genero === 'F') totalH++;
+                                        else if (alumno && alumno.genero === 'M') totalV++;
+                                    }
                                 });
-                                // NUEVO: Añadir la sección al registro mensual
+                                // Añadir la sección al registro mensual
                                 if (secWorked) seccionesAtendidasMes.add(secId);
                             });
                             if (workedThisDay) diasAsistidos++;
@@ -483,9 +511,10 @@
                 }
                 
                 let porcentajeAsistenciaEsp = diasObligatorios > 0 ? ((diasAsistidos / diasObligatorios) * 100).toFixed(1) : 0;
-                let promAlumnosDia = diasAsistidos > 0 ? (totalAlumnosEvaluados / diasAsistidos).toFixed(1) : 0;
+                let promH = diasAsistidos > 0 ? (totalH / diasAsistidos).toFixed(1) : 0;
+                let promV = diasAsistidos > 0 ? (totalV / diasAsistidos).toFixed(1) : 0;
+                let promT = diasAsistidos > 0 ? (totalT / diasAsistidos).toFixed(1) : 0;
                 
-                // Formateo visual
                 let listadoHoyStr = seccionesAtendidasHoy.length > 0 ? `(${seccionesAtendidasHoy.join(', ')})` : "";
 
                 document.getElementById('reporteDocente').innerHTML = `
@@ -510,8 +539,9 @@
                             <div>% Asist. Docente<br><b style="font-size:18px; color:var(--morado)">${porcentajeAsistenciaEsp}%</b></div>
                         </div>
                         <div class="grid-promedios" style="margin-top:5px; background:#e8f4f8; text-align:center;">
-                            <div>Total Alumnos Eval.<br><b style="font-size:16px">${totalAlumnosEvaluados}</b></div>
-                            <div>Promedio Eval. / Día<br><b style="font-size:16px">${promAlumnosDia}</b></div>
+                            <div>Prom H<br><b style="font-size:16px">${promH}</b></div>
+                            <div>Prom V<br><b style="font-size:16px">${promV}</b></div>
+                            <div>Prom Real (T)<br><b style="font-size:16px">${promT}</b></div>
                         </div>
                     </div>`;
             }
