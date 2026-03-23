@@ -123,25 +123,31 @@
 
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('appContent').style.display = 'block';
-                    if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
+                    if (u === USUARIO_ADMIN) {
+                        document.getElementById('adminPanel').style.display = 'block';
+                        window.consolidadoMensual();
+                    }
                     
                     onSnapshot(doc(dbCloud, "docentes_db", u), async (s) => { 
-                        window.db = s.data(); 
-                        if (!window.db.rol) window.db.rol = "AULA"; 
-                        if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; 
-                        
-                        // Cargar datos en el panel de Ajustes
-                        document.getElementById('editDocente').value = window.db.docente || "";
-                        document.getElementById('editTurno').value = window.db.turno || "Mañana";
-                        if (window.db.rol === 'AULA') {
-                            document.getElementById('editGrado').value = window.db.grado || "";
-                            document.getElementById('editSeccion').value = window.db.seccion || "";
-                        }
+                        if (s.exists()) {
+                            window.db = s.data(); 
+                            if (!window.db.rol) window.db.rol = "AULA"; 
+                            if (!window.db.alumnos) window.db.alumnos = [];
+                            if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; 
+                            
+                            // Cargar datos en el panel de Ajustes
+                            document.getElementById('editDocente').value = window.db.docente || "";
+                            document.getElementById('editTurno').value = window.db.turno || "Mañana";
+                            if (window.db.rol === 'AULA') {
+                                document.getElementById('editGrado').value = window.db.grado || "";
+                                document.getElementById('editSeccion').value = window.db.seccion || "";
+                            }
 
-                        if (window.db.rol === 'ESPECIALISTA') {
-                            await window.cargarSeccionesEscuela();
+                            if (window.db.rol === 'ESPECIALISTA') {
+                                await window.cargarSeccionesEscuela();
+                            }
+                            window.render(); 
                         }
-                        window.render(); 
                     });
                     Swal.close();
                 } else { 
@@ -388,20 +394,265 @@
             document.getElementById('migracionOrigen').innerHTML = html;
             document.getElementById('migracionDestino').innerHTML = html;
         };
-        window.cargarAlumnosMigracion = async () => { /* ... Lógica existente ... */ };
-        window.seleccionarTodosMigracion = (marcado) => { /* ... Lógica existente ... */ };
-        window.ejecutarMigracion = async () => { /* ... Lógica existente ... */ };
+        
+        window.cargarAlumnosMigracion = async () => { 
+            const origenId = document.getElementById('migracionOrigen').value;
+            const listaDiv = document.getElementById('listaAlumnosMigracion');
+            if (!origenId) {
+                listaDiv.innerHTML = '<div style="padding:5px; color:#777;">Seleccione un origen para ver la lista.</div>';
+                return;
+            }
+            
+            Swal.fire({ title: 'Cargando estudiantes...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                const docRef = await getDoc(doc(dbCloud, "docentes_db", origenId));
+                if (docRef.exists()) {
+                    const data = docRef.data();
+                    const alumnos = (data.alumnos || []).filter(a => !a.retirado);
+                    
+                    if (alumnos.length === 0) {
+                        listaDiv.innerHTML = '<div style="padding:5px; color:#777;">La sección de origen no tiene estudiantes activos.</div>';
+                    } else {
+                        let html = `<div style="padding:5px; border-bottom:1px solid #ddd;">
+                            <input type="checkbox" id="chkTodosMigracion" onchange="seleccionarTodosMigracion(this.checked)"> <label for="chkTodosMigracion"><b>Seleccionar Todos</b></label>
+                        </div>`;
+                        alumnos.forEach(a => {
+                            html += `<div style="padding:5px;">
+                                <input type="checkbox" class="chk-migracion" value="${a.id}" data-obj='${JSON.stringify(a)}'> ${a.nombre}
+                            </div>`;
+                        });
+                        listaDiv.innerHTML = html;
+                    }
+                }
+                Swal.close();
+            } catch (e) {
+                Swal.fire('Error', 'No se pudieron cargar los estudiantes', 'error');
+            }
+        };
+
+        window.seleccionarTodosMigracion = (marcado) => { 
+            document.querySelectorAll('.chk-migracion').forEach(chk => chk.checked = marcado);
+        };
+
+        window.ejecutarMigracion = async () => { 
+            const origenId = document.getElementById('migracionOrigen').value;
+            const destinoId = document.getElementById('migracionDestino').value;
+            
+            if (!origenId || !destinoId) return Swal.fire('Aviso', 'Seleccione sección de origen y destino', 'warning');
+            if (origenId === destinoId) return Swal.fire('Aviso', 'El origen y destino no pueden ser iguales', 'warning');
+
+            const seleccionados = [];
+            document.querySelectorAll('.chk-migracion:checked').forEach(chk => {
+                seleccionados.push(JSON.parse(chk.getAttribute('data-obj')));
+            });
+
+            if (seleccionados.length === 0) return Swal.fire('Aviso', 'Seleccione al menos un estudiante para mover', 'warning');
+
+            const result = await Swal.fire({ title: `¿Mover ${seleccionados.length} estudiantes?`, text: "Esta acción los cambiará de sección.", icon: 'warning', showCancelButton: true });
+            
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                try {
+                    const docOrigen = await getDoc(doc(dbCloud, "docentes_db", origenId));
+                    const docDestino = await getDoc(doc(dbCloud, "docentes_db", destinoId));
+                    
+                    let dataOrigen = docOrigen.data();
+                    let dataDestino = docDestino.data();
+                    if (!dataDestino.alumnos) dataDestino.alumnos = [];
+
+                    // Agregar al destino
+                    seleccionados.forEach(alum => {
+                        alum.fechaIngreso = document.getElementById('fechaSeleccionada').value; // Nueva fecha de ingreso
+                        dataDestino.alumnos.push(alum);
+                    });
+
+                    // Remover del origen
+                    const idsSeleccionados = seleccionados.map(s => s.id);
+                    dataOrigen.alumnos = dataOrigen.alumnos.filter(a => !idsSeleccionados.includes(a.id));
+
+                    await setDoc(doc(dbCloud, "docentes_db", destinoId), dataDestino);
+                    await setDoc(doc(dbCloud, "docentes_db", origenId), dataOrigen);
+
+                    Swal.fire('Éxito', 'Estudiantes migrados correctamente', 'success');
+                    window.cargarAlumnosMigracion(); // Refrescar lista
+                } catch (e) {
+                    Swal.fire('Error', 'Ocurrió un error al migrar', 'error');
+                }
+            }
+        };
 
         // --- EXPORTACIONES Y REPORTES ---
-        window.exportarConsolidadoIndPDF = () => { /* ... */ };
-        window.imprimirListadoEstudiantesPDF = async () => { /* ... */ };
-        window.exportarListadoEstudiantesExcel = () => { /* ... */ };
-        window.descargarListaEstudiantesPDF = async () => { /* ... */ };
-        window.exportarNombresBasico = async (formato, esAdmin) => { /* ... */ };
-        window.exportarBackupJSON = () => { /* ... */ };
-        window.limpiarMovimientos = async () => { /* ... */ };
-        window.borrarMatriculaTotal = async () => { /* ... */ };
-        window.toggleConsolidadoInd = () => { /* ... */ };
+        window.exportarConsolidadoIndPDF = () => { 
+            const doc = new jspdf.jsPDF();
+            doc.text(`Asistencia Individual Mensual - ${window.db.grado}${window.db.seccion}`, 14, 15);
+            doc.autoTable({ html: '#tablaConsolidadoIndividual', startY: 20, theme: 'grid', styles: {fontSize: 8} });
+            doc.save(`Asistencia_Mensual_${window.db.grado}${window.db.seccion}.pdf`);
+        };
+
+        window.imprimirListadoEstudiantesPDF = async () => { 
+            const doc = new jspdf.jsPDF();
+            doc.text(`Listado de Estudiantes - ${window.db.grado}${window.db.seccion} - ${window.db.docente}`, 14, 15);
+            
+            const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            const data = activos.map((a, i) => [i+1, a.cedula || '', a.nombre, a.genero, a.nacimiento, calcularEdad(a.nacimiento)]);
+            
+            doc.autoTable({
+                head: [['#', 'Cédula', 'Nombre y Apellido', 'Gen', 'Nacimiento', 'Edad']],
+                body: data,
+                startY: 20,
+                theme: 'grid',
+                styles: { fontSize: 9 }
+            });
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        };
+
+        window.exportarListadoEstudiantesExcel = () => { 
+            const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+            const data = activos.map((a, i) => ({
+                "Nro": i+1,
+                "Cédula": a.cedula || '',
+                "Nombres y Apellidos": a.nombre,
+                "Género": a.genero,
+                "Fecha Nac.": a.nacimiento,
+                "Edad": calcularEdad(a.nacimiento)
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Estudiantes");
+            XLSX.writeFile(wb, `Lista_${window.db.grado}${window.db.seccion}.xlsx`);
+        };
+
+        window.descargarListaEstudiantesPDF = async () => { 
+            window.exportarNombresBasico('pdf', true);
+        };
+
+        window.exportarNombresBasico = async (formato, esAdmin) => { 
+            Swal.fire({ title: 'Generando archivo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+            try {
+                const snap = await getDocs(collection(dbCloud, "docentes_db"));
+                let data = [];
+                snap.forEach(dSnap => {
+                    if (dSnap.id !== USUARIO_ADMIN) {
+                        const d = dSnap.data();
+                        if (d.rol === 'AULA') {
+                            const activos = (d.alumnos || []).filter(a => !a.retirado);
+                            activos.forEach(a => {
+                                data.push({
+                                    GradoSec: `${d.grado}${d.seccion}`,
+                                    Cedula: a.cedula || '',
+                                    Nombre: a.nombre,
+                                    Genero: a.genero
+                                });
+                            });
+                        }
+                    }
+                });
+
+                data.sort((a,b) => a.GradoSec.localeCompare(b.GradoSec) || a.Nombre.localeCompare(b.Nombre));
+
+                if (formato === 'excel') {
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Matricula");
+                    XLSX.writeFile(wb, `Matricula_General_Lucila.xlsx`);
+                } else if (formato === 'pdf') {
+                    const doc = new jspdf.jsPDF();
+                    doc.text("Matrícula General de Estudiantes", 14, 15);
+                    const bodyData = data.map((item, i) => [i+1, item.GradoSec, item.Cedula, item.Nombre, item.Genero]);
+                    doc.autoTable({
+                        head: [['#', 'G/S', 'Cédula', 'Nombres', 'Gen']],
+                        body: bodyData,
+                        startY: 20,
+                        styles: { fontSize: 8 }
+                    });
+                    doc.save("Matricula_General.pdf");
+                }
+                Swal.close();
+            } catch (e) {
+                Swal.fire('Error', 'No se pudo generar el archivo', 'error');
+            }
+        };
+
+        window.exportarBackupJSON = () => { 
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.db));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `Backup_${window.db.grado}${window.db.seccion}_${new Date().getTime()}.json`);
+            dlAnchorElem.click();
+        };
+
+        window.limpiarMovimientos = async () => { 
+            const result = await Swal.fire({ title: '¿Limpiar movimientos?', text: "Esto eliminará permanentemente a los estudiantes retirados y restablecerá las fechas de ingreso.", icon: 'warning', showCancelButton: true });
+            if (result.isConfirmed) {
+                const activos = window.db.alumnos.filter(a => !a.retirado);
+                activos.forEach(a => a.fechaIngreso = null);
+                window.db.alumnos = activos;
+                await window.save();
+                window.render();
+                Swal.fire('Éxito', 'Movimientos limpiados', 'success');
+            }
+        };
+
+        window.borrarMatriculaTotal = async () => { 
+            const result = await Swal.fire({ title: '¿Borrar TODA la matrícula?', text: "Se eliminarán todos los estudiantes y asistencias de esta sección.", icon: 'error', showCancelButton: true, confirmButtonText: "Sí, borrar todo" });
+            if (result.isConfirmed) {
+                window.db.alumnos = [];
+                window.db.asistencias = {};
+                await window.save();
+                window.render();
+                Swal.fire('Borrado', 'Matrícula eliminada', 'success');
+            }
+        };
+
+        window.toggleConsolidadoInd = () => { 
+            const panel = document.getElementById('panelConsolidadoInd');
+            if (panel.style.display === 'none') {
+                const fSel = document.getElementById('fechaSeleccionada').value;
+                const mesRef = new Date(fSel + "T00:00:00").getMonth();
+                const yearRef = new Date(fSel + "T00:00:00").getFullYear();
+                
+                const daysInMonth = new Date(yearRef, mesRef + 1, 0).getDate();
+                const activos = (window.db.alumnos || []).filter(a => !a.retirado).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+                let html = `<table id="tablaConsolidadoIndividual" class="tabla-admin">
+                    <thead><tr><th>Estudiante</th>`;
+                
+                for (let i = 1; i <= daysInMonth; i++) {
+                    html += `<th>${i}</th>`;
+                }
+                html += `<th>T</th></tr></thead><tbody>`;
+
+                activos.forEach(a => {
+                    let totalAsist = 0;
+                    html += `<tr><td style="text-align:left; font-size:9px;">${a.nombre}</td>`;
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        let dDate = new Date(yearRef, mesRef, i);
+                        let dateStr = `${dDate.getFullYear()}-${String(dDate.getMonth()+1).padStart(2,'0')}-${String(dDate.getDate()).padStart(2,'0')}`;
+                        
+                        let st = (window.db.asistencias[dateStr] && window.db.asistencias[dateStr][a.id]) || 0;
+                        let text = "";
+                        if (st === 1) { text = "P"; totalAsist++; }
+                        else if (st === 2) text = "J";
+                        
+                        // Fines de semana o feriados
+                        if (dDate.getDay() === 0 || dDate.getDay() === 6 || window.db.feriados?.includes(dateStr)) {
+                            html += `<td style="background:#eee;"></td>`;
+                        } else {
+                            html += `<td>${text}</td>`;
+                        }
+                    }
+                    html += `<td><b>${totalAsist}</b></td></tr>`;
+                });
+
+                html += `</tbody></table>`;
+                document.getElementById('salidaConsolidadoInd').innerHTML = html;
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        };
 
         // --- FUNCIONES ESPECIALISTAS ---
         window.cargarSeccionesEscuela = async () => {
@@ -625,17 +876,95 @@
             window.save();
         };
 
-        window.agregarAlumno = async () => { /* ... Lógica existente ... */ };
-        window.retirarAlumno = async (id) => { /* ... Lógica existente ... */ };
-        window.abrirEdicionAlumno = (id) => { /* ... Lógica existente ... */ };
-        window.cerrarEdicionAlumno = () => { /* ... Lógica existente ... */ };
-        window.guardarEdicionAlumno = async () => { /* ... Lógica existente ... */ };
+        window.agregarAlumno = async () => { 
+            const ced = document.getElementById('ced').value.trim();
+            const nom = document.getElementById('nom').value.toUpperCase().trim();
+            const gen = document.getElementById('gen').value;
+            const nac = document.getElementById('nac').value;
+
+            if(!nom || !nac) return Swal.fire('Error', 'El nombre y la fecha de nacimiento son obligatorios.', 'warning');
+
+            if(!window.db.alumnos) window.db.alumnos = [];
+            const fSel = document.getElementById('fechaSeleccionada').value;
+
+            const nuevoAlumno = {
+                id: Date.now(),
+                cedula: ced,
+                nombre: nom,
+                genero: gen,
+                nacimiento: nac,
+                fechaIngreso: fSel,
+                retirado: false
+            };
+
+            window.db.alumnos.push(nuevoAlumno);
+            await window.save();
+
+            document.getElementById('ced').value = '';
+            document.getElementById('nom').value = '';
+            document.getElementById('nac').value = '';
+            Swal.fire('Éxito', 'Estudiante agregado correctamente.', 'success');
+            window.render();
+        };
+
+        window.retirarAlumno = async (id) => { 
+            const result = await Swal.fire({ 
+                title: '¿Estás seguro?', 
+                text: "Esto marcará al estudiante como retirado (Egreso).", 
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, retirar' 
+            });
+
+            if(result.isConfirmed) {
+                const index = window.db.alumnos.findIndex(a => a.id === id);
+                if (index > -1) {
+                    window.db.alumnos[index].retirado = true;
+                    window.db.alumnos[index].fechaEgreso = document.getElementById('fechaSeleccionada').value;
+                    await window.save();
+                    window.render();
+                    Swal.fire('Retirado', 'Estudiante retirado del sistema.', 'success');
+                }
+            }
+        };
+
+        window.abrirEdicionAlumno = (id) => { 
+            const alumno = window.db.alumnos.find(a => a.id === id);
+            if (alumno) {
+                document.getElementById('editAlumId').value = alumno.id;
+                document.getElementById('editAlumCed').value = alumno.cedula || '';
+                document.getElementById('editAlumNom').value = alumno.nombre;
+                document.getElementById('editAlumGen').value = alumno.genero;
+                document.getElementById('editAlumNac').value = alumno.nacimiento;
+                document.getElementById('modalEditarAlumno').style.display = 'flex';
+            }
+        };
+
+        window.cerrarEdicionAlumno = () => { 
+            document.getElementById('modalEditarAlumno').style.display = 'none';
+        };
+
+        window.guardarEdicionAlumno = async () => { 
+            const id = parseInt(document.getElementById('editAlumId').value);
+            const index = window.db.alumnos.findIndex(a => a.id === id);
+            
+            if (index > -1) {
+                window.db.alumnos[index].cedula = document.getElementById('editAlumCed').value.trim();
+                window.db.alumnos[index].nombre = document.getElementById('editAlumNom').value.toUpperCase().trim();
+                window.db.alumnos[index].genero = document.getElementById('editAlumGen').value;
+                window.db.alumnos[index].nacimiento = document.getElementById('editAlumNac').value;
+                
+                await window.save();
+                window.cerrarEdicionAlumno();
+                window.render();
+                Swal.fire('Guardado', 'Los datos del estudiante han sido actualizados.', 'success');
+            }
+        };
 
         window.toggleFeriado = async () => {
             const f = document.getElementById('fechaSeleccionada').value;
             if(!window.db.feriados) window.db.feriados = [];
             window.db.feriados.includes(f) ? window.db.feriados=window.db.feriados.filter(x=>x!==f) : window.db.feriados.push(f);
             await window.save();
+            window.render();
         };
 
         window.filtrarAlumnos = () => {
@@ -655,6 +984,7 @@
                 await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); 
             } catch (error) {
                 console.error("Error guardando datos:", error);
+                Swal.fire('Error', 'Problema al comunicarse con la base de datos.', 'error');
             }
         };
         
