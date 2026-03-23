@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script type="module">
@@ -61,12 +60,17 @@
 
         window.registrarCuenta = async () => {
             if(document.getElementById('regClaveInst').value !== CLAVE_INST) return Swal.fire('Error', 'Clave Institucional Incorrecta', 'error');
+            
             const u = document.getElementById('regUser').value.toLowerCase().trim();
+            const pass = document.getElementById('regPass').value;
+            const docente = document.getElementById('regNombre').value.toUpperCase();
             const rol = document.getElementById('regRol').value;
+
+            if (!u || !pass || !docente) return Swal.fire('Error', 'Por favor, complete los campos obligatorios.', 'warning');
             
             let data = { 
-                docente: document.getElementById('regNombre').value.toUpperCase(), 
-                pass: document.getElementById('regPass').value, 
+                docente: docente, 
+                pass: pass, 
                 turno: document.getElementById('regTurno').value,
                 rol: rol,
                 asistencias: {}, feriados: [] 
@@ -86,47 +90,65 @@
                 data.diasLaborales = diasLab;
             }
 
-            await setDoc(doc(dbCloud, "docentes_db", u), data);
-            Swal.fire('¡Éxito!', 'Cuenta creada correctamente.', 'success');
-            window.mostrarRegistro(false);
+            try {
+                await setDoc(doc(dbCloud, "docentes_db", u), data);
+                Swal.fire('¡Éxito!', 'Cuenta creada correctamente.', 'success');
+                window.mostrarRegistro(false);
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo crear la cuenta. Revise su conexión.', 'error');
+            }
         };
 
         window.login = async () => {
             const u = document.getElementById('loginUser').value.toLowerCase().trim();
             const p = document.getElementById('loginPass').value;
             
+            if (!u || !p) return Swal.fire('Aviso', 'Ingrese usuario y contraseña.', 'warning');
+
             Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-            const snap = await getDoc(doc(dbCloud, "docentes_db", u));
-            
-            if (snap.exists() && snap.data().pass === p) {
-                window.usuarioActual = u;
-                localStorage.setItem('lucila_usuario', u);
-                localStorage.setItem('lucila_pass', p);
-
-                const hoy = new Date();
-                const año = hoy.getFullYear();
-                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-                const dia = String(hoy.getDate()).padStart(2, '0');
-                document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
-
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
-                if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
+            try {
+                const snap = await getDoc(doc(dbCloud, "docentes_db", u));
                 
-                onSnapshot(doc(dbCloud, "docentes_db", u), async (s) => { 
-                    window.db = s.data(); 
-                    if (!window.db.rol) window.db.rol = "AULA"; 
-                    if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; 
+                if (snap.exists() && snap.data().pass === p) {
+                    window.usuarioActual = u;
+                    localStorage.setItem('lucila_usuario', u);
+                    localStorage.setItem('lucila_pass', p);
+
+                    const hoy = new Date();
+                    const año = hoy.getFullYear();
+                    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                    const dia = String(hoy.getDate()).padStart(2, '0');
+                    document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
+
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('appContent').style.display = 'block';
+                    if (u === USUARIO_ADMIN) document.getElementById('adminPanel').style.display = 'block';
                     
-                    if (window.db.rol === 'ESPECIALISTA') {
-                        await window.cargarSeccionesEscuela();
-                    }
-                    window.render(); 
-                });
-                Swal.close();
-            } else { 
-                Swal.fire('Acceso denegado', 'Usuario o contraseña incorrectos.', 'error');
+                    onSnapshot(doc(dbCloud, "docentes_db", u), async (s) => { 
+                        window.db = s.data(); 
+                        if (!window.db.rol) window.db.rol = "AULA"; 
+                        if (window.db.rol === 'ESPECIALISTA' && !window.db.diasLaborales) window.db.diasLaborales = [1,2,3,4,5]; 
+                        
+                        // Cargar datos en el panel de Ajustes
+                        document.getElementById('editDocente').value = window.db.docente || "";
+                        document.getElementById('editTurno').value = window.db.turno || "Mañana";
+                        if (window.db.rol === 'AULA') {
+                            document.getElementById('editGrado').value = window.db.grado || "";
+                            document.getElementById('editSeccion').value = window.db.seccion || "";
+                        }
+
+                        if (window.db.rol === 'ESPECIALISTA') {
+                            await window.cargarSeccionesEscuela();
+                        }
+                        window.render(); 
+                    });
+                    Swal.close();
+                } else { 
+                    Swal.fire('Acceso denegado', 'Usuario o contraseña incorrectos.', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
             }
         };
 
@@ -147,21 +169,31 @@
         };
 
         window.actualizarPerfil = async () => {
-            window.db.docente = document.getElementById('editDocente').value.toUpperCase();
-            window.db.turno = document.getElementById('editTurno').value;
-            if (window.db.rol === 'AULA') {
-                window.db.grado = document.getElementById('editGrado').value;
-                window.db.seccion = document.getElementById('editSeccion').value.toUpperCase();
+            try {
+                window.db.docente = document.getElementById('editDocente').value.toUpperCase();
+                window.db.turno = document.getElementById('editTurno').value;
+                if (window.db.rol === 'AULA') {
+                    window.db.grado = document.getElementById('editGrado').value;
+                    window.db.seccion = document.getElementById('editSeccion').value.toUpperCase();
+                }
+                await window.save(); 
+                Swal.fire('Actualizado', 'Perfil guardado correctamente', 'success');
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo guardar el perfil', 'error');
             }
-            await window.save(); 
-            Swal.fire('Actualizado', 'Perfil guardado correctamente', 'success');
         };
 
         // --- DIRECCIÓN (ESTADÍSTICAS Y GESTIÓN) ---
         window.eliminarDocenteAdmin = async (uID) => {
             if(uID === USUARIO_ADMIN) return Swal.fire('Error', 'No puedes eliminar al administrador.', 'error');
             const result = await Swal.fire({ title: `¿Eliminar al usuario: ${uID}?`, text: "Acción permanente.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar' });
-            if(result.isConfirmed){ await deleteDoc(doc(dbCloud, "docentes_db", uID)); Swal.fire('Eliminado', 'Cuenta eliminada.', 'success'); window.consolidadoMensual(); }
+            if(result.isConfirmed){ 
+                try {
+                    await deleteDoc(doc(dbCloud, "docentes_db", uID)); 
+                    Swal.fire('Eliminado', 'Cuenta eliminada.', 'success'); 
+                    window.consolidadoMensual(); 
+                } catch(e) { Swal.fire('Error', 'No se pudo eliminar.', 'error'); }
+            }
         };
 
         window.cambiarCredencialesDocente = async () => {
@@ -170,18 +202,22 @@
             const newP = document.getElementById('adminNewPass').value;
             if(!oldU) return Swal.fire('Aviso', 'Usuario actual requerido.', 'warning');
             
-            const oldRef = doc(dbCloud, "docentes_db", oldU);
-            const snap = await getDoc(oldRef);
-            if(!snap.exists()) return Swal.fire('Error', 'El usuario actual no existe.', 'error');
-            
-            const data = snap.data();
-            if(newP) data.pass = newP;
-            if(newU && newU !== oldU) {
-                await setDoc(doc(dbCloud, "docentes_db", newU), data);
-                await deleteDoc(oldRef);
-            } else { await setDoc(oldRef, data); }
-            
-            Swal.fire('Éxito', 'Credenciales actualizadas.', 'success');
+            try {
+                const oldRef = doc(dbCloud, "docentes_db", oldU);
+                const snap = await getDoc(oldRef);
+                if(!snap.exists()) return Swal.fire('Error', 'El usuario actual no existe.', 'error');
+                
+                const data = snap.data();
+                if(newP) data.pass = newP;
+                if(newU && newU !== oldU) {
+                    await setDoc(doc(dbCloud, "docentes_db", newU), data);
+                    await deleteDoc(oldRef);
+                } else { await setDoc(oldRef, data); }
+                
+                Swal.fire('Éxito', 'Credenciales actualizadas.', 'success');
+            } catch (e) {
+                Swal.fire('Error', 'Error al actualizar credenciales.', 'error');
+            }
         };
 
         window.consolidadoMensual = async () => {
@@ -614,7 +650,14 @@
             });
         };
 
-        window.save = async () => { await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); };
+        window.save = async () => { 
+            try {
+                await setDoc(doc(dbCloud, "docentes_db", window.usuarioActual), window.db); 
+            } catch (error) {
+                console.error("Error guardando datos:", error);
+            }
+        };
+        
         window.checkSession();
     </script>
 
@@ -825,3 +868,4 @@
 
 </body>
 </html>
+
