@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBN Lucila Palacios - Especialistas</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { --p: #3498db; --s: #2ecc71; --d: #e74c3c; --black: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 15px; }
+        .hidden { display: none !important; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h2 { color: var(--black); border-bottom: 2px solid var(--p); padding-bottom: 8px; font-size: 1.2rem; }
+        input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: var(--p); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-stats { background: #8e44ad; }
+        .btn-print { background: var(--s); }
+        .btn-del { background: var(--d); font-size: 11px; width: auto; padding: 5px 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        .atencion-card { border-left: 5px solid var(--p); padding: 10px; background: #fafafa; margin-bottom: 10px; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div id="loginSection" class="card" style="max-width:400px; margin: 50px auto; text-align:center;">
+    <h2>Iniciar Sesión</h2>
+    <input type="text" id="userInput" placeholder="Nombre de Usuario (ej: Maria)">
+    <input type="password" id="passInput" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
+</div>
+
+<div id="appSection" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center;" class="no-print">
+        <h3 style="color:var(--black);">EBN Lucila Palacios</h3>
+        <button onclick="auth.signOut()" class="btn-del" style="background:#95a5a6;">Salir</button>
+    </div>
+
+    <div class="card no-print">
+        <h2>1. Matrícula Manual</h2>
+        <input type="text" id="nomAlu" placeholder="Nombre del Alumno">
+        <select id="grpAlu">
+            <option value="Aula Integrada">Aula Integrada</option>
+            <option value="Fútbol">Fútbol</option>
+            <option value="Danza">Danza</option>
+        </select>
+        <button onclick="regAlu()" style="background:var(--s);">Registrar</button>
+    </div>
+
+    <div class="card no-print">
+        <h2>2. Pasar Lista y Actividad</h2>
+        <select id="selGrp" onchange="verLista()">
+            <option value="">-- Seleccionar Grupo --</option>
+            <option value="Aula Integrada">Aula Integrada</option>
+            <option value="Fútbol">Fútbol</option>
+            <option value="Danza">Danza</option>
+        </select>
+        <select id="tipoAt">
+            <option value="Grupal">Atención Grupal</option>
+            <option value="Individual">Atención Individual</option>
+        </select>
+        <div id="boxLista"></div>
+        <textarea id="txtAct" placeholder="¿Qué se trabajó hoy?"></textarea>
+        <button onclick="saveAsis()">Guardar Reporte</button>
+    </div>
+
+    <div class="card">
+        <h2 class="no-print">3. Reporte Mensual</h2>
+        <div class="no-print" style="display:flex; gap:5px;">
+            <input type="month" id="mesBusq">
+            <button onclick="verReporte()" class="btn-stats">Ver</button>
+            <button onclick="window.print()" class="btn-print">PDF</button>
+        </div>
+        <div id="resumenStats"></div>
+        <div id="detalleRep"></div>
+    </div>
+</div>
+
+<script>
+    // CREDENCIALES EXTRAÍDAS DE TU IMAGEN
+    const firebaseConfig = {
+        apiKey: "AIzaSyAERrG77MB-PVjHFWZ...", // (Abreviado por seguridad, usa el tuyo completo)
+        authDomain: "control-de-asistencia-97623.firebaseapp.com",
+        projectId: "control-de-asistencia-97623",
+        storageBucket: "control-de-asistencia-97623.appspot.com",
+        messagingSenderId: "368890880546",
+        appId: "1:368890880546:web:7d2386..."
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // LOGIN CON NOMBRE DE USUARIO
+    function login() {
+        const user = document.getElementById('userInput').value;
+        const pass = document.getElementById('passInput').value;
+        const fakeEmail = user.includes("@") ? user : user + "@lucila.temp";
+        auth.signInWithEmailAndPassword(fakeEmail, pass).catch(e => alert("Error: Usuario/Clave incorrectos"));
+    }
+
+    auth.onAuthStateChanged(u => {
+        document.getElementById('loginSection').classList.toggle('hidden', !!u);
+        document.getElementById('appSection').classList.toggle('hidden', !u);
+    });
+
+    // DB FUNCTIONS
+    async function regAlu() {
+        const n = document.getElementById('nomAlu').value;
+        const g = document.getElementById('grpAlu').value;
+        if(!n) return;
+        await db.collection("alumnos").add({ nombre: n, grupo: g });
+        alert("Alumno guardado");
+        document.getElementById('nomAlu').value = "";
+    }
+
+    async function verLista() {
+        const g = document.getElementById('selGrp').value;
+        const snap = await db.collection("alumnos").where("grupo", "==", g).get();
+        let h = "<table>";
+        snap.forEach(d => {
+            h += `<tr><td>${d.data().nombre}</td><td><input type="checkbox" class="chk-a" data-n="${d.data().nombre}"></td></tr>`;
+        });
+        document.getElementById('boxLista').innerHTML = h + "</table>";
+    }
+
+    async function saveAsis() {
+        const g = document.getElementById('selGrp').value;
+        const t = document.getElementById('tipoAt').value;
+        const a = document.getElementById('txtAct').value;
+        const chks = document.querySelectorAll('.chk-a');
+        let pres = [];
+        chks.forEach(c => { if(c.checked) pres.push(c.getAttribute('data-n')); });
+
+        if(!g || pres.length === 0 || !a) return alert("Faltan datos");
+
+        await db.collection("asistencias_especialistas").add({
+            grupo: g, tipoAtencion: t, actividad: a, alumnosPresentes: pres,
+            fecha: new Date().toLocaleDateString(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("Reporte guardado");
+        document.getElementById('txtAct').value = "";
+    }
+
+    async function verReporte() {
+        const m = document.getElementById('mesBusq').value;
+        const snap = await db.collection("asistencias_especialistas").orderBy("timestamp", "desc").get();
+        let cont = {}; let h = "";
+        
+        snap.forEach(doc => {
+            const d = doc.data();
+            const fD = d.timestamp ? d.timestamp.toDate().toISOString().substring(0,7) : "";
+            if(fD === m) {
+                d.alumnosPresentes.forEach(p => { cont[p] = (cont[p] || 0) + 1; });
+                h += `<div class="atencion-card"><b>${d.fecha} - ${d.grupo}</b> (${d.tipoAtencion})<br>${d.actividad}</div>`;
+            }
+        });
+
+        let sH = "<h4>Total Atenciones</h4><table>";
+        Object.entries(cont).forEach(([n, t]) => { sH += `<tr><td>${n}</td><td>${t}</td></tr>`; });
+        document.getElementById('resumenStats').innerHTML = sH + "</table><hr>";
+        document.getElementById('detalleRep').innerHTML = h;
+    }
+</script>
+</body>
+</html>
