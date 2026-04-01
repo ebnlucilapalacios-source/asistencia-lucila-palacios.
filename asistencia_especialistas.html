@@ -120,6 +120,11 @@
                     const mes = String(hoy.getMonth() + 1).padStart(2, '0');
                     const dia = String(hoy.getDate()).padStart(2, '0');
                     document.getElementById('fechaSeleccionada').value = `${año}-${mes}-${dia}`;
+                    
+                    // Inicializar el input del mes para el administrador
+                    if(document.getElementById('mesEstadisticasAdmin')) {
+                        document.getElementById('mesEstadisticasAdmin').value = `${año}-${mes}`;
+                    }
 
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('appContent').style.display = 'block';
@@ -227,9 +232,20 @@
         };
 
         window.consolidadoMensual = async () => {
-            const fSel = document.getElementById('fechaSeleccionada').value;
-            const mesRef = new Date(fSel + "T00:00:00").getMonth();
-            const yearRef = new Date(fSel + "T00:00:00").getFullYear();
+            let fSel, mesRef, yearRef;
+            const inputMes = document.getElementById('mesEstadisticasAdmin').value;
+            
+            if (inputMes) {
+                const parts = inputMes.split('-');
+                yearRef = parseInt(parts[0]);
+                mesRef = parseInt(parts[1]) - 1; // 0-indexed en JS
+                fSel = `${parts[0]}-${parts[1]}-01`;
+            } else {
+                fSel = document.getElementById('fechaSeleccionada').value;
+                mesRef = new Date(fSel + "T00:00:00").getMonth();
+                yearRef = new Date(fSel + "T00:00:00").getFullYear();
+            }
+
             const snap = await getDocs(collection(dbCloud, "docentes_db"));
             
             let todosLosDocentes = []; 
@@ -255,7 +271,11 @@
             docentesAula.sort((a,b) => (parseInt(a.grado) || 0) - (parseInt(b.grado) || 0) || (a.seccion || "").localeCompare(b.seccion || ""));
 
             let h = `
-                <div class="resumen-direccion">
+                <div class="membrete-print" style="display:none; text-align:center; margin-bottom:15px;">
+                    <h2>E.B.N. LUCILA PALACIOS</h2>
+                    <h3>CONSOLIDADO MENSUAL - ${inputMes || fSel.substring(0,7)}</h3>
+                </div>
+                <div class="resumen-direccion no-print">
                     <strong style="color:var(--morado);">👥 GESTIÓN DE CUENTAS</strong>
                     <table class="tabla-admin" style="margin-top:5px; margin-bottom:15px;">
                         <thead><tr style="background:#34495e;"><th>USUARIO</th><th>DOCENTE</th><th>ROL</th><th>ELIMINAR</th></tr></thead>
@@ -265,12 +285,9 @@
             });
             h += `</tbody></table>
                     <hr style="border:1px dashed #ccc;">
-                    <div style="text-align:center; font-size:14px; color:var(--azul); margin-top:10px;"><strong>ESTADÍSTICA INSTITUCIONAL (AULAS)</strong></div>
                 </div>
-                <div class="btns-admin-row no-print">
-                    <button onclick="descargarPDFAdmin()" class="btn-pdf">💾 GUARDAR PDF</button>
-                    <button onclick="window.print()" class="btn-print-admin">🖨️ IMPRIMIR</button>
-                </div>
+                <div style="text-align:center; font-size:14px; color:var(--azul); margin-top:10px;"><strong>ESTADÍSTICA INSTITUCIONAL (AULAS)</strong></div>
+                
                 <table class="tabla-admin" id="tablaAdminConsolidado">
                 <thead>
                     <tr><th rowspan="2">DOCENTE</th><th rowspan="2">G/S/T</th><th colspan="3">MATRÍCULA</th><th colspan="2">MOV</th><th colspan="3">PROM. REAL</th><th rowspan="2">% EFIC</th></tr>
@@ -372,12 +389,13 @@
 
         window.descargarPDFAdmin = () => {
             const doc = new jspdf.jsPDF('l');
-            doc.text("EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL", 14, 15);
+            const inputMes = document.getElementById('mesEstadisticasAdmin').value;
+            doc.text(`EBN LUCILA PALACIOS - CONSOLIDADO MENSUAL ${inputMes}`, 14, 15);
             doc.autoTable({ html: '#tablaAdminConsolidado', startY: 22, theme: 'grid', styles: {fontSize: 8} });
             if (document.getElementById('tablaEspecialistasDir')) {
                 doc.autoTable({ html: '#tablaEspecialistasDir', startY: doc.lastAutoTable.finalY + 10, theme: 'grid', styles: {fontSize: 8} });
             }
-            doc.save("Consolidado_Direccion.pdf");
+            doc.save(`Consolidado_Direccion_${inputMes}.pdf`);
         };
 
         // --- FUNCIONES DE MIGRACIÓN (AULAS) ---
@@ -838,6 +856,7 @@
 
                 document.getElementById('reporteDocente').innerHTML = `
                     <div class="reporte-card card">
+                        <div class="membrete-print" style="display:none; text-align:center;"><strong>E.B.N. LUCILA PALACIOS</strong></div>
                         <h2 style="text-align:center; color:var(--morado);">📊 ESTADÍSTICA DE ATENCIÓN</h2>
                         <div class="grid-promedios" style="margin-top:5px; background:#f4ebff; text-align:center; border:1px solid var(--morado)">
                             <div style="flex:1"><span style="font-size:11px; font-weight:bold;">Secciones Atendidas Hoy</span><br><b style="font-size:22px; color:var(--morado)">${seccionesAtendidasHoy.length}</b><br><small style="font-size:11px">${listadoHoyStr}</small></div>
@@ -851,6 +870,7 @@
                         <div class="grid-promedios" style="margin-top:5px; background:#e8f4f8; text-align:center;">
                             <div>Prom H<br><b style="font-size:16px">${promH}</b></div><div>Prom V<br><b style="font-size:16px">${promV}</b></div><div>Prom Real (T)<br><b style="font-size:16px">${promT}</b></div>
                         </div>
+                        <button onclick="window.print()" class="btn-print no-print" style="margin-top:10px; background:var(--morado); color:white; border:none; padding:10px; border-radius:5px; width:100%; font-weight:bold;">🖨️ IMPRIMIR REPORTE</button>
                     </div>`;
             }
         };
@@ -1010,12 +1030,19 @@
         input, select { width: 100%; padding: 10px; margin: 4px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
         .circulo-eficiencia { width: 70px; height: 70px; border: 5px solid var(--azul); border-radius: 50%; margin: 10px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .grid-promedios { display: flex; justify-content: space-around; background: #f8f9fa; padding: 10px; border-radius: 8px; margin: 10px 0; }
-        .btns-admin-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        .btns-admin-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 10px; flex: 1; border-radius: 5px; font-weight: bold; }
-        .btn-print-admin { background: #34495e; color: white; border: none; padding: 10px; flex: 1; border-radius: 5px; font-weight: bold; }
         .search-bar { background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px 12px; border-radius: 20px; outline: none; transition: border-color 0.3s ease; }
         .search-bar:focus { border-color: var(--azul); box-shadow: 0 0 5px rgba(0, 33, 71, 0.2); }
-        @media print { .no-print { display: none !important; } .container { max-width: 100%; } .membrete-print { display: block !important; } }
+        
+        /* REGLAS DE IMPRESIÓN ACTUALIZADAS */
+        @media print { 
+            .no-print { display: none !important; } 
+            .container { max-width: 100%; box-shadow:none; padding: 0; } 
+            .card { border: none !important; box-shadow: none; padding: 5px; }
+            .membrete-print { display: block !important; } 
+            body { background: white; }
+        }
     </style>
 </head>
 <body>
@@ -1075,40 +1102,49 @@
 
     <div class="container">
         
-        <div id="adminPanel" class="card no-print" style="display:none; border:2px solid var(--morado);">
-            <b style="color:var(--morado);">📊 PANEL DE DIRECCIÓN</b>
-            <div class="btns-admin-row" style="margin-top:10px;">
-                <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
-                <button onclick="descargarListaEstudiantesPDF()" style="background:var(--exito); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📄 LISTA PDF</button>
-            </div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <button onclick="exportarNombresBasico('excel', true)" style="flex:1; background:#27ae60; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📥 EST. EXCEL</button>
-                <button onclick="exportarNombresBasico('pdf', true)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📄 EST. PDF</button>
-            </div>
-            
-            <details style="margin-top:10px;">
-                <summary style="cursor:pointer; font-size:12px; color:var(--morado);">🔐 Gestión de Credenciales</summary>
-                <div style="padding-top:5px;">
-                    <input type="text" id="adminOldUser" placeholder="Usuario actual">
-                    <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
-                    <input type="password" id="adminNewPass" placeholder="Nueva clave (Opcional)">
-                    <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold;">ACTUALIZAR</button>
-                </div>
-            </details>
-
-            <details style="margin-top:10px;" onclick="cargarOpcionesMigracion()">
-                <summary style="cursor:pointer; font-size:12px; color:var(--exito);">🔄 Promoción y Migración de Estudiantes</summary>
-                <div style="padding-top:10px; background:#f8f9fa; border-radius:5px; padding:10px; margin-top:5px; border:1px solid #ddd;">
-                    <label style="font-size:11px; font-weight:bold;">Origen (Sección actual):</label>
-                    <select id="migracionOrigen" onchange="cargarAlumnosMigracion()"><option value="">Seleccione...</option></select>
-                    <div id="listaAlumnosMigracion" style="max-height:150px; overflow-y:auto; border:1px solid #ccc; padding:5px; margin:5px 0; background:white; font-size:11px;">
-                        <div style="padding:5px; color:#777;">Seleccione un origen para ver la lista.</div>
+        <div id="adminPanel" class="card" style="display:none; border:2px solid var(--morado);">
+            <div class="no-print">
+                <b style="color:var(--morado);">📊 PANEL DE DIRECCIÓN</b>
+                
+                <div style="margin-top:10px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                    <label style="font-size:12px; font-weight:bold; color:var(--azul);">📅 Mes de Estadísticas:</label>
+                    <input type="month" id="mesEstadisticasAdmin" style="width:100%; margin-bottom: 5px; margin-top: 5px;">
+                    
+                    <div class="btns-admin-row">
+                        <button onclick="consolidadoMensual()" style="background:var(--morado); color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">📈 CONSOLIDADO</button>
+                        <button onclick="window.print()" style="background:#34495e; color:white; padding:10px; border:none; border-radius:5px; flex:1; font-weight:bold; font-size:11px;">🖨️ IMPRIMIR</button>
                     </div>
-                    <label style="font-size:11px; font-weight:bold;">Destino (Nueva sección):</label>
-                    <select id="migracionDestino"><option value="">Seleccione...</option></select>
-                    <button onclick="ejecutarMigracion()" style="background:var(--exito); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; margin-top:10px;">MOVER ESTUDIANTES SELECCIONADOS</button>
                 </div>
-            </details>
+
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <button onclick="exportarNombresBasico('excel', true)" style="flex:1; background:#27ae60; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📥 EST. EXCEL</button>
+                    <button onclick="exportarNombresBasico('pdf', true)" style="flex:1; background:#c0392b; color:white; border:none; padding:8px; border-radius:5px; font-size:10px; font-weight:bold;">📄 EST. PDF</button>
+                </div>
+                
+                <details style="margin-top:10px;">
+                    <summary style="cursor:pointer; font-size:12px; color:var(--morado);">🔐 Gestión de Credenciales</summary>
+                    <div style="padding-top:5px;">
+                        <input type="text" id="adminOldUser" placeholder="Usuario actual">
+                        <input type="text" id="adminNewUser" placeholder="Nuevo usuario (Opcional)">
+                        <input type="password" id="adminNewPass" placeholder="Nueva clave (Opcional)">
+                        <button onclick="cambiarCredencialesDocente()" style="background:var(--morado); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold;">ACTUALIZAR</button>
+                    </div>
+                </details>
+
+                <details style="margin-top:10px;" onclick="cargarOpcionesMigracion()">
+                    <summary style="cursor:pointer; font-size:12px; color:var(--exito);">🔄 Promoción y Migración de Estudiantes</summary>
+                    <div style="padding-top:10px; background:#f8f9fa; border-radius:5px; padding:10px; margin-top:5px; border:1px solid #ddd;">
+                        <label style="font-size:11px; font-weight:bold;">Origen (Sección actual):</label>
+                        <select id="migracionOrigen" onchange="cargarAlumnosMigracion()"><option value="">Seleccione...</option></select>
+                        <div id="listaAlumnosMigracion" style="max-height:150px; overflow-y:auto; border:1px solid #ccc; padding:5px; margin:5px 0; background:white; font-size:11px;">
+                            <div style="padding:5px; color:#777;">Seleccione un origen para ver la lista.</div>
+                        </div>
+                        <label style="font-size:11px; font-weight:bold;">Destino (Nueva sección):</label>
+                        <select id="migracionDestino"><option value="">Seleccione...</option></select>
+                        <button onclick="ejecutarMigracion()" style="background:var(--exito); color:white; width:100%; border:none; padding:8px; border-radius:5px; font-weight:bold; margin-top:10px;">MOVER ESTUDIANTES SELECCIONADOS</button>
+                    </div>
+                </details>
+            </div>
 
             <div id="adminOutput" style="overflow-x:auto; margin-top: 10px;"></div>
         </div>
