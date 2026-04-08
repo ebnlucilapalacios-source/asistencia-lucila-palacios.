@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Escolar - Especialistas y Dirección</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; margin: 0; }
+        .seccion { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        h2, h3 { color: #ffffff; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; }
+        button { background: #6200ee; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        button:hover { background: #7722ff; }
+        .btn-secundario { background: #03dac6; color: black; margin-top: 10px; }
+        .btn-peligro { background: #cf6679; color: black; width: auto; }
+        .item-lista { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #6200ee; display: flex; justify-content: space-between; align-items: center;}
+        #vista-auth { max-width: 400px; margin: 50px auto; }
+        #vista-docente, #vista-director { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="vista-auth" class="seccion">
+        <h2 id="titulo-auth">Iniciar Sesión</h2>
+        <input type="email" id="email" placeholder="Correo electrónico">
+        <input type="password" id="pass" placeholder="Contraseña">
+        
+        <div id="campos-registro" style="display:none;">
+            <select id="rol">
+                <option value="docente">Docente Especialista</option>
+                <option value="director">Director</option>
+            </select>
+            <select id="especialidad">
+                <option value="Deporte">Deporte</option>
+                <option value="Cultura">Cultura</option>
+                <option value="Aula Integrada">Aula Integrada</option>
+                <option value="Dirección">Dirección</option>
+            </select>
+        </div>
+
+        <button id="btn-principal">Entrar</button>
+        <button id="btn-switch" class="btn-secundario">¿No tienes cuenta? Regístrate</button>
+    </div>
+
+    <div id="vista-docente">
+        <div class="seccion" style="display:flex; justify-content: space-between;">
+            <h3>Panel Docente (<span id="txt-esp"></span>)</h3>
+            <button class="btn-peligro" onclick="cerrarSesion()">Salir</button>
+        </div>
+        <div class="seccion">
+            <h4>+ Inscribir Alumno</h4>
+            <input type="text" id="nom-alumno" placeholder="Nombre del niño">
+            <button onclick="agregarAlumno()">Guardar Alumno</button>
+        </div>
+        <div class="seccion">
+            <h4>Pase de Asistencia</h4>
+            <div id="lista-alumnos"></div>
+            <textarea id="actividad" placeholder="¿Qué actividad hicieron hoy?"></textarea>
+            <button class="btn-secundario" onclick="guardarAsistencia()">Guardar Reporte</button>
+        </div>
+    </div>
+
+    <div id="vista-director">
+        <div class="seccion" style="display:flex; justify-content: space-between;">
+            <h3>Panel de Dirección</h3>
+            <button class="btn-peligro" onclick="cerrarSesion()">Salir</button>
+        </div>
+        <div class="seccion">
+            <button onclick="verReportes('semanal')">Ver Consolidado Semanal</button>
+            <div id="reportes-dir" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // TUS CREDENCIALES REALES
+        const firebaseConfig = {
+            apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
+            authDomain: "control-de-asistencia-d585e.firebaseapp.com",
+            projectId: "control-de-asistencia-d585e",
+            storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
+            messagingSenderId: "368890880546",
+            appId: "1:368890880546:web:7d23807bcc34d87617207b",
+            measurementId: "G-Q3D5955CE5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- LÓGICA DE NAVEGACIÓN ---
+        let modoRegistro = false;
+        document.getElementById('btn-switch').onclick = () => {
+            modoRegistro = !modoRegistro;
+            document.getElementById('titulo-auth').innerText = modoRegistro ? "Registro" : "Iniciar Sesión";
+            document.getElementById('campos-registro').style.display = modoRegistro ? "block" : "none";
+            document.getElementById('btn-switch').innerText = modoRegistro ? "Volver al Login" : "Registrarse";
+        };
+
+        document.getElementById('btn-principal').onclick = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            if(modoRegistro) {
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "usuarios", res.user.uid), {
+                    rol: document.getElementById('rol').value,
+                    especialidad: document.getElementById('especialidad').value
+                });
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Error"));
+            }
+        };
+
+        window.cerrarSesion = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if(user) {
+                const u = await getDoc(doc(db, "usuarios", user.uid));
+                document.getElementById('vista-auth').style.display = "none";
+                if(u.data().rol === "director") {
+                    document.getElementById('vista-director').style.display = "block";
+                } else {
+                    document.getElementById('vista-docente').style.display = "block";
+                    document.getElementById('txt-esp').innerText = u.data().especialidad;
+                    cargarAlumnos();
+                }
+            } else {
+                document.getElementById('vista-auth').style.display = "block";
+                document.getElementById('vista-docente').style.display = "none";
+                document.getElementById('vista-director').style.display = "none";
+            }
+        });
+
+        // --- FUNCIONES DE DOCENTE ---
+        async function cargarAlumnos() {
+            const q = query(collection(db, "alumnos"), where("docenteId", "==", auth.currentUser.uid));
+            const snap = await getDocs(q);
+            const div = document.getElementById('lista-alumnos');
+            div.innerHTML = "";
+            snap.forEach(d => {
+                div.innerHTML += `<div class="item-lista">${d.data().nombre} <input type="checkbox" id="${d.id}" checked></div>`;
+            });
+        }
+
+        window.agregarAlumno = async () => {
+            await addDoc(collection(db, "alumnos"), {
+                nombre: document.getElementById('nom-alumno').value,
+                docenteId: auth.currentUser.uid
+            });
+            document.getElementById('nom-alumno').value = "";
+            cargarAlumnos();
+        };
+
+        window.guardarAsistencia = async () => {
+            const act = document.getElementById('actividad').value;
+            const u = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+            const checkboxes = document.querySelectorAll('#lista-alumnos input');
+            for(let cb of checkboxes) {
+                await addDoc(collection(db, "asistencias"), {
+                    nombre: cb.parentElement.innerText,
+                    asistio: cb.checked,
+                    actividad: act,
+                    especialidad: u.data().especialidad,
+                    fecha: new Date()
+                });
+            }
+            alert("Enviado");
+            document.getElementById('actividad').value = "";
+        };
+
+        // --- FUNCIONES DE DIRECCIÓN ---
+        window.verReportes = async () => {
+            const snap = await getDocs(collection(db, "asistencias"));
+            const div = document.getElementById('reportes-dir');
+            div.innerHTML = "";
+            snap.forEach(d => {
+                const r = d.data();
+                div.innerHTML += `<div class="item-lista">
+                    <b>${r.especialidad}</b>: ${r.nombre} | ${r.asistio ? 'P' : 'A'} <br>
+                    <small>${r.actividad}</small>
+                </div>`;
+            });
+        };
+    </script>
+</body>
+</html>
