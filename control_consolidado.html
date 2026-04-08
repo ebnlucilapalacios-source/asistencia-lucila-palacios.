@@ -3,139 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Consolidado Escolar</title>
+    <title>Acceso Especialistas - Control Escolar</title>
     <style>
-        :root {
-            --primary: #bb86fc;
-            --secondary: #03dac6;
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --error: #cf6679;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #e0e0e0; margin: 0; padding: 15px; }
-        .card { background: var(--surface); padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2, h3 { color: white; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--primary); color: black; padding: 12px; border: none; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        button:hover { opacity: 0.8; }
-        .btn-alt { background: var(--secondary); margin-top: 10px; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); margin-top: 10px; }
-        .btn-danger { background: var(--error); color: white; width: auto; padding: 8px 15px; }
-        .badge { padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; }
-        .presente { background: #03dac644; color: var(--secondary); }
-        .ausente { background: #cf667944; color: var(--error); }
-        .item-asis { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        #vista-docente, #vista-director, #auth-ui { display: none; }
+        :root { --primary: #bb86fc; --bg: #121212; --surface: #1e1e1e; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #e0e0e0; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--surface); padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: white; margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--primary); color: black; padding: 14px; border: none; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); margin-top: 15px; }
+        #vista-docente, #vista-director, #reg-extra { display: none; }
+        .item-asis { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui" class="card" style="display: block; max-width: 400px; margin: 50px auto;">
-        <h2 id="auth-title">Iniciar Sesión</h2>
-        <input type="email" id="email" placeholder="Correo institucional">
-        <input type="password" id="pass" placeholder="Contraseña">
+    <div id="auth-ui" class="card">
+        <h2 id="auth-title">Control de Asistencia</h2>
+        <input type="text" id="usuario" placeholder="Nombre de Usuario (ej: teatro1)">
+        <input type="password" id="pass" placeholder="Clave Especial">
         
-        <div id="reg-extra" style="display:none;">
-            <label>Tu Rol:</label>
+        <div id="reg-extra">
             <select id="rol">
                 <option value="docente">Docente Especialista</option>
-                <option value="director">Dirección / Coordinación</option>
+                <option value="director">Director / Coordinador</option>
             </select>
-            <label>Especialidad:</label>
             <select id="especialidad">
                 <option value="Aula Integrada">Aula Integrada</option>
                 <option value="Deporte">Deporte</option>
                 <option value="Cultura">Cultura</option>
-                <option value="Dirección">Dirección</option>
+                <option value="Teatro">Teatro</option>
             </select>
         </div>
 
-        <button id="btn-main">Entrar al Sistema</button>
-        <button id="btn-toggle" class="btn-outline">¿No tienes cuenta? Regístrate</button>
+        <button id="btn-main">Entrar</button>
+        <button id="btn-toggle" class="btn-outline">Crear Nueva Cuenta</button>
     </div>
 
-    <div id="vista-docente">
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h3 id="doc-info" style="border:none; margin:0;">Cargando...</h3>
-            </div>
-            <button class="btn-danger" onclick="salir()">Cerrar</button>
-        </div>
-
-        <div class="card">
-            <h3>+ Nuevo Alumno</h3>
-            <input type="text" id="new-alumno" placeholder="Nombre completo">
-            <button onclick="addAlumno()">Registrar en mi lista</button>
-        </div>
-
-        <div class="card">
-            <h3>Asistencia y Actividad</h3>
-            <div id="lista-alumnos" style="margin-bottom:15px;"></div>
-            <textarea id="actividad-texto" rows="3" placeholder="Describe la actividad (Individual/Grupal)"></textarea>
-            <button class="btn-alt" onclick="saveAsistencia()">Enviar Reporte a Dirección</button>
-        </div>
+    <div id="vista-docente" class="card">
+        <h3>Panel: <span id="txt-esp"></span></h3>
+        <input type="text" id="nom-alumno" placeholder="Nombre del Alumno">
+        <button onclick="addAlumno()">+ Inscribir Alumno</button>
+        <hr>
+        <div id="lista-alumnos"></div>
+        <textarea id="actividad" placeholder="Descripción de la actividad hoy..."></textarea>
+        <button onclick="saveAsistencia()" style="background:#03dac6">Guardar Reporte</button>
+        <button onclick="salir()" class="btn-outline">Cerrar Sesión</button>
     </div>
 
-    <div id="vista-director">
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="border:none; margin:0;">Panel de Dirección</h3>
-            <button class="btn-danger" onclick="salir()">Cerrar</button>
-        </div>
-
-        <div class="card">
-            <h3>Consolidados</h3>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="verConsolidado('diario')">Hoy</button>
-                <button onclick="verConsolidado('semanal')" class="btn-outline">Semanal</button>
-                <button onclick="verConsolidado('mensual')" class="btn-outline">Mensual</button>
-            </div>
-            <div id="visor-consolidados" style="margin-top:20px;"></div>
-        </div>
+    <div id="vista-director" class="card">
+        <h3>Reportes de Dirección</h3>
+        <button onclick="verReportes()">Ver Consolidado de Hoy</button>
+        <div id="visor" style="margin-top:20px;"></div>
+        <button onclick="salir()" class="btn-outline">Cerrar Sesión</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // TUS CREDENCIALES (IMAGEN 494581)
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
             projectId: "control-de-asistencia-d585e",
             storageBucket: "control-de-asistencia-d585e.firebasestorage.app",
             messagingSenderId: "368890880546",
-            appId: "1:368890880546:web:7d23807bcc34d87617207b",
-            measurementId: "G-Q3D5955CE5"
+            appId: "1:368890880546:web:7d23807bcc34d87617207b"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // LÓGICA DE INTERFAZ
         let isReg = false;
         document.getElementById('btn-toggle').onclick = () => {
             isReg = !isReg;
-            document.getElementById('auth-title').innerText = isReg ? "Crear Cuenta" : "Iniciar Sesión";
             document.getElementById('reg-extra').style.display = isReg ? "block" : "none";
-            document.getElementById('btn-toggle').innerText = isReg ? "Ya tengo cuenta" : "Registrarse";
+            document.getElementById('auth-title').innerText = isReg ? "Registro de Cuenta" : "Control de Asistencia";
+            document.getElementById('btn-toggle').innerText = isReg ? "Volver al Inicio" : "Crear Nueva Cuenta";
         };
 
         document.getElementById('btn-main').onclick = async () => {
-            const email = document.getElementById('email').value;
+            const user = document.getElementById('usuario').value + "@escuela.com"; // Truco para no usar correo
             const pass = document.getElementById('pass').value;
             try {
                 if(isReg) {
-                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    const res = await createUserWithEmailAndPassword(auth, user, pass);
                     await setDoc(doc(db, "usuarios", res.user.uid), {
                         rol: document.getElementById('rol').value,
                         especialidad: document.getElementById('especialidad').value
                     });
                 } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
+                    await signInWithEmailAndPassword(auth, user, pass);
                 }
-            } catch(e) { alert("Error: " + e.message); }
+            } catch(e) { alert("Usuario o Clave incorrecta"); }
         };
 
         window.salir = () => signOut(auth);
@@ -143,13 +105,13 @@
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('auth-ui').style.display = user ? "none" : "block";
             if(user) {
-                const u = await getDoc(doc(db, "usuarios", user.uid));
-                const data = u.data();
+                const docSnap = await getDoc(doc(db, "usuarios", user.uid));
+                const data = docSnap.data();
                 if(data.rol === 'director') {
                     document.getElementById('vista-director').style.display = "block";
                 } else {
                     document.getElementById('vista-docente').style.display = "block";
-                    document.getElementById('doc-info').innerText = data.especialidad;
+                    document.getElementById('txt-esp').innerText = data.especialidad;
                     renderAlumnos();
                 }
             } else {
@@ -158,78 +120,56 @@
             }
         });
 
-        // FUNCIONES DOCENTE
         async function renderAlumnos() {
             const q = query(collection(db, "alumnos"), where("creador", "==", auth.currentUser.uid));
             const snap = await getDocs(q);
             const div = document.getElementById('lista-alumnos');
             div.innerHTML = "";
             snap.forEach(d => {
-                div.innerHTML += `<div class="item-asis"><span>${d.data().nombre}</span> <input type="checkbox" id="check-${d.id}" checked style="width:auto;"></div>`;
+                div.innerHTML += `<div class="item-asis"><span>${d.data().nombre}</span> <input type="checkbox" id="c-${d.id}" checked style="width:auto;"></div>`;
             });
         }
 
         window.addAlumno = async () => {
-            const nom = document.getElementById('new-alumno').value;
-            if(!nom) return;
-            await addDoc(collection(db, "alumnos"), { nombre: nom, creador: auth.currentUser.uid });
-            document.getElementById('new-alumno').value = "";
-            renderAlumnos();
+            const nom = document.getElementById('nom-alumno').value;
+            if(nom) {
+                await addDoc(collection(db, "alumnos"), { nombre: nom, creador: auth.currentUser.uid });
+                document.getElementById('nom-alumno').value = "";
+                renderAlumnos();
+            }
         };
 
         window.saveAsistencia = async () => {
-            const txt = document.getElementById('actividad-texto').value;
-            if(!txt) return alert("Describe la actividad");
+            const act = document.getElementById('actividad').value;
             const u = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
             const boxes = document.querySelectorAll('#lista-alumnos input');
             for(let b of boxes) {
                 await addDoc(collection(db, "asistencias"), {
                     alumno: b.parentElement.innerText,
                     asistio: b.checked,
-                    actividad: txt,
+                    actividad: act,
                     especialidad: u.data().especialidad,
-                    fecha: new Date()
+                    fecha: new Date().toDateString()
                 });
             }
-            alert("Reporte enviado con éxito");
-            document.getElementById('actividad-texto').value = "";
+            alert("Reporte Enviado");
+            document.getElementById('actividad').value = "";
         };
 
-        // FUNCIONES DIRECCIÓN
-        window.verConsolidado = async (periodo) => {
-            const visor = document.getElementById('visor-consolidados');
-            visor.innerHTML = "Cargando datos...";
-            const snap = await getDocs(collection(db, "asistencias"));
-            const ahora = new Date();
-            let stats = {};
-
+        window.verReportes = async () => {
+            const visor = document.getElementById('visor');
+            visor.innerHTML = "Buscando...";
+            const hoy = new Date().toDateString();
+            const q = query(collection(db, "asistencias"), where("fecha", "==", hoy));
+            const snap = await getDocs(q);
+            visor.innerHTML = "";
             snap.forEach(d => {
-                const data = d.data();
-                const f = data.fecha.toDate();
-                let match = false;
-
-                if(periodo==='diario') match = f.toDateString() === ahora.toDateString();
-                if(periodo==='semanal') match = (ahora - f) < (7 * 24 * 60 * 60 * 1000);
-                if(periodo==='mensual') match = f.getMonth() === ahora.getMonth();
-
-                if(match) {
-                    if(!stats[data.especialidad]) stats[data.especialidad] = { p:0, a:0, logs:[] };
-                    data.asistio ? stats[data.especialidad].p++ : stats[data.especialidad].a++;
-                    stats[data.especialidad].logs.push(`${data.alumno}: ${data.actividad}`);
-                }
+                const r = d.data();
+                visor.innerHTML += `<div style="background:#2c2c2c; padding:10px; border-radius:10px; margin-bottom:5px;">
+                    <strong>${r.especialidad}</strong>: ${r.alumno} (${r.asistio?'P':'A'})<br>
+                    <small>${r.actividad}</small>
+                </div>`;
             });
-
-            visor.innerHTML = `<h4>Reporte ${periodo.toUpperCase()}</h4>`;
-            for(let e in stats) {
-                visor.innerHTML += `
-                    <div class="card" style="background:#252525">
-                        <strong>${e}</strong><br>
-                        Presentes: <span class="badge presente">${stats[e].p}</span> 
-                        Ausentes: <span class="badge ausente">${stats[e].a}</span>
-                        <details style="margin-top:10px;"><summary>Ver detalles</summary>
-                        <small>${stats[e].logs.join('<br>')}</small></details>
-                    </div>`;
-            }
         };
     </script>
 </body>
