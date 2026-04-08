@@ -3,25 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Especialistas - Control Escolar</title>
+    <title>EBN Lucila Palacios - Acceso</title>
     <style>
-        :root { --primary: #bb86fc; --bg: #121212; --surface: #1e1e1e; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: #e0e0e0; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: var(--surface); padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { text-align: center; color: white; margin-bottom: 20px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--primary); color: black; padding: 14px; border: none; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); margin-top: 15px; }
+        /* ESTILO BASADO EN TU IMAGEN */
+        :root {
+            --primary-blue: #001f3f; /* Azul del botón ENTRAR */
+            --bg-light: #f5f7fb;    /* Fondo claro de la imagen */
+            --text-dark: #000000;
+            --purple-link: #8e44ad; /* Color del enlace de registro */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 40px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-container img {
+            width: 120px; /* Tamaño del logo escolar */
+            height: auto;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin: 10px 0 30px 0;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        #btn-toggle {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--purple-link);
+            text-decoration: none;
+            font-size: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: auto;
+        }
+
+        /* VISTAS DE TRABAJO */
         #vista-docente, #vista-director, #reg-extra { display: none; }
-        .item-asis { border-bottom: 1px solid #333; padding: 10px 0; display: flex; justify-content: space-between; }
+        
+        .item-asis { 
+            border-bottom: 1px solid #eee; 
+            padding: 12px 0; 
+            display: flex; 
+            justify-content: space-between;
+            color: #333;
+        }
+
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
+    <div class="logo-container">
+        <img src="https://i.ibb.co/L6V2Mvz/logo-escolar.png" alt="Logo EBN Lucila Palacios">
+        <h1>EBN LUCILA PALACIOS</h1>
+    </div>
+
     <div id="auth-ui" class="card">
-        <h2 id="auth-title">Control de Asistencia</h2>
-        <input type="text" id="usuario" placeholder="Nombre de Usuario (ej: teatro1)">
-        <input type="password" id="pass" placeholder="Clave Especial">
+        <input type="text" id="usuario" placeholder="Usuario">
+        <input type="password" id="pass" placeholder="Clave">
         
         <div id="reg-extra">
             <select id="rol">
@@ -36,26 +134,31 @@
             </select>
         </div>
 
-        <button id="btn-main">Entrar</button>
-        <button id="btn-toggle" class="btn-outline">Crear Nueva Cuenta</button>
+        <button id="btn-main">ENTRAR</button>
+        <button id="btn-toggle">Registrar Cuenta Nueva</button>
     </div>
 
-    <div id="vista-docente" class="card">
-        <h3>Panel: <span id="txt-esp"></span></h3>
+    <div id="vista-docente" class="card" style="max-width: 500px;">
+        <div class="header-panel">
+            <h3 style="margin:0; color:var(--primary-blue);">Especialidad: <span id="txt-esp"></span></h3>
+            <button onclick="salir()" style="width:auto; padding:5px 10px; background:#e74c3c;">Salir</button>
+        </div>
+        
         <input type="text" id="nom-alumno" placeholder="Nombre del Alumno">
-        <button onclick="addAlumno()">+ Inscribir Alumno</button>
-        <hr>
+        <button onclick="addAlumno()" style="background:#27ae60">+ Inscribir Alumno</button>
+        <hr style="border: 0.5px solid #eee; margin: 20px 0;">
         <div id="lista-alumnos"></div>
-        <textarea id="actividad" placeholder="Descripción de la actividad hoy..."></textarea>
-        <button onclick="saveAsistencia()" style="background:#03dac6">Guardar Reporte</button>
-        <button onclick="salir()" class="btn-outline">Cerrar Sesión</button>
+        <textarea id="actividad" rows="3" placeholder="Descripción de la actividad de hoy..."></textarea>
+        <button onclick="saveAsistencia()" style="background:var(--primary-blue)">GUARDAR REPORTE</button>
     </div>
 
-    <div id="vista-director" class="card">
-        <h3>Reportes de Dirección</h3>
-        <button onclick="verReportes()">Ver Consolidado de Hoy</button>
-        <div id="visor" style="margin-top:20px;"></div>
-        <button onclick="salir()" class="btn-outline">Cerrar Sesión</button>
+    <div id="vista-director" class="card" style="max-width: 500px;">
+        <div class="header-panel">
+            <h3 style="margin:0; color:var(--primary-blue);">Reportes de Dirección</h3>
+            <button onclick="salir()" style="width:auto; padding:5px 10px; background:#e74c3c;">Salir</button>
+        </div>
+        <button onclick="verReportes()" style="background:#2980b9">VER CONSOLIDADO DE HOY</button>
+        <div id="visor" style="margin-top:20px; text-align: left;"></div>
     </div>
 
     <script type="module">
@@ -63,6 +166,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // TUS CREDENCIALES REALES
         const firebaseConfig = {
             apiKey: "AIzaSyAERrG77MB-PVjHFWZ2vAaBmfYCc-zNazg",
             authDomain: "control-de-asistencia-d585e.firebaseapp.com",
@@ -76,17 +180,20 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // LÓGICA DE INTERFAZ
         let isReg = false;
         document.getElementById('btn-toggle').onclick = () => {
             isReg = !isReg;
             document.getElementById('reg-extra').style.display = isReg ? "block" : "none";
-            document.getElementById('auth-title').innerText = isReg ? "Registro de Cuenta" : "Control de Asistencia";
-            document.getElementById('btn-toggle').innerText = isReg ? "Volver al Inicio" : "Crear Nueva Cuenta";
+            document.getElementById('btn-main').innerText = isReg ? "CREAR CUENTA" : "ENTRAR";
+            document.getElementById('btn-toggle').innerText = isReg ? "Volver al Inicio" : "Registrar Cuenta Nueva";
         };
 
         document.getElementById('btn-main').onclick = async () => {
-            const user = document.getElementById('usuario').value + "@escuela.com"; // Truco para no usar correo
+            const user = document.getElementById('usuario').value + "@lucila.com"; 
             const pass = document.getElementById('pass').value;
+            if(!pass || !user) return alert("Completa los campos");
+            
             try {
                 if(isReg) {
                     const res = await createUserWithEmailAndPassword(auth, user, pass);
@@ -104,6 +211,9 @@
 
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('auth-ui').style.display = user ? "none" : "block";
+            // Ocultar logo cuando ya entraste
+            document.querySelector('.logo-container').style.display = user ? "none" : "block";
+            
             if(user) {
                 const docSnap = await getDoc(doc(db, "usuarios", user.uid));
                 const data = docSnap.data();
@@ -141,6 +251,7 @@
 
         window.saveAsistencia = async () => {
             const act = document.getElementById('actividad').value;
+            if(!act) return alert("Escribe la actividad realizada");
             const u = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
             const boxes = document.querySelectorAll('#lista-alumnos input');
             for(let b of boxes) {
@@ -152,22 +263,23 @@
                     fecha: new Date().toDateString()
                 });
             }
-            alert("Reporte Enviado");
+            alert("Reporte Enviado con Éxito");
             document.getElementById('actividad').value = "";
         };
 
         window.verReportes = async () => {
             const visor = document.getElementById('visor');
-            visor.innerHTML = "Buscando...";
+            visor.innerHTML = "Buscando datos...";
             const hoy = new Date().toDateString();
             const q = query(collection(db, "asistencias"), where("fecha", "==", hoy));
             const snap = await getDocs(q);
             visor.innerHTML = "";
+            if(snap.empty) visor.innerHTML = "No hay reportes hoy.";
             snap.forEach(d => {
                 const r = d.data();
-                visor.innerHTML += `<div style="background:#2c2c2c; padding:10px; border-radius:10px; margin-bottom:5px;">
-                    <strong>${r.especialidad}</strong>: ${r.alumno} (${r.asistio?'P':'A'})<br>
-                    <small>${r.actividad}</small>
+                visor.innerHTML += `<div style="background:#f9f9f9; padding:10px; border-radius:10px; margin-bottom:8px; border-left: 5px solid var(--primary-blue);">
+                    <strong>${r.especialidad}</strong>: ${r.alumno} (${r.asistio?'Presente':'Ausente'})<br>
+                    <small>Actividad: ${r.actividad}</small>
                 </div>`;
             });
         };
