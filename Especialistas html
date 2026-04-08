@@ -3,171 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBN Lucila Palacios - Especialistas</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
-
+    <title>Sistema Educativo: Especialistas y Dirección</title>
     <style>
-        :root { --p: #3498db; --s: #2ecc71; --d: #e74c3c; --black: #2c3e50; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 15px; }
-        .hidden { display: none !important; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h2 { color: var(--black); border-bottom: 2px solid var(--p); padding-bottom: 8px; font-size: 1.2rem; }
-        input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { background: var(--p); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-stats { background: #8e44ad; }
-        .btn-print { background: var(--s); }
-        .btn-del { background: var(--d); font-size: 11px; width: auto; padding: 5px 10px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        .atencion-card { border-left: 5px solid var(--p); padding: 10px; background: #fafafa; margin-bottom: 10px; }
-        @media print { .no-print { display: none !important; } }
+        /* --- ESTILOS VISUALES (Tema Moderno Oscuro) --- */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #e0e0e0; padding: 20px; margin: 0; }
+        .seccion { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2, h3 { color: #ffffff; margin-top: 0; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #2c2c2c; color: white; box-sizing: border-box; }
+        button { background: #6200ee; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #7722ff; }
+        .btn-secundario { background: #03dac6; color: black; }
+        .btn-warning { background: #ff9800; color: black; }
+        .btn-peligro { background: #cf6679; color: black; }
+        .item-lista { background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #6200ee; }
+        .flex-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .flex-buttons button { flex: 1; min-width: 120px; }
+        #vista-auth { max-width: 450px; margin: 50px auto; }
+        #vista-docente, #vista-director { display: none; }
     </style>
 </head>
 <body>
 
-<div id="loginSection" class="card" style="max-width:400px; margin: 50px auto; text-align:center;">
-    <h2>Iniciar Sesión</h2>
-    <input type="text" id="userInput" placeholder="Nombre de Usuario (ej: Maria)">
-    <input type="password" id="passInput" placeholder="Contraseña">
-    <button onclick="login()">Entrar</button>
-</div>
-
-<div id="appSection" class="hidden">
-    <div style="display:flex; justify-content:space-between; align-items:center;" class="no-print">
-        <h3 style="color:var(--black);">EBN Lucila Palacios</h3>
-        <button onclick="auth.signOut()" class="btn-del" style="background:#95a5a6;">Salir</button>
-    </div>
-
-    <div class="card no-print">
-        <h2>1. Matrícula Manual</h2>
-        <input type="text" id="nomAlu" placeholder="Nombre del Alumno">
-        <select id="grpAlu">
-            <option value="Aula Integrada">Aula Integrada</option>
-            <option value="Fútbol">Fútbol</option>
-            <option value="Danza">Danza</option>
-        </select>
-        <button onclick="regAlu()" style="background:var(--s);">Registrar</button>
-    </div>
-
-    <div class="card no-print">
-        <h2>2. Pasar Lista y Actividad</h2>
-        <select id="selGrp" onchange="verLista()">
-            <option value="">-- Seleccionar Grupo --</option>
-            <option value="Aula Integrada">Aula Integrada</option>
-            <option value="Fútbol">Fútbol</option>
-            <option value="Danza">Danza</option>
-        </select>
-        <select id="tipoAt">
-            <option value="Grupal">Atención Grupal</option>
-            <option value="Individual">Atención Individual</option>
-        </select>
-        <div id="boxLista"></div>
-        <textarea id="txtAct" placeholder="¿Qué se trabajó hoy?"></textarea>
-        <button onclick="saveAsis()">Guardar Reporte</button>
-    </div>
-
-    <div class="card">
-        <h2 class="no-print">3. Reporte Mensual</h2>
-        <div class="no-print" style="display:flex; gap:5px;">
-            <input type="month" id="mesBusq">
-            <button onclick="verReporte()" class="btn-stats">Ver</button>
-            <button onclick="window.print()" class="btn-print">PDF</button>
-        </div>
-        <div id="resumenStats"></div>
-        <div id="detalleRep"></div>
-    </div>
-</div>
-
-<script>
-    // CREDENCIALES EXTRAÍDAS DE TU IMAGEN
-    const firebaseConfig = {
-        apiKey: "AIzaSyAERrG77MB-PVjHFWZ...", // (Abreviado por seguridad, usa el tuyo completo)
-        authDomain: "control-de-asistencia-97623.firebaseapp.com",
-        projectId: "control-de-asistencia-97623",
-        storageBucket: "control-de-asistencia-97623.appspot.com",
-        messagingSenderId: "368890880546",
-        appId: "1:368890880546:web:7d2386..."
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // LOGIN CON NOMBRE DE USUARIO
-    function login() {
-        const user = document.getElementById('userInput').value;
-        const pass = document.getElementById('passInput').value;
-        const fakeEmail = user.includes("@") ? user : user + "@lucila.temp";
-        auth.signInWithEmailAndPassword(fakeEmail, pass).catch(e => alert("Error: Usuario/Clave incorrectos"));
-    }
-
-    auth.onAuthStateChanged(u => {
-        document.getElementById('loginSection').classList.toggle('hidden', !!u);
-        document.getElementById('appSection').classList.toggle('hidden', !u);
-    });
-
-    // DB FUNCTIONS
-    async function regAlu() {
-        const n = document.getElementById('nomAlu').value;
-        const g = document.getElementById('grpAlu').value;
-        if(!n) return;
-        await db.collection("alumnos").add({ nombre: n, grupo: g });
-        alert("Alumno guardado");
-        document.getElementById('nomAlu').value = "";
-    }
-
-    async function verLista() {
-        const g = document.getElementById('selGrp').value;
-        const snap = await db.collection("alumnos").where("grupo", "==", g).get();
-        let h = "<table>";
-        snap.forEach(d => {
-            h += `<tr><td>${d.data().nombre}</td><td><input type="checkbox" class="chk-a" data-n="${d.data().nombre}"></td></tr>`;
-        });
-        document.getElementById('boxLista').innerHTML = h + "</table>";
-    }
-
-    async function saveAsis() {
-        const g = document.getElementById('selGrp').value;
-        const t = document.getElementById('tipoAt').value;
-        const a = document.getElementById('txtAct').value;
-        const chks = document.querySelectorAll('.chk-a');
-        let pres = [];
-        chks.forEach(c => { if(c.checked) pres.push(c.getAttribute('data-n')); });
-
-        if(!g || pres.length === 0 || !a) return alert("Faltan datos");
-
-        await db.collection("asistencias_especialistas").add({
-            grupo: g, tipoAtencion: t, actividad: a, alumnosPresentes: pres,
-            fecha: new Date().toLocaleDateString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("Reporte guardado");
-        document.getElementById('txtAct').value = "";
-    }
-
-    async function verReporte() {
-        const m = document.getElementById('mesBusq').value;
-        const snap = await db.collection("asistencias_especialistas").orderBy("timestamp", "desc").get();
-        let cont = {}; let h = "";
+    <div id="vista-auth" class="seccion">
+        <h2 id="auth-titulo">Iniciar Sesión</h2>
+        <input type="email" id="auth-email" placeholder="Correo institucional">
+        <input type="password" id="auth-pass" placeholder="Contraseña">
         
-        snap.forEach(doc => {
-            const d = doc.data();
-            const fD = d.timestamp ? d.timestamp.toDate().toISOString().substring(0,7) : "";
-            if(fD === m) {
-                d.alumnosPresentes.forEach(p => { cont[p] = (cont[p] || 0) + 1; });
-                h += `<div class="atencion-card"><b>${d.fecha} - ${d.grupo}</b> (${d.tipoAtencion})<br>${d.actividad}</div>`;
+        <div id="campos-registro" style="display:none;">
+            <label>Seleccione su Rol:</label>
+            <select id="auth-rol">
+                <option value="docente">Docente Especialista</option>
+                <option value="director">Dirección</option>
+            </select>
+            <label>Especialidad / Área:</label>
+            <select id="auth-especialidad">
+                <option value="Deporte">Deporte (Fútbol/Kikimbol)</option>
+                <option value="Cultura">Cultura (Teatro/Danza)</option>
+                <option value="Aula Integrada">Aula Integrada (Atención Individual/Grupal)</option>
+                <option value="Dirección">Dirección</option>
+            </select>
+        </div>
+
+        <button id="btn-login-accion">Ingresar</button>
+        <button id="btn-cambiar-a-registro" class="btn-secundario" style="margin-top:10px;">¿No tienes cuenta? Regístrate</button>
+        <button id="btn-registrar-accion" style="display:none;" class="btn-secundario">Crear Cuenta</button>
+        <button id="btn-volver-login" style="display:none;" class="btn-warning">Volver al Login</button>
+    </div>
+
+    <div id="vista-docente">
+        <div class="seccion" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2>Panel Docente</h2>
+                <small id="info-perfil" style="color: #03dac6;"></small>
+            </div>
+            <button class="btn-peligro btn-logout" style="width: auto;">Cerrar Sesión</button>
+        </div>
+
+        <div class="seccion">
+            <h3>+ Registro de Alumno</h3>
+            <input type="text" id="input-alumno-nombre" placeholder="Nombre completo del alumno">
+            <button id="btn-inscribir">Inscribir en mi Grupo</button>
+        </div>
+
+        <div class="seccion">
+            <h3>Asistencia y Actividades</h3>
+            <div id="lista-alumnos-check"></div>
+            <textarea id="texto-actividad" rows="3" placeholder="Describe la actividad detalladamente (ej. Atención individual en lectura...)"></textarea>
+            <button id="btn-guardar-reporte" class="btn-secundario">Guardar Reporte del Día</button>
+        </div>
+    </div>
+
+    <div id="vista-director">
+        <div class="seccion" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Panel de Dirección</h2>
+            <button class="btn-peligro btn-logout" style="width: auto;">Cerrar Sesión</button>
+        </div>
+
+        <div class="seccion">
+            <h3>Consolidados y Reportes</h3>
+            <div class="flex-buttons">
+                <button id="btn-rep-diario" class="btn-secundario">Detalle Diario</button>
+                <button id="btn-rep-semanal" class="btn-warning">Consolidado Semanal</button>
+                <button id="btn-rep-mensual" style="background: #bb86fc; color: black;">Consolidado Mensual</button>
+            </div>
+            <div id="visor-reportes">
+                <p>Selecciona un tipo de reporte para visualizar los datos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // CONFIGURACIÓN (REEMPLAZAR CON TUS CREDENCIALES)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_ID",
+            appId: "TU_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let alumnosCache = [];
+
+        // --- MANEJO DE VISTAS ---
+        const switchAuth = (modo) => {
+            const esReg = modo === 'registro';
+            document.getElementById('auth-titulo').innerText = esReg ? 'Crear Cuenta' : 'Iniciar Sesión';
+            document.getElementById('campos-registro').style.display = esReg ? 'block' : 'none';
+            document.getElementById('btn-registrar-accion').style.display = esReg ? 'block' : 'none';
+            document.getElementById('btn-volver-login').style.display = esReg ? 'block' : 'none';
+            document.getElementById('btn-login-accion').style.display = esReg ? 'none' : 'block';
+            document.getElementById('btn-cambiar-a-registro').style.display = esReg ? 'none' : 'block';
+        };
+
+        document.getElementById('btn-cambiar-a-registro').onclick = () => switchAuth('registro');
+        document.getElementById('btn-volver-login').onclick = () => switchAuth('login');
+
+        // --- AUTENTICACIÓN ---
+        document.getElementById('btn-registrar-accion').onclick = async () => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            const rol = document.getElementById('auth-rol').value;
+            const esp = document.getElementById('auth-especialidad').value;
+            try {
+                const res = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "usuarios", res.user.uid), { email, rol, especialidad: esp });
+                alert("Cuenta creada.");
+            } catch (e) { alert(e.message); }
+        };
+
+        document.getElementById('btn-login-accion').onclick = async () => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            try { await signInWithEmailAndPassword(auth, email, pass); } 
+            catch (e) { alert("Error de acceso."); }
+        };
+
+        document.querySelectorAll('.btn-logout').forEach(b => b.onclick = () => signOut(auth));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const uDoc = await getDoc(doc(db, "usuarios", user.uid));
+                const perfil = uDoc.data();
+                document.getElementById('vista-auth').style.display = 'none';
+                if (perfil.rol === 'director') {
+                    document.getElementById('vista-director').style.display = 'block';
+                } else {
+                    document.getElementById('vista-docente').style.display = 'block';
+                    document.getElementById('info-perfil').innerText = `${perfil.especialidad} | ${perfil.email}`;
+                    cargarAlumnosDocente();
+                }
+            } else {
+                document.getElementById('vista-auth').style.display = 'block';
+                document.getElementById('vista-docente').style.display = 'none';
+                document.getElementById('vista-director').style.display = 'none';
             }
         });
 
-        let sH = "<h4>Total Atenciones</h4><table>";
-        Object.entries(cont).forEach(([n, t]) => { sH += `<tr><td>${n}</td><td>${t}</td></tr>`; });
-        document.getElementById('resumenStats').innerHTML = sH + "</table><hr>";
-        document.getElementById('detalleRep').innerHTML = h;
-    }
-</script>
+        // --- LÓGICA DOCENTE ---
+        async function cargarAlumnosDocente() {
+            const q = query(collection(db, "alumnos"), where("docenteId", "==", auth.currentUser.uid));
+            const snap = await getDocs(q);
+            const div = document.getElementById('lista-alumnos-check');
+            div.innerHTML = ""; alumnosCache = [];
+            snap.forEach(d => {
+                alumnosCache.push({id: d.id, ...d.data()});
+                div.innerHTML += `<div class="item-lista"><span>${d.data().nombre}</span> <input type="checkbox" id="check-${d.id}" checked></div>`;
+            });
+        }
+
+        document.getElementById('btn-inscribir').onclick = async () => {
+            const nombre = document.getElementById('input-alumno-nombre').value;
+            if(!nombre) return;
+            await addDoc(collection(db, "alumnos"), { nombre, docenteId: auth.currentUser.uid });
+            document.getElementById('input-alumno-nombre').value = "";
+            cargarAlumnosDocente();
+        };
+
+        document.getElementById('btn-guardar-reporte').onclick = async () => {
+            const act = document.getElementById('texto-actividad').value;
+            if(!act) return alert("Escribe la actividad.");
+            const uDoc = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+            const esp = uDoc.data().especialidad;
+            
+            for(let al of alumnosCache) {
+                const asis = document.getElementById(`check-${al.id}`).checked;
+                await addDoc(collection(db, "asistencias"), {
+                    alumno: al.nombre,
+                    docenteId: auth.currentUser.uid,
+                    especialidad: esp,
+                    asistio: asis,
+                    actividad: act,
+                    fecha: new Date() // Guardamos objeto Date para filtros de tiempo
+                });
+            }
+            alert("Reporte guardado.");
+            document.getElementById('texto-actividad').value = "";
+        };
+
+        // --- LÓGICA DIRECCIÓN (CONSOLIDADOS) ---
+        const generarReporte = async (tipo) => {
+            const visor = document.getElementById('visor-reportes');
+            visor.innerHTML = "<p>Procesando...</p>";
+            const snap = await getDocs(collection(db, "asistencias"));
+            const ahora = new Date();
+            let stats = {};
+
+            snap.forEach(d => {
+                const data = d.data();
+                const fechaRep = data.fecha.toDate();
+                let incluir = false;
+
+                if (tipo === 'diario') {
+                    incluir = fechaRep.toDateString() === ahora.toDateString();
+                } else if (tipo === 'semanal') {
+                    const haceUnaSemana = new Date().setDate(ahora.getDate() - 7);
+                    incluir = fechaRep >= haceUnaSemana;
+                } else if (tipo === 'mensual') {
+                    incluir = fechaRep.getMonth() === ahora.getMonth() && fechaRep.getFullYear() === ahora.getFullYear();
+                }
+
+                if (incluir) {
+                    if (!stats[data.especialidad]) stats[data.especialidad] = { p: 0, f: 0, detalles: [] };
+                    data.asistio ? stats[data.especialidad].p++ : stats[data.especialidad].f++;
+                    stats[data.especialidad].detalles.push(`${data.alumno}: ${data.actividad}`);
+                }
+            });
+
+            visor.innerHTML = `<h3>Resultado ${tipo.toUpperCase()}</h3>`;
+            for (let esp in stats) {
+                visor.innerHTML += `
+                    <div class="item-lista">
+                        <strong>Área: ${esp}</strong><br>
+                        Presentes: <b style="color:#03dac6">${stats[esp].p}</b> | Ausentes: <b style="color:#cf6679">${stats[esp].f}</b>
+                        <details style="margin-top:10px;"><summary>Ver actividades y alumnos</summary>
+                        <small>${stats[esp].detalles.join('<br>')}</small></details>
+                    </div>`;
+            }
+            if (Object.keys(stats).length === 0) visor.innerHTML = "<p>No hay datos para este período.</p>";
+        };
+
+        document.getElementById('btn-rep-diario').onclick = () => generarReporte('diario');
+        document.getElementById('btn-rep-semanal').onclick = () => generarReporte('semanal');
+        document.getElementById('btn-rep-mensual').onclick = () => generarReporte('mensual');
+
+    </script>
 </body>
 </html>
 
